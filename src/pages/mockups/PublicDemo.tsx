@@ -5,38 +5,38 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-
-const limitedTechnologies = [
-  { name: "Kubernetes", quadrant: "Cloud", ring: "Adopt", score: 8.5 },
-  { name: "Edge AI Inference", quadrant: "Edge", ring: "Trial", score: 6.8 },
-  { name: "V2X Communication", quadrant: "IoT", ring: "Assess", score: 4.5 },
-  { name: "Computer Vision", quadrant: "AI/ML", ring: "Adopt", score: 8.3 },
-  { name: "Digital Twin", quadrant: "IoT", ring: "Trial", score: 6.5 },
-];
-
-const premiumFeatures = [
-  "Full technology coverage (150+ technologies)",
-  "Advanced filtering (geography, funding, patents)",
-  "Export to CSV, PDF reports",
-  "Quarterly data updates",
-  "Priority support",
-  "API access for integrations",
-];
-
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+const limitedTechnologies = [{
+  name: "Kubernetes",
+  quadrant: "Cloud",
+  ring: "Adopt",
+  score: 8.5
+}, {
+  name: "Edge AI Inference",
+  quadrant: "Edge",
+  ring: "Trial",
+  score: 6.8
+}, {
+  name: "V2X Communication",
+  quadrant: "IoT",
+  ring: "Assess",
+  score: 4.5
+}, {
+  name: "Computer Vision",
+  quadrant: "AI/ML",
+  ring: "Adopt",
+  score: 8.3
+}, {
+  name: "Digital Twin",
+  quadrant: "IoT",
+  ring: "Trial",
+  score: 6.5
+}];
+const premiumFeatures = ["Full technology coverage (150+ technologies)", "Advanced filtering (geography, funding, patents)", "Export to CSV, PDF reports", "Quarterly data updates", "Priority support", "API access for integrations"];
 export default function PublicDemo() {
   const [activeView, setActiveView] = useState<"radar" | "heatmap">("radar");
   const [showAccessDialog, setShowAccessDialog] = useState(false);
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -45,7 +45,7 @@ export default function PublicDemo() {
               <Button variant="ghost" size="sm">← Back to Mockups</Button>
             </Link>
             <div>
-              <h1 className="text-xl font-bold text-gradient">BluSpecs AI-CE Heatmap</h1>
+              <h1 className="text-xl font-bold text-gradient text-primary">BluSpecs AI-CE Heatmap</h1>
               <p className="text-sm text-muted-foreground">Technology Maturity Visualization</p>
             </div>
           </div>
@@ -100,19 +100,11 @@ export default function PublicDemo() {
           <div className="space-y-6">
             {/* View Toggle */}
             <div className="flex gap-2">
-              <Button
-                variant={activeView === "radar" ? "default" : "outline"}
-                onClick={() => setActiveView("radar")}
-                className="flex items-center gap-2"
-              >
+              <Button variant={activeView === "radar" ? "default" : "outline"} onClick={() => setActiveView("radar")} className="flex items-center gap-2">
                 <Radar className="h-4 w-4" />
                 Radar View
               </Button>
-              <Button
-                variant={activeView === "heatmap" ? "default" : "outline"}
-                onClick={() => setActiveView("heatmap")}
-                className="flex items-center gap-2"
-              >
+              <Button variant={activeView === "heatmap" ? "default" : "outline"} onClick={() => setActiveView("heatmap")} className="flex items-center gap-2">
                 <Grid3X3 className="h-4 w-4" />
                 Heatmap View
               </Button>
@@ -121,22 +113,11 @@ export default function PublicDemo() {
             {/* Visualization Area */}
             <Card className="relative overflow-hidden">
               <CardContent className="p-8">
-                {activeView === "radar" ? (
-                  <div className="relative aspect-square max-w-lg mx-auto">
+                {activeView === "radar" ? <div className="relative aspect-square max-w-lg mx-auto">
                     {/* Simplified Radar */}
                     <svg viewBox="0 0 100 100" className="w-full h-full">
                       {/* Rings */}
-                      {[0.8, 0.6, 0.4, 0.2].map((r, i) => (
-                        <circle
-                          key={i}
-                          cx="50"
-                          cy="50"
-                          r={r * 45}
-                          fill="none"
-                          stroke="hsl(var(--border))"
-                          strokeWidth="0.3"
-                        />
-                      ))}
+                      {[0.8, 0.6, 0.4, 0.2].map((r, i) => <circle key={i} cx="50" cy="50" r={r * 45} fill="none" stroke="hsl(var(--border))" strokeWidth="0.3" />)}
                       {/* Quadrant lines */}
                       <line x1="50" y1="5" x2="50" y2="95" stroke="hsl(var(--border))" strokeWidth="0.3" />
                       <line x1="5" y1="50" x2="95" y2="50" stroke="hsl(var(--border))" strokeWidth="0.3" />
@@ -157,9 +138,7 @@ export default function PublicDemo() {
 
                     {/* Blur overlay for premium content */}
                     <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
-                  </div>
-                ) : (
-                  <div className="space-y-2">
+                  </div> : <div className="space-y-2">
                     {/* Simplified Heatmap */}
                     <div className="grid grid-cols-5 gap-1 text-center text-xs font-medium text-muted-foreground mb-2">
                       <div></div>
@@ -168,8 +147,7 @@ export default function PublicDemo() {
                       <div>Innovation</div>
                       <div>Overall</div>
                     </div>
-                    {limitedTechnologies.slice(0, 3).map((tech) => (
-                      <div key={tech.name} className="grid grid-cols-5 gap-1">
+                    {limitedTechnologies.slice(0, 3).map(tech => <div key={tech.name} className="grid grid-cols-5 gap-1">
                         <div className="text-sm font-medium truncate pr-2">{tech.name}</div>
                         <div className="h-10 rounded bg-emerald-500/60 flex items-center justify-center text-sm font-mono">
                           {(Math.random() * 3 + 6).toFixed(1)}
@@ -183,21 +161,18 @@ export default function PublicDemo() {
                         <div className="h-10 rounded bg-emerald-500/50 flex items-center justify-center text-sm font-mono font-semibold">
                           {tech.score.toFixed(1)}
                         </div>
-                      </div>
-                    ))}
+                      </div>)}
                     
                     {/* Blur overlay */}
                     <div className="relative h-32 overflow-hidden">
                       <div className="opacity-30 blur-sm space-y-2">
-                        {[1, 2, 3].map((i) => (
-                          <div key={i} className="grid grid-cols-5 gap-1">
+                        {[1, 2, 3].map(i => <div key={i} className="grid grid-cols-5 gap-1">
                             <div className="h-10 bg-muted rounded" />
                             <div className="h-10 bg-muted rounded" />
                             <div className="h-10 bg-muted rounded" />
                             <div className="h-10 bg-muted rounded" />
                             <div className="h-10 bg-muted rounded" />
-                          </div>
-                        ))}
+                          </div>)}
                       </div>
                       <div className="absolute inset-0 flex items-center justify-center">
                         <Button onClick={() => setShowAccessDialog(true)}>
@@ -206,8 +181,7 @@ export default function PublicDemo() {
                         </Button>
                       </div>
                     </div>
-                  </div>
-                )}
+                  </div>}
               </CardContent>
             </Card>
 
@@ -219,27 +193,14 @@ export default function PublicDemo() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {limitedTechnologies.map((tech) => (
-                    <div
-                      key={tech.name}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                    >
+                  {limitedTechnologies.map(tech => <div key={tech.name} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                       <div>
                         <p className="font-medium">{tech.name}</p>
                         <div className="flex gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">
                             {tech.quadrant}
                           </Badge>
-                          <Badge
-                            variant="outline"
-                            className={`text-xs ${
-                              tech.ring === "Adopt"
-                                ? "border-emerald-500/50 text-emerald-400"
-                                : tech.ring === "Trial"
-                                ? "border-sky-500/50 text-sky-400"
-                                : "border-amber-500/50 text-amber-400"
-                            }`}
-                          >
+                          <Badge variant="outline" className={`text-xs ${tech.ring === "Adopt" ? "border-emerald-500/50 text-emerald-400" : tech.ring === "Trial" ? "border-sky-500/50 text-sky-400" : "border-amber-500/50 text-amber-400"}`}>
                             {tech.ring}
                           </Badge>
                         </div>
@@ -248,8 +209,7 @@ export default function PublicDemo() {
                         <p className="text-2xl font-bold font-mono">{tech.score.toFixed(1)}</p>
                         <p className="text-xs text-muted-foreground">Maturity Score</p>
                       </div>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </CardContent>
             </Card>
@@ -268,12 +228,10 @@ export default function PublicDemo() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <ul className="space-y-3">
-                  {premiumFeatures.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2 text-sm">
+                  {premiumFeatures.map(feature => <li key={feature} className="flex items-start gap-2 text-sm">
                       <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                       <span>{feature}</span>
-                    </li>
-                  ))}
+                    </li>)}
                 </ul>
                 <Button className="w-full" onClick={() => setShowAccessDialog(true)}>
                   Request Access
@@ -326,6 +284,5 @@ export default function PublicDemo() {
           <p className="mt-1">Last updated: December 2024 • Next refresh: March 2025</p>
         </footer>
       </div>
-    </div>
-  );
+    </div>;
 }
