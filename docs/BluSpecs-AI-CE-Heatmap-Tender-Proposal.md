@@ -199,14 +199,24 @@ ML-SDV Sphere
 
 ## Investment
 
-### Development Cost: €18,500
+### Total Investment: €18,500
+
+#### Base Development: €17,000
 
 | Phase | Effort | Cost |
 |-------|--------|------|
-| Phase 1: Foundation | 4 weeks | €5,000 |
-| Phase 2: Visualization | 4 weeks | €6,000 |
-| Phase 3: Data Integration | 2 weeks | €4,500 |
+| Phase 1: Foundation | 4 weeks | €4,500 |
+| Phase 2: Visualization | 4 weeks | €5,500 |
+| Phase 3: Data Integration | 2 weeks | €4,000 |
 | Phase 4: Polish & Launch | 2 weeks | €3,000 |
+
+#### Enhanced Capabilities: €1,500
+
+| Enhancement | Description |
+|-------------|-------------|
+| **AI Document Extraction** | Advanced parsing for CEI PPT/PDF documents with structured data output |
+| **Public Data Sources** | Integration of EU Horizon, GitHub Trending, arXiv for innovation signals |
+| **Methodology Documentation** | Comprehensive scoring framework and assessment criteria documentation |
 
 ### What's Included
 
@@ -216,6 +226,8 @@ ML-SDV Sphere
 ✅ 1 data refresh cycle (at month 3)  
 ✅ Bug fixes and minor adjustments  
 ✅ Email support during maintenance period  
+✅ Enhanced AI extraction for unstructured documents  
+✅ Additional public data source integrations  
 
 ### Ongoing Costs (Post-6-Month Maintenance)
 
@@ -224,6 +236,15 @@ ML-SDV Sphere
 | Hosting (Lovable Cloud) | ~€25-50/month |
 | Data refresh cycle | €1,500/cycle (quarterly recommended) |
 | Extended maintenance | €500/month |
+
+---
+
+## Annexes
+
+- **Annex A**: Visual Mockups - Technology Radar & Heatmap Matrix concepts
+- **Annex B**: Technical Architecture - System design and data flow diagrams
+- **Annex C**: Methodology Framework - Scoring criteria and assessment approach
+- **Annex D**: Maintenance Model - Support scope and refresh procedures
 
 ---
 
