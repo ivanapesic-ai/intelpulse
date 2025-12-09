@@ -10,6 +10,7 @@ import TechnologyRadar from "./pages/mockups/TechnologyRadar";
 import HeatmapMatrix from "./pages/mockups/HeatmapMatrix";
 import AdminPanel from "./pages/mockups/AdminPanel";
 import PublicDemo from "./pages/mockups/PublicDemo";
+import ArchitectureDiagrams from "./pages/mockups/ArchitectureDiagrams";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/mockups/heatmap" element={<HeatmapMatrix />} />
           <Route path="/mockups/admin" element={<AdminPanel />} />
           <Route path="/mockups/public" element={<PublicDemo />} />
+          <Route path="/mockups/architecture" element={<ArchitectureDiagrams />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
