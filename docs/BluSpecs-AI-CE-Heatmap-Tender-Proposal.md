@@ -2,7 +2,7 @@
 ## Technology Maturity Visualization Platform for ML-SDV Sphere
 
 **Submitted to:** BluSpecs  
-**Date:** December 2024  
+**Date:** December 2025  
 **Project Duration:** 3 months  
 **Total Investment:** €18,500
 
