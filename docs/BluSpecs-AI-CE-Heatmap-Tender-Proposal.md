@@ -72,33 +72,7 @@ Based on our discussions, BluSpecs requires:
 
 ## Technical Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        FRONTEND                                  │
-│  React + TypeScript + Tailwind CSS                              │
-│  ├── Public Demo View                                           │
-│  ├── Premium Dashboard                                          │
-│  └── Admin Panel                                                │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     BACKEND (EU-Hosted)                         │
-│  Lovable Cloud (Supabase)                                       │
-│  ├── Authentication & User Management                           │
-│  ├── PostgreSQL Database                                        │
-│  ├── Row-Level Security (RLS)                                   │
-│  └── Edge Functions (AI Processing)                             │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      DATA SOURCES                               │
-│  ├── Dealroom API (startup/funding data)                        │
-│  ├── PATSTAT/EPO (patent data via CSV)                          │
-│  └── CEI Internal Datasets (format TBD)                         │
-└─────────────────────────────────────────────────────────────────┘
-```
+> **See:** [Architecture Diagrams](./visuals/architecture-diagrams.md) for detailed Mermaid diagrams
 
 ### Technology Stack
 
@@ -110,32 +84,40 @@ Based on our discussions, BluSpecs requires:
 | AI Processing | Lovable AI Gateway | Document parsing, no external API keys needed |
 | Hosting | EU Region | GDPR compliance, data residency |
 
+### System Components
+
+**Frontend Layer:**
+- React + TypeScript + Tailwind CSS
+- Public Demo View
+- Premium Dashboard
+- Admin Panel
+
+**Backend Layer (Lovable Cloud - EU Hosted):**
+- Authentication & User Management
+- PostgreSQL Database
+- Row-Level Security (RLS)
+- Edge Functions (AI Processing)
+
+**External Data Sources:**
+- Dealroom API (startup/funding data)
+- PATSTAT/EPO (patent data via CSV)
+- CEI Internal Datasets (format TBD)
+- Public Sources (EU Horizon, GitHub, arXiv)
+
 ---
 
 ## Data Model
 
+> **See:** [Database Schema](./visuals/database-schema.md) for detailed ERD
+
 ### Technology Taxonomy (ML-SDV Sphere)
 
-```
-ML-SDV Sphere
-├── Cloud Technologies
-│   ├── Infrastructure
-│   ├── Platforms
-│   └── Services
-├── Edge Computing
-│   ├── Hardware
-│   ├── Software
-│   └── Networking
-├── IoT
-│   ├── Sensors
-│   ├── Connectivity
-│   └── Protocols
-└── AI/ML
-    ├── Computer Vision
-    ├── NLP
-    ├── Predictive Analytics
-    └── Autonomous Systems
-```
+| Domain | Sub-categories |
+|--------|----------------|
+| **Cloud Technologies** | Infrastructure, Platforms, Services |
+| **Edge Computing** | Hardware, Software, Networking |
+| **IoT** | Sensors, Connectivity, Protocols |
+| **AI/ML** | Computer Vision, NLP, Predictive Analytics, Autonomous Systems |
 
 ### Maturity Scoring Framework
 
@@ -145,6 +127,49 @@ ML-SDV Sphere
 | Market Adoption | 25% | Dealroom funding/company data |
 | Innovation Activity | 25% | PATSTAT patent filings |
 | EU Strategic Alignment | 25% | CEI policy documents |
+
+---
+
+## Methodology Framework
+
+### Technology Readiness Level (TRL)
+
+Based on the EU Horizon Europe TRL scale:
+
+| TRL | Name | Score |
+|-----|------|-------|
+| TRL 9 | Actual system proven in operational environment | 9.0 |
+| TRL 8 | System complete and qualified | 8.0 |
+| TRL 7 | System prototype demonstrated | 7.0 |
+| TRL 6 | Technology demonstrated in relevant environment | 6.0 |
+| TRL 5 | Technology validated in relevant environment | 5.0 |
+| TRL 4 | Technology validated in laboratory | 4.0 |
+| TRL 3 | Experimental proof of concept | 3.0 |
+| TRL 2 | Technology concept formulated | 2.0 |
+| TRL 1 | Basic principles observed | 1.0 |
+
+### Composite Score Calculation
+
+```
+Overall Score = (TRL × 0.25) + (Market Adoption × 0.25) + (Innovation Activity × 0.25) + (EU Alignment × 0.25)
+```
+
+### Radar Chart Placement
+
+| Overall Score | Radar Ring | Recommendation |
+|---------------|------------|----------------|
+| 7.5 - 9.0 | **Adopt** | Ready for production deployment |
+| 5.0 - 7.4 | **Trial** | Suitable for pilot projects |
+| 3.0 - 4.9 | **Assess** | Worth exploring and monitoring |
+| 0.0 - 2.9 | **Hold** | Monitor development, not ready for adoption |
+
+### Confidence Levels
+
+| Level | Criteria |
+|-------|----------|
+| **High** | 3+ data sources agree, recent data (< 6 months) |
+| **Medium** | 2 data sources, data within 12 months |
+| **Low** | Single source or data > 12 months old |
 
 ---
 
@@ -239,12 +264,60 @@ ML-SDV Sphere
 
 ---
 
-## Annexes
+## Maintenance Model
 
-- **Annex A**: Visual Mockups - Technology Radar & Heatmap Matrix concepts
-- **Annex B**: Technical Architecture - System design and data flow diagrams
-- **Annex C**: Methodology Framework - Scoring criteria and assessment approach
-- **Annex D**: Maintenance Model - Support scope and refresh procedures
+### Included Maintenance Period: 6 Months Post-Launch
+
+| Category | Coverage |
+|----------|----------|
+| **Bug Fixes** | Resolution of defects in delivered functionality |
+| **Security Patches** | Critical security updates and vulnerability fixes |
+| **Platform Updates** | Compatibility updates for underlying infrastructure |
+| **Minor Adjustments** | Small UI/UX tweaks (< 2 hours each, up to 10 total) |
+| **Email Support** | Response within 2 business days |
+| **1 Data Refresh** | One complete data refresh cycle at month 3 |
+
+### Support Classification
+
+| Priority | Response | Resolution Target |
+|----------|----------|-------------------|
+| **Critical** | 4 hours | 24 hours |
+| **High** | 8 hours | 3 business days |
+| **Medium** | 2 business days | 5 business days |
+| **Low** | 5 business days | Next release |
+
+### Extended Maintenance Options
+
+| Option | Cost | Coverage |
+|--------|------|----------|
+| **Basic** | €300/month | Bug fixes, security patches, email support |
+| **Standard** | €500/month | Basic + 1 data refresh/quarter + priority support |
+| **Premium** | €800/month | Standard + 4 hours/month minor enhancements |
+
+---
+
+## Visual Mockups
+
+> **Interactive mockups available at:** `/mockups` in the application
+> 
+> Screenshots can be captured from:
+> - `/mockups/radar` - Technology Radar visualization
+> - `/mockups/heatmap` - Heatmap Matrix visualization
+> - `/mockups/admin` - Admin Panel interface
+> - `/mockups/public` - Public Demo view
+
+### Visualization Concepts
+
+**Technology Radar:**
+- Circular, quadrant-based visualization
+- Rings: Adopt → Trial → Assess → Hold
+- Quadrants: Cloud, Edge, IoT, AI/ML
+- Interactive: hover for details, click to drill down
+
+**Heatmap Matrix:**
+- Grid: Technology domains × Assessment dimensions
+- Color scale: Deep Green (8-9) → Yellow (4-6) → Red (0-3)
+- Features: sorting, filtering, row expansion
 
 ---
 
@@ -317,6 +390,14 @@ These can be added in future phases as the service validates market demand.
 2. **Contract Signing**: Formalize agreement and payment terms
 3. **Kickoff**: Begin Phase 1 within 1 week of contract signing
 4. **Weekly Syncs**: 30-minute progress updates throughout development
+
+---
+
+## Reference Documents
+
+- [Architecture Diagrams](./visuals/architecture-diagrams.md) - System design flowcharts
+- [Data Flow Diagrams](./visuals/data-flow-diagrams.md) - Data processing pipeline
+- [Database Schema](./visuals/database-schema.md) - Entity relationship diagram
 
 ---
 
