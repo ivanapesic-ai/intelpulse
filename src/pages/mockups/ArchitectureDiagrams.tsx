@@ -10,246 +10,170 @@ const diagrams = [
     id: "system-overview",
     title: "System Overview",
     description: "High-level architecture showing users, frontend, backend, and external data sources",
-    mermaid: `graph TB
-    subgraph Users["👥 Users"]
-        A[Public Visitors]
-        B[Premium Subscribers]
-        C[Admin - BluSpecs]
-    end
+    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#3b82f6', 'primaryTextColor': '#1e293b'}}}%%
+flowchart TD
+    A[Public Visitors] --> D[Public Demo View]
+    B[Premium Subscribers] --> E[Premium Dashboard]
+    C[Admin - BluSpecs] --> F[Admin Panel]
     
-    subgraph Frontend["🖥️ Frontend - React + TypeScript"]
-        D[Public Demo View]
-        E[Premium Dashboard]
-        F[Admin Panel]
-    end
-    
-    subgraph Backend["☁️ Lovable Cloud - EU Hosted"]
-        G[Authentication]
-        H[PostgreSQL Database]
-        I[Row-Level Security]
-        J[Edge Functions]
-        K[File Storage]
-    end
-    
-    subgraph External["📊 External Data Sources"]
-        L[Dealroom API]
-        M[PATSTAT/EPO]
-        N[CEI Documents]
-        O[Public Sources]
-    end
-    
-    A --> D
-    B --> E
-    C --> F
-    
-    D --> G
+    D --> G[Authentication]
     E --> G
     F --> G
     
-    G --> H
-    G --> I
+    G --> H[(PostgreSQL Database)]
+    G --> I[Row-Level Security]
     
-    J --> L
-    J --> M
-    J --> N
-    J --> O
+    J[Edge Functions] --> K[Dealroom API]
+    J --> L[PATSTAT/EPO]
+    J --> M[CEI Documents]
+    J --> N[Public Sources]
     
     J --> H
-    K --> H`
+    O[File Storage] --> H`
   },
   {
     id: "security-architecture",
     title: "Security Architecture",
     description: "Role-based access control with Row-Level Security policies",
-    mermaid: `graph TB
-    subgraph Auth["🔐 Authentication Layer"]
-        A[Email/Password Login]
-        B[Session Management]
-        C[JWT Tokens]
-    end
+    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#3b82f6', 'primaryTextColor': '#1e293b'}}}%%
+flowchart TD
+    A[Email/Password Login] --> B[Session Management]
+    B --> C[JWT Tokens]
     
-    subgraph Roles["👤 Role-Based Access"]
-        D[Public - No Auth]
-        E[Premium - Authenticated]
-        F[Admin - Elevated]
-    end
+    C --> D[Public - No Auth]
+    C --> E[Premium - Authenticated]
+    C --> F[Admin - Elevated]
     
-    subgraph RLS["🛡️ Row-Level Security"]
-        G[Public Data Policy]
-        H[Premium Data Policy]
-        I[Admin Full Access]
-    end
+    D --> G[Public Data Policy]
+    E --> H[Premium Data Policy]
+    F --> I[Admin Full Access]
     
-    subgraph Data["📊 Data Access"]
-        J[Sample Technologies]
-        K[Full Technology Set]
-        L[User Management]
-        M[Analytics]
-    end
-    
-    A --> B
-    B --> C
-    
-    C --> D
-    C --> E
-    C --> F
-    
-    D --> G
-    E --> H
-    F --> I
-    
-    G --> J
-    H --> K
-    I --> L
-    I --> M`
+    G --> J[Sample Technologies]
+    H --> K[Full Technology Set]
+    I --> L[User Management]
+    I --> M[Analytics]`
   },
   {
     id: "data-refresh-flow",
     title: "Data Refresh Flow",
     description: "How data is collected, normalized, scored, and stored",
-    mermaid: `flowchart TD
-    A[🔄 Admin Triggers Refresh] --> B[Edge Function: data-refresh]
+    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#3b82f6', 'primaryTextColor': '#1e293b'}}}%%
+flowchart TD
+    A[Admin Triggers Refresh] --> B[Edge Function]
     
-    B --> C{Parallel Fetch}
+    B --> C[Dealroom API]
+    B --> D[PATSTAT CSV]
+    B --> E[AI Doc Parsing]
+    B --> F[Public Sources]
     
-    C --> D[📊 Dealroom API]
-    C --> E[📄 PATSTAT CSV]
-    C --> F[🤖 AI Doc Parsing]
-    C --> G[🌐 Public Sources]
+    C --> G[Normalize Data]
+    D --> G
+    E --> G
+    F --> G
     
-    D --> H[Normalize Data]
-    E --> H
-    F --> H
-    G --> H
+    G --> H[Scoring Engine]
     
-    H --> I[🧮 Scoring Engine]
+    H --> I[Calculate TRL]
+    H --> J[Compute Market]
+    H --> K[Assess Innovation]
+    H --> L[EU Alignment]
     
-    I --> J[Calculate TRL]
-    I --> K[Compute Market Score]
-    I --> L[Assess Innovation]
-    I --> M[Evaluate EU Alignment]
+    I --> M[Composite Score]
+    J --> M
+    K --> M
+    L --> M
     
-    J --> N[Composite Score]
-    K --> N
-    L --> N
-    M --> N
-    
-    N --> O[(Database Update)]
-    
-    O --> P[✅ Visualizations Updated]`
+    M --> N[(Database Update)]
+    N --> O[Visualizations Updated]`
   },
   {
     id: "scoring-calculation",
     title: "Scoring Calculation Flow",
     description: "Detailed breakdown of how composite scores are calculated from multiple data sources",
-    mermaid: `flowchart TD
-    subgraph Inputs["📥 Data Inputs"]
-        A[Dealroom Data]
-        B[PATSTAT Patents]
-        C[CEI Assessments]
-        D[Public Sources]
+    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#3b82f6', 'primaryTextColor': '#1e293b'}}}%%
+flowchart TD
+    subgraph Inputs["Data Inputs"]
+        A[Dealroom]
+        B[PATSTAT]
+        C[CEI Docs]
+        D[Public]
     end
     
-    subgraph Dimension1["TRL Score - 25%"]
+    Inputs --> TRL
+    
+    subgraph TRL["TRL Score 25%"]
         E[Expert Assessment]
-        F[AI TRL Detection]
+        F[AI Detection]
         G[Deployment Evidence]
     end
     
-    subgraph Dimension2["Market Score - 25%"]
-        H[Funding Activity × 0.30]
-        I[Company Count × 0.25]
-        J[Deployments × 0.25]
-        K[Growth Rate × 0.20]
+    TRL --> Market
+    
+    subgraph Market["Market Score 25%"]
+        H[Funding x0.30]
+        I[Companies x0.25]
+        J[Deployments x0.25]
+        K[Growth x0.20]
     end
     
-    subgraph Dimension3["Innovation Score - 25%"]
-        L[Patents × 0.35]
-        M[Publications × 0.25]
-        N[Open Source × 0.20]
-        O[EU Projects × 0.20]
+    Market --> Innovation
+    
+    subgraph Innovation["Innovation Score 25%"]
+        L[Patents x0.35]
+        M[Publications x0.25]
+        N[Open Source x0.20]
+        O[EU Projects x0.20]
     end
     
-    subgraph Dimension4["EU Alignment - 25%"]
+    Innovation --> EU
+    
+    subgraph EU["EU Alignment 25%"]
         P[Policy Mentions]
         Q[Horizon Funding]
         R[IPCEI Inclusion]
     end
     
-    A --> H
-    A --> I
-    B --> L
-    C --> E
-    C --> P
-    D --> M
-    D --> N
-    
-    E --> S[TRL: 0-9]
-    F --> S
-    G --> S
-    
-    H --> T[Market: 0-9]
-    I --> T
-    J --> T
-    K --> T
-    
-    L --> U[Innovation: 0-9]
-    M --> U
-    N --> U
-    O --> U
-    
-    P --> V[EU: 0-9]
-    Q --> V
-    R --> V
-    
-    S --> W[🎯 Composite Score]
-    T --> W
-    U --> W
-    V --> W
+    EU --> W[Composite Score]
     
     W --> X{Radar Placement}
     
-    X -->|7.5-9.0| Y[Adopt Ring]
-    X -->|5.0-7.4| Z[Trial Ring]
-    X -->|3.0-4.9| AA[Assess Ring]
-    X -->|0.0-2.9| AB[Hold Ring]`
+    X -->|7.5-9.0| Y[Adopt]
+    X -->|5.0-7.4| Z[Trial]
+    X -->|3.0-4.9| AA[Assess]
+    X -->|0.0-2.9| AB[Hold]`
   },
   {
     id: "auth-flow",
     title: "User Authentication Flow",
-    description: "Sequence diagram showing the authentication and data access process",
-    mermaid: `sequenceDiagram
-    participant U as User
-    participant F as Frontend
-    participant A as Auth Service
-    participant D as Database
+    description: "Step-by-step authentication and data access process",
+    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#3b82f6', 'primaryTextColor': '#1e293b'}}}%%
+flowchart TD
+    A[User] --> B[Enter Credentials]
+    B --> C[Frontend]
+    C --> D[signInWithPassword]
+    D --> E[Auth Service]
+    E --> F[Verify Credentials]
+    F --> G[(Database)]
+    G --> H[User Record]
+    H --> I[Session + JWT]
+    I --> J[Fetch Profile with RLS]
+    J --> K[Role-Filtered Data]
+    K --> L[Redirect to Dashboard]
     
-    U->>F: Enter credentials
-    F->>A: signInWithPassword()
-    A->>D: Verify credentials
-    D-->>A: User record
-    A-->>F: Session + JWT
-    F->>D: Fetch profile (with RLS)
-    D-->>F: User data (role-filtered)
-    F-->>U: Redirect to dashboard
-    
-    Note over F,D: All subsequent requests include JWT
-    
-    U->>F: Request technologies
-    F->>D: Query with auth header
-    D->>D: Apply RLS policies
-    D-->>F: Filtered results
-    F-->>U: Display data`
+    L --> M[Request Technologies]
+    M --> N[Query with Auth Header]
+    N --> O[Apply RLS Policies]
+    O --> P[Filtered Results]
+    P --> Q[Display Data]`
   },
   {
     id: "ai-doc-processing",
     title: "AI Document Processing",
     description: "How unstructured documents are parsed and categorized using AI",
-    mermaid: `flowchart LR
-    A[📎 Upload PPT/PDF] --> B[File Storage]
-    
-    B --> C[Edge Function: parse-document]
-    
+    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#3b82f6', 'primaryTextColor': '#1e293b'}}}%%
+flowchart TD
+    A[Upload PPT/PDF] --> B[File Storage]
+    B --> C[Edge Function]
     C --> D[Lovable AI Gateway]
     
     D --> E{Document Type}
@@ -272,8 +196,8 @@ const diagrams = [
     
     M --> N{Confidence Check}
     
-    N -->|>70%| O[Auto-categorize]
-    N -->|<70%| P[Flag for Review]
+    N -->|Above 70%| O[Auto-categorize]
+    N -->|Below 70%| P[Flag for Review]
     
     O --> Q[(Save to Database)]
     P --> Q`
