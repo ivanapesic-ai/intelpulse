@@ -1,10 +1,13 @@
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import mermaid from "mermaid";
 
 const diagrams = [
   {
+    id: "system-overview",
     title: "System Overview",
     description: "High-level architecture showing users, frontend, backend, and external data sources",
     mermaid: `graph TB
@@ -55,6 +58,7 @@ const diagrams = [
     K --> H`
   },
   {
+    id: "security-architecture",
     title: "Security Architecture",
     description: "Role-based access control with Row-Level Security policies",
     mermaid: `graph TB
@@ -100,6 +104,7 @@ const diagrams = [
     I --> M`
   },
   {
+    id: "data-refresh-flow",
     title: "Data Refresh Flow",
     description: "How data is collected, normalized, scored, and stored",
     mermaid: `flowchart TD
@@ -134,6 +139,7 @@ const diagrams = [
     O --> P[✅ Visualizations Updated]`
   },
   {
+    id: "scoring-calculation",
     title: "Scoring Calculation Flow",
     description: "Detailed breakdown of how composite scores are calculated from multiple data sources",
     mermaid: `flowchart TD
@@ -209,6 +215,7 @@ const diagrams = [
     X -->|0.0-2.9| AB[Hold Ring]`
   },
   {
+    id: "auth-flow",
     title: "User Authentication Flow",
     description: "Sequence diagram showing the authentication and data access process",
     mermaid: `sequenceDiagram
@@ -235,6 +242,7 @@ const diagrams = [
     F-->>U: Display data`
   },
   {
+    id: "ai-doc-processing",
     title: "AI Document Processing",
     description: "How unstructured documents are parsed and categorized using AI",
     mermaid: `flowchart LR
@@ -272,7 +280,62 @@ const diagrams = [
   }
 ];
 
+function MermaidDiagram({ id, chart }: { id: string; chart: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const renderDiagram = async () => {
+      if (containerRef.current) {
+        containerRef.current.innerHTML = "";
+        try {
+          const { svg } = await mermaid.render(`mermaid-${id}`, chart);
+          containerRef.current.innerHTML = svg;
+        } catch (error) {
+          console.error("Mermaid rendering error:", error);
+          containerRef.current.innerHTML = `<pre class="text-sm text-muted-foreground">${chart}</pre>`;
+        }
+      }
+    };
+    renderDiagram();
+  }, [id, chart]);
+
+  return <div ref={containerRef} className="flex justify-center overflow-x-auto" />;
+}
+
 export default function ArchitectureDiagrams() {
+  useEffect(() => {
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: "base",
+      themeVariables: {
+        primaryColor: "#3b82f6",
+        primaryTextColor: "#ffffff",
+        primaryBorderColor: "#2563eb",
+        lineColor: "#64748b",
+        secondaryColor: "#1e293b",
+        tertiaryColor: "#0f172a",
+        background: "#020817",
+        mainBkg: "#1e293b",
+        secondBkg: "#0f172a",
+        nodeBorder: "#3b82f6",
+        clusterBkg: "#1e293b",
+        clusterBorder: "#334155",
+        titleColor: "#f8fafc",
+        edgeLabelBackground: "#1e293b",
+        textColor: "#e2e8f0",
+        nodeTextColor: "#f8fafc",
+      },
+      flowchart: {
+        htmlLabels: true,
+        curve: "basis",
+      },
+      sequence: {
+        actorMargin: 50,
+        mirrorActors: false,
+      },
+    });
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
@@ -295,17 +358,15 @@ export default function ArchitectureDiagrams() {
 
         {/* Diagrams Grid */}
         <div className="space-y-8">
-          {diagrams.map((diagram, index) => (
-            <Card key={index} className="overflow-hidden">
+          {diagrams.map((diagram) => (
+            <Card key={diagram.id} className="overflow-hidden">
               <CardHeader className="bg-muted/30">
                 <CardTitle className="text-xl">{diagram.title}</CardTitle>
                 <p className="text-sm text-muted-foreground">{diagram.description}</p>
               </CardHeader>
               <CardContent className="p-6">
-                <div className="bg-card rounded-lg p-4 overflow-x-auto">
-                  <pre className="mermaid text-sm">
-                    {diagram.mermaid}
-                  </pre>
+                <div className="bg-slate-900 rounded-lg p-6 overflow-x-auto min-h-[200px]">
+                  <MermaidDiagram id={diagram.id} chart={diagram.mermaid} />
                 </div>
               </CardContent>
             </Card>
