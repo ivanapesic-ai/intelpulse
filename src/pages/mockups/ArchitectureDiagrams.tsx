@@ -308,22 +308,37 @@ export default function ArchitectureDiagrams() {
       startOnLoad: false,
       theme: "base",
       themeVariables: {
+        // White/light background
+        background: "#ffffff",
+        mainBkg: "#f8fafc",
+        secondBkg: "#f1f5f9",
+        
+        // Professional blue nodes
         primaryColor: "#3b82f6",
-        primaryTextColor: "#ffffff",
+        primaryTextColor: "#1e293b",
         primaryBorderColor: "#2563eb",
+        
+        // Dark text for readability
+        textColor: "#1e293b",
+        nodeTextColor: "#1e293b",
+        titleColor: "#0f172a",
+        
+        // Subtle lines
         lineColor: "#64748b",
-        secondaryColor: "#1e293b",
-        tertiaryColor: "#0f172a",
-        background: "#020817",
-        mainBkg: "#1e293b",
-        secondBkg: "#0f172a",
         nodeBorder: "#3b82f6",
-        clusterBkg: "#1e293b",
-        clusterBorder: "#334155",
-        titleColor: "#f8fafc",
-        edgeLabelBackground: "#1e293b",
-        textColor: "#e2e8f0",
-        nodeTextColor: "#f8fafc",
+        clusterBkg: "#f1f5f9",
+        clusterBorder: "#cbd5e1",
+        edgeLabelBackground: "#ffffff",
+        
+        // Sequence diagram colors
+        actorBkg: "#3b82f6",
+        actorTextColor: "#ffffff",
+        actorLineColor: "#64748b",
+        signalColor: "#1e293b",
+        signalTextColor: "#1e293b",
+        noteBkgColor: "#fef3c7",
+        noteTextColor: "#1e293b",
+        noteBorderColor: "#f59e0b",
       },
       flowchart: {
         htmlLabels: true,
@@ -365,7 +380,7 @@ export default function ArchitectureDiagrams() {
                 <p className="text-sm text-muted-foreground">{diagram.description}</p>
               </CardHeader>
               <CardContent className="p-6">
-                <div className="bg-slate-900 rounded-lg p-6 overflow-x-auto min-h-[200px]">
+                <div className="bg-white rounded-lg p-6 overflow-x-auto min-h-[300px] border border-gray-200 max-w-[600px] mx-auto">
                   <MermaidDiagram id={diagram.id} chart={diagram.mermaid} />
                 </div>
               </CardContent>
