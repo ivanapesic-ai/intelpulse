@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Radar, Grid3X3, Shield, Globe } from "lucide-react";
+import { Radar, Grid3X3, Shield, Globe, Network } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 const mockups = [{
   title: "Technology Radar",
@@ -25,6 +25,12 @@ const mockups = [{
   icon: Globe,
   path: "/mockups/public",
   features: ["Sample data only", "Basic filtering", "Premium upsell"]
+}, {
+  title: "Architecture Diagrams",
+  description: "System architecture and data flow diagrams for technical documentation",
+  icon: Network,
+  path: "/mockups/architecture",
+  features: ["System overview", "Security architecture", "Data flow diagrams"]
 }];
 export default function MockupsIndex() {
   return <div className="min-h-screen bg-background">
