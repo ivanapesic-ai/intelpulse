@@ -20,6 +20,54 @@ We propose to deliver a production-ready Technology Maturity Heatmap platform th
 
 ---
 
+## Why House Eleven Oy
+
+### The Lovable Advantage
+
+House Eleven Oy leverages **Lovable**, a next-generation AI-powered development platform that represents a fundamental shift in how enterprise software is built.
+
+| Capability | Benefit |
+|------------|---------|
+| **AI-assisted full-stack development** | React, TypeScript, PostgreSQL backend—production-grade code |
+| **Rapid iteration** | Changes deployed in seconds, not weeks |
+| **EU-hosted infrastructure** | All data residency in EU (AWS Frankfurt/Ireland) |
+| **Integrated backend** | Authentication, database, edge functions included |
+
+This approach delivers the output equivalent of a **3-5 person development team** with faster iteration cycles and lower risk.
+
+### Founder Credentials
+
+| Credential | Details |
+|------------|---------|
+| **Delivery Entity** | House Eleven Oy (Finnish company) |
+| **Founder** | Ivana Pešić, Chief Product Officer at Headai |
+| **Experience** | 20+ years in product strategy, design leadership, AI integration |
+| **Notable Companies** | Supermetrics (Head of Design), Interactio (VP Product), Nokia/Alcatel |
+| **AI Certifications** | Vanderbilt AI Specializations (2025), Microsoft NLP, Reforge Product Strategy |
+
+### Relevant Project Portfolio
+
+| Project | Relevance to AI-CE Heatmap |
+|---------|---------------------------|
+| **HeadAI Studio** | 4-layer AI agentic platform with data visualization, skill intelligence dashboards — *built with Lovable* |
+| **Supermetrics Dashboard Ecosystem** | Data integration platform with 40+ connectors, visualization for marketing analytics |
+| **Municipal/Government Tools** | Experience with public sector stakeholders, compliance requirements |
+| **Enterprise Solutions (ABB)** | Large-scale B2B deployments, data governance standards |
+
+### Client Sectors Served
+
+- **Cities and municipalities** — Public sector digital transformation
+- **Educational institutions** — Skill mapping and workforce intelligence
+- **Enterprise** — ABB, Supermetrics, Nokia ecosystem
+- **Government and public authorities** — Compliance-aware development
+- **SaaS platforms** — Scalable multi-tenant architectures
+
+### A New Way of Building
+
+This project represents a new paradigm: **AI-augmented development** where a product leader works alongside AI to deliver faster, with lower risk, and at a fraction of traditional cost. The AI-CE Heatmap will serve as a reference implementation of this approach.
+
+---
+
 ## Proposed Solution
 
 ### Dual Visualization System
