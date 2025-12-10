@@ -123,8 +123,8 @@ The 10-week timeline accounts for the collaborative elements that ensure quality
 | Phase 1: Design Sprint + Foundation | €4,500 |
 | Phase 2: Visualization | €5,500 |
 | Phase 3: Data Integration | €4,000 |
-| Phase 4: Polish & Launch | €3,000 |
-| Enhanced AI + Public Sources | €1,500 |
+| — Enhanced AI for Text Data Sources | €3,000 |
+| Phase 4: Polish & Launch | €1,500 |
 
 **Included:** All development & deployment • EU-hosted infrastructure • Bug fixes + email support during project
 
