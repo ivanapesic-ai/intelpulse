@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Layers, Cpu, Database, Workflow, FileText, Zap } from "lucide-react";
+import { ArrowLeft, Layers, Cpu, Database, Workflow, FileText, Zap, Target, Activity, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import mermaid from "mermaid";
@@ -206,11 +206,13 @@ flowchart LR
     id: "data-source-integration",
     title: "Data Source Integration",
     icon: Database,
-    description: `The platform integrates multiple heterogeneous data sources to provide comprehensive technology assessment. Each source contributes different dimensions of the overall picture.
+    description: `The platform integrates multiple heterogeneous data sources to provide comprehensive technology assessment. Each source contributes different dimensions of the overall picture through three key signals.
 
-**Dealroom API** — Company profiles, funding rounds, investor networks, and growth metrics. Provides the foundation for Market Score calculation. REST API with structured JSON responses.
+**Signal 1: Investment (Dealroom API)** — Company profiles, funding rounds, investor networks, and growth metrics. Provides the foundation for Market Score calculation. REST API with structured JSON responses.
 
-**PATSTAT (EPO)** — European Patent Office data on patent filings, citations, and patent families. Primary source for Innovation Score. Delivered as CSV exports for batch processing.
+**Signal 2: Patents (PATSTAT/EPO)** — European Patent Office data on patent filings (both granted and applied for status), citations, and patent families. Primary source for Innovation Score. Delivered as CSV exports for batch processing.
+
+**Signal 3: Market/Media Response (Tech Coverage)** — Technology coverage from industry publications, analyst reports, and media mentions. Sourced from CEI documents initially, with potential API integration for automated tracking.
 
 **CEI Internal Documents** — Strategic assessments, technology reports, and policy analyses from the Cloud-Edge-IoT sphere. Unstructured documents processed through AI document intelligence layer.
 
@@ -218,10 +220,10 @@ flowchart LR
     mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart TD
     subgraph Sources["Data Sources"]
-        DR["Dealroom API"]
-        PS["PATSTAT CSV"]
+        DR["Signal 1: Dealroom"]
+        PS["Signal 2: PATSTAT"]
+        TC["Signal 3: Tech Coverage"]
         CEI["CEI Documents"]
-        MAN["Manual Entry"]
     end
 
     subgraph Platform["AI-CE Platform"]
@@ -232,9 +234,102 @@ flowchart TD
 
     DR --> ING
     PS --> ING
+    TC --> ING
     CEI --> AI
-    MAN --> DB
     ING --> AI --> DB`
+  },
+  {
+    id: "challenge-opportunity-matrix",
+    title: "Challenge-Opportunity Matrix",
+    icon: Target,
+    description: `Complementing the 4-dimension scoring, the Challenge-Opportunity Matrix provides a strategic view of market validation for each technology. This framework assesses both the barriers to adoption and the potential value realization.
+
+**Challenges Scale (0-2):**
+- **2 (No Major Challenge):** No significant barriers to market entry. Problems are solved or negligible.
+- **1 (Manageable Challenge):** Some challenges exist but are understood with clear, actionable steps to overcome.
+- **0 (Severe Challenge):** Major obstacles that could impede market success. May require new regulations or substantial investment.
+
+**Opportunities Scale (0-2):**
+- **2 (High Opportunity):** Significant value, readily achievable, closely aligned with strategic goals.
+- **1 (Promising Opportunity):** Reasonable value achievable with existing resources or moderate effort.
+- **0 (Limited Opportunity):** Low potential value, difficult realization, weak strategic fit.
+
+**Maturity Mapping:** The matrix maps to maturity categories: Emerging (early signals), Early Adoption (pilot deployments), and Mainstream (widespread production use).
+
+Data sources include specific reports and CEI Sphere data sources with expert validation.`,
+    mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
+flowchart LR
+    subgraph Challenges["Challenges"]
+        direction TB
+        C2["2: No Major"]
+        C1["1: Manageable"]
+        C0["0: Severe"]
+    end
+
+    subgraph Opportunities["Opportunities"]
+        direction TB
+        O2["2: High"]
+        O1["1: Promising"]
+        O0["0: Limited"]
+    end
+
+    subgraph Maturity["Maturity"]
+        direction TB
+        M1["Emerging"]
+        M2["Early Adoption"]
+        M3["Mainstream"]
+    end
+
+    Challenges --> Matrix["C-O Matrix"]
+    Opportunities --> Matrix
+    Matrix --> Maturity`
+  },
+  {
+    id: "hourglass-model",
+    title: "CEI-Sphere Hourglass Model Integration",
+    icon: Activity,
+    description: `The platform's technology taxonomy aligns with the CEI-Sphere Hourglass Model, a conceptual framework illustrating how different layers of digital capabilities and stakeholder groups interact to create intelligent, interoperable, and scalable digital ecosystems.
+
+**Hourglass Model Layers:**
+The model maps technology capabilities across Cloud (centralized computing and storage), Edge (distributed processing closer to data sources), and IoT (sensors, devices, and connectivity). AI capabilities span all layers, enabling intelligence at each level.
+
+**Technology Mapping:**
+Our four-quadrant radar (Cloud, Edge, IoT, AI) directly corresponds to the hourglass layers:
+- **Cloud:** Platforms, infrastructure, hyperscaler services
+- **Edge:** Compute nodes, gateways, local processing (including 5G/6G connectivity)
+- **IoT:** Sensors, actuators, device ecosystems
+- **AI:** Cross-cutting intelligence layer (ML, LLMs, computer vision)
+
+**Reference:** The full hourglass model is documented at https://ceisphere.eu/hourglass-model
+
+This alignment ensures the AI-CE Heatmap provides technology intelligence that maps directly to CEI-Sphere's strategic framework.`,
+    mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
+flowchart TB
+    subgraph Hourglass["CEI-Sphere Hourglass"]
+        direction TB
+        CL["Cloud Layer"]
+        ED["Edge Layer<br/>(incl. 5G/6G)"]
+        IOT["IoT Layer"]
+    end
+
+    subgraph AILayer["AI Cross-Cutting"]
+        AI["AI/ML Intelligence"]
+    end
+
+    subgraph Radar["Heatmap Quadrants"]
+        Q1["Cloud"]
+        Q2["Edge"]
+        Q3["IoT"]
+        Q4["AI"]
+    end
+
+    CL --> Q1
+    ED --> Q2
+    IOT --> Q3
+    AILayer --> Q4
+    AI -.-> CL
+    AI -.-> ED
+    AI -.-> IOT`
   }
 ];
 
@@ -267,6 +362,18 @@ const aiCapabilities = [
   { capability: "Trend Analysis", description: "Detect momentum shifts and trajectory changes over time" },
   { capability: "Pattern Recognition", description: "Identify technology clusters and cross-domain correlations" },
   { capability: "Signal Detection", description: "Early warning indicators for emerging technologies" },
+];
+
+const earlyIndicators = [
+  { signal: "Signal 1", indicator: "Investment", source: "Dealroom", description: "Funding rounds, valuations, investor activity" },
+  { signal: "Signal 2", indicator: "Patents", source: "PATSTAT/EPO", description: "Granted and applied for patents, citation networks" },
+  { signal: "Signal 3", indicator: "Market/Media Response", source: "Tech Coverage", description: "Industry publications, analyst reports, media mentions" },
+];
+
+const marketValidationCriteria = [
+  { criteria: "Market Size & Growth", source: "Dealroom, IDC", description: "Enterprise value and growth rate metrics" },
+  { criteria: "Customer Adoption", source: "Dealroom, IDC", description: "Adoption rates across industries and geographies" },
+  { criteria: "Competitive Landscape", source: "Dealroom", description: "Presence of competitors and substitutes" },
 ];
 
 function MermaidDiagram({ id, chart }: { id: string; chart: string }) {
@@ -356,6 +463,74 @@ export default function AnnexA() {
           </Card>
         ))}
 
+        {/* Early Indicators of New Technologies */}
+        <Card>
+          <CardHeader className="bg-muted/30 py-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary" />
+              Early Indicators of New Technologies
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <p className="text-sm text-muted-foreground mb-4">
+              Three key signals are monitored to identify emerging technologies before mainstream recognition.
+            </p>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="p-3 text-left font-medium w-1/6">Signal</th>
+                  <th className="p-3 text-left font-medium w-1/4">Indicator</th>
+                  <th className="p-3 text-left font-medium w-1/4">Data Source</th>
+                  <th className="p-3 text-left font-medium">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                {earlyIndicators.map((row) => (
+                  <tr key={row.signal} className="border-t border-border">
+                    <td className="p-3 font-medium">{row.signal}</td>
+                    <td className="p-3">{row.indicator}</td>
+                    <td className="p-3">{row.source}</td>
+                    <td className="p-3 text-muted-foreground">{row.description}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+
+        {/* Market Validation Criteria */}
+        <Card>
+          <CardHeader className="bg-muted/30 py-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Target className="h-5 w-5 text-primary" />
+              Market Validation Criteria
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <p className="text-sm text-muted-foreground mb-4">
+              Additional market validation metrics assess the external landscape and broader adoption potential.
+            </p>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="p-3 text-left font-medium w-1/3">Criteria</th>
+                  <th className="p-3 text-left font-medium w-1/4">Data Source</th>
+                  <th className="p-3 text-left font-medium">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                {marketValidationCriteria.map((row) => (
+                  <tr key={row.criteria} className="border-t border-border">
+                    <td className="p-3 font-medium">{row.criteria}</td>
+                    <td className="p-3">{row.source}</td>
+                    <td className="p-3 text-muted-foreground">{row.description}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+
         {/* AI Capabilities Summary */}
         <Card>
           <CardHeader className="bg-muted/30 py-4">
@@ -376,6 +551,30 @@ export default function AnnexA() {
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Hourglass Model Reference */}
+        <Card>
+          <CardHeader className="bg-muted/30 py-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ExternalLink className="h-5 w-5 text-primary" />
+              CEI-Sphere Framework Reference
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <p className="text-sm text-muted-foreground mb-4">
+              The AI-CE Heatmap aligns with the CEI-Sphere Hourglass Model, ensuring technology intelligence maps directly to the established strategic framework.
+            </p>
+            <a 
+              href="https://ceisphere.eu/hourglass-model" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-primary hover:underline"
+            >
+              <ExternalLink className="h-4 w-4" />
+              View CEI-Sphere Hourglass Model Documentation
+            </a>
           </CardContent>
         </Card>
 
