@@ -19,19 +19,31 @@ const columns = [
 ];
 
 const getScoreColor = (score: number): string => {
-  if (score >= 8) return "hsl(160 72% 35%)";
-  if (score >= 6) return "hsl(160 72% 35% / 0.6)";
-  if (score >= 4) return "hsl(38 92% 45%)";
-  if (score >= 2) return "hsl(0 72% 50% / 0.7)";
-  return "hsl(0 72% 50%)";
+  if (score >= 8.5) return "hsl(160 72% 30%)";
+  if (score >= 8) return "hsl(160 72% 38%)";
+  if (score >= 7.5) return "hsl(160 60% 45%)";
+  if (score >= 7) return "hsl(170 50% 50%)";
+  if (score >= 6.5) return "hsl(180 45% 50%)";
+  if (score >= 6) return "hsl(190 50% 50%)";
+  if (score >= 5) return "hsl(38 92% 50%)";
+  if (score >= 4) return "hsl(25 90% 50%)";
+  if (score >= 3) return "hsl(15 85% 50%)";
+  if (score >= 2) return "hsl(0 72% 55%)";
+  return "hsl(0 72% 45%)";
 };
 
 const getScoreBg = (score: number): string => {
-  if (score >= 8) return "bg-success text-success-foreground";
-  if (score >= 6) return "bg-success/60 text-foreground";
-  if (score >= 4) return "bg-warning/70 text-foreground";
-  if (score >= 2) return "bg-destructive/60 text-foreground";
-  return "bg-destructive text-destructive-foreground";
+  if (score >= 8.5) return "bg-[hsl(160_72%_30%)] text-white";
+  if (score >= 8) return "bg-[hsl(160_72%_38%)] text-white";
+  if (score >= 7.5) return "bg-[hsl(160_60%_45%)] text-white";
+  if (score >= 7) return "bg-[hsl(170_50%_50%)] text-white";
+  if (score >= 6.5) return "bg-[hsl(180_45%_50%)] text-white";
+  if (score >= 6) return "bg-[hsl(190_50%_50%)] text-white";
+  if (score >= 5) return "bg-[hsl(38_92%_50%)] text-foreground";
+  if (score >= 4) return "bg-[hsl(25_90%_50%)] text-white";
+  if (score >= 3) return "bg-[hsl(15_85%_50%)] text-white";
+  if (score >= 2) return "bg-[hsl(0_72%_55%)] text-white";
+  return "bg-[hsl(0_72%_45%)] text-white";
 };
 
 const quadrantColors: Record<TechnologyQuadrant, string> = {
@@ -231,15 +243,18 @@ export default function HeatmapMatrix() {
                   </CardHeader>
                   <CardContent className="space-y-2">
                     {[
-                      { label: "8.0 - 9.0 (High)", color: "bg-success" },
-                      { label: "6.0 - 7.9 (Good)", color: "bg-success/60" },
-                      { label: "4.0 - 5.9 (Moderate)", color: "bg-warning/70" },
-                      { label: "2.0 - 3.9 (Low)", color: "bg-destructive/60" },
-                      { label: "0.0 - 1.9 (Very Low)", color: "bg-destructive" },
+                      { label: "8.5 - 9.0 (Excellent)", color: "bg-[hsl(160_72%_30%)]" },
+                      { label: "8.0 - 8.4 (High)", color: "bg-[hsl(160_72%_38%)]" },
+                      { label: "7.5 - 7.9 (Good+)", color: "bg-[hsl(160_60%_45%)]" },
+                      { label: "7.0 - 7.4 (Good)", color: "bg-[hsl(170_50%_50%)]" },
+                      { label: "6.0 - 6.9 (Above Avg)", color: "bg-[hsl(190_50%_50%)]" },
+                      { label: "5.0 - 5.9 (Moderate)", color: "bg-[hsl(38_92%_50%)]" },
+                      { label: "4.0 - 4.9 (Below Avg)", color: "bg-[hsl(25_90%_50%)]" },
+                      { label: "0.0 - 3.9 (Low)", color: "bg-[hsl(0_72%_50%)]" },
                     ].map((item) => (
                       <div key={item.label} className="flex items-center gap-2">
                         <span className={cn("w-6 h-3 rounded", item.color)} />
-                        <span className="text-sm text-foreground">{item.label}</span>
+                        <span className="text-xs text-foreground">{item.label}</span>
                       </div>
                     ))}
                   </CardContent>
