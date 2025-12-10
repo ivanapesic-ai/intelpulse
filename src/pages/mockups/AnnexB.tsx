@@ -153,7 +153,7 @@ flowchart LR
 
 **Snapshot Share** — Generate a shareable link to the current view (with filters applied). Recipients see a read-only version. Useful for "look at this cluster of technologies" discussions.
 
-**API Access (Premium+)** — Programmatic JSON endpoints for integration with external systems. Supports webhook notifications when technologies change maturity level.`,
+**API Access (Roadmap)** — Programmatic JSON endpoints for integration with external systems. Planned for future release to enable third-party integrations and automated workflows.`,
     mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart LR
     subgraph Formats["Export Formats"]
@@ -221,7 +221,7 @@ const tierFeatures = [
   { feature: "Source citations", public: "—", premium: "✓", admin: "✓" },
   { feature: "PDF report export", public: "—", premium: "✓", admin: "✓" },
   { feature: "CSV data export", public: "—", premium: "✓", admin: "✓" },
-  { feature: "API access", public: "—", premium: "—", admin: "✓" },
+  { feature: "API access", public: "—", premium: "—", admin: "Roadmap" },
   { feature: "User management", public: "—", premium: "—", admin: "✓" },
   { feature: "Data validation & override", public: "—", premium: "—", admin: "✓" },
   { feature: "System monitoring", public: "—", premium: "—", admin: "✓" },
@@ -232,6 +232,7 @@ const upcomingFeatures = [
   { feature: "Alerts & Notifications", description: "Get notified when tracked technologies change maturity level" },
   { feature: "Comparison Mode", description: "Side-by-side comparison of 2-4 technologies" },
   { feature: "Collaboration Notes", description: "Add private or shared notes to technologies" },
+  { feature: "API Access", description: "Programmatic JSON endpoints for Premium+ users. Enable integration with external BI tools, automated reporting, and webhook notifications for technology changes." },
 ];
 
 function MermaidDiagram({ id, chart }: { id: string; chart: string }) {
