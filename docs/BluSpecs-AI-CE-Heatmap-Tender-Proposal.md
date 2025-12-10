@@ -127,21 +127,9 @@ The 10-week timeline accounts for the collaborative elements that ensure quality
 | Phase 4: Polish & Launch | €3,000 |
 | Enhanced AI + Public Sources | €1,500 |
 
-### Included
+**Included:** All development & deployment • EU-hosted infrastructure • 6 months maintenance • 1 data refresh (month 3) • Bug fixes + email support
 
-✅ All development and deployment  
-✅ EU-hosted infrastructure  
-✅ 6 months maintenance  
-✅ 1 data refresh cycle (month 3)  
-✅ Bug fixes + email support
-
-### Ongoing Costs (Post-Maintenance) TBD
-
-- Hosting:   
-- Data refresh:    
-- Extended maintenance:  
-
-**Maintenance Details:** See [Annex D: Maintenance & Support](./annexes/Annex-D-Maintenance-Support.md)
+**Ongoing Costs:** Hosting, data refresh, and extended maintenance quoted separately. See [Annex D](./annexes/Annex-D-Maintenance-Support.md)
 
 ---
 
@@ -157,10 +145,7 @@ The 10-week timeline accounts for the collaborative elements that ensure quality
 
 ### Out of Scope
 
-❌ Payment integration (handled externally)  
-❌ Automated data polling (manual refresh)  
-❌ Native mobile apps  
-❌ Real-time collaboration
+❌ Payment integration (handled externally) ❌ Automated data polling ❌ Native mobile apps ❌ Real-time collaboration
 
 ### Risk Mitigation
 
@@ -181,16 +166,15 @@ The 10-week timeline accounts for the collaborative elements that ensure quality
 
 ---
 
-## Annexes
-
-| Annex | Contents |
-| :---- | :---- |
-| [A: Technical Architecture](./annexes/Annex-A-Technical-Architecture.md) | Tech stack, system components, diagrams |
-| [B: Methodology Framework](./annexes/Annex-B-Methodology-Framework.md) | TRL scale, scoring formula, confidence levels |
-| [C: Data Model](./annexes/Annex-C-Data-Model.md) | Taxonomy, database schema, data flow |
-| [D: Maintenance & Support](./annexes/Annex-D-Maintenance-Support.md) | SLA, support tiers, extended options |
-| [E: Visual Mockups](./annexes/Annex-E-Visual-Mockups.md) | Radar, heatmap, admin panel concepts |
+**Annexes:** [A: Technical Architecture](./annexes/Annex-A-Technical-Architecture.md) | [B: Methodology](./annexes/Annex-B-Methodology-Framework.md) | [C: Data Model](./annexes/Annex-C-Data-Model.md) | [D: Maintenance](./annexes/Annex-D-Maintenance-Support.md) | [E: Visual Mockups](./annexes/Annex-E-Visual-Mockups.md)
 
 ---
+
+**Submitted by:**
+
+_________________________  
+**Ivana Pešić**, Founder  
+House Eleven Oy  
+Date: _______________
 
 *This proposal is valid for 30 days from the date of submission.*
