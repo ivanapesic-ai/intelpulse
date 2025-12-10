@@ -149,21 +149,12 @@ flowchart LR
 
 The composite score directly determines radar ring placement, providing actionable guidance for technology adoption decisions.`,
     mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
-flowchart TD
-    subgraph Dimensions["Scoring Dimensions (25% each)"]
-        D1["TRL Score"]
-        D2["Market Score"]
-        D3["Innovation Score"]
-        D4["EU Alignment"]
-    end
-
-    Dimensions --> CS["Composite Score 0-9"]
-
-    CS --> R{Radar Placement}
-    R -->|"7.5-9.0"| A["ADOPT - Deploy"]
-    R -->|"5.0-7.4"| T["TRIAL - Pilot"]
-    R -->|"3.0-4.9"| AS["ASSESS - Monitor"]
-    R -->|"0.0-2.9"| H["HOLD - Wait"]`
+flowchart LR
+    D["Dimensions<br/>TRL | Market | Innovation | EU<br/>(25% each)"] --> CS["Composite<br/>Score 0-9"]
+    CS --> A["ADOPT 7.5-9"]
+    CS --> T["TRIAL 5.0-7.4"]
+    CS --> AS["ASSESS 3.0-4.9"]
+    CS --> H["HOLD 0-2.9"]`
   },
   {
     id: "data-pipeline",
