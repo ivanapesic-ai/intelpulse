@@ -221,18 +221,24 @@ const tierFeatures = [
   { feature: "Source citations", public: "—", premium: "✓", admin: "✓" },
   { feature: "PDF report export", public: "—", premium: "✓", admin: "✓" },
   { feature: "CSV data export", public: "—", premium: "✓", admin: "✓" },
-  { feature: "API access", public: "—", premium: "—", admin: "Roadmap" },
   { feature: "User management", public: "—", premium: "—", admin: "✓" },
   { feature: "Data validation & override", public: "—", premium: "—", admin: "✓" },
   { feature: "System monitoring", public: "—", premium: "—", admin: "✓" },
 ];
 
-const upcomingFeatures = [
+const futureFeatureIdeas = [
   { feature: "Saved Views", description: "Save and name custom filter configurations for quick access" },
   { feature: "Alerts & Notifications", description: "Get notified when tracked technologies change maturity level" },
   { feature: "Comparison Mode", description: "Side-by-side comparison of 2-4 technologies" },
   { feature: "Collaboration Notes", description: "Add private or shared notes to technologies" },
-  { feature: "API Access", description: "Programmatic JSON endpoints for Premium+ users. Enable integration with external BI tools, automated reporting, and webhook notifications for technology changes." },
+  { feature: "API Access", description: "Programmatic JSON endpoints enabling integration with external BI tools, automated reporting, and webhook notifications for technology changes" },
+  { feature: "Multi-Sphere Expansion", description: "Extend coverage beyond ML-SDV to Energy, Health, AgriFood, and other CEI spheres" },
+  { feature: "Geographic Filters", description: "Filter and compare technology maturity by region (EU, US, Asia-Pacific)" },
+  { feature: "Trend Forecasting", description: "AI-powered predictions of technology trajectory based on historical signal patterns" },
+  { feature: "Custom Dashboards", description: "Build personalized dashboards with widgets arranged to user preferences" },
+  { feature: "White-Label Support", description: "Enable partner organizations to deploy branded versions of the platform" },
+  { feature: "Integration Connectors", description: "Pre-built connectors for popular BI tools (Tableau, Power BI, Looker)" },
+  { feature: "Community Insights", description: "Crowdsourced ratings and comments from domain experts with moderation workflow" },
 ];
 
 function MermaidDiagram({ id, chart }: { id: string; chart: string }) {
@@ -394,15 +400,15 @@ export default function AnnexB() {
           <CardHeader className="bg-muted/30 py-4">
             <CardTitle className="text-lg flex items-center gap-2">
               <Bookmark className="h-5 w-5 text-primary" />
-              Roadmap Features
+              Ideas for Future Features
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <p className="text-sm text-muted-foreground mb-4">
-              Planned enhancements for future releases based on user feedback and strategic priorities.
+              Potential enhancements to explore based on user feedback, strategic priorities, and evolving market needs. These ideas represent opportunities for future development phases.
             </p>
-            <div className="grid md:grid-cols-2 gap-4">
-              {upcomingFeatures.map((f) => (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {futureFeatureIdeas.map((f) => (
                 <div key={f.feature} className="border border-border rounded-lg p-4">
                   <div className="font-medium mb-1">{f.feature}</div>
                   <div className="text-sm text-muted-foreground">{f.description}</div>
