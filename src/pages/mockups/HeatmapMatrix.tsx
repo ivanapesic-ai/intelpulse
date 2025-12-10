@@ -1,12 +1,13 @@
-import { useState, useEffect, useRef } from "react";
-import { Download, Filter, ArrowUpDown, ChevronDown, ChevronRight, Map, BarChart3, Grid3X3, Globe } from "lucide-react";
+import { useState } from "react";
+import { Download, Filter, ArrowUpDown, Map, BarChart3, Grid3X3, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { PlatformHeader } from "@/components/mockups/PlatformHeader";
-import { technologies, Technology, TechnologyQuadrant, getStats, formatFunding } from "@/data/technologies";
+import { EUMap } from "@/components/mockups/EUMap";
+import { technologies, Technology, TechnologyQuadrant, getStats } from "@/data/technologies";
 import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, ScatterChart, Scatter, ZAxis, Treemap } from "recharts";
 
@@ -296,45 +297,8 @@ export default function HeatmapMatrix() {
                   <CardDescription>Technology activity concentration across European Union member states</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {/* Simplified EU Map visualization using a grid */}
-                  <div className="relative h-[400px] bg-muted/20 rounded-lg overflow-hidden border border-border">
-                    <div className="absolute inset-0 p-6">
-                      {/* Grid-based EU representation */}
-                      <div className="grid grid-cols-5 gap-4 h-full">
-                        {euCountryData.map((country) => {
-                          const sizeClass = country.techCount > 20 ? "col-span-2 row-span-2" : 
-                                           country.techCount > 12 ? "col-span-1 row-span-2" : "col-span-1";
-                          const funding = country.funding / 1000000000;
-                          return (
-                            <Tooltip key={country.code}>
-                              <TooltipTrigger asChild>
-                                <div 
-                                  className={cn(
-                                    "rounded-lg flex flex-col items-center justify-center p-3 cursor-pointer transition-all hover:scale-105",
-                                    sizeClass
-                                  )}
-                                  style={{ 
-                                    background: `hsl(214 100% 49% / ${0.2 + (country.techCount / 30) * 0.6})`,
-                                    border: "1px solid hsl(214 100% 49% / 0.3)"
-                                  }}
-                                >
-                                  <span className="text-lg font-bold text-foreground">{country.code}</span>
-                                  <span className="text-xs text-muted-foreground">{country.techCount} tech</span>
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <div className="space-y-1">
-                                  <p className="font-semibold text-foreground">{country.country}</p>
-                                  <p className="text-sm text-muted-foreground">{country.techCount} technologies tracked</p>
-                                  <p className="text-sm text-muted-foreground">€{funding.toFixed(1)}B funding</p>
-                                  <p className="text-xs text-primary">Focus: {country.focus}</p>
-                                </div>
-                              </TooltipContent>
-                            </Tooltip>
-                          );
-                        })}
-                      </div>
-                    </div>
+                  <div className="relative h-[450px] rounded-lg overflow-hidden border border-border">
+                    <EUMap data={euCountryData} />
                   </div>
                 </CardContent>
               </Card>
