@@ -63,8 +63,8 @@ House Eleven Oy combines deep product leadership experience across data visualiz
 
 | Visualization | Purpose | Key Features |
 | :---- | :---- | :---- |
-| **Radar Chart** | Quick technology comparison | Multi-axis scoring, overlay comparison, exportable |
-| **Heatmap Matrix** | Detailed maturity landscape | TRL levels × Technology domains, drill-down capability |
+| **Radar Chart** | Quick technology comparison | Multi-axis scoring, overlay comparison, geography filter, exportable |
+| **Heatmap Matrix** | Detailed maturity landscape | TRL × Domains (Hardware, Software, Cloud/Edge, Data, Security, Industry), sector/geography filters |
 | **Custom Views** | Refined during discovery | Adapted to user needs identified in design sprint |
 
 ### Access Tiers
@@ -80,7 +80,7 @@ Add/remove users, grant/revoke access, view analytics, trigger data refresh—no
 
 ### AI-Powered Processing
 
-Automatic extraction from PDF/PPT, structured parsing, technology categorization, TRL assessment support.
+Automatic extraction from PDF/PPT, structured parsing, technology categorization, TRL assessment, competitive landscape analysis, and innovation signal detection (patents, funding, media).
 
 **Technical Details:** See [Annex A: Technical Architecture](./annexes/Annex-A-Technical-Architecture.md)
 
@@ -109,7 +109,7 @@ The 10-week timeline accounts for the collaborative elements that ensure quality
 | **2. Foundation** | Weeks 2-4 | Working admin panel + authentication |
 | **3. Visualization** | Weeks 5-7 | Both visualizations with sample data |
 | **4. Data Integration** | Weeks 8-9 | Live data from all sources |
-| **5. Polish & Launch** | Week 10 | Production-ready platform |
+| **5. Polish & Launch** | Week 10 | Production-ready platform + user guide |
 
 **Details:** See [Annex B: Methodology](./annexes/Annex-B-Methodology-Framework.md) | [Annex C: Data Model](./annexes/Annex-C-Data-Model.md)
 
