@@ -43,17 +43,17 @@ House Eleven Oy combines deep product leadership experience across data visualiz
 | **Founder** | Ivana Pešić |
 | **Experience** | 20+ years in product strategy, design leadership, AI integration |
 | **Notable Companies** | Supermetrics (Head of Design), Interactio (VP Product), Headai CPO |
-| **AI Certifications** | Vanderbilt AI Specializations (2025), Microsoft NLP, Reforge Product Strategy |
+| **AI & Analytics** | Developed AI model for predictive analytics (Interactio), NLP in Azure (2023), Reforge Product Strategy (2023) |
+| **Project Lead** | Ivana Pešić – 20+ years product/design leadership, Reforge certified, built teams through 10x growth |
 
 ### Relevant Project Portfolio
 
 | Project | Relevance to AI-CE Heatmap |
 | :---- | :---- |
-| **HeadAI Studio** | 4-layer AI agentic platform with data visualization, custom algorithms, skill intelligence dashboards — *built with Lovable* |
-| **Supermetrics Ecosystem** | Data integration platform with 40+ connectors, visualization for marketing analytics |
-| **Forvio (Meta/Facebook)** | Marketing measurement SaaS platform with MMM modeling, scenario planning dashboards, and forecasting capabilities |
-| **Municipal/Government Tools** | Experience with public sector stakeholders, compliance requirements |
-| **Enterprise Solutions (ABB)** | Large-scale B2B deployments, data governance standards |
+| **Supermetrics** | Led design through 10x ARR growth (€4M→€40M), 40+ data integrations, Top 20 fastest-growing company in Europe |
+| **Interactio** | VP of Product delivering 30% faster delivery, developed AI model for predictive analytics and decision-making |
+| **House Eleven** | 30+ startup/scaleup projects, Finnish Government organization partnerships |
+| **Space Nation** | Design Director, NASA partnership, €5M investment |
 
 ---
 
