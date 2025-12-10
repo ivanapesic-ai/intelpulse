@@ -1,19 +1,17 @@
 import { useState, useMemo } from "react";
-import { Search, Filter, SlidersHorizontal, X, TrendingUp, TrendingDown, Minus, FileText, DollarSign, Users, Calendar, ExternalLink, ChevronDown } from "lucide-react";
+import { Search, TrendingUp, TrendingDown, Minus, FileText, DollarSign, Users, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlatformHeader } from "@/components/mockups/PlatformHeader";
 import { TechnologyCard } from "@/components/mockups/TechnologyCard";
 import { SignalIndicator } from "@/components/mockups/SignalIndicator";
 import { ScoreBadge } from "@/components/mockups/ScoreBadge";
 import { QuadrantFilter } from "@/components/mockups/QuadrantFilter";
 import { technologies, Technology, TechnologyQuadrant, TechnologyRing, formatFunding } from "@/data/technologies";
-import { cn } from "@/lib/utils";
-import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, AreaChart, Area } from "recharts";
+import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, AreaChart, Area, XAxis, YAxis } from "recharts";
 
 const ringOptions: TechnologyRing[] = ["Adopt", "Trial", "Assess", "Hold"];
 
@@ -48,7 +46,8 @@ export default function TechnologyExplorer() {
   const filteredTechnologies = useMemo(() => {
     return technologies
       .filter((tech) => {
-        const matchesSearch = tech.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        const matchesSearch =
+          tech.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           tech.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
           tech.category.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesQuadrant = activeQuadrants.has(tech.quadrant);
@@ -57,11 +56,16 @@ export default function TechnologyExplorer() {
       })
       .sort((a, b) => {
         switch (sortBy) {
-          case "trl": return b.trl - a.trl;
-          case "market": return b.marketScore - a.marketScore;
-          case "innovation": return b.innovationScore - a.innovationScore;
-          case "eu": return b.euAlignmentScore - a.euAlignmentScore;
-          default: return b.compositeScore - a.compositeScore;
+          case "trl":
+            return b.trl - a.trl;
+          case "market":
+            return b.marketScore - a.marketScore;
+          case "innovation":
+            return b.innovationScore - a.innovationScore;
+          case "eu":
+            return b.euAlignmentScore - a.euAlignmentScore;
+          default:
+            return b.compositeScore - a.compositeScore;
         }
       });
   }, [searchQuery, activeQuadrants, activeRings, sortBy]);
@@ -71,21 +75,25 @@ export default function TechnologyExplorer() {
     setDetailOpen(true);
   };
 
-  const radarData = selectedTech ? [
-    { dimension: "TRL", value: selectedTech.trl, fullMark: 10 },
-    { dimension: "Market", value: selectedTech.marketScore, fullMark: 10 },
-    { dimension: "Innovation", value: selectedTech.innovationScore, fullMark: 10 },
-    { dimension: "EU Align", value: selectedTech.euAlignmentScore, fullMark: 10 },
-  ] : [];
+  const radarData = selectedTech
+    ? [
+        { dimension: "TRL", value: selectedTech.trl, fullMark: 10 },
+        { dimension: "Market", value: selectedTech.marketScore, fullMark: 10 },
+        { dimension: "Innovation", value: selectedTech.innovationScore, fullMark: 10 },
+        { dimension: "EU Align", value: selectedTech.euAlignmentScore, fullMark: 10 },
+      ]
+    : [];
 
-  const trendData = selectedTech ? [
-    { month: "Jul", score: selectedTech.compositeScore - 0.8 },
-    { month: "Aug", score: selectedTech.compositeScore - 0.5 },
-    { month: "Sep", score: selectedTech.compositeScore - 0.3 },
-    { month: "Oct", score: selectedTech.compositeScore - 0.1 },
-    { month: "Nov", score: selectedTech.compositeScore },
-    { month: "Dec", score: selectedTech.compositeScore + 0.1 },
-  ] : [];
+  const trendData = selectedTech
+    ? [
+        { month: "Jul", score: selectedTech.compositeScore - 0.8 },
+        { month: "Aug", score: selectedTech.compositeScore - 0.5 },
+        { month: "Sep", score: selectedTech.compositeScore - 0.3 },
+        { month: "Oct", score: selectedTech.compositeScore - 0.1 },
+        { month: "Nov", score: selectedTech.compositeScore },
+        { month: "Dec", score: selectedTech.compositeScore + 0.1 },
+      ]
+    : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -94,8 +102,10 @@ export default function TechnologyExplorer() {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Technology Explorer</h1>
-          <p className="text-muted-foreground">Search, filter, and analyze {technologies.length} technologies in the ML-SDV sphere</p>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Technology Explorer</h1>
+          <p className="text-muted-foreground">
+            Search, filter, and analyze {technologies.length} technologies in the ML-SDV sphere
+          </p>
         </div>
 
         {/* Filters */}
@@ -135,8 +145,8 @@ export default function TechnologyExplorer() {
               <span className="text-sm text-muted-foreground mr-2">Sort by:</span>
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="h-7 text-xs rounded border border-border bg-background px-2"
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                className="h-7 text-xs rounded border border-border bg-background px-2 text-foreground"
               >
                 <option value="composite">Composite Score</option>
                 <option value="trl">TRL</option>
@@ -164,11 +174,15 @@ export default function TechnologyExplorer() {
         {filteredTechnologies.length === 0 && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">No technologies match your filters</p>
-            <Button variant="ghost" className="mt-2" onClick={() => {
-              setSearchQuery("");
-              setActiveQuadrants(new Set(["Cloud", "Edge", "IoT", "AI/ML"]));
-              setActiveRings(new Set(ringOptions));
-            }}>
+            <Button
+              variant="ghost"
+              className="mt-2"
+              onClick={() => {
+                setSearchQuery("");
+                setActiveQuadrants(new Set(["Cloud", "Edge", "IoT", "AI/ML"]));
+                setActiveRings(new Set(ringOptions));
+              }}
+            >
               Clear filters
             </Button>
           </div>
@@ -182,7 +196,7 @@ export default function TechnologyExplorer() {
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-3">
-                  <span className="text-2xl">{selectedTech.name}</span>
+                  <span className="text-2xl text-foreground">{selectedTech.name}</span>
                   <ScoreBadge score={selectedTech.compositeScore} size="lg" />
                 </DialogTitle>
               </DialogHeader>
@@ -203,7 +217,7 @@ export default function TechnologyExplorer() {
                   {/* Radar Chart */}
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-sm">Score Breakdown</CardTitle>
+                      <CardTitle className="text-sm text-foreground">Score Breakdown</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="h-48">
@@ -222,7 +236,7 @@ export default function TechnologyExplorer() {
                   {/* Key Players */}
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-sm flex items-center gap-2">
+                      <CardTitle className="text-sm text-foreground flex items-center gap-2">
                         <Users className="h-4 w-4" />
                         Key Players
                       </CardTitle>
@@ -230,7 +244,9 @@ export default function TechnologyExplorer() {
                     <CardContent>
                       <div className="flex flex-wrap gap-2">
                         {selectedTech.keyPlayers.map((player) => (
-                          <Badge key={player} variant="secondary">{player}</Badge>
+                          <Badge key={player} variant="secondary">
+                            {player}
+                          </Badge>
                         ))}
                       </div>
                     </CardContent>
@@ -242,7 +258,7 @@ export default function TechnologyExplorer() {
                   {/* Signals */}
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-sm">Signal Strength</CardTitle>
+                      <CardTitle className="text-sm text-foreground">Signal Strength</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <SignalIndicator signals={selectedTech.signals} showLabels size="md" />
@@ -257,7 +273,7 @@ export default function TechnologyExplorer() {
                           <FileText className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm text-muted-foreground">Patents</span>
                         </div>
-                        <p className="text-2xl font-bold">{selectedTech.patents.toLocaleString()}</p>
+                        <p className="text-2xl font-bold text-foreground">{selectedTech.patents.toLocaleString()}</p>
                       </CardContent>
                     </Card>
                     <Card>
@@ -266,7 +282,7 @@ export default function TechnologyExplorer() {
                           <DollarSign className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm text-muted-foreground">Funding</span>
                         </div>
-                        <p className="text-2xl font-bold">{formatFunding(selectedTech.fundingEur)}</p>
+                        <p className="text-2xl font-bold text-foreground">{formatFunding(selectedTech.fundingEur)}</p>
                       </CardContent>
                     </Card>
                   </div>
@@ -274,15 +290,26 @@ export default function TechnologyExplorer() {
                   {/* Trend Chart */}
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-sm">Score Trend</CardTitle>
+                      <CardTitle className="text-sm text-foreground">Score Trend</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="h-32">
                         <ResponsiveContainer width="100%" height="100%">
                           <AreaChart data={trendData}>
-                            <XAxis dataKey="month" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} axisLine={false} tickLine={false} />
+                            <XAxis
+                              dataKey="month"
+                              tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                              axisLine={false}
+                              tickLine={false}
+                            />
                             <YAxis domain={["dataMin - 0.5", "dataMax + 0.5"]} tick={false} axisLine={false} />
-                            <Area type="monotone" dataKey="score" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} />
+                            <Area
+                              type="monotone"
+                              dataKey="score"
+                              stroke="hsl(var(--primary))"
+                              fill="hsl(var(--primary))"
+                              fillOpacity={0.2}
+                            />
                           </AreaChart>
                         </ResponsiveContainer>
                       </div>
@@ -292,22 +319,30 @@ export default function TechnologyExplorer() {
                   {/* Challenge-Opportunity */}
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-sm">Challenge-Opportunity Matrix</CardTitle>
+                      <CardTitle className="text-sm text-foreground">Challenge-Opportunity Matrix</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="text-center p-3 rounded bg-muted/50">
-                          <p className="text-2xl font-bold">{selectedTech.challengeScore}/2</p>
+                        <div className="text-center p-3 rounded bg-muted/50 border border-border">
+                          <p className="text-2xl font-bold text-foreground">{selectedTech.challengeScore}/2</p>
                           <p className="text-xs text-muted-foreground">Challenge Score</p>
-                          <p className="text-xs mt-1">
-                            {selectedTech.challengeScore === 2 ? "No Major Barriers" : selectedTech.challengeScore === 1 ? "Manageable" : "Severe"}
+                          <p className="text-xs mt-1 text-foreground">
+                            {selectedTech.challengeScore === 2
+                              ? "No Major Barriers"
+                              : selectedTech.challengeScore === 1
+                              ? "Manageable"
+                              : "Severe"}
                           </p>
                         </div>
-                        <div className="text-center p-3 rounded bg-muted/50">
-                          <p className="text-2xl font-bold">{selectedTech.opportunityScore}/2</p>
+                        <div className="text-center p-3 rounded bg-muted/50 border border-border">
+                          <p className="text-2xl font-bold text-foreground">{selectedTech.opportunityScore}/2</p>
                           <p className="text-xs text-muted-foreground">Opportunity Score</p>
-                          <p className="text-xs mt-1">
-                            {selectedTech.opportunityScore === 2 ? "High Value" : selectedTech.opportunityScore === 1 ? "Promising" : "Limited"}
+                          <p className="text-xs mt-1 text-foreground">
+                            {selectedTech.opportunityScore === 2
+                              ? "High Value"
+                              : selectedTech.opportunityScore === 1
+                              ? "Promising"
+                              : "Limited"}
                           </p>
                         </div>
                       </div>
@@ -320,7 +355,14 @@ export default function TechnologyExplorer() {
                       Last updated: {selectedTech.lastUpdated}
                     </span>
                     <span className="flex items-center gap-1">
-                      Trend: {selectedTech.trend === "up" ? <TrendingUp className="h-3 w-3 text-emerald-400" /> : selectedTech.trend === "down" ? <TrendingDown className="h-3 w-3 text-rose-400" /> : <Minus className="h-3 w-3" />}
+                      Trend:{" "}
+                      {selectedTech.trend === "up" ? (
+                        <TrendingUp className="h-3 w-3 text-success" />
+                      ) : selectedTech.trend === "down" ? (
+                        <TrendingDown className="h-3 w-3 text-destructive" />
+                      ) : (
+                        <Minus className="h-3 w-3" />
+                      )}
                     </span>
                   </div>
                 </div>

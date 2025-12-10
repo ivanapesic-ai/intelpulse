@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, RefreshCw, Users, BarChart3, Database, Trash2, Edit, Check, X } from "lucide-react";
+import { ArrowLeft, Plus, RefreshCw, Users, BarChart3, Database, Trash2, Edit } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 
 interface User {
@@ -41,22 +40,22 @@ const sampleDataSources: DataSource[] = [
 ];
 
 const statusColors = {
-  active: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-  expired: "bg-rose-500/20 text-rose-400 border-rose-500/30",
-  pending: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-  healthy: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-  error: "bg-rose-500/20 text-rose-400 border-rose-500/30",
+  active: "bg-success/20 text-success border-success/30",
+  expired: "bg-destructive/20 text-destructive border-destructive/30",
+  pending: "bg-warning/20 text-warning border-warning/30",
+  healthy: "bg-success/20 text-success border-success/30",
+  error: "bg-destructive/20 text-destructive border-destructive/30",
 };
 
 export default function AdminPanel() {
-  const [users, setUsers] = useState(sampleUsers);
+  const [users] = useState(sampleUsers);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState(0);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
     setRefreshProgress(0);
-    
+
     const interval = setInterval(() => {
       setRefreshProgress((prev) => {
         if (prev >= 100) {
@@ -74,7 +73,7 @@ export default function AdminPanel() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+      <header className="border-b border-border bg-card sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link to="/mockups">
@@ -83,7 +82,7 @@ export default function AdminPanel() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-xl font-bold">Admin Panel</h1>
+              <h1 className="text-xl font-bold text-foreground">Admin Panel</h1>
               <p className="text-sm text-muted-foreground">BluSpecs Staff Portal</p>
             </div>
           </div>
@@ -101,7 +100,7 @@ export default function AdminPanel() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Active Users</p>
-                  <p className="text-3xl font-bold">{activeUsers}</p>
+                  <p className="text-3xl font-bold text-foreground">{activeUsers}</p>
                 </div>
                 <div className="p-3 rounded-full bg-primary/10">
                   <Users className="h-6 w-6 text-primary" />
@@ -114,7 +113,7 @@ export default function AdminPanel() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Records</p>
-                  <p className="text-3xl font-bold">{totalRecords.toLocaleString()}</p>
+                  <p className="text-3xl font-bold text-foreground">{totalRecords.toLocaleString()}</p>
                 </div>
                 <div className="p-3 rounded-full bg-primary/10">
                   <Database className="h-6 w-6 text-primary" />
@@ -127,7 +126,7 @@ export default function AdminPanel() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Data Sources</p>
-                  <p className="text-3xl font-bold">{sampleDataSources.length}</p>
+                  <p className="text-3xl font-bold text-foreground">{sampleDataSources.length}</p>
                 </div>
                 <div className="p-3 rounded-full bg-primary/10">
                   <BarChart3 className="h-6 w-6 text-primary" />
@@ -140,7 +139,7 @@ export default function AdminPanel() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Last Refresh</p>
-                  <p className="text-3xl font-bold">Dec 1</p>
+                  <p className="text-3xl font-bold text-foreground">Dec 1</p>
                 </div>
                 <div className="p-3 rounded-full bg-primary/10">
                   <RefreshCw className="h-6 w-6 text-primary" />
@@ -162,7 +161,7 @@ export default function AdminPanel() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>Premium Users</CardTitle>
+                  <CardTitle className="text-foreground">Premium Users</CardTitle>
                   <CardDescription>Manage access for contracted clients</CardDescription>
                 </div>
                 <Button size="sm">
@@ -186,7 +185,7 @@ export default function AdminPanel() {
                     <tbody>
                       {users.map((user) => (
                         <tr key={user.id} className="border-b border-border/50 hover:bg-muted/50">
-                          <td className="p-3 text-sm font-medium">{user.email}</td>
+                          <td className="p-3 text-sm font-medium text-foreground">{user.email}</td>
                           <td className="p-3 text-sm text-muted-foreground">{user.organization}</td>
                           <td className="p-3 text-sm text-muted-foreground">{user.accessUntil}</td>
                           <td className="p-3">
@@ -219,29 +218,25 @@ export default function AdminPanel() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>Data Sources</CardTitle>
+                  <CardTitle className="text-foreground">Data Sources</CardTitle>
                   <CardDescription>Manage external data integrations</CardDescription>
                 </div>
-                <Button 
-                  size="sm" 
-                  onClick={handleRefresh}
-                  disabled={isRefreshing}
-                >
+                <Button size="sm" onClick={handleRefresh} disabled={isRefreshing}>
                   <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
                   {isRefreshing ? "Refreshing..." : "Refresh All"}
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">
                 {isRefreshing && (
-                  <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
+                  <div className="space-y-2 p-4 bg-muted/50 rounded-lg border border-border">
                     <div className="flex justify-between text-sm">
-                      <span>Refreshing data sources...</span>
-                      <span>{refreshProgress}%</span>
+                      <span className="text-foreground">Refreshing data sources...</span>
+                      <span className="text-foreground">{refreshProgress}%</span>
                     </div>
                     <Progress value={refreshProgress} className="h-2" />
                   </div>
                 )}
-                
+
                 <div className="space-y-3">
                   {sampleDataSources.map((source) => (
                     <div
@@ -253,7 +248,7 @@ export default function AdminPanel() {
                           <Database className="h-5 w-5 text-muted-foreground" />
                         </div>
                         <div>
-                          <p className="font-medium">{source.name}</p>
+                          <p className="font-medium text-foreground">{source.name}</p>
                           <p className="text-sm text-muted-foreground">
                             {source.recordCount.toLocaleString()} records • Last refresh: {source.lastRefresh}
                           </p>
@@ -282,31 +277,31 @@ export default function AdminPanel() {
             <div className="grid md:grid-cols-2 gap-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Usage This Month</CardTitle>
+                  <CardTitle className="text-foreground">Usage This Month</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Page Views</span>
-                    <span className="font-semibold">2,847</span>
+                    <span className="font-semibold text-foreground">2,847</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Unique Visitors</span>
-                    <span className="font-semibold">156</span>
+                    <span className="font-semibold text-foreground">156</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Exports Generated</span>
-                    <span className="font-semibold">42</span>
+                    <span className="font-semibold text-foreground">42</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Avg. Session Duration</span>
-                    <span className="font-semibold">8m 32s</span>
+                    <span className="font-semibold text-foreground">8m 32s</span>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Top Technologies Viewed</CardTitle>
+                  <CardTitle className="text-foreground">Top Technologies Viewed</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {[
@@ -318,8 +313,8 @@ export default function AdminPanel() {
                   ].map((tech, i) => (
                     <div key={tech.name} className="flex items-center gap-3">
                       <span className="text-sm text-muted-foreground w-4">{i + 1}</span>
-                      <span className="text-sm flex-1">{tech.name}</span>
-                      <span className="text-sm font-medium">{tech.views}</span>
+                      <span className="text-sm flex-1 text-foreground">{tech.name}</span>
+                      <span className="text-sm font-medium text-foreground">{tech.views}</span>
                     </div>
                   ))}
                 </CardContent>
