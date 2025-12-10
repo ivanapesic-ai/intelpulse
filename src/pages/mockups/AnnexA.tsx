@@ -74,30 +74,22 @@ flowchart TD
 flowchart LR
     subgraph L1["1: Ingestion"]
         direction TB
-        I1["API"]
-        I2["Parser"]
-        I3["Normalize"]
+        I1["API"] --> I2["Parser"] --> I3["Normalize"]
     end
 
     subgraph L2["2: Intelligence"]
         direction TB
-        E1["Extract"]
-        E2["Classify"]
-        E3["TRL"]
+        E1["Extract"] --> E2["Classify"] --> E3["TRL"]
     end
 
     subgraph L3["3: Analysis"]
         direction TB
-        A1["Trends"]
-        A2["Patterns"]
-        A3["Signals"]
+        A1["Trends"] --> A2["Patterns"] --> A3["Signals"]
     end
 
     subgraph L4["4: Present"]
         direction TB
-        P1["Radar"]
-        P2["Heatmap"]
-        P3["Analytics"]
+        P1["Radar"] --> P2["Heatmap"] --> P3["Analytics"]
     end
 
     L1 --> L2 --> L3 --> L4`
