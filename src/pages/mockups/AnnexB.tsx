@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Palette } from "lucide-react";
+import { ArrowLeft, MousePointer, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import mermaid from "mermaid";
@@ -9,6 +9,11 @@ const diagrams = [
   {
     id: "annex-b-radar-layout",
     title: "Technology Radar Layout",
+    description: `The Technology Radar provides a circular, quadrant-based visualization optimized for quick comparison and pattern recognition. Technologies are positioned based on their composite score (distance from center) and domain category (quadrant placement).
+
+The circular layout enables rapid visual scanning: technologies closer to the center are more mature and adoption-ready, while those on the outer rings require more evaluation. Each quadrant represents a distinct technology domain within the Cloud-Edge-IoT-AI taxonomy, allowing stakeholders to quickly focus on their areas of interest.
+
+This visualization is particularly effective for executive briefings and strategic planning sessions where the goal is to communicate relative positioning across the technology landscape.`,
     mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#3b82f6', 'primaryTextColor': '#1e293b'}}}%%
 flowchart TD
     subgraph Radar["Technology Radar"]
@@ -41,6 +46,15 @@ flowchart TD
   {
     id: "annex-b-interactions",
     title: "User Interaction Patterns",
+    description: `The platform implements progressive disclosure patterns to balance information density with usability. Users can explore the technology landscape through multiple interaction modes.
+
+**Hover** — Hovering over any technology dot reveals a tooltip with key metrics: name, composite score, trend direction, and confidence level. This enables rapid scanning without context-switching.
+
+**Click** — Clicking a technology opens a detail panel with full scoring breakdown, data source citations, historical trend charts, and related technologies. Premium users can access source documents and methodology notes.
+
+**Filter** — The filter panel allows narrowing the view by quadrant, confidence level, and score range. Filters persist across sessions for returning users.
+
+**Compare** — Users can select multiple technologies to display side-by-side comparison views, highlighting scoring differences across all four dimensions.`,
     mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#3b82f6', 'primaryTextColor': '#1e293b'}}}%%
 flowchart LR
     subgraph Hover["Hover"]
@@ -75,10 +89,10 @@ const colorScale = [
 ];
 
 const quadrants = [
-  { name: "Cloud Technologies", position: "Top-Right", color: "bg-blue-500", icon: "☁️" },
-  { name: "AI/ML", position: "Top-Left", color: "bg-purple-500", icon: "🤖" },
-  { name: "IoT", position: "Bottom-Left", color: "bg-orange-500", icon: "📡" },
-  { name: "Edge Computing", position: "Bottom-Right", color: "bg-green-500", icon: "⚡" },
+  { name: "Cloud Technologies", position: "Top-Right", color: "bg-blue-500", icon: "☁️", description: "Infrastructure, platforms, and services delivered via cloud computing models" },
+  { name: "AI/ML", position: "Top-Left", color: "bg-purple-500", icon: "🤖", description: "Artificial intelligence, machine learning, and cognitive computing systems" },
+  { name: "IoT", position: "Bottom-Left", color: "bg-orange-500", icon: "📡", description: "Connected devices, sensors, and Internet of Things ecosystems" },
+  { name: "Edge Computing", position: "Bottom-Right", color: "bg-green-500", icon: "⚡", description: "Distributed computing infrastructure at the network edge" },
 ];
 
 function MermaidDiagram({ id, chart }: { id: string; chart: string }) {
@@ -132,41 +146,67 @@ export default function AnnexB() {
       </header>
 
       <main className="container mx-auto px-4 py-8 space-y-8">
+        {/* Introduction */}
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-muted-foreground">
+              The AI-CE Heatmap Platform employs a dual visualization system: the <strong className="text-foreground">Technology Radar</strong> for quick, high-level comparison and the <strong className="text-foreground">Heatmap Matrix</strong> for detailed maturity analysis. These complementary views serve different decision-making contexts while maintaining consistent scoring and interaction patterns.
+            </p>
+          </CardContent>
+        </Card>
+
         {/* Live Mockups Reference */}
         <Card>
           <CardHeader className="bg-primary/5 border-b border-primary/10 py-4">
             <CardTitle className="text-lg">Live Interactive Mockups</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
+            <p className="text-sm text-muted-foreground mb-4">
+              Explore the working prototypes to experience the interaction patterns and visual design firsthand.
+            </p>
             <div className="grid md:grid-cols-2 gap-4">
               <Link to="/mockups/radar" className="block p-4 border border-border rounded-lg hover:border-primary transition-colors">
                 <div className="font-medium">Technology Radar</div>
-                <div className="text-sm text-muted-foreground">/mockups/radar</div>
+                <div className="text-sm text-muted-foreground">/mockups/radar — Circular quadrant-based view</div>
               </Link>
               <Link to="/mockups/heatmap" className="block p-4 border border-border rounded-lg hover:border-primary transition-colors">
                 <div className="font-medium">Heatmap Matrix</div>
-                <div className="text-sm text-muted-foreground">/mockups/heatmap</div>
+                <div className="text-sm text-muted-foreground">/mockups/heatmap — Grid-based maturity landscape</div>
               </Link>
               <Link to="/mockups/admin" className="block p-4 border border-border rounded-lg hover:border-primary transition-colors">
                 <div className="font-medium">Admin Panel</div>
-                <div className="text-sm text-muted-foreground">/mockups/admin</div>
+                <div className="text-sm text-muted-foreground">/mockups/admin — User and data management</div>
               </Link>
               <Link to="/mockups/public" className="block p-4 border border-border rounded-lg hover:border-primary transition-colors">
                 <div className="font-medium">Public Demo</div>
-                <div className="text-sm text-muted-foreground">/mockups/public</div>
+                <div className="text-sm text-muted-foreground">/mockups/public — Limited public-facing view</div>
               </Link>
             </div>
           </CardContent>
         </Card>
 
-        {/* Diagrams */}
+        {/* Diagrams with descriptions */}
         {diagrams.map((diagram) => (
           <Card key={diagram.id}>
             <CardHeader className="bg-muted/30 py-4">
-              <CardTitle className="text-lg">{diagram.title}</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                {diagram.id.includes('radar') ? <Palette className="h-5 w-5 text-primary" /> : <MousePointer className="h-5 w-5 text-primary" />}
+                {diagram.title}
+              </CardTitle>
             </CardHeader>
-            <CardContent className="p-6 bg-white">
-              <MermaidDiagram id={diagram.id} chart={diagram.mermaid} />
+            <CardContent className="p-6 space-y-6">
+              <div className="prose prose-sm max-w-none text-muted-foreground">
+                {diagram.description.split('\n\n').map((paragraph, idx) => (
+                  <p key={idx} className="mb-3 last:mb-0">
+                    {paragraph.split('**').map((part, i) => 
+                      i % 2 === 1 ? <strong key={i} className="text-foreground">{part}</strong> : part
+                    )}
+                  </p>
+                ))}
+              </div>
+              <div className="bg-white rounded-lg p-4 border border-border">
+                <MermaidDiagram id={diagram.id} chart={diagram.mermaid} />
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -176,14 +216,22 @@ export default function AnnexB() {
           <CardHeader className="bg-muted/30 py-4">
             <CardTitle className="text-lg">Radar Quadrants</CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <CardContent className="p-6 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              The four quadrants represent the Cloud-Edge-IoT-AI taxonomy, organizing technologies by their primary domain. Each quadrant uses a distinct color for rapid visual identification.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {quadrants.map((q) => (
-                <div key={q.name} className="text-center p-4 border border-border rounded-lg">
-                  <div className="text-2xl mb-2">{q.icon}</div>
-                  <div className={`w-3 h-3 rounded-full ${q.color} mx-auto mb-2`} />
-                  <div className="font-medium text-sm">{q.name}</div>
-                  <div className="text-xs text-muted-foreground">{q.position}</div>
+                <div key={q.name} className="flex items-start gap-4 p-4 border border-border rounded-lg">
+                  <div className="text-2xl">{q.icon}</div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className={`w-3 h-3 rounded-full ${q.color}`} />
+                      <span className="font-medium">{q.name}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground mb-1">{q.position}</div>
+                    <div className="text-sm text-muted-foreground">{q.description}</div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -195,7 +243,10 @@ export default function AnnexB() {
           <CardHeader className="bg-muted/30 py-4">
             <CardTitle className="text-lg">Heatmap Color Scale</CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="p-6 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              The heatmap matrix uses a traffic-light color progression that is intuitive and accessible. The scale moves from red (nascent) through yellow (developing) to green (mature), with each color band mapping to specific score ranges and recommended actions.
+            </p>
             <div className="space-y-2">
               {colorScale.map((c) => (
                 <div key={c.range} className="flex items-center gap-4 text-sm">
