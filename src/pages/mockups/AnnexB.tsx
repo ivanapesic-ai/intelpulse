@@ -1,98 +1,139 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, MousePointer, Palette } from "lucide-react";
+import { ArrowLeft, FileText, Database, Users, Download, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import mermaid from "mermaid";
 
 const diagrams = [
   {
-    id: "annex-b-radar-layout",
-    title: "Technology Radar Layout",
-    description: `The Technology Radar provides a circular, quadrant-based visualization optimized for quick comparison and pattern recognition. Technologies are positioned based on their composite score (distance from center) and domain category (quadrant placement).
+    id: "document-processing-flow",
+    title: "Document Processing Capabilities",
+    icon: FileText,
+    description: `The platform's AI layer transforms unstructured documents into structured technology intelligence. This is critical for processing CEI internal datasets which arrive as PowerPoint presentations and PDF reports rather than structured data.
 
-The circular layout enables rapid visual scanning: technologies closer to the center are more mature and adoption-ready, while those on the outer rings require more evaluation. Each quadrant represents a distinct technology domain within the Cloud-Edge-IoT-AI taxonomy, allowing stakeholders to quickly focus on their areas of interest.
+**Supported Formats** — PDF reports, PowerPoint presentations (PPT/PPTX), Word documents (DOC/DOCX), and plain text files. The system extracts text, preserves document structure, and processes embedded tables.
 
-This visualization is particularly effective for executive briefings and strategic planning sessions where the goal is to communicate relative positioning across the technology landscape.`,
-    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#3b82f6', 'primaryTextColor': '#1e293b'}}}%%
-flowchart TD
-    subgraph Radar["Technology Radar"]
-        direction TB
-        
-        subgraph Q1["Cloud - Top-Right"]
-            C1["•"]
-        end
-        
-        subgraph Q2["AI/ML - Top-Left"]
-            A1["•"]
-        end
-        
-        subgraph Q3["IoT - Bottom-Left"]
-            I1["•"]
-        end
-        
-        subgraph Q4["Edge - Bottom-Right"]
-            E1["•"]
-        end
+**Processing Pipeline** — Documents are parsed for layout structure, text is extracted and cleaned, and NLP models identify technology entities, company mentions, funding data, and readiness indicators.
+
+**Quality Assurance** — Each extraction includes confidence scores. Low-confidence extractions are flagged for human review. Domain experts can validate and correct AI assessments through the admin interface.`,
+    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#3b82f6'}}}%%
+flowchart LR
+    subgraph Input["Document Input"]
+        PDF["PDF Reports"]
+        PPT["PowerPoints"]
+        DOC["Word Docs"]
     end
-    
-    subgraph Rings["Concentric Rings"]
-        R1["Adopt (7.5-9.0)"]
-        R2["Trial (5.0-7.4)"]
-        R3["Assess (3.0-4.9)"]
-        R4["Hold (0.0-2.9)"]
-    end`
+
+    subgraph AI["AI Processing"]
+        Parse["Parse & Extract"]
+        NLP["NLP Analysis"]
+        Validate["Confidence Score"]
+    end
+
+    subgraph Output["Structured Data"]
+        Tech["Technologies"]
+        TRL["TRL Assessments"]
+        Meta["Metadata"]
+    end
+
+    Input --> AI --> Output`
   },
   {
-    id: "annex-b-interactions",
-    title: "User Interaction Patterns",
-    description: `The platform implements progressive disclosure patterns to balance information density with usability. Users can explore the technology landscape through multiple interaction modes.
+    id: "data-source-integration",
+    title: "Data Source Integration",
+    icon: Database,
+    description: `The platform integrates multiple heterogeneous data sources to provide comprehensive technology assessment. Each source contributes different dimensions of the overall picture.
 
-**Hover** — Hovering over any technology dot reveals a tooltip with key metrics: name, composite score, trend direction, and confidence level. This enables rapid scanning without context-switching.
+**Dealroom API** — Company profiles, funding rounds, investor networks, and growth metrics. Provides the foundation for Market Score calculation. REST API with structured JSON responses.
 
-**Click** — Clicking a technology opens a detail panel with full scoring breakdown, data source citations, historical trend charts, and related technologies. Premium users can access source documents and methodology notes.
+**PATSTAT (EPO)** — European Patent Office data on patent filings, citations, and patent families. Primary source for Innovation Score. Delivered as CSV exports for batch processing.
 
-**Filter** — The filter panel allows narrowing the view by quadrant, confidence level, and score range. Filters persist across sessions for returning users.
+**CEI Internal Documents** — Strategic assessments, technology reports, and policy analyses from the Cloud-Edge-IoT sphere. Unstructured documents processed through AI document intelligence layer.
 
-**Compare** — Users can select multiple technologies to display side-by-side comparison views, highlighting scoring differences across all four dimensions.`,
-    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#3b82f6', 'primaryTextColor': '#1e293b'}}}%%
-flowchart LR
-    subgraph Hover["Hover"]
-        H1["Technology dot"]
-        H2["→ Tooltip"]
+**Manual Data Entry** — Admin interface for adding technologies, correcting AI assessments, and inputting expert evaluations not available in automated sources.`,
+    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#8b5cf6'}}}%%
+flowchart TD
+    subgraph Sources["Data Sources"]
+        DR["Dealroom API"]
+        PS["PATSTAT CSV"]
+        CEI["CEI Documents"]
+        MAN["Manual Entry"]
     end
-    
-    subgraph Click["Click"]
-        C1["Technology"]
-        C2["→ Detail panel"]
+
+    subgraph Platform["AI-CE Platform"]
+        ING["Ingestion Layer"]
+        AI["AI Processing"]
+        DB["Unified Database"]
     end
-    
-    subgraph Filter["Filter"]
-        F1["Quadrant"]
-        F2["Confidence"]
-        F3["Score range"]
+
+    DR --> ING
+    PS --> ING
+    CEI --> AI
+    MAN --> DB
+    ING --> AI --> DB`
+  },
+  {
+    id: "user-capabilities",
+    title: "User Capabilities by Tier",
+    icon: Users,
+    description: `The platform implements a three-tier access model designed for BluSpecs' freemium business model. Each tier provides progressively more capabilities while maintaining consistent user experience.
+
+**Public Demo (Free)** — Access to a curated subset of technologies with limited historical data. Demonstrates platform capabilities without revealing full dataset. No account required.
+
+**Premium Clients (Paid)** — Full access to all technologies, complete historical data, detailed scoring breakdowns, source citations, and export capabilities. Requires account managed by BluSpecs.
+
+**Administrators (BluSpecs Staff)** — All premium features plus user management, data source configuration, manual data entry, AI assessment validation, and system monitoring dashboards.`,
+    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#10b981'}}}%%
+flowchart TD
+    subgraph Public["Public Demo"]
+        P1["Sample Technologies"]
+        P2["Basic Visualization"]
+        P3["Limited History"]
     end
-    
-    subgraph Compare["Compare"]
-        CO1["Select multiple"]
-        CO2["→ Side-by-side"]
-    end`
+
+    subgraph Premium["Premium Clients"]
+        PR1["All Technologies"]
+        PR2["Full History"]
+        PR3["Source Citations"]
+        PR4["Export Features"]
+    end
+
+    subgraph Admin["Administrators"]
+        A1["User Management"]
+        A2["Data Configuration"]
+        A3["AI Validation"]
+        A4["System Monitoring"]
+    end
+
+    Public --> Premium --> Admin`
   }
 ];
 
-const colorScale = [
-  { range: "8.0 - 9.0", color: "bg-green-600", label: "Deep Green", meaning: "Highly mature, ready for adoption" },
-  { range: "6.0 - 7.9", color: "bg-green-400", label: "Light Green", meaning: "Mature, worth trialing" },
-  { range: "4.0 - 5.9", color: "bg-yellow-400", label: "Yellow", meaning: "Developing, assess carefully" },
-  { range: "2.0 - 3.9", color: "bg-orange-400", label: "Orange", meaning: "Early stage, monitor" },
-  { range: "0.0 - 1.9", color: "bg-red-500", label: "Red", meaning: "Nascent, hold" },
+const dataSourceCapabilities = [
+  { source: "Dealroom API", type: "REST API", data: "Companies, funding, investors, growth metrics", frequency: "On-demand refresh" },
+  { source: "PATSTAT", type: "CSV Export", data: "Patents, citations, applicants, classifications", frequency: "Quarterly batch" },
+  { source: "CEI Documents", type: "PDF/PPT", data: "Strategic assessments, policy analysis, reports", frequency: "As published" },
+  { source: "Expert Input", type: "Manual Entry", data: "TRL validation, corrections, annotations", frequency: "Continuous" },
 ];
 
-const quadrants = [
-  { name: "Cloud Technologies", position: "Top-Right", color: "bg-blue-500", icon: "☁️", description: "Infrastructure, platforms, and services delivered via cloud computing models" },
-  { name: "AI/ML", position: "Top-Left", color: "bg-purple-500", icon: "🤖", description: "Artificial intelligence, machine learning, and cognitive computing systems" },
-  { name: "IoT", position: "Bottom-Left", color: "bg-orange-500", icon: "📡", description: "Connected devices, sensors, and Internet of Things ecosystems" },
-  { name: "Edge Computing", position: "Bottom-Right", color: "bg-green-500", icon: "⚡", description: "Distributed computing infrastructure at the network edge" },
+const userTierCapabilities = [
+  { tier: "Public Demo", capabilities: ["View sample technologies", "Basic radar visualization", "Limited technology details"], limits: "~20 technologies, no export" },
+  { tier: "Premium Client", capabilities: ["All technologies", "Full historical data", "Detailed score breakdowns", "Source citations", "PDF/CSV export"], limits: "Full access, managed by BluSpecs" },
+  { tier: "Administrator", capabilities: ["All premium features", "User management", "Data source config", "AI validation tools", "Audit logs"], limits: "BluSpecs staff only" },
+];
+
+const exportCapabilities = [
+  { format: "PDF Report", description: "Formatted report with visualizations, suitable for presentations and stakeholder briefings" },
+  { format: "CSV Export", description: "Raw data export for analysis in spreadsheet tools or further processing" },
+  { format: "API Access", description: "Programmatic access to technology data for integration with other systems (premium tier)" },
+];
+
+const taxonomyDomains = [
+  { domain: "Cloud Technologies", icon: "☁️", description: "Infrastructure, platforms, and services delivered via cloud computing models" },
+  { domain: "AI/ML", icon: "🤖", description: "Artificial intelligence, machine learning, and cognitive computing systems" },
+  { domain: "IoT", icon: "📡", description: "Connected devices, sensors, and Internet of Things ecosystems" },
+  { domain: "Edge Computing", icon: "⚡", description: "Distributed computing infrastructure at the network edge" },
 ];
 
 function MermaidDiagram({ id, chart }: { id: string; chart: string }) {
@@ -138,8 +179,8 @@ export default function AnnexB() {
               </Link>
             </Button>
             <div>
-              <h1 className="text-xl font-bold">Annex B: Visual Mockups</h1>
-              <p className="text-sm text-muted-foreground">UI layouts, design system, interaction patterns</p>
+              <h1 className="text-xl font-bold">Annex B: Platform Capabilities</h1>
+              <p className="text-sm text-muted-foreground">Document processing, data integration, user features</p>
             </div>
           </div>
         </div>
@@ -150,7 +191,7 @@ export default function AnnexB() {
         <Card>
           <CardContent className="p-6">
             <p className="text-muted-foreground">
-              The AI-CE Heatmap Platform employs a dual visualization system: the <strong className="text-foreground">Technology Radar</strong> for quick, high-level comparison and the <strong className="text-foreground">Heatmap Matrix</strong> for detailed maturity analysis. These complementary views serve different decision-making contexts while maintaining consistent scoring and interaction patterns.
+              The AI-CE Heatmap Platform transforms heterogeneous data sources—structured APIs, semi-structured files, and unstructured documents—into actionable technology intelligence. This annex details the platform's document processing capabilities, data source integrations, and user features by access tier.
             </p>
           </CardContent>
         </Card>
@@ -158,28 +199,28 @@ export default function AnnexB() {
         {/* Live Mockups Reference */}
         <Card>
           <CardHeader className="bg-primary/5 border-b border-primary/10 py-4">
-            <CardTitle className="text-lg">Live Interactive Mockups</CardTitle>
+            <CardTitle className="text-lg">Interactive Prototypes</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <p className="text-sm text-muted-foreground mb-4">
-              Explore the working prototypes to experience the interaction patterns and visual design firsthand.
+              Explore the working prototypes to experience platform capabilities firsthand.
             </p>
             <div className="grid md:grid-cols-2 gap-4">
               <Link to="/mockups/radar" className="block p-4 border border-border rounded-lg hover:border-primary transition-colors">
                 <div className="font-medium">Technology Radar</div>
-                <div className="text-sm text-muted-foreground">/mockups/radar — Circular quadrant-based view</div>
+                <div className="text-sm text-muted-foreground">Circular quadrant-based visualization</div>
               </Link>
               <Link to="/mockups/heatmap" className="block p-4 border border-border rounded-lg hover:border-primary transition-colors">
                 <div className="font-medium">Heatmap Matrix</div>
-                <div className="text-sm text-muted-foreground">/mockups/heatmap — Grid-based maturity landscape</div>
+                <div className="text-sm text-muted-foreground">Grid-based maturity landscape</div>
               </Link>
               <Link to="/mockups/admin" className="block p-4 border border-border rounded-lg hover:border-primary transition-colors">
                 <div className="font-medium">Admin Panel</div>
-                <div className="text-sm text-muted-foreground">/mockups/admin — User and data management</div>
+                <div className="text-sm text-muted-foreground">User and data management</div>
               </Link>
               <Link to="/mockups/public" className="block p-4 border border-border rounded-lg hover:border-primary transition-colors">
                 <div className="font-medium">Public Demo</div>
-                <div className="text-sm text-muted-foreground">/mockups/public — Limited public-facing view</div>
+                <div className="text-sm text-muted-foreground">Limited public-facing view</div>
               </Link>
             </div>
           </CardContent>
@@ -190,7 +231,7 @@ export default function AnnexB() {
           <Card key={diagram.id}>
             <CardHeader className="bg-muted/30 py-4">
               <CardTitle className="text-lg flex items-center gap-2">
-                {diagram.id.includes('radar') ? <Palette className="h-5 w-5 text-primary" /> : <MousePointer className="h-5 w-5 text-primary" />}
+                <diagram.icon className="h-5 w-5 text-primary" />
                 {diagram.title}
               </CardTitle>
             </CardHeader>
@@ -211,26 +252,85 @@ export default function AnnexB() {
           </Card>
         ))}
 
-        {/* Radar Quadrants */}
+        {/* Data Source Capabilities Table */}
         <Card>
           <CardHeader className="bg-muted/30 py-4">
-            <CardTitle className="text-lg">Radar Quadrants</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Database className="h-5 w-5 text-primary" />
+              Data Source Capabilities
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="p-3 text-left font-medium">Source</th>
+                  <th className="p-3 text-left font-medium">Type</th>
+                  <th className="p-3 text-left font-medium">Data Provided</th>
+                  <th className="p-3 text-left font-medium">Refresh</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dataSourceCapabilities.map((row) => (
+                  <tr key={row.source} className="border-t border-border">
+                    <td className="p-3 font-medium">{row.source}</td>
+                    <td className="p-3">{row.type}</td>
+                    <td className="p-3 text-muted-foreground">{row.data}</td>
+                    <td className="p-3 text-muted-foreground">{row.frequency}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+
+        {/* User Tier Capabilities */}
+        <Card>
+          <CardHeader className="bg-muted/30 py-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              User Tier Capabilities
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <p className="text-sm text-muted-foreground mb-4">
+              Access tiers are managed manually by BluSpecs—no self-service registration or payment integration. This allows BluSpecs to maintain direct relationships with premium clients.
+            </p>
+            <div className="space-y-4">
+              {userTierCapabilities.map((tier) => (
+                <div key={tier.tier} className="border border-border rounded-lg p-4">
+                  <div className="font-medium mb-2">{tier.tier}</div>
+                  <ul className="text-sm text-muted-foreground space-y-1 mb-2">
+                    {tier.capabilities.map((cap) => (
+                      <li key={cap}>• {cap}</li>
+                    ))}
+                  </ul>
+                  <div className="text-xs text-muted-foreground italic">{tier.limits}</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Technology Taxonomy */}
+        <Card>
+          <CardHeader className="bg-muted/30 py-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Layers className="h-5 w-5 text-primary" />
+              Cloud-Edge-IoT-AI Taxonomy
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-6 space-y-4">
             <p className="text-sm text-muted-foreground">
-              The four quadrants represent the Cloud-Edge-IoT-AI taxonomy, organizing technologies by their primary domain. Each quadrant uses a distinct color for rapid visual identification.
+              Technologies are classified into four primary domains within the ML-SDV (Mobility, Logistics, Software-Defined Vehicles) sphere. This taxonomy organizes the radar quadrants and enables domain-specific filtering.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {quadrants.map((q) => (
-                <div key={q.name} className="flex items-start gap-4 p-4 border border-border rounded-lg">
-                  <div className="text-2xl">{q.icon}</div>
+              {taxonomyDomains.map((d) => (
+                <div key={d.domain} className="flex items-start gap-4 p-4 border border-border rounded-lg">
+                  <div className="text-2xl">{d.icon}</div>
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className={`w-3 h-3 rounded-full ${q.color}`} />
-                      <span className="font-medium">{q.name}</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground mb-1">{q.position}</div>
-                    <div className="text-sm text-muted-foreground">{q.description}</div>
+                    <div className="font-medium mb-1">{d.domain}</div>
+                    <div className="text-sm text-muted-foreground">{d.description}</div>
                   </div>
                 </div>
               ))}
@@ -238,21 +338,23 @@ export default function AnnexB() {
           </CardContent>
         </Card>
 
-        {/* Color Scale */}
+        {/* Export Capabilities */}
         <Card>
           <CardHeader className="bg-muted/30 py-4">
-            <CardTitle className="text-lg">Heatmap Color Scale</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Download className="h-5 w-5 text-primary" />
+              Export & Reporting
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-6 space-y-4">
             <p className="text-sm text-muted-foreground">
-              The heatmap matrix uses a traffic-light color progression that is intuitive and accessible. The scale moves from red (nascent) through yellow (developing) to green (mature), with each color band mapping to specific score ranges and recommended actions.
+              Premium users can export technology data for offline analysis, presentations, and integration with other tools.
             </p>
-            <div className="space-y-2">
-              {colorScale.map((c) => (
-                <div key={c.range} className="flex items-center gap-4 text-sm">
-                  <div className={`w-10 h-6 rounded ${c.color}`} />
-                  <div className="w-20 font-mono">{c.range}</div>
-                  <div className="text-muted-foreground">{c.meaning}</div>
+            <div className="space-y-3">
+              {exportCapabilities.map((exp) => (
+                <div key={exp.format} className="flex gap-4 text-sm">
+                  <span className="font-medium w-28">{exp.format}</span>
+                  <span className="text-muted-foreground">{exp.description}</span>
                 </div>
               ))}
             </div>
