@@ -1,141 +1,89 @@
-import { useState } from "react";
-import { ArrowLeft, Download, Filter, ArrowUpDown, ChevronDown, ChevronRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { Download, Filter, ArrowUpDown, ChevronDown, ChevronRight, Map, BarChart3, Grid3X3, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-
-interface TechnologyScore {
-  id: string;
-  name: string;
-  category: string;
-  trl: number;
-  market: number;
-  innovation: number;
-  euAlignment: number;
-  composite: number;
-  subTechnologies?: TechnologyScore[];
-}
-
-const sampleData: TechnologyScore[] = [
-  {
-    id: "1",
-    name: "Cloud Infrastructure",
-    category: "Cloud",
-    trl: 8.5,
-    market: 8.0,
-    innovation: 6.5,
-    euAlignment: 8.0,
-    composite: 7.8,
-    subTechnologies: [
-      { id: "1a", name: "Kubernetes", category: "Cloud", trl: 9.0, market: 8.5, innovation: 6.0, euAlignment: 7.5, composite: 7.8 },
-      { id: "1b", name: "Serverless", category: "Cloud", trl: 8.0, market: 7.5, innovation: 7.0, euAlignment: 8.5, composite: 7.8 },
-    ],
-  },
-  {
-    id: "2",
-    name: "Edge Computing",
-    category: "Edge",
-    trl: 6.5,
-    market: 5.5,
-    innovation: 8.0,
-    euAlignment: 6.0,
-    composite: 6.5,
-    subTechnologies: [
-      { id: "2a", name: "MEC Platforms", category: "Edge", trl: 5.5, market: 4.5, innovation: 8.5, euAlignment: 6.5, composite: 6.3 },
-      { id: "2b", name: "Edge AI", category: "Edge", trl: 7.5, market: 6.5, innovation: 7.5, euAlignment: 5.5, composite: 6.8 },
-    ],
-  },
-  {
-    id: "3",
-    name: "IoT Sensors",
-    category: "IoT",
-    trl: 7.5,
-    market: 6.0,
-    innovation: 5.5,
-    euAlignment: 7.5,
-    composite: 6.6,
-  },
-  {
-    id: "4",
-    name: "AI/ML Vision",
-    category: "AI",
-    trl: 6.0,
-    market: 8.5,
-    innovation: 9.0,
-    euAlignment: 5.5,
-    composite: 7.3,
-    subTechnologies: [
-      { id: "4a", name: "Object Detection", category: "AI", trl: 7.0, market: 8.0, innovation: 8.5, euAlignment: 5.0, composite: 7.1 },
-      { id: "4b", name: "SLAM", category: "AI", trl: 5.0, market: 9.0, innovation: 9.5, euAlignment: 6.0, composite: 7.4 },
-    ],
-  },
-  {
-    id: "5",
-    name: "V2X Protocols",
-    category: "IoT",
-    trl: 4.5,
-    market: 3.5,
-    innovation: 6.0,
-    euAlignment: 5.5,
-    composite: 4.9,
-  },
-  {
-    id: "6",
-    name: "Autonomous Systems",
-    category: "AI",
-    trl: 5.0,
-    market: 7.0,
-    innovation: 8.5,
-    euAlignment: 7.0,
-    composite: 6.9,
-  },
-];
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { PlatformHeader } from "@/components/mockups/PlatformHeader";
+import { technologies, Technology, TechnologyQuadrant, getStats, formatFunding } from "@/data/technologies";
+import { cn } from "@/lib/utils";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, ScatterChart, Scatter, ZAxis, Treemap } from "recharts";
 
 const columns = [
   { key: "trl", label: "TRL", description: "Technology Readiness Level" },
-  { key: "market", label: "Market", description: "Market Adoption Score" },
-  { key: "innovation", label: "Innovation", description: "Innovation Activity Score" },
-  { key: "euAlignment", label: "EU Align", description: "EU Strategic Alignment" },
-  { key: "composite", label: "Overall", description: "Composite Score" },
+  { key: "marketScore", label: "Market", description: "Market Adoption Score" },
+  { key: "innovationScore", label: "Innovation", description: "Innovation Activity" },
+  { key: "euAlignmentScore", label: "EU Align", description: "EU Strategic Alignment" },
+  { key: "compositeScore", label: "Overall", description: "Composite Score" },
 ];
 
-const getScoreColor = (score: number) => {
-  if (score >= 8) return "bg-emerald-500/80 text-emerald-50";
-  if (score >= 6) return "bg-emerald-500/40 text-emerald-100";
-  if (score >= 4) return "bg-amber-500/60 text-amber-50";
-  if (score >= 2) return "bg-rose-500/50 text-rose-50";
-  return "bg-rose-500/80 text-rose-50";
+const getScoreColor = (score: number): string => {
+  if (score >= 8) return "hsl(160 72% 35%)";
+  if (score >= 6) return "hsl(160 72% 35% / 0.6)";
+  if (score >= 4) return "hsl(38 92% 45%)";
+  if (score >= 2) return "hsl(0 72% 50% / 0.7)";
+  return "hsl(0 72% 50%)";
 };
 
-const getScoreGradient = (score: number) => {
-  const percentage = (score / 9) * 100;
-  if (score >= 8) return `linear-gradient(90deg, hsl(152, 76%, 36%) ${percentage}%, transparent ${percentage}%)`;
-  if (score >= 6) return `linear-gradient(90deg, hsl(152, 76%, 36%, 0.5) ${percentage}%, transparent ${percentage}%)`;
-  if (score >= 4) return `linear-gradient(90deg, hsl(38, 92%, 50%, 0.6) ${percentage}%, transparent ${percentage}%)`;
-  return `linear-gradient(90deg, hsl(0, 84%, 60%, 0.6) ${percentage}%, transparent ${percentage}%)`;
+const getScoreBg = (score: number): string => {
+  if (score >= 8) return "bg-success text-success-foreground";
+  if (score >= 6) return "bg-success/60 text-foreground";
+  if (score >= 4) return "bg-warning/70 text-foreground";
+  if (score >= 2) return "bg-destructive/60 text-foreground";
+  return "bg-destructive text-destructive-foreground";
 };
+
+const quadrantColors: Record<TechnologyQuadrant, string> = {
+  Cloud: "hsl(214 100% 49%)",
+  Edge: "hsl(270 60% 50%)",
+  IoT: "hsl(160 72% 35%)",
+  "AI/ML": "hsl(350 70% 50%)",
+};
+
+// EU Country data for geographic visualization
+const euCountryData = [
+  { country: "Germany", code: "DE", lat: 51.1657, lng: 10.4515, techCount: 28, funding: 4500000000, focus: "Automotive AI" },
+  { country: "France", code: "FR", lat: 46.2276, lng: 2.2137, techCount: 22, funding: 3200000000, focus: "Edge Computing" },
+  { country: "Netherlands", code: "NL", lat: 52.1326, lng: 5.2913, techCount: 18, funding: 2100000000, focus: "IoT Infrastructure" },
+  { country: "Sweden", code: "SE", lat: 60.1282, lng: 18.6435, techCount: 15, funding: 1800000000, focus: "V2X Communication" },
+  { country: "Finland", code: "FI", lat: 61.9241, lng: 25.7482, techCount: 12, funding: 950000000, focus: "Smart Mobility" },
+  { country: "Spain", code: "ES", lat: 40.4637, lng: -3.7492, techCount: 14, funding: 1200000000, focus: "Cloud Native" },
+  { country: "Italy", code: "IT", lat: 41.8719, lng: 12.5674, techCount: 16, funding: 1400000000, focus: "Digital Twin" },
+  { country: "Belgium", code: "BE", lat: 50.5039, lng: 4.4699, techCount: 10, funding: 780000000, focus: "5G Networks" },
+  { country: "Austria", code: "AT", lat: 47.5162, lng: 14.5501, techCount: 8, funding: 520000000, focus: "Sensor Networks" },
+  { country: "Poland", code: "PL", lat: 51.9194, lng: 19.1451, techCount: 11, funding: 680000000, focus: "Edge AI" },
+];
+
+// Treemap data for technology categories
+const treemapData = technologies.reduce((acc, tech) => {
+  const quadrant = acc.find(q => q.name === tech.quadrant);
+  if (quadrant) {
+    quadrant.children.push({
+      name: tech.name,
+      size: tech.compositeScore * 10,
+      color: quadrantColors[tech.quadrant],
+    });
+  } else {
+    acc.push({
+      name: tech.quadrant,
+      children: [{
+        name: tech.name,
+        size: tech.compositeScore * 10,
+        color: quadrantColors[tech.quadrant as TechnologyQuadrant],
+      }],
+    });
+  }
+  return acc;
+}, [] as Array<{ name: string; children: Array<{ name: string; size: number; color: string }> }>);
 
 export default function HeatmapMatrix() {
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [sortColumn, setSortColumn] = useState<string>("composite");
+  const [sortColumn, setSortColumn] = useState<string>("compositeScore");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [selectedCell, setSelectedCell] = useState<{ row: string; col: string } | null>(null);
-
-  const toggleRow = (id: string) => {
-    const newExpanded = new Set(expandedRows);
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id);
-    } else {
-      newExpanded.add(id);
-    }
-    setExpandedRows(newExpanded);
-  };
+  const [activeView, setActiveView] = useState<"matrix" | "geo" | "bubble" | "treemap">("matrix");
+  
+  const stats = getStats();
 
   const handleSort = (column: string) => {
     if (sortColumn === column) {
@@ -146,217 +94,383 @@ export default function HeatmapMatrix() {
     }
   };
 
-  const sortedData = [...sampleData].sort((a, b) => {
-    const aVal = a[sortColumn as keyof TechnologyScore] as number;
-    const bVal = b[sortColumn as keyof TechnologyScore] as number;
+  const sortedData = [...technologies].sort((a, b) => {
+    const aVal = a[sortColumn as keyof Technology] as number;
+    const bVal = b[sortColumn as keyof Technology] as number;
     return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
   });
 
-  const renderRow = (tech: TechnologyScore, isSubRow = false) => (
-    <tr
-      key={tech.id}
-      className={`border-b border-border/50 transition-colors ${
-        isSubRow ? "bg-muted/30" : "hover:bg-muted/50"
-      }`}
-    >
-      <td className="p-3">
-        <div className={`flex items-center gap-2 ${isSubRow ? "pl-6" : ""}`}>
-          {!isSubRow && tech.subTechnologies && (
-            <button
-              onClick={() => toggleRow(tech.id)}
-              className="p-1 hover:bg-muted rounded"
-            >
-              {expandedRows.has(tech.id) ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
-              )}
-            </button>
-          )}
-          {!isSubRow && !tech.subTechnologies && <div className="w-6" />}
-          <div>
-            <p className={`font-medium ${isSubRow ? "text-sm text-muted-foreground" : ""}`}>
-              {tech.name}
-            </p>
-            {!isSubRow && (
-              <Badge variant="outline" className="text-xs mt-1">
-                {tech.category}
-              </Badge>
-            )}
-          </div>
-        </div>
-      </td>
-      {columns.map((col) => {
-        const score = tech[col.key as keyof TechnologyScore] as number;
-        const isSelected = selectedCell?.row === tech.id && selectedCell?.col === col.key;
-        return (
-          <td key={col.key} className="p-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => setSelectedCell({ row: tech.id, col: col.key })}
-                  className={`w-full h-12 rounded-md flex items-center justify-center font-mono text-sm font-semibold transition-all ${
-                    getScoreColor(score)
-                  } ${isSelected ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`}
-                  style={{ background: getScoreGradient(score) }}
-                >
-                  {score.toFixed(1)}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <div className="text-sm">
-                  <p className="font-semibold">{tech.name}</p>
-                  <p className="text-muted-foreground">{col.description}: {score.toFixed(1)}/9.0</p>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </td>
-        );
-      })}
-    </tr>
-  );
+  // Bubble chart data - Innovation vs Market with TRL as size
+  const bubbleData = technologies.map(tech => ({
+    name: tech.name,
+    x: tech.marketScore,
+    y: tech.innovationScore,
+    z: tech.trl * 10,
+    quadrant: tech.quadrant,
+    color: quadrantColors[tech.quadrant],
+  }));
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/mockups">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-xl font-bold">Heatmap Matrix</h1>
-              <p className="text-sm text-muted-foreground">ML-SDV Sphere • Q4 2024</p>
-            </div>
+      <PlatformHeader />
+
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row gap-6 mb-8">
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold font-display text-foreground mb-2">Heatmap & Visualization</h1>
+            <p className="text-muted-foreground">
+              Multi-dimensional technology maturity analysis across {technologies.length} technologies
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm">
               <Filter className="h-4 w-4 mr-2" />
               Filters
             </Button>
-            <Button size="sm">
+            <Button variant="outline" size="sm">
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
           </div>
         </div>
-      </header>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-[1fr_280px] gap-8">
-          {/* Heatmap Table */}
-          <Card>
-            <CardContent className="p-0 overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border bg-muted/50">
-                    <th className="p-3 text-left font-semibold text-sm w-64">Technology</th>
-                    {columns.map((col) => (
-                      <th key={col.key} className="p-3 text-center w-24">
-                        <button
-                          onClick={() => handleSort(col.key)}
-                          className="flex items-center justify-center gap-1 mx-auto font-semibold text-sm hover:text-primary transition-colors"
-                        >
-                          {col.label}
-                          <ArrowUpDown className={`h-3 w-3 ${sortColumn === col.key ? "text-primary" : "text-muted-foreground"}`} />
-                        </button>
-                      </th>
+        {/* View Tabs */}
+        <Tabs value={activeView} onValueChange={(v) => setActiveView(v as typeof activeView)} className="space-y-6">
+          <TabsList className="grid w-full max-w-lg grid-cols-4">
+            <TabsTrigger value="matrix" className="gap-2">
+              <Grid3X3 className="h-4 w-4" />
+              Matrix
+            </TabsTrigger>
+            <TabsTrigger value="geo" className="gap-2">
+              <Globe className="h-4 w-4" />
+              Geographic
+            </TabsTrigger>
+            <TabsTrigger value="bubble" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Bubble
+            </TabsTrigger>
+            <TabsTrigger value="treemap" className="gap-2">
+              <Map className="h-4 w-4" />
+              Treemap
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Matrix View */}
+          <TabsContent value="matrix" className="space-y-6">
+            <div className="grid lg:grid-cols-[1fr_280px] gap-6">
+              <Card>
+                <CardContent className="p-0 overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/50">
+                        <th className="p-3 text-left font-semibold text-sm text-foreground w-64">Technology</th>
+                        {columns.map((col) => (
+                          <th key={col.key} className="p-3 text-center w-24">
+                            <button
+                              onClick={() => handleSort(col.key)}
+                              className="flex items-center justify-center gap-1 mx-auto font-semibold text-sm hover:text-primary transition-colors text-foreground"
+                            >
+                              {col.label}
+                              <ArrowUpDown className={cn("h-3 w-3", sortColumn === col.key ? "text-primary" : "text-muted-foreground")} />
+                            </button>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedData.slice(0, 15).map((tech) => (
+                        <tr key={tech.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                          <td className="p-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full" style={{ background: quadrantColors[tech.quadrant] }} />
+                              <div>
+                                <p className="font-medium text-foreground">{tech.name}</p>
+                                <p className="text-xs text-muted-foreground">{tech.quadrant} • {tech.ring}</p>
+                              </div>
+                            </div>
+                          </td>
+                          {columns.map((col) => {
+                            const score = tech[col.key as keyof Technology] as number;
+                            const isSelected = selectedCell?.row === tech.id && selectedCell?.col === col.key;
+                            return (
+                              <td key={col.key} className="p-1">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      onClick={() => setSelectedCell({ row: tech.id, col: col.key })}
+                                      className={cn(
+                                        "w-full h-10 rounded flex items-center justify-center font-mono text-sm font-semibold transition-all",
+                                        getScoreBg(score),
+                                        isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                                      )}
+                                    >
+                                      {score.toFixed(1)}
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="font-semibold text-foreground">{tech.name}</p>
+                                    <p className="text-muted-foreground">{col.description}: {score.toFixed(1)}/9.0</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </CardContent>
+              </Card>
+
+              {/* Sidebar */}
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-foreground">Score Legend</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {[
+                      { label: "8.0 - 9.0 (High)", color: "bg-success" },
+                      { label: "6.0 - 7.9 (Good)", color: "bg-success/60" },
+                      { label: "4.0 - 5.9 (Moderate)", color: "bg-warning/70" },
+                      { label: "2.0 - 3.9 (Low)", color: "bg-destructive/60" },
+                      { label: "0.0 - 1.9 (Very Low)", color: "bg-destructive" },
+                    ].map((item) => (
+                      <div key={item.label} className="flex items-center gap-2">
+                        <span className={cn("w-6 h-3 rounded", item.color)} />
+                        <span className="text-sm text-foreground">{item.label}</span>
+                      </div>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedData.map((tech) => (
-                    <>
-                      {renderRow(tech)}
-                      {expandedRows.has(tech.id) &&
-                        tech.subTechnologies?.map((sub) => renderRow(sub, true))}
-                    </>
-                  ))}
-                </tbody>
-              </table>
-            </CardContent>
-          </Card>
+                  </CardContent>
+                </Card>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Legend */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">Score Legend</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="w-8 h-4 rounded bg-emerald-500/80" />
-                  <span className="text-sm">8.0 - 9.0 (High)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-8 h-4 rounded bg-emerald-500/40" />
-                  <span className="text-sm">6.0 - 7.9 (Good)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-8 h-4 rounded bg-amber-500/60" />
-                  <span className="text-sm">4.0 - 5.9 (Moderate)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-8 h-4 rounded bg-rose-500/50" />
-                  <span className="text-sm">2.0 - 3.9 (Low)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-8 h-4 rounded bg-rose-500/80" />
-                  <span className="text-sm">0.0 - 1.9 (Very Low)</span>
-                </div>
-              </CardContent>
-            </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-foreground">Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Technologies</span>
+                      <span className="text-sm font-medium text-foreground">{technologies.length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Avg. Score</span>
+                      <span className="text-sm font-medium text-foreground">{stats.avgTrl}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">High Maturity</span>
+                      <span className="text-sm font-medium text-success">{technologies.filter(t => t.compositeScore >= 7.5).length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Needs Assessment</span>
+                      <span className="text-sm font-medium text-warning">{technologies.filter(t => t.compositeScore < 5).length}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
 
-            {/* Column Descriptions */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">Dimensions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {columns.map((col) => (
-                  <div key={col.key}>
-                    <p className="text-sm font-medium">{col.label}</p>
-                    <p className="text-xs text-muted-foreground">{col.description}</p>
+          {/* Geographic View */}
+          <TabsContent value="geo" className="space-y-6">
+            <div className="grid lg:grid-cols-[1fr_320px] gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-foreground">EU Technology Hub Distribution</CardTitle>
+                  <CardDescription>Technology activity concentration across European Union member states</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {/* Simplified EU Map visualization using a grid */}
+                  <div className="relative h-[400px] bg-muted/20 rounded-lg overflow-hidden border border-border">
+                    <div className="absolute inset-0 p-6">
+                      {/* Grid-based EU representation */}
+                      <div className="grid grid-cols-5 gap-4 h-full">
+                        {euCountryData.map((country) => {
+                          const sizeClass = country.techCount > 20 ? "col-span-2 row-span-2" : 
+                                           country.techCount > 12 ? "col-span-1 row-span-2" : "col-span-1";
+                          const funding = country.funding / 1000000000;
+                          return (
+                            <Tooltip key={country.code}>
+                              <TooltipTrigger asChild>
+                                <div 
+                                  className={cn(
+                                    "rounded-lg flex flex-col items-center justify-center p-3 cursor-pointer transition-all hover:scale-105",
+                                    sizeClass
+                                  )}
+                                  style={{ 
+                                    background: `hsl(214 100% 49% / ${0.2 + (country.techCount / 30) * 0.6})`,
+                                    border: "1px solid hsl(214 100% 49% / 0.3)"
+                                  }}
+                                >
+                                  <span className="text-lg font-bold text-foreground">{country.code}</span>
+                                  <span className="text-xs text-muted-foreground">{country.techCount} tech</span>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className="space-y-1">
+                                  <p className="font-semibold text-foreground">{country.country}</p>
+                                  <p className="text-sm text-muted-foreground">{country.techCount} technologies tracked</p>
+                                  <p className="text-sm text-muted-foreground">€{funding.toFixed(1)}B funding</p>
+                                  <p className="text-xs text-primary">Focus: {country.focus}</p>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            {/* Stats */}
+              {/* Country Stats */}
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-foreground">Top EU Hubs</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {euCountryData
+                        .sort((a, b) => b.techCount - a.techCount)
+                        .slice(0, 6)
+                        .map((country, i) => (
+                          <div key={country.code} className="flex items-center gap-3">
+                            <span className="text-sm font-medium text-muted-foreground w-4">{i + 1}</span>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-sm font-medium text-foreground">{country.country}</span>
+                                <span className="text-xs text-muted-foreground">{country.techCount}</span>
+                              </div>
+                              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-primary rounded-full transition-all"
+                                  style={{ width: `${(country.techCount / 28) * 100}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-foreground">Funding by Region</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={150}>
+                      <BarChart data={euCountryData.slice(0, 5)} layout="vertical">
+                        <XAxis type="number" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                        <YAxis type="category" dataKey="code" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={30} />
+                        <Bar dataKey="funding" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Bubble Chart View */}
+          <TabsContent value="bubble" className="space-y-6">
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">Summary</CardTitle>
+              <CardHeader>
+                <CardTitle className="text-foreground">Innovation vs Market Adoption</CardTitle>
+                <CardDescription>Bubble size represents Technology Readiness Level (TRL)</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Technologies</span>
-                  <span className="text-sm font-medium">{sampleData.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Avg. Composite</span>
-                  <span className="text-sm font-medium">
-                    {(sampleData.reduce((sum, t) => sum + t.composite, 0) / sampleData.length).toFixed(1)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">High Maturity</span>
-                  <span className="text-sm font-medium text-emerald-400">
-                    {sampleData.filter((t) => t.composite >= 7).length}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Needs Assessment</span>
-                  <span className="text-sm font-medium text-amber-400">
-                    {sampleData.filter((t) => t.composite < 5).length}
-                  </span>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={500}>
+                  <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 40 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis 
+                      type="number" 
+                      dataKey="x" 
+                      name="Market Score" 
+                      domain={[4, 10]}
+                      tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                      label={{ value: "Market Score", position: "bottom", offset: 20, fill: "hsl(var(--muted-foreground))" }}
+                    />
+                    <YAxis 
+                      type="number" 
+                      dataKey="y" 
+                      name="Innovation Score"
+                      domain={[5, 10]}
+                      tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                      label={{ value: "Innovation Score", angle: -90, position: "insideLeft", offset: -10, fill: "hsl(var(--muted-foreground))" }}
+                    />
+                    <ZAxis type="number" dataKey="z" range={[50, 300]} name="TRL" />
+                    <RechartsTooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
+                              <p className="font-semibold text-foreground">{data.name}</p>
+                              <p className="text-sm text-muted-foreground">Market: {data.x.toFixed(1)}</p>
+                              <p className="text-sm text-muted-foreground">Innovation: {data.y.toFixed(1)}</p>
+                              <p className="text-sm text-muted-foreground">TRL: {data.z / 10}</p>
+                              <Badge variant="outline" className="mt-1">{data.quadrant}</Badge>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Scatter data={bubbleData}>
+                      {bubbleData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} fillOpacity={0.7} stroke={entry.color} strokeWidth={1} />
+                      ))}
+                    </Scatter>
+                  </ScatterChart>
+                </ResponsiveContainer>
+
+                {/* Legend */}
+                <div className="flex flex-wrap justify-center gap-6 mt-4 pt-4 border-t border-border">
+                  {(Object.entries(quadrantColors) as [TechnologyQuadrant, string][]).map(([quadrant, color]) => (
+                    <div key={quadrant} className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full" style={{ background: color }} />
+                      <span className="text-sm text-foreground">{quadrant}</span>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
+          </TabsContent>
+
+          {/* Treemap View */}
+          <TabsContent value="treemap" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-foreground">Technology Portfolio Treemap</CardTitle>
+                <CardDescription>Proportional visualization by quadrant and composite score</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={500}>
+                  <Treemap
+                    data={treemapData}
+                    dataKey="size"
+                    aspectRatio={4 / 3}
+                    stroke="hsl(var(--background))"
+                  />
+                </ResponsiveContainer>
+
+                {/* Legend */}
+                <div className="flex flex-wrap justify-center gap-6 mt-4 pt-4 border-t border-border">
+                  {(Object.entries(quadrantColors) as [TechnologyQuadrant, string][]).map(([quadrant, color]) => (
+                    <div key={quadrant} className="flex items-center gap-2">
+                      <span className="w-4 h-4 rounded" style={{ background: color }} />
+                      <span className="text-sm text-foreground">{quadrant}</span>
+                      <Badge variant="outline" className="text-xs">{stats.quadrantCounts[quadrant]}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

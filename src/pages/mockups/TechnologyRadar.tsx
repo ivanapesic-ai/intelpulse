@@ -1,24 +1,22 @@
 import { useState, useMemo } from "react";
-import { Download, TrendingUp, TrendingDown, Minus, FileText, DollarSign, Users, Calendar, ExternalLink } from "lucide-react";
+import { Download, TrendingUp, TrendingDown, Minus, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
 import { PlatformHeader } from "@/components/mockups/PlatformHeader";
 import { QuadrantFilter } from "@/components/mockups/QuadrantFilter";
 import { SignalIndicator } from "@/components/mockups/SignalIndicator";
-import { ScoreBadge } from "@/components/mockups/ScoreBadge";
 import { technologies, Technology, TechnologyQuadrant, TechnologyRing, formatFunding, getStats } from "@/data/technologies";
 import { cn } from "@/lib/utils";
-import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from "recharts";
+import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Cell, PieChart, Pie } from "recharts";
 
 const ringRadii: Record<TechnologyRing, number> = {
-  Adopt: 0.2,
-  Trial: 0.4,
-  Assess: 0.6,
-  Hold: 0.8,
+  Adopt: 0.22,
+  Trial: 0.42,
+  Assess: 0.62,
+  Hold: 0.82,
 };
 
 const quadrantAngles: Record<TechnologyQuadrant, { start: number; end: number }> = {
@@ -28,38 +26,18 @@ const quadrantAngles: Record<TechnologyQuadrant, { start: number; end: number }>
   "AI/ML": { start: Math.PI, end: (3 * Math.PI) / 2 },
 };
 
-const ringColors: Record<TechnologyRing, string> = {
-  Adopt: "bg-emerald-500",
-  Trial: "bg-sky-500",
-  Assess: "bg-amber-500",
-  Hold: "bg-rose-500",
-};
-
-const ringTextColors: Record<TechnologyRing, string> = {
-  Adopt: "text-emerald-500",
-  Trial: "text-sky-500",
-  Assess: "text-amber-500",
-  Hold: "text-rose-500",
+const ringColors: Record<TechnologyRing, { bg: string; text: string }> = {
+  Adopt: { bg: "hsl(160 72% 35%)", text: "text-success" },
+  Trial: { bg: "hsl(214 100% 49%)", text: "text-primary" },
+  Assess: { bg: "hsl(38 92% 45%)", text: "text-warning" },
+  Hold: { bg: "hsl(0 72% 50%)", text: "text-destructive" },
 };
 
 const quadrantColors: Record<TechnologyQuadrant, string> = {
-  Cloud: "text-sky-400",
-  Edge: "text-violet-400",
-  IoT: "text-emerald-400",
-  "AI/ML": "text-rose-400",
-};
-
-const quadrantFillColors: Record<TechnologyQuadrant, string> = {
-  Cloud: "fill-sky-400",
-  Edge: "fill-violet-400",
-  IoT: "fill-emerald-400",
-  "AI/ML": "fill-rose-400",
-};
-
-const TrendIcon = ({ trend }: { trend: "up" | "down" | "stable" }) => {
-  if (trend === "up") return <TrendingUp className="h-4 w-4 text-emerald-500" />;
-  if (trend === "down") return <TrendingDown className="h-4 w-4 text-rose-500" />;
-  return <Minus className="h-4 w-4 text-muted-foreground" />;
+  Cloud: "hsl(214 100% 49%)",
+  Edge: "hsl(270 60% 50%)",
+  IoT: "hsl(160 72% 35%)",
+  "AI/ML": "hsl(350 70% 50%)",
 };
 
 export default function TechnologyRadar() {
@@ -101,21 +79,41 @@ export default function TechnologyRadar() {
     const techIndex = techsInQuadrantRing.findIndex((t) => t.id === tech.id);
     const angleOffset = (angleRange / (techsInQuadrantRing.length + 1)) * (techIndex + 1);
     const angle = angles.start + angleOffset;
-
-    const jitter = (radius * 0.12) * ((index % 3) - 1);
+    const jitter = (radius * 0.08) * ((index % 3) - 1);
     const finalRadius = radius + jitter;
 
     return {
-      x: 50 + Math.cos(angle) * finalRadius * 45,
-      y: 50 + Math.sin(angle) * finalRadius * 45,
+      x: 50 + Math.cos(angle) * finalRadius * 46,
+      y: 50 + Math.sin(angle) * finalRadius * 46,
     };
   };
 
+  const quadrantDistributionData = Object.entries(stats.quadrantCounts).map(([name, value]) => ({
+    name,
+    value,
+    color: quadrantColors[name as TechnologyQuadrant],
+  }));
+
+  const ringDistributionData = Object.entries(stats.ringCounts).map(([name, value]) => ({
+    name,
+    value,
+    color: ringColors[name as TechnologyRing].bg,
+  }));
+
+  const topTechData = filteredTechnologies
+    .sort((a, b) => b.compositeScore - a.compositeScore)
+    .slice(0, 8)
+    .map((tech) => ({
+      name: tech.name.length > 15 ? tech.name.slice(0, 15) + "..." : tech.name,
+      score: tech.compositeScore,
+      color: quadrantColors[tech.quadrant],
+    }));
+
   const radarChartData = selectedTech ? [
-    { dimension: "TRL", value: selectedTech.trl },
-    { dimension: "Market", value: selectedTech.marketScore },
-    { dimension: "Innovation", value: selectedTech.innovationScore },
-    { dimension: "EU Align", value: selectedTech.euAlignmentScore },
+    { dimension: "TRL", value: selectedTech.trl, fullMark: 9 },
+    { dimension: "Market", value: selectedTech.marketScore, fullMark: 9 },
+    { dimension: "Innovation", value: selectedTech.innovationScore, fullMark: 9 },
+    { dimension: "EU Align", value: selectedTech.euAlignmentScore, fullMark: 9 },
   ] : [];
 
   return (
@@ -123,11 +121,12 @@ export default function TechnologyRadar() {
       <PlatformHeader />
 
       <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col lg:flex-row gap-6 mb-6">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row gap-6 mb-8">
           <div className="flex-1">
-            <h1 className="text-3xl font-bold mb-2">Technology Radar</h1>
+            <h1 className="text-2xl font-bold font-display text-foreground mb-2">Technology Radar</h1>
             <p className="text-muted-foreground">
-              Visualizing {filteredTechnologies.length} technologies across maturity rings and domain quadrants
+              {filteredTechnologies.length} technologies across maturity rings and domain quadrants
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -139,163 +138,223 @@ export default function TechnologyRadar() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-[1fr_360px] gap-6">
-          {/* Radar Visualization */}
-          <Card className="overflow-hidden">
-            <CardContent className="p-0">
-              <div className="relative aspect-square max-w-2xl mx-auto p-6">
-                <svg viewBox="0 0 100 100" className="w-full h-full">
-                  {/* Quadrant background fills */}
-                  <path d="M50,50 L50,5 A45,45 0 0,1 95,50 Z" fill="hsl(200 80% 50% / 0.05)" />
-                  <path d="M50,50 L95,50 A45,45 0 0,1 50,95 Z" fill="hsl(270 80% 50% / 0.05)" />
-                  <path d="M50,50 L50,95 A45,45 0 0,1 5,50 Z" fill="hsl(150 80% 50% / 0.05)" />
-                  <path d="M50,50 L5,50 A45,45 0 0,1 50,5 Z" fill="hsl(350 80% 50% / 0.05)" />
+        <div className="grid lg:grid-cols-[1fr_380px] gap-6">
+          {/* Main Radar */}
+          <div className="space-y-6">
+            <Card>
+              <CardContent className="p-0">
+                <div className="relative aspect-square max-w-2xl mx-auto p-4">
+                  <svg viewBox="0 0 100 100" className="w-full h-full">
+                    {/* Background quadrants */}
+                    <path d="M50,50 L50,4 A46,46 0 0,1 96,50 Z" fill="hsl(214 100% 49% / 0.06)" stroke="hsl(var(--border))" strokeWidth="0.2" />
+                    <path d="M50,50 L96,50 A46,46 0 0,1 50,96 Z" fill="hsl(270 60% 50% / 0.06)" stroke="hsl(var(--border))" strokeWidth="0.2" />
+                    <path d="M50,50 L50,96 A46,46 0 0,1 4,50 Z" fill="hsl(160 72% 35% / 0.06)" stroke="hsl(var(--border))" strokeWidth="0.2" />
+                    <path d="M50,50 L4,50 A46,46 0 0,1 50,4 Z" fill="hsl(350 70% 50% / 0.06)" stroke="hsl(var(--border))" strokeWidth="0.2" />
 
-                  {/* Ring circles */}
-                  {[0.8, 0.6, 0.4, 0.2].map((radius, i) => (
-                    <circle
-                      key={i}
-                      cx="50"
-                      cy="50"
-                      r={radius * 45}
-                      fill="none"
-                      stroke="hsl(var(--border))"
-                      strokeWidth="0.3"
-                      strokeDasharray={i === 0 ? "2,2" : "none"}
-                    />
-                  ))}
+                    {/* Ring circles */}
+                    {[0.82, 0.62, 0.42, 0.22].map((radius, i) => (
+                      <circle
+                        key={i}
+                        cx="50"
+                        cy="50"
+                        r={radius * 46}
+                        fill="none"
+                        stroke="hsl(var(--border))"
+                        strokeWidth="0.3"
+                        strokeDasharray={i === 0 ? "1.5,1.5" : "none"}
+                      />
+                    ))}
 
-                  {/* Quadrant lines */}
-                  <line x1="50" y1="5" x2="50" y2="95" stroke="hsl(var(--border))" strokeWidth="0.3" />
-                  <line x1="5" y1="50" x2="95" y2="50" stroke="hsl(var(--border))" strokeWidth="0.3" />
+                    {/* Axis lines */}
+                    <line x1="50" y1="4" x2="50" y2="96" stroke="hsl(var(--border))" strokeWidth="0.3" />
+                    <line x1="4" y1="50" x2="96" y2="50" stroke="hsl(var(--border))" strokeWidth="0.3" />
 
-                  {/* Technology dots */}
-                  {filteredTechnologies.map((tech, index) => {
-                    const pos = getPosition(tech, index);
-                    const isSelected = selectedTech?.id === tech.id;
-                    const isHovered = hoveredTech === tech.id;
-                    const isHighlighted = isSelected || isHovered;
+                    {/* Technology dots */}
+                    {filteredTechnologies.map((tech, index) => {
+                      const pos = getPosition(tech, index);
+                      const isSelected = selectedTech?.id === tech.id;
+                      const isHovered = hoveredTech === tech.id;
+                      const isHighlighted = isSelected || isHovered;
 
-                    return (
-                      <g key={tech.id}>
-                        {isHighlighted && (
-                          <circle
-                            cx={pos.x}
-                            cy={pos.y}
-                            r="4"
-                            className="fill-primary/20 animate-pulse"
-                          />
-                        )}
-                        <Tooltip>
-                          <TooltipTrigger asChild>
+                      return (
+                        <g key={tech.id}>
+                          {isHighlighted && (
                             <circle
                               cx={pos.x}
                               cy={pos.y}
-                              r={isHighlighted ? 2.5 : 1.8}
-                              className={cn(
-                                "cursor-pointer transition-all duration-300",
-                                isHighlighted
-                                  ? "fill-primary stroke-primary"
-                                  : cn("fill-current hover:stroke-primary", quadrantColors[tech.quadrant])
-                              )}
-                              strokeWidth={isHighlighted ? 1 : 0}
-                              onClick={() => setSelectedTech(tech)}
-                              onMouseEnter={() => setHoveredTech(tech.id)}
-                              onMouseLeave={() => setHoveredTech(null)}
-                              onDoubleClick={() => openDetails(tech)}
+                              r="3.5"
+                              fill={quadrantColors[tech.quadrant]}
+                              opacity="0.2"
                             />
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="max-w-xs">
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between gap-3">
-                                <p className="font-semibold">{tech.name}</p>
-                                <div className="flex items-center gap-1">
-                                  <TrendIcon trend={tech.trend} />
-                                  <ScoreBadge score={tech.compositeScore} size="sm" />
+                          )}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <circle
+                                cx={pos.x}
+                                cy={pos.y}
+                                r={isHighlighted ? 2 : 1.5}
+                                fill={quadrantColors[tech.quadrant]}
+                                className="cursor-pointer transition-all duration-200"
+                                stroke={isHighlighted ? "hsl(var(--foreground))" : "none"}
+                                strokeWidth={isHighlighted ? 0.4 : 0}
+                                onClick={() => setSelectedTech(tech)}
+                                onMouseEnter={() => setHoveredTech(tech.id)}
+                                onMouseLeave={() => setHoveredTech(null)}
+                                onDoubleClick={() => openDetails(tech)}
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs">
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between gap-3">
+                                  <p className="font-semibold text-foreground">{tech.name}</p>
+                                  <span className="font-mono font-bold text-primary">{tech.compositeScore.toFixed(1)}</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground line-clamp-2">{tech.description}</p>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="text-xs">{tech.quadrant}</Badge>
+                                  <Badge variant="outline" className="text-xs">{tech.ring}</Badge>
                                 </div>
                               </div>
-                              <p className="text-xs text-muted-foreground line-clamp-2">{tech.description}</p>
-                              <div className="flex items-center gap-2 pt-1 border-t border-border">
-                                <Badge className={cn("text-xs", ringColors[tech.ring])}>
-                                  {tech.ring}
-                                </Badge>
-                                <span className={cn("text-xs font-medium", quadrantColors[tech.quadrant])}>
-                                  {tech.quadrant}
-                                </span>
-                              </div>
-                              <p className="text-xs text-muted-foreground italic">Double-click for details</p>
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
+                            </TooltipContent>
+                          </Tooltip>
+                        </g>
+                      );
+                    })}
+                  </svg>
 
-                        {isHovered && !isSelected && (
-                          <text
-                            x={pos.x}
-                            y={pos.y - 4}
-                            textAnchor="middle"
-                            className="fill-foreground text-[2.5px] font-medium pointer-events-none"
+                  {/* Ring labels */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+                    <span className="text-[10px] text-success font-medium uppercase tracking-wide">Adopt</span>
+                  </div>
+                  <div className="absolute top-[30%] left-1/2 -translate-x-1/2">
+                    <span className="text-[10px] text-primary font-medium uppercase tracking-wide">Trial</span>
+                  </div>
+                  <div className="absolute top-[18%] left-1/2 -translate-x-1/2">
+                    <span className="text-[10px] text-warning font-medium uppercase tracking-wide">Assess</span>
+                  </div>
+                  <div className="absolute top-[8%] left-1/2 -translate-x-1/2">
+                    <span className="text-[10px] text-destructive font-medium uppercase tracking-wide">Hold</span>
+                  </div>
+
+                  {/* Quadrant labels */}
+                  <div className="absolute top-3 right-3 text-xs font-semibold text-primary">Cloud</div>
+                  <div className="absolute bottom-3 right-3 text-xs font-semibold" style={{ color: "hsl(270 60% 50%)" }}>Edge</div>
+                  <div className="absolute bottom-3 left-3 text-xs font-semibold text-success">IoT</div>
+                  <div className="absolute top-3 left-3 text-xs font-semibold" style={{ color: "hsl(350 70% 50%)" }}>AI/ML</div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Charts Row */}
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Top Technologies Bar Chart */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-foreground">Top Technologies by Score</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={topTechData} layout="vertical" margin={{ left: 0, right: 10 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                      <XAxis type="number" domain={[0, 9]} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                      <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={80} />
+                      <RechartsTooltip 
+                        contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }}
+                        labelStyle={{ color: "hsl(var(--foreground))" }}
+                      />
+                      <Bar dataKey="score" radius={[0, 4, 4, 0]}>
+                        {topTechData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Distribution Pie Charts */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-foreground">Distribution</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground text-center mb-2">By Quadrant</p>
+                      <ResponsiveContainer width="100%" height={100}>
+                        <PieChart>
+                          <Pie
+                            data={quadrantDistributionData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={25}
+                            outerRadius={40}
+                            dataKey="value"
+                            strokeWidth={0}
                           >
-                            {tech.name}
-                          </text>
-                        )}
-                      </g>
-                    );
-                  })}
-                </svg>
-
-                {/* Ring labels */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
-                  <span className="text-xs text-emerald-500 font-medium uppercase tracking-wider">Adopt</span>
-                </div>
-                <div className="absolute top-[30%] left-1/2 -translate-x-1/2 text-center">
-                  <span className="text-xs text-sky-500 font-medium uppercase tracking-wider">Trial</span>
-                </div>
-                <div className="absolute top-[18%] left-1/2 -translate-x-1/2 text-center">
-                  <span className="text-xs text-amber-500 font-medium uppercase tracking-wider">Assess</span>
-                </div>
-                <div className="absolute top-[6%] left-1/2 -translate-x-1/2 text-center">
-                  <span className="text-xs text-rose-500 font-medium uppercase tracking-wider">Hold</span>
-                </div>
-
-                {/* Quadrant labels */}
-                <div className="absolute top-4 right-4 text-sky-400 font-semibold text-sm">Cloud</div>
-                <div className="absolute bottom-4 right-4 text-violet-400 font-semibold text-sm">Edge</div>
-                <div className="absolute bottom-4 left-4 text-emerald-400 font-semibold text-sm">IoT</div>
-                <div className="absolute top-4 left-4 text-rose-400 font-semibold text-sm">AI/ML</div>
-              </div>
-            </CardContent>
-          </Card>
+                            {quadrantDistributionData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground text-center mb-2">By Maturity</p>
+                      <ResponsiveContainer width="100%" height={100}>
+                        <PieChart>
+                          <Pie
+                            data={ringDistributionData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={25}
+                            outerRadius={40}
+                            dataKey="value"
+                            strokeWidth={0}
+                          >
+                            {ringDistributionData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
 
           {/* Sidebar */}
           <div className="space-y-4">
-            {/* Stats */}
+            {/* Summary Stats */}
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Overview</CardTitle>
+                <CardTitle className="text-sm font-medium text-foreground">Overview</CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-2 gap-3">
                 <div className="p-3 rounded-lg bg-muted/50 text-center">
-                  <p className="text-2xl font-bold">{stats.totalTechnologies}</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.totalTechnologies}</p>
                   <p className="text-xs text-muted-foreground">Technologies</p>
                 </div>
                 <div className="p-3 rounded-lg bg-muted/50 text-center">
-                  <p className="text-2xl font-bold">{stats.avgTrl}</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.avgTrl}</p>
                   <p className="text-xs text-muted-foreground">Avg TRL</p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Ring Legend */}
+            {/* Maturity Rings */}
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Maturity Rings</CardTitle>
+                <CardTitle className="text-sm font-medium text-foreground">Maturity Rings</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 {(["Adopt", "Trial", "Assess", "Hold"] as TechnologyRing[]).map((ring) => (
                   <div key={ring} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className={cn("w-3 h-3 rounded-full", ringColors[ring])} />
-                      <span className="text-sm">{ring}</span>
+                      <span className="w-3 h-3 rounded-full" style={{ background: ringColors[ring].bg }} />
+                      <span className="text-sm text-foreground">{ring}</span>
                     </div>
                     <Badge variant="outline" className="text-xs">
                       {stats.ringCounts[ring]}
@@ -310,46 +369,51 @@ export default function TechnologyRadar() {
               <Card className="border-primary/30">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium">Selected Technology</CardTitle>
-                    <ScoreBadge score={selectedTech.compositeScore} size="md" />
+                    <CardTitle className="text-sm font-medium text-foreground">Selected</CardTitle>
+                    <span className="font-mono font-bold text-lg text-primary">{selectedTech.compositeScore.toFixed(1)}</span>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <h3 className="font-semibold mb-1">{selectedTech.name}</h3>
+                    <h3 className="font-semibold text-foreground mb-1">{selectedTech.name}</h3>
                     <p className="text-xs text-muted-foreground line-clamp-2">{selectedTech.description}</p>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline" className={quadrantColors[selectedTech.quadrant]}>
-                      {selectedTech.quadrant}
-                    </Badge>
-                    <Badge className={ringColors[selectedTech.ring]}>{selectedTech.ring}</Badge>
+                    <Badge variant="outline">{selectedTech.quadrant}</Badge>
+                    <Badge variant="outline">{selectedTech.ring}</Badge>
                     <Badge variant="outline">TRL {selectedTech.trl}</Badge>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-center text-xs">
-                    <div className="p-2 rounded bg-muted/50">
-                      <p className="font-mono font-semibold">{selectedTech.marketScore.toFixed(1)}</p>
-                      <p className="text-muted-foreground">Market</p>
-                    </div>
-                    <div className="p-2 rounded bg-muted/50">
-                      <p className="font-mono font-semibold">{selectedTech.innovationScore.toFixed(1)}</p>
-                      <p className="text-muted-foreground">Innovation</p>
-                    </div>
+                  {/* Mini Radar Chart */}
+                  <div className="h-32">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart data={radarChartData}>
+                        <PolarGrid stroke="hsl(var(--border))" />
+                        <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                        <Radar
+                          name="Score"
+                          dataKey="value"
+                          stroke="hsl(var(--primary))"
+                          fill="hsl(var(--primary))"
+                          fillOpacity={0.3}
+                        />
+                      </RadarChart>
+                    </ResponsiveContainer>
                   </div>
 
                   <SignalIndicator signals={selectedTech.signals} showLabels size="sm" />
 
                   <Button className="w-full" size="sm" onClick={() => openDetails(selectedTech)}>
                     View Full Details
+                    <ChevronRight className="h-4 w-4 ml-1" />
                   </Button>
                 </CardContent>
               </Card>
             ) : (
               <Card className="border-dashed">
                 <CardContent className="py-8 text-center">
-                  <p className="text-sm text-muted-foreground">Click a technology dot to see details</p>
+                  <p className="text-sm text-muted-foreground">Click a technology to see details</p>
                 </CardContent>
               </Card>
             )}
@@ -357,7 +421,7 @@ export default function TechnologyRadar() {
             {/* Technology List */}
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">All Technologies ({filteredTechnologies.length})</CardTitle>
+                <CardTitle className="text-sm font-medium text-foreground">All Technologies</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="max-h-64 overflow-y-auto space-y-1 pr-2">
@@ -374,13 +438,10 @@ export default function TechnologyRadar() {
                         )}
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className={cn("w-2 h-2 rounded-full shrink-0", ringColors[tech.ring])} />
-                          <span className="truncate">{tech.name}</span>
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: ringColors[tech.ring].bg }} />
+                          <span className="truncate text-foreground">{tech.name}</span>
                         </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <TrendIcon trend={tech.trend} />
-                          <span className="font-mono text-xs">{tech.compositeScore.toFixed(1)}</span>
-                        </div>
+                        <span className="font-mono text-xs text-muted-foreground">{tech.compositeScore.toFixed(1)}</span>
                       </button>
                     ))}
                 </div>
@@ -392,130 +453,67 @@ export default function TechnologyRadar() {
 
       {/* Detail Dialog */}
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">{selectedTech?.name}</DialogTitle>
+          </DialogHeader>
           {selectedTech && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-3">
-                  <span className="text-2xl">{selectedTech.name}</span>
-                  <ScoreBadge score={selectedTech.compositeScore} size="lg" />
-                </DialogTitle>
-              </DialogHeader>
-
-              <div className="grid md:grid-cols-2 gap-6 mt-4">
-                <div className="space-y-6">
-                  <div>
-                    <p className="text-muted-foreground mb-4">{selectedTech.description}</p>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline">{selectedTech.quadrant}</Badge>
-                      <Badge className={ringColors[selectedTech.ring]}>{selectedTech.ring}</Badge>
-                      <Badge variant="outline">{selectedTech.category}</Badge>
-                      <Badge variant="outline">TRL {selectedTech.trl}</Badge>
-                    </div>
-                  </div>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Score Breakdown</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-48">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <RadarChart data={radarChartData}>
-                            <PolarGrid stroke="hsl(var(--border))" />
-                            <PolarAngleAxis dataKey="dimension" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                            <PolarRadiusAxis domain={[0, 10]} tick={false} axisLine={false} />
-                            <Radar name="Score" dataKey="value" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
-                          </RadarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        Key Players
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedTech.keyPlayers.map((player) => (
-                          <Badge key={player} variant="secondary">{player}</Badge>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
+            <div className="space-y-6">
+              <p className="text-muted-foreground">{selectedTech.description}</p>
+              
+              <div className="grid grid-cols-4 gap-4 text-center">
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-2xl font-bold text-foreground">{selectedTech.trl}</p>
+                  <p className="text-xs text-muted-foreground">TRL</p>
                 </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-2xl font-bold text-foreground">{selectedTech.marketScore.toFixed(1)}</p>
+                  <p className="text-xs text-muted-foreground">Market</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-2xl font-bold text-foreground">{selectedTech.innovationScore.toFixed(1)}</p>
+                  <p className="text-xs text-muted-foreground">Innovation</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-2xl font-bold text-foreground">{selectedTech.euAlignmentScore.toFixed(1)}</p>
+                  <p className="text-xs text-muted-foreground">EU Align</p>
+                </div>
+              </div>
 
-                <div className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Signal Strength</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <SignalIndicator signals={selectedTech.signals} showLabels size="md" />
-                    </CardContent>
-                  </Card>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart data={radarChartData}>
+                    <PolarGrid stroke="hsl(var(--border))" />
+                    <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+                    <Radar
+                      name="Score"
+                      dataKey="value"
+                      stroke="hsl(var(--primary))"
+                      fill="hsl(var(--primary))"
+                      fillOpacity={0.3}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <Card>
-                      <CardContent className="pt-4">
-                        <div className="flex items-center gap-2 mb-1">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">Patents</span>
-                        </div>
-                        <p className="text-2xl font-bold">{selectedTech.patents.toLocaleString()}</p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="pt-4">
-                        <div className="flex items-center gap-2 mb-1">
-                          <DollarSign className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">Funding</span>
-                        </div>
-                        <p className="text-2xl font-bold">{formatFunding(selectedTech.fundingEur)}</p>
-                      </CardContent>
-                    </Card>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-2">Key Players</p>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedTech.keyPlayers.map((player) => (
+                      <Badge key={player} variant="outline" className="text-xs">{player}</Badge>
+                    ))}
                   </div>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Challenge-Opportunity Matrix</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="text-center p-3 rounded bg-muted/50">
-                          <p className="text-2xl font-bold">{selectedTech.challengeScore}/2</p>
-                          <p className="text-xs text-muted-foreground">Challenge Score</p>
-                          <p className="text-xs mt-1">
-                            {selectedTech.challengeScore === 2 ? "No Major Barriers" : selectedTech.challengeScore === 1 ? "Manageable" : "Severe"}
-                          </p>
-                        </div>
-                        <div className="text-center p-3 rounded bg-muted/50">
-                          <p className="text-2xl font-bold">{selectedTech.opportunityScore}/2</p>
-                          <p className="text-xs text-muted-foreground">Opportunity Score</p>
-                          <p className="text-xs mt-1">
-                            {selectedTech.opportunityScore === 2 ? "High Value" : selectedTech.opportunityScore === 1 ? "Promising" : "Limited"}
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      Last updated: {selectedTech.lastUpdated}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      Trend: <TrendIcon trend={selectedTech.trend} />
-                    </span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-2">Metrics</p>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <p>{selectedTech.patents.toLocaleString()} patents</p>
+                    <p>{formatFunding(selectedTech.fundingEur)} funding</p>
                   </div>
                 </div>
               </div>
-            </>
+            </div>
           )}
         </DialogContent>
       </Dialog>
