@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Radar, Grid3X3, Compass, Settings, LayoutDashboard, Users, FileText } from "lucide-react";
+import { Radar, Grid3X3, Compass, Settings, LayoutDashboard, Users, FileText, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -26,17 +26,20 @@ export function PlatformHeader({ showBadge = true }: PlatformHeaderProps) {
   const location = useLocation();
 
   return (
-    <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-50">
+    <header className="glass-strong sticky top-0 z-50 border-b border-border/50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-6">
-            <Link to="/mockups" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">CE</span>
+            <Link to="/mockups" className="flex items-center gap-3 group">
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/30 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-indigo flex items-center justify-center shadow-glow-sm">
+                  <Sparkles className="h-5 w-5 text-primary-foreground" />
+                </div>
               </div>
               <div>
-                <h1 className="text-lg font-bold leading-none">AI-CE Heatmap</h1>
-                <p className="text-xs text-muted-foreground">ML-SDV Technology Intelligence</p>
+                <h1 className="text-lg font-bold font-display leading-none">AI-CE Heatmap</h1>
+                <p className="text-xs text-muted-foreground">ML-SDV Intelligence</p>
               </div>
             </Link>
 
@@ -46,11 +49,13 @@ export function PlatformHeader({ showBadge = true }: PlatformHeaderProps) {
                 return (
                   <Link key={item.path} to={item.path}>
                     <Button
-                      variant={isActive ? "secondary" : "ghost"}
+                      variant="ghost"
                       size="sm"
                       className={cn(
-                        "gap-2",
-                        isActive && "bg-primary/10 text-primary"
+                        "gap-2 transition-all duration-200",
+                        isActive 
+                          ? "bg-primary/10 text-primary shadow-glow-sm" 
+                          : "hover:bg-primary/5 hover:text-primary"
                       )}
                     >
                       <item.icon className="h-4 w-4" />
@@ -72,8 +77,10 @@ export function PlatformHeader({ showBadge = true }: PlatformHeaderProps) {
                       variant="ghost"
                       size="sm"
                       className={cn(
-                        "text-xs",
-                        isActive && "bg-muted text-foreground"
+                        "text-xs transition-all duration-200",
+                        isActive 
+                          ? "bg-muted text-foreground" 
+                          : "text-muted-foreground hover:text-foreground"
                       )}
                     >
                       {item.label}
@@ -83,7 +90,7 @@ export function PlatformHeader({ showBadge = true }: PlatformHeaderProps) {
               })}
             </div>
             {showBadge && (
-              <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-400 border-amber-500/30">
+              <Badge className="badge-glass text-xs font-medium">
                 Preview
               </Badge>
             )}
