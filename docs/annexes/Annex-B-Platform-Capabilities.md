@@ -1,20 +1,18 @@
 # Annex B: Platform Capabilities
 
-Document processing, data integration, user features
-
-> **⚠️ Note:** Data source configurations and integration details are preliminary. The final data pipeline will be validated during the design sprint based on actual Dealroom API access level, PATSTAT export format, and CEI document samples provided by BluSpecs.
+User features, interface capabilities, access tiers
 
 ---
 
 ## Overview
 
-The AI-CE Heatmap Platform transforms heterogeneous data sources—structured APIs, semi-structured files, and unstructured documents—into actionable technology intelligence. This annex details the platform's document processing capabilities, data source integrations, and user features by access tier.
+This annex details the user-facing capabilities of the AI-CE Heatmap Platform—what users can do, how they interact with the system, and what features are available at each access tier. For technical architecture and data processing details, see Annex A.
 
 ---
 
 ## Interactive Prototypes
 
-Explore the working prototypes to experience platform capabilities firsthand.
+Experience the platform capabilities through working prototypes.
 
 | View | URL | Description |
 |------|-----|-------------|
@@ -25,157 +23,137 @@ Explore the working prototypes to experience platform capabilities firsthand.
 
 ---
 
-## Document Processing Pipeline
+## User Journey & Workflows
 
-The platform's core differentiator is its ability to transform unstructured documents into structured intelligence. CEI internal datasets arrive as PowerPoint presentations and PDF reports rather than structured data—requiring sophisticated AI processing.
+The platform supports three distinct user journeys, each optimized for different goals and access levels. All journeys share a consistent interface while exposing tier-appropriate features.
 
-**Stage 1: Ingestion** — Documents are uploaded through the admin interface or API. The system identifies file type, extracts metadata, and queues for processing. Supported formats include PDF, PPT/PPTX, DOC/DOCX, and plain text.
+**Discovery Journey (All Users)** — Users land on the Technology Radar or Heatmap Matrix, explore technologies visually, filter by domain or maturity, and drill into individual technology profiles. Public users see sample data; premium users see the full dataset.
 
-**Stage 2: Parsing** — Layout analysis preserves document structure including headings, tables, lists, and embedded diagrams. Text is extracted while maintaining semantic relationships between sections.
+**Analysis Journey (Premium)** — Deep-dive into technology assessments including score breakdowns across all four dimensions, historical trend charts, source citations, and related technologies. Export capabilities enable offline analysis and reporting.
 
-**Stage 3: NLP Processing** — Named Entity Recognition (NER) identifies technology mentions, company names, funding amounts, locations, and temporal references. Relationship extraction links entities together.
+**Management Journey (Admin)** — Configure platform settings, manage user accounts, validate AI assessments, perform manual data entry, and monitor system health. Full audit trail of all administrative actions.
 
-**Stage 4: Enrichment** — AI models assess Technology Readiness Levels from contextual signals, classify technologies into the Cloud-Edge-IoT-AI taxonomy, and generate confidence scores for each extraction.
+Each journey is designed for minimal friction—users accomplish their goals within 2-3 clicks from any starting point.
 
-**Stage 5: Validation** — Low-confidence extractions are flagged for human review. Domain experts can validate, correct, or enhance AI assessments through the admin interface.
-
-> 📊 **[INSERT DIAGRAM: document-processing-pipeline.png]**
+> 📊 **[INSERT DIAGRAM: user-journey-workflows.png]**
 
 ---
 
-## Data Source Architecture
+## Visualization Modes
 
-The platform integrates four distinct data sources, each contributing unique intelligence dimensions. The architecture handles structured APIs, semi-structured files, and unstructured documents through specialized connectors.
+Two complementary visualization modes serve different decision-making contexts. Users can switch seamlessly between views while maintaining their current filters and selections.
 
-**Dealroom API (REST)** — Real-time company profiles, funding rounds, investor networks, and growth metrics. Primary source for Market Score calculation. Structured JSON responses with pagination and rate limiting.
+**Technology Radar** — Circular quadrant layout inspired by ThoughtWorks Tech Radar. Technologies are positioned by domain (quadrant) and maturity (ring distance from center). Ideal for quick strategic overview—"What should we adopt now? What's emerging?" Interactive hover reveals technology details; click opens full profile.
 
-**PATSTAT (CSV Batch)** — European Patent Office quarterly exports containing patent filings, citations, applicant data, and IPC classifications. Primary source for Innovation Score. Large-scale batch processing with entity resolution.
+**Heatmap Matrix** — Grid layout with domains as columns and maturity levels as rows. Cell color intensity indicates technology density or average score. Better for systematic coverage analysis—"Where are the gaps? Which domains are most mature?" Supports drill-down into individual cells.
 
-**CEI Documents (Unstructured)** — Strategic assessments, technology reports, and policy analyses from the Cloud-Edge-IoT sphere. Requires full AI document intelligence pipeline. Source for TRL assessment and EU Alignment scoring.
+**Custom Views (Coming)** — Save and share filtered views with specific configurations. Useful for recurring analysis or stakeholder-specific dashboards.
 
-**Expert Input (Manual)** — Admin interface for adding technologies not captured by automated sources, correcting AI assessments, and inputting domain expert evaluations. Provides validation layer and fills data gaps.
-
-All sources feed into a unified data model with provenance tracking, enabling source attribution and confidence weighting in final scores.
-
-> 📊 **[INSERT DIAGRAM: data-source-architecture.png]**
+> 📊 **[INSERT DIAGRAM: visualization-modes.png]**
 
 ---
 
-## Data Source Summary
+## Filtering & Search
 
-| Source | Type | Refresh | Data Provided |
-|--------|------|---------|---------------|
-| Dealroom | REST API | On-demand | Companies, funding, investors, growth metrics |
-| PATSTAT | CSV Export | Quarterly | Patents, citations, applicants, IPC codes |
-| CEI Documents | Unstructured | As published | Strategic assessments, technology reports |
-| Expert Input | Manual | Continuous | TRL validation, corrections, annotations |
+Powerful filtering enables users to focus on technologies relevant to their specific needs. All filters are combinable and URL-persistent for easy sharing.
 
----
+**Domain Filter** — Select one or more technology domains: Cloud, Edge, IoT, AI/ML. Quadrant highlighting on radar; column filtering on heatmap.
 
-## Access Control Architecture
+**Maturity Filter** — Focus on specific readiness levels: Adopt, Trial, Assess, Hold. Ring highlighting on radar; row filtering on heatmap.
 
-The platform implements Row-Level Security (RLS) at the database level, ensuring users only access data appropriate to their tier. This architecture enables a freemium model while protecting premium content.
+**Score Range** — Slider to filter by composite score (0-9) or individual dimension scores. Enables "show only high-innovation technologies" or similar queries.
 
-**Public Tier** — Unauthenticated access to a curated sample dataset (~20 technologies). Demonstrates platform capabilities without exposing full intelligence. No export, limited history, basic visualizations only.
+**Text Search** — Full-text search across technology names, descriptions, and tags. Instant results with highlighted matches.
 
-**Premium Tier** — Authenticated access with full dataset visibility. Complete historical data, detailed score breakdowns, source citations, and export capabilities (PDF/CSV). Access managed by BluSpecs—no self-service registration.
+**Time Range** — For premium users with historical access, filter to specific date ranges to see how the landscape evolved.
 
-**Admin Tier** — Full platform access plus management capabilities: user provisioning, data source configuration, AI validation tools, manual data entry, audit logs, and system monitoring dashboards.
+Filter state is encoded in URL, enabling bookmarking and sharing of specific views.
 
-Security is enforced at multiple layers: authentication (Lovable Cloud Auth), authorization (RLS policies), and UI (feature gating based on user claims).
-
-> 📊 **[INSERT DIAGRAM: access-control-architecture.png]**
+> 📊 **[INSERT DIAGRAM: filtering-search.png]**
 
 ---
 
-## Feature Comparison by Tier
+## Technology Profile View
+
+Each technology has a detailed profile page providing comprehensive assessment information. Profile depth varies by access tier.
+
+**Summary Section** — Technology name, domain classification, current maturity ring, and composite score. Visual indicator of score trend (improving, stable, declining).
+
+**Score Breakdown** — Four-dimension radar chart showing TRL, Market, Innovation, and EU Alignment scores. Each dimension clickable to reveal calculation methodology and data sources.
+
+**Trend History (Premium)** — Time-series chart showing how the technology's scores have evolved across data refresh cycles. Annotations mark significant events.
+
+**Source Citations (Premium)** — Links to source documents and data points that contributed to the assessment. Enables validation and deeper research.
+
+**Related Technologies** — Algorithmically suggested technologies with similar profiles or complementary capabilities. Enables ecosystem exploration.
+
+> 📊 **[INSERT DIAGRAM: technology-profile.png]**
+
+---
+
+## Export & Sharing
+
+Premium users can export and share technology intelligence in formats optimized for different audiences and use cases.
+
+**PDF Executive Report** — One-click generation of a formatted report including radar visualization, top technologies summary, and key insights. Branded with BluSpecs identity. Ideal for stakeholder briefings and board presentations.
+
+**CSV Data Export** — Download filtered technology data as spreadsheet-compatible CSV. Includes all visible dimensions and scores. Suitable for custom analysis in Excel, Google Sheets, or BI tools.
+
+**Snapshot Share** — Generate a shareable link to the current view (with filters applied). Recipients see a read-only version. Useful for "look at this cluster of technologies" discussions.
+
+**API Access (Premium+)** — Programmatic JSON endpoints for integration with external systems. Supports webhook notifications when technologies change maturity level.
+
+> 📊 **[INSERT DIAGRAM: export-sharing.png]**
+
+---
+
+## Admin Capabilities
+
+Administrators have full platform control through a dedicated management interface. All admin actions are logged for audit compliance.
+
+**User Management** — Create, edit, and deactivate user accounts. Assign access tiers (Public/Premium/Admin). View user activity and last login timestamps.
+
+**Data Validation** — Review AI-generated assessments flagged for low confidence. Approve, reject, or manually override TRL scores and classifications. Add expert annotations.
+
+**Manual Entry** — Add technologies not captured by automated data sources. Input expert assessments for emerging technologies before they appear in external databases.
+
+**System Monitoring** — Dashboard showing data freshness, processing queue status, error logs, and usage metrics. Alerts for failed data source connections or processing errors.
+
+**Audit Trail** — Complete log of all data changes, user actions, and system events. Filterable by date, user, or action type. Exportable for compliance reporting.
+
+> 📊 **[INSERT DIAGRAM: admin-capabilities.png]**
+
+---
+
+## Feature Availability by Tier
 
 Access tiers are managed manually by BluSpecs—no self-service registration or payment integration.
 
 | Feature | Public Demo | Premium | Admin |
 |---------|-------------|---------|-------|
+| Technology Radar view | ✓ | ✓ | ✓ |
+| Heatmap Matrix view | ✓ | ✓ | ✓ |
+| Domain & maturity filters | ✓ | ✓ | ✓ |
 | Technology count | ~20 sample | Full dataset | Full dataset |
-| Historical data | Limited | Complete | Complete + audit |
-| Score details | Composite only | All dimensions | All + sources |
-| Export | — | PDF, CSV | PDF, CSV, API |
+| Score breakdown (4 dimensions) | — | ✓ | ✓ |
+| Historical trend charts | — | ✓ | ✓ |
+| Source citations | — | ✓ | ✓ |
+| PDF report export | — | ✓ | ✓ |
+| CSV data export | — | ✓ | ✓ |
+| API access | — | — | ✓ |
 | User management | — | — | ✓ |
-| Data configuration | — | — | ✓ |
-| AI validation | — | — | ✓ |
+| Data validation & override | — | — | ✓ |
+| System monitoring | — | — | ✓ |
 
 ---
 
-## Cloud-Edge-IoT-AI Taxonomy
+## Roadmap Features
 
-Technologies are classified into four primary domains within the ML-SDV (Mobility, Logistics, Software-Defined Vehicles) sphere. This taxonomy provides the quadrant structure for the Technology Radar and enables domain-specific filtering throughout the platform.
+Planned enhancements for future releases based on user feedback and strategic priorities.
 
-**Cloud Technologies** — Centralized computing infrastructure including hyperscaler platforms (AWS, Azure, GCP), container orchestration, serverless computing, and cloud-native development tools. Foundation for scalable backend services.
-
-**Edge Computing** — Distributed processing at network periphery including edge nodes, gateways, MEC (Multi-access Edge Computing), and 5G/6G connectivity. Critical for low-latency applications in autonomous vehicles and real-time logistics.
-
-**IoT (Internet of Things)** — Connected device ecosystems including sensors, actuators, telematics units, and fleet management systems. Primary data generation layer for mobility and logistics applications.
-
-**AI/ML** — Cross-cutting intelligence capabilities spanning machine learning, computer vision, natural language processing, and autonomous decision systems. Enables intelligent automation across all other domains.
-
-The taxonomy aligns with the CEI-Sphere Hourglass Model, ensuring platform intelligence maps directly to established strategic frameworks.
-
-> 📊 **[INSERT DIAGRAM: taxonomy.png]**
-
-| Domain | Icon | Description |
-|--------|------|-------------|
-| Cloud Technologies | ☁️ | Infrastructure, platforms, and services delivered via cloud computing models |
-| AI/ML | 🤖 | Artificial intelligence, machine learning, and cognitive computing systems |
-| IoT | 📡 | Connected devices, sensors, and Internet of Things ecosystems |
-| Edge Computing | ⚡ | Distributed computing infrastructure at the network edge |
-
----
-
-## Export & Reporting Pipeline
-
-Premium users can export technology intelligence in multiple formats optimized for different use cases. The export pipeline applies access controls, formats data appropriately, and tracks usage for audit purposes.
-
-**PDF Reports** — Formatted documents with embedded visualizations, suitable for executive briefings and stakeholder presentations. Includes radar snapshots, score breakdowns, and trend analysis. Branded with BluSpecs identity.
-
-**CSV Export** — Raw data exports for offline analysis in spreadsheet tools or integration with business intelligence platforms. Includes all visible fields with proper escaping and encoding.
-
-**API Access** — Programmatic endpoints returning JSON data for integration with external systems. Supports filtering, pagination, and webhooks for data change notifications. Rate-limited per client.
-
-All exports include metadata: generation timestamp, user attribution, data freshness indicators, and source citations where applicable.
-
-> 📊 **[INSERT DIAGRAM: export-reporting-pipeline.png]**
-
-| Format | Description |
-|--------|-------------|
-| PDF Report | Formatted report with visualizations, suitable for presentations and stakeholder briefings |
-| CSV Export | Raw data export for analysis in spreadsheet tools or further processing |
-| API Access | Programmatic access to technology data for integration with other systems (premium tier) |
-
----
-
-## Data Refresh Workflow
-
-Data refresh is triggered manually via admin interface rather than automated polling. This design gives BluSpecs control over update timing and allows validation before data becomes visible to users.
-
-**Initiation** — Administrator triggers refresh from the admin panel, selecting which data sources to update. The system validates credentials and connectivity before proceeding.
-
-**Extraction** — Connectors pull data from external sources: Dealroom API calls, PATSTAT file imports, and document queue processing. Progress is tracked in real-time.
-
-**Processing** — New data flows through the AI pipeline: normalization, entity extraction, TRL assessment, and score calculation. Delta detection identifies changes from previous refresh.
-
-**Validation** — Admin reviews flagged items requiring human judgment. Low-confidence extractions and significant score changes are highlighted for attention.
-
-**Publication** — Approved data is published to production, instantly available to all users. Full audit trail captures what changed, when, and who approved.
-
-Initial delivery includes one data refresh cycle. Ongoing refresh cycles are quoted separately.
-
-> 📊 **[INSERT DIAGRAM: data-refresh-workflow.png]**
-
----
-
-## Supported Document Formats
-
-| Format | Extensions | Typical Use |
-|--------|------------|-------------|
-| PDF | .pdf | Reports, whitepapers, policy documents |
-| PowerPoint | .ppt, .pptx | Presentations, slide decks |
-| Word | .doc, .docx | Text documents, assessments |
-| Plain Text | .txt, .md | Simple text files, markdown |
+| Feature | Description |
+|---------|-------------|
+| Saved Views | Save and name custom filter configurations for quick access |
+| Alerts & Notifications | Get notified when tracked technologies change maturity level |
+| Comparison Mode | Side-by-side comparison of 2-4 technologies |
+| Collaboration Notes | Add private or shared notes to technologies |

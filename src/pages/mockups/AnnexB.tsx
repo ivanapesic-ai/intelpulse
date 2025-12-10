@@ -1,268 +1,237 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, FileText, Database, Layers, Download, Shield, RefreshCw, Users } from "lucide-react";
+import { ArrowLeft, Users, Eye, Filter, Download, Bell, Bookmark, Search, BarChart3, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import mermaid from "mermaid";
 
 const diagrams = [
   {
-    id: "document-processing",
-    title: "Document Processing Pipeline",
-    icon: FileText,
-    description: `The platform's core differentiator is its ability to transform unstructured documents into structured intelligence. CEI internal datasets arrive as PowerPoint presentations and PDF reports rather than structured data—requiring sophisticated AI processing.
+    id: "user-journey",
+    title: "User Journey & Workflows",
+    icon: Users,
+    description: `The platform supports three distinct user journeys, each optimized for different goals and access levels. All journeys share a consistent interface while exposing tier-appropriate features.
 
-**Stage 1: Ingestion** — Documents are uploaded through the admin interface or API. The system identifies file type, extracts metadata, and queues for processing. Supported formats include PDF, PPT/PPTX, DOC/DOCX, and plain text.
+**Discovery Journey (All Users)** — Users land on the Technology Radar or Heatmap Matrix, explore technologies visually, filter by domain or maturity, and drill into individual technology profiles. Public users see sample data; premium users see the full dataset.
 
-**Stage 2: Parsing** — Layout analysis preserves document structure including headings, tables, lists, and embedded diagrams. Text is extracted while maintaining semantic relationships between sections.
+**Analysis Journey (Premium)** — Deep-dive into technology assessments including score breakdowns across all four dimensions, historical trend charts, source citations, and related technologies. Export capabilities enable offline analysis and reporting.
 
-**Stage 3: NLP Processing** — Named Entity Recognition (NER) identifies technology mentions, company names, funding amounts, locations, and temporal references. Relationship extraction links entities together.
+**Management Journey (Admin)** — Configure platform settings, manage user accounts, validate AI assessments, perform manual data entry, and monitor system health. Full audit trail of all administrative actions.
 
-**Stage 4: Enrichment** — AI models assess Technology Readiness Levels from contextual signals, classify technologies into the Cloud-Edge-IoT-AI taxonomy, and generate confidence scores for each extraction.
-
-**Stage 5: Validation** — Low-confidence extractions are flagged for human review. Domain experts can validate, correct, or enhance AI assessments through the admin interface.`,
+Each journey is designed for minimal friction—users accomplish their goals within 2-3 clicks from any starting point.`,
     mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart LR
-    subgraph S1["1: Ingest"]
+    subgraph J1["1: Discovery"]
         direction TB
-        I1["Upload"] --> I2["Detect"] --> I3["Queue"]
+        D1["Land"] --> D2["Explore"] --> D3["Filter"] --> D4["Select"]
     end
 
-    subgraph S2["2: Parse"]
+    subgraph J2["2: Analysis"]
         direction TB
-        P1["Layout"] --> P2["Extract"] --> P3["Structure"]
+        A1["View Details"] --> A2["Compare"] --> A3["Export"]
     end
 
-    subgraph S3["3: NLP"]
+    subgraph J3["3: Management"]
         direction TB
-        N1["NER"] --> N2["Relations"] --> N3["Context"]
+        M1["Configure"] --> M2["Validate"] --> M3["Monitor"]
     end
 
-    subgraph S4["4: Enrich"]
-        direction TB
-        E1["TRL"] --> E2["Classify"] --> E3["Score"]
-    end
-
-    subgraph S5["5: Validate"]
-        direction TB
-        V1["Flag"] --> V2["Review"] --> V3["Approve"]
-    end
-
-    S1 --> S2 --> S3 --> S4 --> S5`
+    J1 --> J2
+    J2 --> J3`
   },
   {
-    id: "data-sources",
-    title: "Data Source Architecture",
-    icon: Database,
-    description: `The platform integrates four distinct data sources, each contributing unique intelligence dimensions. The architecture handles structured APIs, semi-structured files, and unstructured documents through specialized connectors.
+    id: "visualization-modes",
+    title: "Visualization Modes",
+    icon: Eye,
+    description: `Two complementary visualization modes serve different decision-making contexts. Users can switch seamlessly between views while maintaining their current filters and selections.
 
-**Dealroom API (REST)** — Real-time company profiles, funding rounds, investor networks, and growth metrics. Primary source for Market Score calculation. Structured JSON responses with pagination and rate limiting.
+**Technology Radar** — Circular quadrant layout inspired by ThoughtWorks Tech Radar. Technologies are positioned by domain (quadrant) and maturity (ring distance from center). Ideal for quick strategic overview—"What should we adopt now? What's emerging?" Interactive hover reveals technology details; click opens full profile.
 
-**PATSTAT (CSV Batch)** — European Patent Office quarterly exports containing patent filings, citations, applicant data, and IPC classifications. Primary source for Innovation Score. Large-scale batch processing with entity resolution.
+**Heatmap Matrix** — Grid layout with domains as columns and maturity levels as rows. Cell color intensity indicates technology density or average score. Better for systematic coverage analysis—"Where are the gaps? Which domains are most mature?" Supports drill-down into individual cells.
 
-**CEI Documents (Unstructured)** — Strategic assessments, technology reports, and policy analyses from the Cloud-Edge-IoT sphere. Requires full AI document intelligence pipeline. Source for TRL assessment and EU Alignment scoring.
-
-**Expert Input (Manual)** — Admin interface for adding technologies not captured by automated sources, correcting AI assessments, and inputting domain expert evaluations. Provides validation layer and fills data gaps.
-
-All sources feed into a unified data model with provenance tracking, enabling source attribution and confidence weighting in final scores.`,
+**Custom Views (Coming)** — Save and share filtered views with specific configurations. Useful for recurring analysis or stakeholder-specific dashboards.`,
     mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart LR
-    subgraph APIs["REST APIs"]
+    subgraph Radar["Technology Radar"]
         direction TB
-        DR["Dealroom"] --> DR1["Companies"] --> DR2["Funding"]
+        R1["Quadrants"] --> R2["Rings"] --> R3["Blips"]
     end
 
-    subgraph Batch["Batch Files"]
+    subgraph Heatmap["Heatmap Matrix"]
         direction TB
-        PS["PATSTAT"] --> PS1["Patents"] --> PS2["Citations"]
+        H1["Domains"] --> H2["Maturity"] --> H3["Cells"]
     end
 
-    subgraph Docs["Documents"]
+    subgraph Custom["Custom Views"]
         direction TB
-        CEI["CEI Reports"] --> CEI1["Parse"] --> CEI2["Extract"]
+        C1["Filters"] --> C2["Save"] --> C3["Share"]
     end
 
-    subgraph Manual["Expert Input"]
-        direction TB
-        EX["Admin"] --> EX1["Add"] --> EX2["Validate"]
-    end
-
-    APIs --> Unified["Unified Data Model"]
-    Batch --> Unified
-    Docs --> Unified
-    Manual --> Unified`
+    Radar --> Switch["Seamless Switch"]
+    Heatmap --> Switch
+    Switch --> Custom`
   },
   {
-    id: "access-tiers",
-    title: "Access Control Architecture",
-    icon: Shield,
-    description: `The platform implements Row-Level Security (RLS) at the database level, ensuring users only access data appropriate to their tier. This architecture enables a freemium model while protecting premium content.
+    id: "filtering-search",
+    title: "Filtering & Search",
+    icon: Filter,
+    description: `Powerful filtering enables users to focus on technologies relevant to their specific needs. All filters are combinable and URL-persistent for easy sharing.
 
-**Public Tier** — Unauthenticated access to a curated sample dataset (~20 technologies). Demonstrates platform capabilities without exposing full intelligence. No export, limited history, basic visualizations only.
+**Domain Filter** — Select one or more technology domains: Cloud, Edge, IoT, AI/ML. Quadrant highlighting on radar; column filtering on heatmap.
 
-**Premium Tier** — Authenticated access with full dataset visibility. Complete historical data, detailed score breakdowns, source citations, and export capabilities (PDF/CSV). Access managed by BluSpecs—no self-service registration.
+**Maturity Filter** — Focus on specific readiness levels: Adopt, Trial, Assess, Hold. Ring highlighting on radar; row filtering on heatmap.
 
-**Admin Tier** — Full platform access plus management capabilities: user provisioning, data source configuration, AI validation tools, manual data entry, audit logs, and system monitoring dashboards.
+**Score Range** — Slider to filter by composite score (0-9) or individual dimension scores. Enables "show only high-innovation technologies" or similar queries.
 
-Security is enforced at multiple layers: authentication (Lovable Cloud Auth), authorization (RLS policies), and UI (feature gating based on user claims).`,
+**Text Search** — Full-text search across technology names, descriptions, and tags. Instant results with highlighted matches.
+
+**Time Range** — For premium users with historical access, filter to specific date ranges to see how the landscape evolved.
+
+Filter state is encoded in URL, enabling bookmarking and sharing of specific views.`,
     mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart LR
-    subgraph Auth["Authentication"]
+    subgraph Filters["Filter Types"]
         direction TB
-        A1["Request"] --> A2["JWT Verify"] --> A3["User Claims"]
+        F1["Domain"] --> F2["Maturity"] --> F3["Score"] --> F4["Search"]
     end
 
-    subgraph RLS["Row-Level Security"]
+    subgraph Apply["Application"]
         direction TB
-        R1["Policy Check"] --> R2["Filter Data"] --> R3["Return Rows"]
+        A1["Combine"] --> A2["URL Encode"] --> A3["Update View"]
     end
 
-    subgraph UI["Feature Gating"]
+    subgraph Persist["Persistence"]
         direction TB
-        U1["Check Tier"] --> U2["Enable/Disable"] --> U3["Render UI"]
+        P1["Bookmark"] --> P2["Share"] --> P3["Restore"]
     end
 
-    Auth --> RLS --> UI`
+    Filters --> Apply --> Persist`
   },
   {
-    id: "taxonomy",
-    title: "Cloud-Edge-IoT-AI Taxonomy",
-    icon: Layers,
-    description: `Technologies are classified into four primary domains within the ML-SDV (Mobility, Logistics, Software-Defined Vehicles) sphere. This taxonomy provides the quadrant structure for the Technology Radar and enables domain-specific filtering throughout the platform.
+    id: "technology-profile",
+    title: "Technology Profile View",
+    icon: BarChart3,
+    description: `Each technology has a detailed profile page providing comprehensive assessment information. Profile depth varies by access tier.
 
-**Cloud Technologies** — Centralized computing infrastructure including hyperscaler platforms (AWS, Azure, GCP), container orchestration, serverless computing, and cloud-native development tools. Foundation for scalable backend services.
+**Summary Section** — Technology name, domain classification, current maturity ring, and composite score. Visual indicator of score trend (improving, stable, declining).
 
-**Edge Computing** — Distributed processing at network periphery including edge nodes, gateways, MEC (Multi-access Edge Computing), and 5G/6G connectivity. Critical for low-latency applications in autonomous vehicles and real-time logistics.
+**Score Breakdown** — Four-dimension radar chart showing TRL, Market, Innovation, and EU Alignment scores. Each dimension clickable to reveal calculation methodology and data sources.
 
-**IoT (Internet of Things)** — Connected device ecosystems including sensors, actuators, telematics units, and fleet management systems. Primary data generation layer for mobility and logistics applications.
+**Trend History (Premium)** — Time-series chart showing how the technology's scores have evolved across data refresh cycles. Annotations mark significant events.
 
-**AI/ML** — Cross-cutting intelligence capabilities spanning machine learning, computer vision, natural language processing, and autonomous decision systems. Enables intelligent automation across all other domains.
+**Source Citations (Premium)** — Links to source documents and data points that contributed to the assessment. Enables validation and deeper research.
 
-The taxonomy aligns with the CEI-Sphere Hourglass Model, ensuring platform intelligence maps directly to established strategic frameworks.`,
+**Related Technologies** — Algorithmically suggested technologies with similar profiles or complementary capabilities. Enables ecosystem exploration.`,
     mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart LR
-    subgraph Cloud["☁️ Cloud"]
+    subgraph Core["Core Info"]
         direction TB
-        C1["Platforms"] --> C2["Containers"] --> C3["Serverless"]
+        C1["Name"] --> C2["Domain"] --> C3["Score"]
     end
 
-    subgraph Edge["⚡ Edge"]
+    subgraph Scores["Score Detail"]
         direction TB
-        E1["Nodes"] --> E2["MEC"] --> E3["5G/6G"]
+        S1["TRL"] --> S2["Market"] --> S3["Innovation"] --> S4["EU"]
     end
 
-    subgraph IoT["📡 IoT"]
+    subgraph Deep["Deep Dive"]
         direction TB
-        I1["Sensors"] --> I2["Telematics"] --> I3["Fleet"]
+        D1["History"] --> D2["Sources"] --> D3["Related"]
     end
 
-    subgraph AI["🤖 AI/ML"]
-        direction TB
-        A1["ML"] --> A2["Vision"] --> A3["NLP"]
-    end
-
-    Cloud --> Radar["Technology Radar"]
-    Edge --> Radar
-    IoT --> Radar
-    AI --> Radar`
+    Core --> Scores --> Deep`
   },
   {
-    id: "export-reporting",
-    title: "Export & Reporting Pipeline",
+    id: "export-features",
+    title: "Export & Sharing",
     icon: Download,
-    description: `Premium users can export technology intelligence in multiple formats optimized for different use cases. The export pipeline applies access controls, formats data appropriately, and tracks usage for audit purposes.
+    description: `Premium users can export and share technology intelligence in formats optimized for different audiences and use cases.
 
-**PDF Reports** — Formatted documents with embedded visualizations, suitable for executive briefings and stakeholder presentations. Includes radar snapshots, score breakdowns, and trend analysis. Branded with BluSpecs identity.
+**PDF Executive Report** — One-click generation of a formatted report including radar visualization, top technologies summary, and key insights. Branded with BluSpecs identity. Ideal for stakeholder briefings and board presentations.
 
-**CSV Export** — Raw data exports for offline analysis in spreadsheet tools or integration with business intelligence platforms. Includes all visible fields with proper escaping and encoding.
+**CSV Data Export** — Download filtered technology data as spreadsheet-compatible CSV. Includes all visible dimensions and scores. Suitable for custom analysis in Excel, Google Sheets, or BI tools.
 
-**API Access** — Programmatic endpoints returning JSON data for integration with external systems. Supports filtering, pagination, and webhooks for data change notifications. Rate-limited per client.
+**Snapshot Share** — Generate a shareable link to the current view (with filters applied). Recipients see a read-only version. Useful for "look at this cluster of technologies" discussions.
 
-All exports include metadata: generation timestamp, user attribution, data freshness indicators, and source citations where applicable.`,
+**API Access (Premium+)** — Programmatic JSON endpoints for integration with external systems. Supports webhook notifications when technologies change maturity level.`,
     mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart LR
-    subgraph Request["1: Request"]
+    subgraph Formats["Export Formats"]
         direction TB
-        R1["Select Data"] --> R2["Choose Format"] --> R3["Apply Filters"]
+        E1["PDF Report"] --> E2["CSV Data"] --> E3["Share Link"]
     end
 
-    subgraph Process["2: Process"]
+    subgraph Options["Options"]
         direction TB
-        P1["Access Check"] --> P2["Format Data"] --> P3["Add Metadata"]
+        O1["Apply Filters"] --> O2["Select Fields"] --> O3["Add Branding"]
     end
 
-    subgraph Deliver["3: Deliver"]
+    subgraph Deliver["Delivery"]
         direction TB
-        D1["Generate File"] --> D2["Log Audit"] --> D3["Download"]
+        D1["Download"] --> D2["Email"] --> D3["API"]
     end
 
-    Request --> Process --> Deliver`
+    Formats --> Options --> Deliver`
   },
   {
-    id: "data-refresh",
-    title: "Data Refresh Workflow",
-    icon: RefreshCw,
-    description: `Data refresh is triggered manually via admin interface rather than automated polling. This design gives BluSpecs control over update timing and allows validation before data becomes visible to users.
+    id: "admin-capabilities",
+    title: "Admin Capabilities",
+    icon: Settings,
+    description: `Administrators have full platform control through a dedicated management interface. All admin actions are logged for audit compliance.
 
-**Initiation** — Administrator triggers refresh from the admin panel, selecting which data sources to update. The system validates credentials and connectivity before proceeding.
+**User Management** — Create, edit, and deactivate user accounts. Assign access tiers (Public/Premium/Admin). View user activity and last login timestamps.
 
-**Extraction** — Connectors pull data from external sources: Dealroom API calls, PATSTAT file imports, and document queue processing. Progress is tracked in real-time.
+**Data Validation** — Review AI-generated assessments flagged for low confidence. Approve, reject, or manually override TRL scores and classifications. Add expert annotations.
 
-**Processing** — New data flows through the AI pipeline: normalization, entity extraction, TRL assessment, and score calculation. Delta detection identifies changes from previous refresh.
+**Manual Entry** — Add technologies not captured by automated data sources. Input expert assessments for emerging technologies before they appear in external databases.
 
-**Validation** — Admin reviews flagged items requiring human judgment. Low-confidence extractions and significant score changes are highlighted for attention.
+**System Monitoring** — Dashboard showing data freshness, processing queue status, error logs, and usage metrics. Alerts for failed data source connections or processing errors.
 
-**Publication** — Approved data is published to production, instantly available to all users. Full audit trail captures what changed, when, and who approved.
-
-Initial delivery includes one data refresh cycle. Ongoing refresh cycles are quoted separately.`,
+**Audit Trail** — Complete log of all data changes, user actions, and system events. Filterable by date, user, or action type. Exportable for compliance reporting.`,
     mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart LR
-    subgraph Init["1: Initiate"]
+    subgraph Users["User Mgmt"]
         direction TB
-        I1["Trigger"] --> I2["Validate"] --> I3["Start"]
+        U1["Create"] --> U2["Edit"] --> U3["Assign Tier"]
     end
 
-    subgraph Extract["2: Extract"]
+    subgraph Data["Data Mgmt"]
         direction TB
-        E1["APIs"] --> E2["Files"] --> E3["Docs"]
+        D1["Validate"] --> D2["Override"] --> D3["Add New"]
     end
 
-    subgraph Process["3: Process"]
+    subgraph Monitor["Monitoring"]
         direction TB
-        P1["Normalize"] --> P2["AI Enrich"] --> P3["Score"]
+        M1["Dashboard"] --> M2["Alerts"] --> M3["Audit Log"]
     end
 
-    subgraph Validate["4: Validate"]
-        direction TB
-        V1["Review"] --> V2["Approve"] --> V3["Publish"]
-    end
-
-    Init --> Extract --> Process --> Validate`
+    Users --> AdminPanel["Admin Panel"]
+    Data --> AdminPanel
+    Monitor --> AdminPanel`
   }
 ];
 
-const supportedFormats = [
-  { format: "PDF", extensions: ".pdf", notes: "Reports, whitepapers, policy documents" },
-  { format: "PowerPoint", extensions: ".ppt, .pptx", notes: "Presentations, slide decks" },
-  { format: "Word", extensions: ".doc, .docx", notes: "Text documents, assessments" },
-  { format: "Plain Text", extensions: ".txt, .md", notes: "Simple text files, markdown" },
-];
-
-const dataSourceDetails = [
-  { source: "Dealroom", type: "REST API", refresh: "On-demand", data: "Companies, funding, investors, growth metrics" },
-  { source: "PATSTAT", type: "CSV Export", refresh: "Quarterly", data: "Patents, citations, applicants, IPC codes" },
-  { source: "CEI Documents", type: "Unstructured", refresh: "As published", data: "Strategic assessments, technology reports" },
-  { source: "Expert Input", type: "Manual", refresh: "Continuous", data: "TRL validation, corrections, annotations" },
-];
-
-const tierComparison = [
+const tierFeatures = [
+  { feature: "Technology Radar view", public: "✓", premium: "✓", admin: "✓" },
+  { feature: "Heatmap Matrix view", public: "✓", premium: "✓", admin: "✓" },
+  { feature: "Domain & maturity filters", public: "✓", premium: "✓", admin: "✓" },
   { feature: "Technology count", public: "~20 sample", premium: "Full dataset", admin: "Full dataset" },
-  { feature: "Historical data", public: "Limited", premium: "Complete", admin: "Complete + audit" },
-  { feature: "Score details", public: "Composite only", premium: "All dimensions", admin: "All + sources" },
-  { feature: "Export", public: "—", premium: "PDF, CSV", admin: "PDF, CSV, API" },
+  { feature: "Score breakdown (4 dimensions)", public: "—", premium: "✓", admin: "✓" },
+  { feature: "Historical trend charts", public: "—", premium: "✓", admin: "✓" },
+  { feature: "Source citations", public: "—", premium: "✓", admin: "✓" },
+  { feature: "PDF report export", public: "—", premium: "✓", admin: "✓" },
+  { feature: "CSV data export", public: "—", premium: "✓", admin: "✓" },
+  { feature: "API access", public: "—", premium: "—", admin: "✓" },
   { feature: "User management", public: "—", premium: "—", admin: "✓" },
-  { feature: "Data configuration", public: "—", premium: "—", admin: "✓" },
-  { feature: "AI validation", public: "—", premium: "—", admin: "✓" },
+  { feature: "Data validation & override", public: "—", premium: "—", admin: "✓" },
+  { feature: "System monitoring", public: "—", premium: "—", admin: "✓" },
+];
+
+const upcomingFeatures = [
+  { feature: "Saved Views", description: "Save and name custom filter configurations for quick access" },
+  { feature: "Alerts & Notifications", description: "Get notified when tracked technologies change maturity level" },
+  { feature: "Comparison Mode", description: "Side-by-side comparison of 2-4 technologies" },
+  { feature: "Collaboration Notes", description: "Add private or shared notes to technologies" },
 ];
 
 function MermaidDiagram({ id, chart }: { id: string; chart: string }) {
@@ -310,18 +279,18 @@ export default function AnnexB() {
             </Button>
             <div>
               <h1 className="text-xl font-bold">Annex B: Platform Capabilities</h1>
-              <p className="text-sm text-muted-foreground">Document processing, data integration, user features</p>
+              <p className="text-sm text-muted-foreground">User features, interface capabilities, access tiers</p>
             </div>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8 space-y-8">
-        {/* Data Model Disclaimer */}
-        <Card className="border-amber-200 bg-amber-50/50">
-          <CardContent className="p-4">
-            <p className="text-sm text-amber-800">
-              <strong>⚠️ Note:</strong> Data source configurations and integration details are preliminary. The final data pipeline will be validated during the design sprint based on actual Dealroom API access level, PATSTAT export format, and CEI document samples provided by BluSpecs.
+        {/* Introduction */}
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-muted-foreground">
+              This annex details the user-facing capabilities of the AI-CE Heatmap Platform—what users can do, how they interact with the system, and what features are available at each access tier. For technical architecture and data processing details, see Annex A.
             </p>
           </CardContent>
         </Card>
@@ -333,7 +302,7 @@ export default function AnnexB() {
           </CardHeader>
           <CardContent className="p-6">
             <p className="text-sm text-muted-foreground mb-4">
-              Explore the working prototypes to experience platform capabilities firsthand.
+              Experience the platform capabilities through working prototypes.
             </p>
             <div className="grid md:grid-cols-2 gap-4">
               <Link to="/mockups/radar" className="block p-4 border border-border rounded-lg hover:border-primary transition-colors">
@@ -382,101 +351,63 @@ export default function AnnexB() {
           </Card>
         ))}
 
-        {/* Reference Tables */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Supported Formats */}
-          <Card>
-            <CardHeader className="bg-muted/30 py-4">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                Supported Document Formats
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="p-2 text-left font-medium">Format</th>
-                    <th className="p-2 text-left font-medium">Extensions</th>
-                    <th className="p-2 text-left font-medium">Typical Use</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {supportedFormats.map((f) => (
-                    <tr key={f.format} className="border-t border-border">
-                      <td className="p-2 font-medium">{f.format}</td>
-                      <td className="p-2 font-mono text-xs">{f.extensions}</td>
-                      <td className="p-2 text-muted-foreground">{f.notes}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </CardContent>
-          </Card>
-
-          {/* Data Sources */}
-          <Card>
-            <CardHeader className="bg-muted/30 py-4">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Database className="h-5 w-5 text-primary" />
-                Data Source Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="p-2 text-left font-medium">Source</th>
-                    <th className="p-2 text-left font-medium">Type</th>
-                    <th className="p-2 text-left font-medium">Refresh</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dataSourceDetails.map((d) => (
-                    <tr key={d.source} className="border-t border-border">
-                      <td className="p-2 font-medium">{d.source}</td>
-                      <td className="p-2">{d.type}</td>
-                      <td className="p-2 text-muted-foreground">{d.refresh}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Tier Comparison Table */}
+        {/* Feature Comparison Table */}
         <Card>
           <CardHeader className="bg-muted/30 py-4">
             <CardTitle className="text-lg flex items-center gap-2">
               <Users className="h-5 w-5 text-primary" />
-              Feature Comparison by Tier
+              Feature Availability by Tier
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <p className="text-sm text-muted-foreground mb-4">
               Access tiers are managed manually by BluSpecs—no self-service registration or payment integration.
             </p>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="p-3 text-left font-medium">Feature</th>
-                  <th className="p-3 text-center font-medium">Public Demo</th>
-                  <th className="p-3 text-center font-medium">Premium</th>
-                  <th className="p-3 text-center font-medium">Admin</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tierComparison.map((row) => (
-                  <tr key={row.feature} className="border-t border-border">
-                    <td className="p-3 font-medium">{row.feature}</td>
-                    <td className="p-3 text-center text-muted-foreground">{row.public}</td>
-                    <td className="p-3 text-center text-muted-foreground">{row.premium}</td>
-                    <td className="p-3 text-center text-muted-foreground">{row.admin}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="p-3 text-left font-medium">Feature</th>
+                    <th className="p-3 text-center font-medium">Public Demo</th>
+                    <th className="p-3 text-center font-medium">Premium</th>
+                    <th className="p-3 text-center font-medium">Admin</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {tierFeatures.map((row) => (
+                    <tr key={row.feature} className="border-t border-border">
+                      <td className="p-3">{row.feature}</td>
+                      <td className="p-3 text-center text-muted-foreground">{row.public}</td>
+                      <td className="p-3 text-center text-muted-foreground">{row.premium}</td>
+                      <td className="p-3 text-center text-muted-foreground">{row.admin}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Upcoming Features */}
+        <Card>
+          <CardHeader className="bg-muted/30 py-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Bookmark className="h-5 w-5 text-primary" />
+              Roadmap Features
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <p className="text-sm text-muted-foreground mb-4">
+              Planned enhancements for future releases based on user feedback and strategic priorities.
+            </p>
+            <div className="grid md:grid-cols-2 gap-4">
+              {upcomingFeatures.map((f) => (
+                <div key={f.feature} className="border border-border rounded-lg p-4">
+                  <div className="font-medium mb-1">{f.feature}</div>
+                  <div className="text-sm text-muted-foreground">{f.description}</div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </main>
