@@ -101,7 +101,7 @@ Premium users can export and share technology intelligence in formats optimized 
 
 **Snapshot Share** — Generate a shareable link to the current view (with filters applied). Recipients see a read-only version. Useful for "look at this cluster of technologies" discussions.
 
-**API Access (Premium+)** — Programmatic JSON endpoints for integration with external systems. Supports webhook notifications when technologies change maturity level.
+**API Access (Roadmap)** — Programmatic JSON endpoints for integration with external systems. Planned for future release to enable third-party integrations and automated workflows.
 
 > 📊 **[INSERT DIAGRAM: export-sharing.png]**
 
@@ -140,7 +140,7 @@ Access tiers are managed manually by BluSpecs—no self-service registration or 
 | Source citations | — | ✓ | ✓ |
 | PDF report export | — | ✓ | ✓ |
 | CSV data export | — | ✓ | ✓ |
-| API access | — | — | ✓ |
+| API access | — | — | Roadmap |
 | User management | — | — | ✓ |
 | Data validation & override | — | — | ✓ |
 | System monitoring | — | — | ✓ |
@@ -157,3 +157,4 @@ Planned enhancements for future releases based on user feedback and strategic pr
 | Alerts & Notifications | Get notified when tracked technologies change maturity level |
 | Comparison Mode | Side-by-side comparison of 2-4 technologies |
 | Collaboration Notes | Add private or shared notes to technologies |
+| API Access | Programmatic JSON endpoints for Premium+ users. Enable integration with external BI tools, automated reporting, and webhook notifications for technology changes. |
