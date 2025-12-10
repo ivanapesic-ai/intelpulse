@@ -34,11 +34,7 @@ flowchart LR
         A1["User Management"] --> A2["Data Configuration"] --> A3["AI Validation"] --> A4["System Monitoring"]
     end
 
-    T1 --> T2 --> T3
-        A4["System Monitoring"]
-    end
-
-    Public --> Premium --> Admin`
+    T1 --> T2 --> T3`
   }
 ];
 
