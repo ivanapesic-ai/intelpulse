@@ -40,8 +40,8 @@ House Eleven Oy combines deep product leadership experience across data visualiz
 | Supplier Requirement | Evidence |
 | :---- | :---- |
 | **Technology monitoring/intelligence** | HeadAI (CPO): ABB skills foresight (Sitra/Gaia-X pilot 2024), Business Finland AI Score, LEADSx2030 (€2M EU project with BluSpecs), Prometheus-X founding partner |
-| **Data integration and APIs** | Supermetrics: 40+ data source integrations, led design through €4M→€40M ARR growth, Top 20 fastest-growing company in Europe |
-| **Interactive dashboards/visualization** | HeadAI Studio: 4-layer AI architecture with visual analytics; Supermetrics: Dashboard ecosystem serving 750K+ users |
+| **Data integration and APIs** | Supermetrics: 40+ data source integrations, €4M→€40M ARR growth; Forvio: Multi-source marketing data aggregation and modeling |
+| **Interactive dashboards/visualization** | HeadAI Studio: 4-layer AI with visual analytics (built with Lovable, 100+ users in 2 months); Forvio: MMM platform with scenario forecasting dashboards; Supermetrics: 750K+ users |
 | **Tech strategy & market intelligence** | HeadAI: DS4Skills (22-partner EU initiative), Gaia-X pilot with Sitra/ABB/Lightcast; Interactio: AI model for predictive analytics |
 
 **EU/Government Client Experience:**  
@@ -53,6 +53,8 @@ European Commission, European Parliament (Interactio – VP Product) • UN CBD 
 | :---- | :---- | :---- |
 | **Project Lead** | Ivana Pešić | 20+ years product leadership, CPO HeadAI, VP Interactio, Reforge certified |
 | **Development** | House Eleven + Lovable AI | AI-augmented full-stack development, equivalent to 3-5 person team capacity |
+| **Advisory** | Andy Kozak | CPO Forvio, ex-Supermetrics (4 yrs), 20+ years data engineering & ML/analytics |
+| **Advisory** | Viktor Djupsjöbacka | Lead Engineer Supermetrics (9 yrs), cloud infrastructure (GCP/AWS), algorithms |
 
 ---
 
