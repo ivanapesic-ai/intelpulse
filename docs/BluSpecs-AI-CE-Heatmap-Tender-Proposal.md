@@ -35,8 +35,6 @@ House Eleven Oy combines deep product leadership experience across data visualiz
 | **EU-hosted infrastructure** | All data residency in EU (AWS Frankfurt/Ireland) |
 | **Integrated backend** | Authentication, database, edge functions included |
 
-We leverage AI-assisted development tools to accelerate delivery cycles while maintaining the strategic oversight and product thinking that comes from years of building successful data platforms.
-
 ### Founder Credentials
 
 | Credential | Details |
@@ -56,18 +54,6 @@ We leverage AI-assisted development tools to accelerate delivery cycles while ma
 | **Forvio (Meta/Facebook)** | Marketing measurement SaaS platform with MMM modeling, scenario planning dashboards, and forecasting capabilities |
 | **Municipal/Government Tools** | Experience with public sector stakeholders, compliance requirements |
 | **Enterprise Solutions (ABB)** | Large-scale B2B deployments, data governance standards |
-
-### Client Sectors Served
-
-- **Cities and municipalities** — Public sector digital transformation  
-- **Educational institutions** — Skill mapping and workforce intelligence  
-- **Enterprise** — ABB, Supermetrics, Nokia ecosystem  
-- **Government and public authorities** — Compliance-aware development  
-- **SaaS platforms** — Scalable multi-tenant architectures
-
-### A New Way of Building
-
-This project represents a new paradigm: **AI-augmented development** where a product leader works alongside AI to deliver faster, with lower risk, and at a fraction of traditional cost. The AI-CE Heatmap will serve as a reference implementation of this approach.
 
 ---
 
@@ -113,8 +99,6 @@ The 10-week timeline accounts for the collaborative elements that ensure quality
 | **TRL validation** | Domain expert input on scoring accuracy |
 | **Real-world testing** | Pilot users validate usability before launch |
 
-This approach means you get a validated product, not just working code.
-
 ---
 
 ## Timeline & Deliverables
@@ -127,16 +111,7 @@ This approach means you get a validated product, not just working code.
 | **4. Data Integration** | Weeks 8-9 | Live data from all sources |
 | **5. Polish & Launch** | Week 10 | Production-ready platform |
 
-### Key Deliverables
-
-- Methodology Document (scoring framework, criteria)  
-- Data Architecture (schema, API specs)  
-- Interactive Prototype (both visualizations)  
-- Production Platform (EU-hosted, ready for clients)  
-- Admin Guide + Technical Documentation
-
-**Methodology Details:** See [Annex B: Methodology Framework](./annexes/Annex-B-Methodology-Framework.md)  
-**Data Model Details:** See [Annex C: Data Model](./annexes/Annex-C-Data-Model.md)
+**Details:** See [Annex B: Methodology](./annexes/Annex-B-Methodology-Framework.md) | [Annex C: Data Model](./annexes/Annex-C-Data-Model.md)
 
 ---
 
