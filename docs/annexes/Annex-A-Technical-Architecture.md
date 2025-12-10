@@ -19,7 +19,7 @@ All data is stored and processed within EU jurisdiction (AWS Frankfurt) ensuring
 - **AI Intelligence Layer:** Powered by Lovable AI Gateway for document processing, TRL assessment, and trend analysis
 - **EU-hosted backend:** All data stored in AWS Frankfurt (eu-central-1) for GDPR compliance
 
-> 📊 **[Diagram: System Architecture]** — See interactive version at `/mockups/annex-a`
+**[INSERT DIAGRAM: system-architecture.png]**
 
 ---
 
@@ -35,7 +35,7 @@ The platform employs a sophisticated 4-layer AI architecture inspired by product
 
 **Layer 4 — Presentation** renders the processed intelligence through the Technology Radar, Heatmap Matrix, and Analytics dashboards, each optimized for different decision-making contexts.
 
-> 📊 **[Diagram: 4-Layer AI Architecture]** — See interactive version at `/mockups/annex-a`
+**[INSERT DIAGRAM: ai-layers.png]**
 
 ---
 
@@ -51,22 +51,7 @@ A key differentiator of the platform is its ability to extract structured intell
 
 **Confidence Scoring** — Each extracted data point includes a confidence score based on source reliability, extraction method, and corroboration across multiple sources.
 
-> 📊 **[Diagram: AI-Powered Document Intelligence]** — See interactive version at `/mockups/annex-a`
-
----
-
-## AI Capabilities Summary
-
-The platform leverages advanced AI capabilities to transform heterogeneous data sources into actionable technology intelligence:
-
-| Capability | Description |
-|------------|-------------|
-| Document Parsing | Extract text, tables, and structure from PDF, PPT, DOCX files |
-| Entity Recognition | Identify technologies, companies, locations, and funding mentions |
-| TRL Detection | Auto-assess technology readiness from contextual language patterns |
-| Trend Analysis | Detect momentum shifts and trajectory changes over time |
-| Pattern Recognition | Identify technology clusters and cross-domain correlations |
-| Signal Detection | Early warning indicators for emerging technologies |
+**[INSERT DIAGRAM: document-intelligence.png]**
 
 ---
 
@@ -84,7 +69,7 @@ Technologies are evaluated across four equally-weighted dimensions, each normali
 
 The composite score directly determines radar ring placement, providing actionable guidance for technology adoption decisions.
 
-> 📊 **[Diagram: 4-Dimension Scoring Methodology]** — See interactive version at `/mockups/annex-a`
+**[INSERT DIAGRAM: scoring-methodology.png]**
 
 ---
 
@@ -104,7 +89,130 @@ The data pipeline implements an ETL (Extract-Transform-Load) flow optimized for 
 
 Data refresh is triggered manually via admin interface with full audit logging of each refresh cycle.
 
-> 📊 **[Diagram: Data Pipeline]** — See interactive version at `/mockups/annex-a`
+**[INSERT DIAGRAM: data-pipeline.png]**
+
+---
+
+## Document Processing Capabilities
+
+The platform's AI layer transforms unstructured documents into structured technology intelligence. This is critical for processing CEI internal datasets which arrive as PowerPoint presentations and PDF reports rather than structured data.
+
+**Supported Formats** — PDF reports, PowerPoint presentations (PPT/PPTX), Word documents (DOC/DOCX), and plain text files. The system extracts text, preserves document structure, and processes embedded tables.
+
+**Processing Pipeline** — Documents are parsed for layout structure, text is extracted and cleaned, and NLP models identify technology entities, company mentions, funding data, and readiness indicators.
+
+**Quality Assurance** — Each extraction includes confidence scores. Low-confidence extractions are flagged for human review. Domain experts can validate and correct AI assessments through the admin interface.
+
+**[INSERT DIAGRAM: document-processing-flow.png]**
+
+---
+
+## Data Source Integration
+
+The platform integrates multiple heterogeneous data sources to provide comprehensive technology assessment. Each source contributes different dimensions of the overall picture through three key signals.
+
+**Signal 1: Investment (Dealroom API)** — Company profiles, funding rounds, investor networks, and growth metrics. Provides the foundation for Market Score calculation. REST API with structured JSON responses.
+
+**Signal 2: Patents (PATSTAT/EPO)** — European Patent Office data on patent filings (both granted and applied for status), citations, and patent families. Primary source for Innovation Score. Delivered as CSV exports for batch processing.
+
+**Signal 3: Market/Media Response (Tech Coverage)** — Technology coverage from industry publications, analyst reports, and media mentions. Sourced from CEI documents initially, with potential API integration for automated tracking.
+
+**CEI Internal Documents** — Strategic assessments, technology reports, and policy analyses from the Cloud-Edge-IoT sphere. Unstructured documents processed through AI document intelligence layer.
+
+**Manual Data Entry** — Admin interface for adding technologies, correcting AI assessments, and inputting expert evaluations not available in automated sources.
+
+**[INSERT DIAGRAM: data-source-integration.png]**
+
+---
+
+## Challenge-Opportunity Matrix
+
+Complementing the 4-dimension scoring, the Challenge-Opportunity Matrix provides a strategic view of market validation for each technology. This framework assesses both the barriers to adoption and the potential value realization.
+
+**Challenges Scale (0-2):**
+- **2 (No Major Challenge):** No significant barriers to market entry. Problems are solved or negligible.
+- **1 (Manageable Challenge):** Some challenges exist but are understood with clear, actionable steps to overcome.
+- **0 (Severe Challenge):** Major obstacles that could impede market success. May require new regulations or substantial investment.
+
+**Opportunities Scale (0-2):**
+- **2 (High Opportunity):** Significant value, readily achievable, closely aligned with strategic goals.
+- **1 (Promising Opportunity):** Reasonable value achievable with existing resources or moderate effort.
+- **0 (Limited Opportunity):** Low potential value, difficult realization, weak strategic fit.
+
+**Maturity Mapping:** The matrix maps to maturity categories: Emerging (early signals), Early Adoption (pilot deployments), and Mainstream (widespread production use).
+
+Data sources include specific reports and CEI Sphere data sources with expert validation.
+
+**[INSERT DIAGRAM: challenge-opportunity-matrix.png]**
+
+---
+
+## CEI-Sphere Hourglass Model Integration
+
+The platform's technology taxonomy aligns with the CEI-Sphere Hourglass Model, a conceptual framework illustrating how different layers of digital capabilities and stakeholder groups interact to create intelligent, interoperable, and scalable digital ecosystems.
+
+**Hourglass Model Layers:**
+The model maps technology capabilities across Cloud (centralized computing and storage), Edge (distributed processing closer to data sources), and IoT (sensors, devices, and connectivity). AI capabilities span all layers, enabling intelligence at each level.
+
+**Technology Mapping:**
+Our four-quadrant radar (Cloud, Edge, IoT, AI) directly corresponds to the hourglass layers:
+- **Cloud:** Platforms, infrastructure, hyperscaler services
+- **Edge:** Compute nodes, gateways, local processing (including 5G/6G connectivity)
+- **IoT:** Sensors, actuators, device ecosystems
+- **AI:** Cross-cutting intelligence layer (ML, LLMs, computer vision)
+
+**Reference:** The full hourglass model is documented at https://ceisphere.eu/hourglass-model
+
+This alignment ensures the AI-CE Heatmap provides technology intelligence that maps directly to CEI-Sphere's strategic framework.
+
+**[INSERT DIAGRAM: hourglass-model.png]**
+
+---
+
+## Early Indicators of New Technologies
+
+Three key signals are monitored to identify emerging technologies before mainstream recognition.
+
+| Signal | Indicator | Data Source | Description |
+|--------|-----------|-------------|-------------|
+| Signal 1 | Investment | Dealroom | Funding rounds, valuations, investor activity |
+| Signal 2 | Patents | PATSTAT/EPO | Granted and applied for patents, citation networks |
+| Signal 3 | Market/Media Response | Tech Coverage | Industry publications, analyst reports, media mentions |
+
+---
+
+## Market Validation Criteria
+
+Additional market validation metrics assess the external landscape and broader adoption potential.
+
+| Criteria | Data Source | Description |
+|----------|-------------|-------------|
+| Market Size & Growth | Dealroom, IDC | Enterprise value and growth rate metrics |
+| Customer Adoption | Dealroom, IDC | Adoption rates across industries and geographies |
+| Competitive Landscape | Dealroom | Presence of competitors and substitutes |
+
+---
+
+## AI Capabilities Summary
+
+The platform leverages advanced AI capabilities to transform heterogeneous data sources into actionable technology intelligence:
+
+| Capability | Description |
+|------------|-------------|
+| Document Parsing | Extract text, tables, and structure from PDF, PPT, DOCX files |
+| Entity Recognition | Identify technologies, companies, locations, and funding mentions |
+| TRL Detection | Auto-assess technology readiness from contextual language patterns |
+| Trend Analysis | Detect momentum shifts and trajectory changes over time |
+| Pattern Recognition | Identify technology clusters and cross-domain correlations |
+| Signal Detection | Early warning indicators for emerging technologies |
+
+---
+
+## CEI-Sphere Framework Reference
+
+The AI-CE Heatmap aligns with the CEI-Sphere Hourglass Model, ensuring technology intelligence maps directly to the established strategic framework.
+
+🔗 [View CEI-Sphere Hourglass Model Documentation](https://ceisphere.eu/hourglass-model)
 
 ---
 
