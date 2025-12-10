@@ -51,6 +51,7 @@ This approach delivers the output equivalent of a **3-5 person development team*
 |---------|---------------------------|
 | **HeadAI Studio** | 4-layer AI agentic platform with data visualization, skill intelligence dashboards — *built with Lovable* |
 | **Supermetrics Dashboard Ecosystem** | Data integration platform with 40+ connectors, visualization for marketing analytics |
+| **Forvio (Meta/Facebook)** | Marketing measurement SaaS platform with MMM modeling, scenario planning dashboards, and forecasting capabilities |
 | **Municipal/Government Tools** | Experience with public sector stakeholders, compliance requirements |
 | **Enterprise Solutions (ABB)** | Large-scale B2B deployments, data governance standards |
 
