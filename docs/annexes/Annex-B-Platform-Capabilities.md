@@ -2,6 +2,8 @@
 
 Document processing, data integration, user features
 
+> **⚠️ Note:** Data source configurations and integration details are preliminary. The final data pipeline will be validated during the design sprint based on actual Dealroom API access level, PATSTAT export format, and CEI document samples provided by BluSpecs.
+
 ---
 
 ## Overview

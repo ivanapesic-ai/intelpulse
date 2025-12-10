@@ -17,7 +17,7 @@ const diagrams = [
 **Processing Pipeline** — Documents are parsed for layout structure, text is extracted and cleaned, and NLP models identify technology entities, company mentions, funding data, and readiness indicators.
 
 **Quality Assurance** — Each extraction includes confidence scores. Low-confidence extractions are flagged for human review. Domain experts can validate and correct AI assessments through the admin interface.`,
-    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#3b82f6'}}}%%
+    mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart LR
     subgraph Input["Document Input"]
         PDF["PDF Reports"]
@@ -52,7 +52,7 @@ flowchart LR
 **CEI Internal Documents** — Strategic assessments, technology reports, and policy analyses from the Cloud-Edge-IoT sphere. Unstructured documents processed through AI document intelligence layer.
 
 **Manual Data Entry** — Admin interface for adding technologies, correcting AI assessments, and inputting expert evaluations not available in automated sources.`,
-    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#8b5cf6'}}}%%
+    mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart TD
     subgraph Sources["Data Sources"]
         DR["Dealroom API"]
@@ -84,7 +84,7 @@ flowchart TD
 **Premium Clients (Paid)** — Full access to all technologies, complete historical data, detailed scoring breakdowns, source citations, and export capabilities. Requires account managed by BluSpecs.
 
 **Administrators (BluSpecs Staff)** — All premium features plus user management, data source configuration, manual data entry, AI assessment validation, and system monitoring dashboards.`,
-    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#10b981'}}}%%
+    mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart TD
     subgraph Public["Public Demo"]
         P1["Sample Technologies"]
@@ -161,8 +161,9 @@ export default function AnnexB() {
   useEffect(() => {
     mermaid.initialize({
       startOnLoad: false,
-      theme: "base",
+      theme: "neutral",
       securityLevel: "loose",
+      themeVariables: { background: "#ffffff" },
       flowchart: { htmlLabels: true, curve: "basis" },
     });
   }, []);
@@ -192,6 +193,15 @@ export default function AnnexB() {
           <CardContent className="p-6">
             <p className="text-muted-foreground">
               The AI-CE Heatmap Platform transforms heterogeneous data sources—structured APIs, semi-structured files, and unstructured documents—into actionable technology intelligence. This annex details the platform's document processing capabilities, data source integrations, and user features by access tier.
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Data Model Disclaimer */}
+        <Card className="border-amber-200 bg-amber-50/50">
+          <CardContent className="p-4">
+            <p className="text-sm text-amber-800">
+              <strong>⚠️ Note:</strong> Data source configurations and integration details are preliminary. The final data pipeline will be validated during the design sprint based on actual Dealroom API access level, PATSTAT export format, and CEI document samples provided by BluSpecs.
             </p>
           </CardContent>
         </Card>
