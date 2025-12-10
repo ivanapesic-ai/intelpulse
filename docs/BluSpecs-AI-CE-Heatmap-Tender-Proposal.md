@@ -42,18 +42,18 @@ House Eleven Oy combines deep product leadership experience across data visualiz
 | **Delivery Entity** | House Eleven Oy (Finnish company) |
 | **Founder** | Ivana Pešić |
 | **Experience** | 20+ years in product strategy, design leadership, AI integration |
-| **Notable Companies** | Supermetrics (Head of Design), Interactio (VP Product), Headai CPO |
-| **AI & Analytics** | Developed AI model for predictive analytics (Interactio), NLP in Azure (2023), Reforge Product Strategy (2023) |
+| **Notable Companies** | Supermetrics (Head of Design), Interactio (VP Product), HeadAI (CPO) |
+| **AI & Analytics** | HeadAI Studio (4-layer AI architecture), AI model for predictive analytics (Interactio), NLP in Azure (2023), Reforge Product Strategy (2023) |
 | **Project Lead** | Ivana Pešić – 20+ years product/design leadership, Reforge certified, built teams through 10x growth |
 
 ### Relevant Project Portfolio
 
 | Project | Relevance to AI-CE Heatmap |
 | :---- | :---- |
+| **HeadAI** | CPO. 4-layer AI architecture, LEADSx2030 (€2M EU skills intelligence project), Business Finland AI Score platform |
 | **Supermetrics** | Led design through 10x ARR growth (€4M→€40M), 40+ data integrations, Top 20 fastest-growing company in Europe |
 | **Interactio** | VP of Product delivering 30% faster delivery, developed AI model for predictive analytics and decision-making |
 | **House Eleven** | 30+ startup/scaleup projects, Finnish Government organization partnerships |
-| **Space Nation** | Design Director, NASA partnership, €5M investment |
 
 ---
 
