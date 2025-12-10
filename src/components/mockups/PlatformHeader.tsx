@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Radar, Grid3X3, Compass, Settings, LayoutDashboard, Users, FileText, Sparkles } from "lucide-react";
+import { Radar, Grid3X3, Compass, Settings, LayoutDashboard, Users, FileText, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -26,19 +26,16 @@ export function PlatformHeader({ showBadge = true }: PlatformHeaderProps) {
   const location = useLocation();
 
   return (
-    <header className="glass-strong sticky top-0 z-50 border-b border-border/50">
+    <header className="sticky top-0 z-50 bg-background border-b border-border">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-6">
-            <Link to="/mockups" className="flex items-center gap-3 group">
-              <div className="relative">
-                <div className="absolute inset-0 bg-primary/30 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-indigo flex items-center justify-center shadow-glow-sm">
-                  <Sparkles className="h-5 w-5 text-primary-foreground" />
-                </div>
+            <Link to="/mockups" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <div className="w-8 h-8 rounded bg-primary flex items-center justify-center">
+                <Layers className="h-4 w-4 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-lg font-bold font-display leading-none">AI-CE Heatmap</h1>
+                <h1 className="text-base font-semibold font-display leading-none text-foreground">AI-CE Heatmap</h1>
                 <p className="text-xs text-muted-foreground">ML-SDV Intelligence</p>
               </div>
             </Link>
@@ -49,13 +46,13 @@ export function PlatformHeader({ showBadge = true }: PlatformHeaderProps) {
                 return (
                   <Link key={item.path} to={item.path}>
                     <Button
-                      variant="ghost"
+                      variant={isActive ? "secondary" : "ghost"}
                       size="sm"
                       className={cn(
-                        "gap-2 transition-all duration-200",
+                        "gap-2",
                         isActive 
-                          ? "bg-primary/10 text-primary shadow-glow-sm" 
-                          : "hover:bg-primary/5 hover:text-primary"
+                          ? "bg-secondary text-foreground" 
+                          : "text-muted-foreground hover:text-foreground"
                       )}
                     >
                       <item.icon className="h-4 w-4" />
@@ -77,9 +74,9 @@ export function PlatformHeader({ showBadge = true }: PlatformHeaderProps) {
                       variant="ghost"
                       size="sm"
                       className={cn(
-                        "text-xs transition-all duration-200",
+                        "text-xs",
                         isActive 
-                          ? "bg-muted text-foreground" 
+                          ? "text-primary" 
                           : "text-muted-foreground hover:text-foreground"
                       )}
                     >
@@ -90,7 +87,7 @@ export function PlatformHeader({ showBadge = true }: PlatformHeaderProps) {
               })}
             </div>
             {showBadge && (
-              <Badge className="badge-glass text-xs font-medium">
+              <Badge variant="outline" className="text-xs font-normal">
                 Preview
               </Badge>
             )}
