@@ -112,23 +112,17 @@ flowchart TB
 
 **Confidence Scoring** — Each extracted data point includes a confidence score based on source reliability, extraction method, and corroboration across multiple sources.`,
     mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
-flowchart LR
+flowchart TD
     subgraph Input["Unstructured Sources"]
-        PDF["PDF Reports"]
-        PPT["PowerPoints"]
-        DOC["Documents"]
+        PDF["PDF"] ~~~ PPT["PPT"] ~~~ DOC["DOC"]
     end
 
     subgraph Processing["AI Processing"]
-        P1["Layout Analysis"]
-        P2["Text Extraction"]
-        P3["NLP Engine"]
+        P1["Layout Analysis"] ~~~ P2["Text Extraction"] ~~~ P3["NLP Engine"]
     end
 
     subgraph Output["Structured Output"]
-        O1["Technology Entities"]
-        O2["TRL Assessments"]
-        O3["Confidence Scores"]
+        O1["Tech Entities"] ~~~ O2["TRL Scores"] ~~~ O3["Confidence"]
     end
 
     Input --> Processing --> Output`
