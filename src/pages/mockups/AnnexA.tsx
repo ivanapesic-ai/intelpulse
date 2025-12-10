@@ -185,22 +185,19 @@ flowchart LR
 **Quality Assurance** — Each extraction includes confidence scores. Low-confidence extractions are flagged for human review. Domain experts can validate and correct AI assessments through the admin interface.`,
     mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart LR
-    subgraph Input["Document Input"]
-        PDF["PDF Reports"]
-        PPT["PowerPoints"]
-        DOC["Word Docs"]
+    subgraph Input["1: Input"]
+        direction TB
+        PDF["PDF"] --> PPT["PPT"] --> DOC["DOC"]
     end
 
-    subgraph AI["AI Processing"]
-        Parse["Parse & Extract"]
-        NLP["NLP Analysis"]
-        Validate["Confidence Score"]
+    subgraph AI["2: Process"]
+        direction TB
+        Parse["Parse"] --> NLP["NLP"] --> Validate["Score"]
     end
 
-    subgraph Output["Structured Data"]
-        Tech["Technologies"]
-        TRL["TRL Assessments"]
-        Meta["Metadata"]
+    subgraph Output["3: Output"]
+        direction TB
+        Tech["Tech"] --> TRL["TRL"] --> Meta["Meta"]
     end
 
     Input --> AI --> Output`
