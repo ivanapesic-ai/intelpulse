@@ -49,7 +49,7 @@ flowchart LR
 
 **Heatmap Matrix** — Grid layout with domains as columns and maturity levels as rows. Cell color intensity indicates technology density or average score. Better for systematic coverage analysis—"Where are the gaps? Which domains are most mature?" Supports drill-down into individual cells.
 
-**Custom Views (Coming)** — Save and share filtered views with specific configurations. Useful for recurring analysis or stakeholder-specific dashboards.`,
+**Custom Views** — Save and share filtered views with specific configurations. Useful for recurring analysis or stakeholder-specific dashboards. View types and configurations will be refined during the design sprint based on user needs identified in discovery.`,
     mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart LR
     subgraph Radar["Technology Radar"]
