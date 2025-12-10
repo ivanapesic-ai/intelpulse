@@ -83,7 +83,7 @@ Add/remove users, grant/revoke access, view analytics, trigger data refresh—no
 
 Automatic extraction from PDF/PPT, structured parsing, technology categorization, TRL assessment, competitive landscape analysis, and innovation signal detection (patents, funding, media).
 
-**Technical Details:** See [Annex A: Technical Architecture](./annexes/Annex-A-Technical-Architecture.md)
+**Technical Details:** See [Annex A: Technical Approach & Methodology](./annexes/Annex-A-Technical-Architecture.md)
 
 ---
 
@@ -112,8 +112,6 @@ The 10-week timeline accounts for the collaborative elements that ensure quality
 | **4. Data Integration** | Weeks 8-9 | Live data from all sources |
 | **5. Polish & Launch** | Week 10 | Production-ready platform + user guide |
 
-**Details:** See [Annex B: Methodology](./annexes/Annex-B-Methodology-Framework.md) | [Annex C: Data Model](./annexes/Annex-C-Data-Model.md)
-
 ---
 
 ## Investment
@@ -128,9 +126,9 @@ The 10-week timeline accounts for the collaborative elements that ensure quality
 | Phase 4: Polish & Launch | €3,000 |
 | Enhanced AI + Public Sources | €1,500 |
 
-**Included:** All development & deployment • EU-hosted infrastructure • 6 months maintenance • 1 data refresh (month 3) • Bug fixes + email support
+**Included:** All development & deployment • EU-hosted infrastructure • Bug fixes + email support during project
 
-**Ongoing Costs:** Hosting, data refresh, and extended maintenance quoted separately. See [Annex D](./annexes/Annex-D-Maintenance-Support.md)
+**Ongoing Costs (TBD):** Hosting, data refresh, and extended maintenance to be discussed.
 
 ---
 
@@ -167,7 +165,7 @@ The 10-week timeline accounts for the collaborative elements that ensure quality
 
 ---
 
-**Annexes:** [A: Technical Architecture](./annexes/Annex-A-Technical-Architecture.md) | [B: Methodology](./annexes/Annex-B-Methodology-Framework.md) | [C: Data Model](./annexes/Annex-C-Data-Model.md) | [D: Maintenance](./annexes/Annex-D-Maintenance-Support.md) | [E: Visual Mockups](./annexes/Annex-E-Visual-Mockups.md)
+**Annexes:** [A: Technical Approach & Methodology](./annexes/Annex-A-Technical-Architecture.md) | [B: Visual Mockups](./annexes/Annex-E-Visual-Mockups.md)
 
 ---
 
