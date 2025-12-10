@@ -10,7 +10,7 @@ const diagrams = [
     id: "system-overview",
     title: "System Overview",
     description: "Annex A: End-to-end platform architecture",
-    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#3b82f6', 'primaryTextColor': '#1e293b'}}}%%
+    mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart TD
     subgraph Users["User Tiers"]
         U1["Public Visitor"]
@@ -61,7 +61,7 @@ flowchart TD
     id: "security-architecture",
     title: "Security Architecture",
     description: "Annex A: Authentication flow with role-based RLS policies",
-    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#3b82f6', 'primaryTextColor': '#1e293b'}}}%%
+    mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart TD
     A1["User Request"] --> A2["Auth Service"]
     A2 --> A3["JWT Token Issued"]
@@ -91,7 +91,7 @@ flowchart TD
     id: "api-layer",
     title: "API Layer",
     description: "Annex A: Supabase client endpoints and database interaction",
-    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#3b82f6', 'primaryTextColor': '#1e293b'}}}%%
+    mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart TD
     subgraph Client["Frontend Supabase Client"]
         C1["React Query Hooks"]
@@ -135,7 +135,7 @@ flowchart TD
     id: "scoring-engine",
     title: "Scoring Calculation Engine",
     description: "Annex B: 4-dimension weighted composite score with radar placement",
-    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#3b82f6', 'primaryTextColor': '#1e293b'}}}%%
+    mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart TD
     subgraph Inputs["Data Inputs"]
         S1["Dealroom"]
@@ -208,7 +208,7 @@ flowchart TD
     id: "entity-relationship",
     title: "Entity Relationship Diagram",
     description: "Annex C: Database schema with table relationships",
-    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#3b82f6', 'primaryTextColor': '#1e293b'}}}%%
+    mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 erDiagram
     profiles {
         uuid id PK
@@ -280,7 +280,7 @@ erDiagram
     id: "data-ingestion",
     title: "Data Ingestion Pipeline",
     description: "Annex C: Manual refresh with parallel fetch and scoring",
-    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#3b82f6', 'primaryTextColor': '#1e293b'}}}%%
+    mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart TD
     T1["Admin: Refresh Data"] --> T2["Edge Function: data-refresh"]
 
@@ -340,24 +340,9 @@ export default function ArchitectureDiagrams() {
   useEffect(() => {
     mermaid.initialize({
       startOnLoad: false,
-      theme: "base",
+      theme: "neutral",
       securityLevel: "loose",
-      themeVariables: {
-        background: "#ffffff",
-        mainBkg: "#f8fafc",
-        secondBkg: "#f1f5f9",
-        primaryColor: "#3b82f6",
-        primaryTextColor: "#1e293b",
-        primaryBorderColor: "#2563eb",
-        textColor: "#1e293b",
-        nodeTextColor: "#1e293b",
-        titleColor: "#0f172a",
-        lineColor: "#64748b",
-        nodeBorder: "#3b82f6",
-        clusterBkg: "#f8fafc",
-        clusterBorder: "#e2e8f0",
-        edgeLabelBackground: "#ffffff",
-      },
+      themeVariables: { background: "#ffffff" },
       flowchart: {
         htmlLabels: true,
         curve: "basis",
@@ -395,6 +380,15 @@ export default function ArchitectureDiagrams() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {/* Data Model Disclaimer */}
+        <Card className="border-amber-200 bg-amber-50/50 mb-8">
+          <CardContent className="p-4">
+            <p className="text-sm text-amber-800">
+              <strong>⚠️ Note:</strong> The database schema, entity relationships, and data structures presented are preliminary assumptions. Final schema design will be validated during the Week 1 design sprint based on actual data source requirements.
+            </p>
+          </CardContent>
+        </Card>
+        
         <div className="grid gap-8">
           {diagrams.map((diagram) => (
             <Card key={diagram.id} className="overflow-hidden">

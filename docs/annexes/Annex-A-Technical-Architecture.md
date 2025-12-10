@@ -2,6 +2,8 @@
 
 Architecture, AI capabilities, scoring framework
 
+> **⚠️ Note:** The data model, scoring methodology weights, and data source configurations presented here are preliminary assumptions. The final data structure and integration approach will be validated and refined during the Week 1 design sprint based on actual data source access, CEI document samples, and BluSpecs stakeholder feedback.
+
 ---
 
 ## System Architecture

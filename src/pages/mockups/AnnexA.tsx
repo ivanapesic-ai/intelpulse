@@ -15,7 +15,7 @@ const diagrams = [
 The React frontend communicates exclusively through the Lovable Cloud backend, which enforces Row-Level Security (RLS) policies at the database level. This ensures that users only see data appropriate to their access tier. The AI Intelligence Layer operates as a separate processing pipeline, triggered by Edge Functions to handle document parsing, TRL assessment, and trend analysis.
 
 All data is stored and processed within EU jurisdiction (AWS Frankfurt) ensuring GDPR compliance and meeting public sector data residency requirements.`,
-    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#3b82f6'}}}%%
+    mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart TD
     subgraph Users["User Tiers"]
         U1["Public Visitor"]
@@ -70,7 +70,7 @@ flowchart TD
 **Layer 3 — Analysis & Synthesis** executes trend detection (momentum and trajectory over time), pattern recognition (cross-technology correlations and clusters), and signal detection (early indicators of emerging technologies before mainstream recognition).
 
 **Layer 4 — Presentation** renders the processed intelligence through the Technology Radar, Heatmap Matrix, and Analytics dashboards, each optimized for different decision-making contexts.`,
-    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#8b5cf6'}}}%%
+    mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart TB
     subgraph L1["Layer 1: Data Ingestion"]
         I1["API Connectors"]
@@ -111,7 +111,7 @@ flowchart TB
 **TRL Auto-Detection** — The AI analyzes contextual signals (language patterns, deployment mentions, pilot references) to automatically suggest Technology Readiness Levels, which can be validated by domain experts.
 
 **Confidence Scoring** — Each extracted data point includes a confidence score based on source reliability, extraction method, and corroboration across multiple sources.`,
-    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#10b981'}}}%%
+    mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart LR
     subgraph Input["Unstructured Sources"]
         PDF["PDF Reports"]
@@ -148,7 +148,7 @@ flowchart LR
 **EU Alignment (25%)** — Strategic fit with European priorities based on policy document mentions, Horizon Europe funding allocation, and IPCEI (Important Projects of Common European Interest) inclusion.
 
 The composite score directly determines radar ring placement, providing actionable guidance for technology adoption decisions.`,
-    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#f59e0b'}}}%%
+    mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart TD
     subgraph Dimensions["Scoring Dimensions (25% each)"]
         D1["TRL Score"]
@@ -182,7 +182,7 @@ flowchart TD
 **Scoring Engine** — Computes all four dimension scores and the composite score based on the scoring methodology.
 
 Data refresh is triggered manually via admin interface with full audit logging of each refresh cycle.`,
-    mermaid: `%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryColor': '#06b6d4'}}}%%
+    mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart LR
     S["External Sources"] --> I["Ingestion"]
     I --> N["Normalize"]
@@ -249,8 +249,9 @@ export default function AnnexA() {
   useEffect(() => {
     mermaid.initialize({
       startOnLoad: false,
-      theme: "base",
+      theme: "neutral",
       securityLevel: "loose",
+      themeVariables: { background: "#ffffff" },
       flowchart: { htmlLabels: true, curve: "basis" },
     });
   }, []);
@@ -275,6 +276,15 @@ export default function AnnexA() {
       </header>
 
       <main className="container mx-auto px-4 py-8 space-y-8">
+        {/* Data Model Disclaimer */}
+        <Card className="border-amber-200 bg-amber-50/50">
+          <CardContent className="p-4">
+            <p className="text-sm text-amber-800">
+              <strong>⚠️ Note:</strong> The data model, scoring methodology weights, and data source configurations presented here are preliminary assumptions. The final data structure and integration approach will be validated and refined during the Week 1 design sprint based on actual data source access, CEI document samples, and BluSpecs stakeholder feedback.
+            </p>
+          </CardContent>
+        </Card>
+
         {/* Diagrams with descriptions */}
         {diagrams.map((diagram) => (
           <Card key={diagram.id}>
