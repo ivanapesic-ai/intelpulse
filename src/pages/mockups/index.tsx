@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Radar, Grid3X3, Shield, Globe, Network, FileText, Calculator, Database, Wrench, Palette } from "lucide-react";
+import { Radar, Grid3X3, Shield, Globe, Network, FileText, Palette } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const mockups = [
@@ -42,38 +42,17 @@ const mockups = [
 
 const annexes = [
   {
-    title: "Annex A: Technical Architecture",
-    description: "System design, security, infrastructure, and API reference",
+    title: "Annex A: Technical Approach & Methodology",
+    description: "Architecture, AI layers, scoring framework, and data pipeline",
     icon: FileText,
     path: "/mockups/annex-a",
-    features: ["System overview", "Frontend hierarchy", "Authentication flow", "API endpoints"]
+    features: ["System architecture", "4-layer AI", "Scoring methodology", "TRL scale"]
   },
   {
-    title: "Annex B: Methodology Framework",
-    description: "TRL scale, scoring logic, and data source mapping",
-    icon: Calculator,
-    path: "/mockups/annex-b",
-    features: ["TRL 1-9 scale", "4-dimension scoring", "Radar placement logic", "Confidence levels"]
-  },
-  {
-    title: "Annex C: Data Model",
-    description: "Database schema, ERD, taxonomy, and access control",
-    icon: Database,
-    path: "/mockups/annex-c",
-    features: ["Entity relationships", "Technology taxonomy", "RLS policies", "Access matrix"]
-  },
-  {
-    title: "Annex D: Maintenance & Support",
-    description: "SLA, support tiers, and data refresh cycles",
-    icon: Wrench,
-    path: "/mockups/annex-d",
-    features: ["6-month coverage", "Priority matrix", "Support tiers", "Infrastructure costs"]
-  },
-  {
-    title: "Annex E: Visual Mockups",
+    title: "Annex B: Visual Mockups",
     description: "UI layouts, design system, and interaction patterns",
     icon: Palette,
-    path: "/mockups/annex-e",
+    path: "/mockups/annex-b",
     features: ["Radar layout", "Heatmap layout", "Color scale", "Design tokens"]
   }
 ];
@@ -129,8 +108,8 @@ export default function MockupsIndex() {
         {/* Proposal Annexes */}
         <section>
           <h2 className="text-2xl font-bold mb-2">Proposal Annexes</h2>
-          <p className="text-muted-foreground mb-6">Screenshot-ready pages with Mermaid diagrams and tables for each annex</p>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <p className="text-muted-foreground mb-6">Screenshot-ready pages with Mermaid diagrams and tables</p>
+          <div className="grid md:grid-cols-2 gap-6">
             {annexes.map(annex => (
               <Link key={annex.path} to={annex.path}>
                 <Card className="h-full transition-all duration-300 hover:glow-primary hover:border-primary/50 cursor-pointer group">
