@@ -165,7 +165,7 @@ The 10-week timeline accounts for the collaborative elements that ensure quality
 
 ---
 
-**Annexes:** [A: Technical Approach & Methodology](./annexes/Annex-A-Technical-Architecture.md) | [B: Visual Mockups](./annexes/Annex-E-Visual-Mockups.md)
+**Annexes:** [A: Technical Approach & Methodology](./annexes/Annex-A-Technical-Architecture.md) | [B: Visual Mockups](./annexes/Annex-B-Visual-Mockups.md)
 
 ---
 
