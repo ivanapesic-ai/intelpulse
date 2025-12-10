@@ -19,26 +19,22 @@ const diagrams = [
 **Administrators (BluSpecs Staff)** — All premium features plus user management, data source configuration, manual data entry, AI assessment validation, and system monitoring dashboards.`,
     mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
 flowchart LR
-    subgraph Public["🌐 Public Demo"]
+    subgraph T1["1: Public Demo"]
         direction TB
-        P1["Sample Technologies"]
-        P2["Basic Visualization"]
-        P3["Limited History"]
+        P1["Sample Technologies"] --> P2["Basic Visualization"] --> P3["Limited History"]
     end
 
-    subgraph Premium["⭐ Premium Clients"]
+    subgraph T2["2: Premium Clients"]
         direction TB
-        PR1["All Technologies"]
-        PR2["Full History"]
-        PR3["Source Citations"]
-        PR4["Export Features"]
+        PR1["All Technologies"] --> PR2["Full History"] --> PR3["Source Citations"] --> PR4["Export Features"]
     end
 
-    subgraph Admin["🔧 Administrators"]
+    subgraph T3["3: Administrators"]
         direction TB
-        A1["User Management"]
-        A2["Data Configuration"]
-        A3["AI Validation"]
+        A1["User Management"] --> A2["Data Configuration"] --> A3["AI Validation"] --> A4["System Monitoring"]
+    end
+
+    T1 --> T2 --> T3
         A4["System Monitoring"]
     end
 
