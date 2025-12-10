@@ -1,78 +1,11 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, FileText, Database, Users, Download, Layers } from "lucide-react";
+import { ArrowLeft, Users, Download, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import mermaid from "mermaid";
 
 const diagrams = [
-  {
-    id: "document-processing-flow",
-    title: "Document Processing Capabilities",
-    icon: FileText,
-    description: `The platform's AI layer transforms unstructured documents into structured technology intelligence. This is critical for processing CEI internal datasets which arrive as PowerPoint presentations and PDF reports rather than structured data.
-
-**Supported Formats** — PDF reports, PowerPoint presentations (PPT/PPTX), Word documents (DOC/DOCX), and plain text files. The system extracts text, preserves document structure, and processes embedded tables.
-
-**Processing Pipeline** — Documents are parsed for layout structure, text is extracted and cleaned, and NLP models identify technology entities, company mentions, funding data, and readiness indicators.
-
-**Quality Assurance** — Each extraction includes confidence scores. Low-confidence extractions are flagged for human review. Domain experts can validate and correct AI assessments through the admin interface.`,
-    mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
-flowchart LR
-    subgraph Input["Document Input"]
-        PDF["PDF Reports"]
-        PPT["PowerPoints"]
-        DOC["Word Docs"]
-    end
-
-    subgraph AI["AI Processing"]
-        Parse["Parse & Extract"]
-        NLP["NLP Analysis"]
-        Validate["Confidence Score"]
-    end
-
-    subgraph Output["Structured Data"]
-        Tech["Technologies"]
-        TRL["TRL Assessments"]
-        Meta["Metadata"]
-    end
-
-    Input --> AI --> Output`
-  },
-  {
-    id: "data-source-integration",
-    title: "Data Source Integration",
-    icon: Database,
-    description: `The platform integrates multiple heterogeneous data sources to provide comprehensive technology assessment. Each source contributes different dimensions of the overall picture.
-
-**Dealroom API** — Company profiles, funding rounds, investor networks, and growth metrics. Provides the foundation for Market Score calculation. REST API with structured JSON responses.
-
-**PATSTAT (EPO)** — European Patent Office data on patent filings, citations, and patent families. Primary source for Innovation Score. Delivered as CSV exports for batch processing.
-
-**CEI Internal Documents** — Strategic assessments, technology reports, and policy analyses from the Cloud-Edge-IoT sphere. Unstructured documents processed through AI document intelligence layer.
-
-**Manual Data Entry** — Admin interface for adding technologies, correcting AI assessments, and inputting expert evaluations not available in automated sources.`,
-    mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
-flowchart TD
-    subgraph Sources["Data Sources"]
-        DR["Dealroom API"]
-        PS["PATSTAT CSV"]
-        CEI["CEI Documents"]
-        MAN["Manual Entry"]
-    end
-
-    subgraph Platform["AI-CE Platform"]
-        ING["Ingestion Layer"]
-        AI["AI Processing"]
-        DB["Unified Database"]
-    end
-
-    DR --> ING
-    PS --> ING
-    CEI --> AI
-    MAN --> DB
-    ING --> AI --> DB`
-  },
   {
     id: "user-capabilities",
     title: "User Capabilities by Tier",
@@ -108,13 +41,6 @@ flowchart TD
 
     Public --> Premium --> Admin`
   }
-];
-
-const dataSourceCapabilities = [
-  { source: "Dealroom API", type: "REST API", data: "Companies, funding, investors, growth metrics", frequency: "On-demand refresh" },
-  { source: "PATSTAT", type: "CSV Export", data: "Patents, citations, applicants, classifications", frequency: "Quarterly batch" },
-  { source: "CEI Documents", type: "PDF/PPT", data: "Strategic assessments, policy analysis, reports", frequency: "As published" },
-  { source: "Expert Input", type: "Manual Entry", data: "TRL validation, corrections, annotations", frequency: "Continuous" },
 ];
 
 const userTierCapabilities = [
@@ -261,38 +187,6 @@ export default function AnnexB() {
             </CardContent>
           </Card>
         ))}
-
-        {/* Data Source Capabilities Table */}
-        <Card>
-          <CardHeader className="bg-muted/30 py-4">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Database className="h-5 w-5 text-primary" />
-              Data Source Capabilities
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="p-3 text-left font-medium">Source</th>
-                  <th className="p-3 text-left font-medium">Type</th>
-                  <th className="p-3 text-left font-medium">Data Provided</th>
-                  <th className="p-3 text-left font-medium">Refresh</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dataSourceCapabilities.map((row) => (
-                  <tr key={row.source} className="border-t border-border">
-                    <td className="p-3 font-medium">{row.source}</td>
-                    <td className="p-3">{row.type}</td>
-                    <td className="p-3 text-muted-foreground">{row.data}</td>
-                    <td className="p-3 text-muted-foreground">{row.frequency}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
 
         {/* User Tier Capabilities */}
         <Card>

@@ -171,6 +171,73 @@ flowchart LR
     AI --> SC["Scoring Engine"]
     SC --> DB["PostgreSQL"]
     DB --> V["Visualizations"]`
+  },
+  {
+    id: "document-processing-flow",
+    title: "Document Processing Capabilities",
+    icon: FileText,
+    description: `The platform's AI layer transforms unstructured documents into structured technology intelligence. This is critical for processing CEI internal datasets which arrive as PowerPoint presentations and PDF reports rather than structured data.
+
+**Supported Formats** — PDF reports, PowerPoint presentations (PPT/PPTX), Word documents (DOC/DOCX), and plain text files. The system extracts text, preserves document structure, and processes embedded tables.
+
+**Processing Pipeline** — Documents are parsed for layout structure, text is extracted and cleaned, and NLP models identify technology entities, company mentions, funding data, and readiness indicators.
+
+**Quality Assurance** — Each extraction includes confidence scores. Low-confidence extractions are flagged for human review. Domain experts can validate and correct AI assessments through the admin interface.`,
+    mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
+flowchart LR
+    subgraph Input["Document Input"]
+        PDF["PDF Reports"]
+        PPT["PowerPoints"]
+        DOC["Word Docs"]
+    end
+
+    subgraph AI["AI Processing"]
+        Parse["Parse & Extract"]
+        NLP["NLP Analysis"]
+        Validate["Confidence Score"]
+    end
+
+    subgraph Output["Structured Data"]
+        Tech["Technologies"]
+        TRL["TRL Assessments"]
+        Meta["Metadata"]
+    end
+
+    Input --> AI --> Output`
+  },
+  {
+    id: "data-source-integration",
+    title: "Data Source Integration",
+    icon: Database,
+    description: `The platform integrates multiple heterogeneous data sources to provide comprehensive technology assessment. Each source contributes different dimensions of the overall picture.
+
+**Dealroom API** — Company profiles, funding rounds, investor networks, and growth metrics. Provides the foundation for Market Score calculation. REST API with structured JSON responses.
+
+**PATSTAT (EPO)** — European Patent Office data on patent filings, citations, and patent families. Primary source for Innovation Score. Delivered as CSV exports for batch processing.
+
+**CEI Internal Documents** — Strategic assessments, technology reports, and policy analyses from the Cloud-Edge-IoT sphere. Unstructured documents processed through AI document intelligence layer.
+
+**Manual Data Entry** — Admin interface for adding technologies, correcting AI assessments, and inputting expert evaluations not available in automated sources.`,
+    mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
+flowchart TD
+    subgraph Sources["Data Sources"]
+        DR["Dealroom API"]
+        PS["PATSTAT CSV"]
+        CEI["CEI Documents"]
+        MAN["Manual Entry"]
+    end
+
+    subgraph Platform["AI-CE Platform"]
+        ING["Ingestion Layer"]
+        AI["AI Processing"]
+        DB["Unified Database"]
+    end
+
+    DR --> ING
+    PS --> ING
+    CEI --> AI
+    MAN --> DB
+    ING --> AI --> DB`
   }
 ];
 
