@@ -140,16 +140,15 @@ Access tiers are managed manually by BluSpecs—no self-service registration or 
 | Source citations | — | ✓ | ✓ |
 | PDF report export | — | ✓ | ✓ |
 | CSV data export | — | ✓ | ✓ |
-| API access | — | — | Roadmap |
 | User management | — | — | ✓ |
 | Data validation & override | — | — | ✓ |
 | System monitoring | — | — | ✓ |
 
 ---
 
-## Roadmap Features
+## Ideas for Future Features
 
-Planned enhancements for future releases based on user feedback and strategic priorities.
+Potential enhancements to explore based on user feedback, strategic priorities, and evolving market needs. These ideas represent opportunities for future development phases.
 
 | Feature | Description |
 |---------|-------------|
@@ -157,4 +156,11 @@ Planned enhancements for future releases based on user feedback and strategic pr
 | Alerts & Notifications | Get notified when tracked technologies change maturity level |
 | Comparison Mode | Side-by-side comparison of 2-4 technologies |
 | Collaboration Notes | Add private or shared notes to technologies |
-| API Access | Programmatic JSON endpoints for Premium+ users. Enable integration with external BI tools, automated reporting, and webhook notifications for technology changes. |
+| API Access | Programmatic JSON endpoints enabling integration with external BI tools, automated reporting, and webhook notifications for technology changes |
+| Multi-Sphere Expansion | Extend coverage beyond ML-SDV to Energy, Health, AgriFood, and other CEI spheres |
+| Geographic Filters | Filter and compare technology maturity by region (EU, US, Asia-Pacific) |
+| Trend Forecasting | AI-powered predictions of technology trajectory based on historical signal patterns |
+| Custom Dashboards | Build personalized dashboards with widgets arranged to user preferences |
+| White-Label Support | Enable partner organizations to deploy branded versions of the platform |
+| Integration Connectors | Pre-built connectors for popular BI tools (Tableau, Power BI, Looker) |
+| Community Insights | Crowdsourced ratings and comments from domain experts with moderation workflow |
