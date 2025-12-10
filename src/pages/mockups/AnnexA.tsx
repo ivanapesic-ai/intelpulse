@@ -71,28 +71,28 @@ flowchart TD
 
 **Layer 4 — Presentation** renders the processed intelligence through the Technology Radar, Heatmap Matrix, and Analytics dashboards, each optimized for different decision-making contexts.`,
     mermaid: `%%{init: {'theme': 'neutral', 'themeVariables': {'background': '#ffffff'}}}%%
-flowchart LR
-    subgraph L1["Layer 1<br/>Ingestion"]
-        I1["API"]
-        I2["Docs"]
-        I3["CSV"]
+flowchart TB
+    subgraph L1["Layer 1: Data Ingestion"]
+        I1["API Connectors"]
+        I2["Document Parsers"]
+        I3["Normalizers"]
     end
 
-    subgraph L2["Layer 2<br/>Intelligence"]
-        E1["Extract"]
-        E2["Classify"]
-        E3["TRL"]
+    subgraph L2["Layer 2: Intelligence"]
+        E1["Entity Extraction"]
+        E2["Classification"]
+        E3["TRL Detection"]
     end
 
-    subgraph L3["Layer 3<br/>Analysis"]
-        A1["Trends"]
-        A2["Patterns"]
-        A3["Signals"]
+    subgraph L3["Layer 3: Analysis"]
+        A1["Trend Detection"]
+        A2["Pattern Recognition"]
+        A3["Signal Detection"]
     end
 
-    subgraph L4["Layer 4<br/>Presentation"]
-        P1["Radar"]
-        P2["Heatmap"]
+    subgraph L4["Layer 4: Presentation"]
+        P1["Technology Radar"]
+        P2["Heatmap Matrix"]
         P3["Analytics"]
     end
 
