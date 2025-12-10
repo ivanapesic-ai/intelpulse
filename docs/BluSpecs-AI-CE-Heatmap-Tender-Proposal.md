@@ -42,9 +42,10 @@ House Eleven Oy combines deep product leadership experience across data visualiz
 | **Delivery Entity** | House Eleven Oy (Finnish company) |
 | **Founder** | Ivana Pešić |
 | **Experience** | 20+ years in product strategy, design leadership, AI integration |
-| **Notable Companies** | Supermetrics (Head of Design), Interactio (VP Product), HeadAI (CPO – ABB/Sitra partnerships) |
+| **Notable Companies** | Supermetrics (Head of Design), Interactio (VP Product – EU/UN platform provider), HeadAI (CPO – ABB/Sitra partnerships) |
 | **AI & Analytics** | HeadAI Studio (4-layer AI architecture), AI model for predictive analytics (Interactio), NLP in Azure (2023), Reforge Product Strategy (2023) |
 | **EU Data Ecosystems** | HeadAI: Founding partner Prometheus-X (European Data Space for Education), Gaia-X pilot with Sitra/ABB/Lightcast, DS4Skills (22-partner EU initiative) |
+| **EU/UN Institutions** | Interactio: European Commission (interpretation provider), European Parliament, UN CBD (COP-15, 196 nations), UNCTAD |
 | **Project Lead** | Ivana Pešić – 20+ years product/design leadership, Reforge certified, built teams through 10x growth |
 
 ### Relevant Project Portfolio
@@ -53,7 +54,7 @@ House Eleven Oy combines deep product leadership experience across data visualiz
 | :---- | :---- |
 | **HeadAI** | CPO. Technology intelligence: ABB skills foresight (Sitra/Gaia-X pilot 2024), LEADSx2030 (€2M EU project with BluSpecs), Business Finland AI Score, Prometheus-X founding partner |
 | **Supermetrics** | Led design through 10x ARR growth (€4M→€40M), 40+ data integrations, Top 20 fastest-growing company in Europe |
-| **Interactio** | VP of Product delivering 30% faster delivery, developed AI model for predictive analytics and decision-making |
+| **Interactio** | VP of Product. Platform serving European Commission, European Parliament, and UN (COP-15, 15,000 attendees). Developed AI model for predictive analytics, 30% faster delivery |
 | **House Eleven** | 30+ startup/scaleup projects, Finnish Government organization partnerships |
 
 ---
