@@ -29,9 +29,9 @@ graph TB
     
     subgraph External["📊 External Data Sources"]
         L[Dealroom API]
-        M[PATSTAT/EPO]
         N[CEI Documents]
-        O[Public Sources]
+        O[Manual Entry]
+        M[PATSTAT - Phase 2]
     end
     
     A --> D

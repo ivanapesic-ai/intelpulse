@@ -12,12 +12,10 @@ flowchart TD
     B --> C{Parallel Fetch}
     
     C --> D[📊 Dealroom API]
-    C --> E[📄 PATSTAT CSV]
     C --> F[🤖 AI Doc Parsing]
-    C --> G[🌐 Public Sources]
+    C --> G[📝 Manual Entry]
     
     D --> H[Normalize Data]
-    E --> H
     F --> H
     G --> H
     
@@ -174,11 +172,10 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    subgraph Inputs["📥 Data Inputs"]
+    subgraph Inputs["📥 Data Inputs (MVP)"]
         A[Dealroom Data]
-        B[PATSTAT Patents]
         C[CEI Assessments]
-        D[Public Sources]
+        D[Manual Entry]
     end
     
     subgraph Dimension1["TRL Score (25%)"]
@@ -195,10 +192,9 @@ flowchart TD
     end
     
     subgraph Dimension3["Innovation Score (25%)"]
-        L[Patents × 0.35]
-        M[Publications × 0.25]
-        N[Open Source × 0.20]
-        O[EU Projects × 0.20]
+        L[Expert Assessment × 0.40]
+        M[CEI Mentions × 0.30]
+        N[EU Projects × 0.30]
     end
     
     subgraph Dimension4["EU Alignment (25%)"]
@@ -209,11 +205,10 @@ flowchart TD
     
     A --> H
     A --> I
-    B --> L
     C --> E
     C --> P
+    C --> L
     D --> M
-    D --> N
     
     E --> S[TRL: 0-9]
     F --> S
@@ -227,7 +222,6 @@ flowchart TD
     L --> U[Innovation: 0-9]
     M --> U
     N --> U
-    O --> U
     
     P --> V[EU: 0-9]
     Q --> V
