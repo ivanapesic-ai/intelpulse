@@ -92,49 +92,24 @@ Please provide 5-10 sample documents representing the variety of document types.
 
 ---
 
-## 3. PATSTAT
+## 3. Future Data Sources (Phase 2+)
 
-### Access Method
+> **Note:** The following data sources are planned for future phases, not MVP.
 
-| Question | Answer |
-|----------|--------|
-| Do we have PATSTAT access? (EPO subscription, data export, etc.) | |
-| If export, what format? (CSV, XML, etc.) | |
-| If API, what are the credentials? | |
-| Who manages the PATSTAT subscription? | |
-
-### Data Scope
+### PATSTAT / Patent Data
 
 | Question | Answer |
 |----------|--------|
-| Which patent classifications are relevant? (IPC/CPC codes) | |
-| Geographic scope? (EU, global, specific countries) | |
-| Date range of interest? | |
-| Application patents, granted patents, or both? | |
+| Do you have existing PATSTAT access? | |
+| Is patent data a priority for Phase 2? | |
+| Any alternative patent data sources to consider? | |
 
-### Data Fields
-
-| Question | Answer |
-|----------|--------|
-| What fields should we extract? (title, abstract, claims, citations, etc.) | |
-| Do we need applicant/assignee information? | |
-| Do we need citation networks? | |
-| Is patent family information needed? | |
-
-### Correlation
+### Other Potential Sources
 
 | Question | Answer |
 |----------|--------|
-| How should patents map to technologies? (keywords, classifications) | |
-| Should we link patents to companies from Dealroom? | |
-| What makes a patent "relevant" to a technology? | |
-
-### Data Volume
-
-| Question | Answer |
-|----------|--------|
-| Estimated number of relevant patents? | |
-| How often should patent data be refreshed? | |
+| What other data sources might be valuable post-MVP? | |
+| Any internal databases or spreadsheets to consider? | |
 
 ---
 
@@ -172,7 +147,7 @@ Please provide 5-10 sample documents representing the variety of document types.
 | Question | Answer |
 |----------|--------|
 | How should the composite score be calculated? | |
-| What weights for each data source? (Dealroom, CEI, PATSTAT) | |
+| What weights for each data source? (Dealroom, CEI docs, manual entry) | |
 | Should scores be normalized? Scale? | |
 | How often should scores be recalculated? | |
 
@@ -248,7 +223,6 @@ Before Phase 2 begins, we need:
 
 - [ ] Dealroom API credentials and documentation
 - [ ] 5-10 sample CEI documents
-- [ ] PATSTAT access details or sample export
 - [ ] Confirmed technology taxonomy (quadrants, maturity levels)
 - [ ] List of 20+ seed technologies for testing
 - [ ] Confirmed access tier feature split

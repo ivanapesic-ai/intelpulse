@@ -74,20 +74,16 @@
 
 ---
 
-### 5. PATSTAT & Patent Data (15 min)
+### 5. Future Data Sources (5 min)
 
-| Topic | Questions to Address |
-|-------|---------------------|
-| **Access Method** | API, bulk export, or third-party service? |
-| **Scope** | Which patent classifications (CPC/IPC)? |
-| **Geography** | EU focus? Global coverage needed? |
-| **Metrics** | Patent counts? Citations? Filing trends? |
-| **Updates** | How often to refresh? |
+| Source | Status | Notes |
+|--------|--------|-------|
+| **PATSTAT/Patent Data** | Phase 2 | Requires EPO subscription, evaluate after MVP |
+| **Additional APIs** | TBD | Identify any other sources for future phases |
 
-**Action Items to Define:**
-- [ ] Data access method confirmation
-- [ ] Classification codes relevant to CE technologies
-- [ ] Sample patent data format
+**Discussion:**
+- What patent/innovation data sources might be valuable post-MVP?
+- Any other data sources not yet discussed?
 
 ---
 
@@ -129,7 +125,6 @@ Validate TRL mapping:
 |-------------|-------|---------------|--------|
 | Dealroom API access | BluSpecs | Jan 10 | API credentials |
 | CEI sample documents | BluSpecs | Jan 10 | Shared folder |
-| PATSTAT sample data | BluSpecs | Jan 15 | CSV/API |
 | Technology taxonomy approval | Both | Jan 12 | Spreadsheet |
 
 ---
@@ -155,11 +150,10 @@ Validate TRL mapping:
 
 1. **Dealroom**: What exact API endpoints and fields are available to us?
 2. **CEI Documents**: Are there templates or is every document unique?
-3. **PATSTAT**: Bulk export or API - which is preferred/possible?
-4. **Taxonomy**: Is there an existing classification we should align with?
-5. **Gaps**: What data do we need that no source currently provides?
-6. **Quality**: What data quality issues should we anticipate?
-7. **Updates**: What is the refresh cycle expectation (daily/weekly/monthly)?
+3. **Taxonomy**: Is there an existing classification we should align with?
+4. **Gaps**: What data do we need that no source currently provides?
+5. **Quality**: What data quality issues should we anticipate?
+6. **Updates**: What is the refresh cycle expectation (daily/weekly/monthly)?
 
 ---
 

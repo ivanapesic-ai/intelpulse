@@ -33,7 +33,7 @@ Week 9-10: Polish, Testing & Launch
 **Key Activities:**
 - Kickoff focuses on data sources and mapping
 - Finalize technology taxonomy (4 quadrants, maturity levels)
-- Define data schema for Dealroom/PATSTAT/CEI integration
+- Define data schema for Dealroom/CEI integration
 - Design sprint follows data decisions
 - Establish Schedule 1 acceptance criteria
 
@@ -82,13 +82,11 @@ Week 9-10: Polish, Testing & Launch
 |-----------|-------------|--------------|--------------|
 | Dealroom Integration | Feb 18 | Company/funding data pipeline | API access from BluSpecs |
 | CEI Document Parser | Feb 23 | AI text extraction | Sample documents |
-| PATSTAT Integration | Feb 25 | Patent data correlation | Data format specs |
-| Scoring Algorithm | Feb 27 | Composite score calculation | All data sources |
+| Scoring Algorithm | Feb 27 | Composite score calculation | Data sources ready |
 
 **Key Activities:**
 - Connect to Dealroom API for company data
 - Build AI-powered document parser for CEI reports
-- Integrate PATSTAT patent data
 - Implement technology scoring algorithm
 - Create data validation and quality checks
 
@@ -156,7 +154,6 @@ Launch (Week 10)
 |------|-------------|--------|
 | Dealroom API credentials | Jan 13 | Pending |
 | Sample CEI documents | Jan 13 | Pending |
-| PATSTAT data format | Jan 17 | Pending |
 | Technology taxonomy approval | Jan 17 | Pending |
 | Domain expert availability | Ongoing | Pending |
 

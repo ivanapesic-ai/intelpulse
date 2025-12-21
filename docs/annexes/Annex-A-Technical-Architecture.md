@@ -27,7 +27,7 @@ All data is stored and processed within EU jurisdiction (AWS Frankfurt) ensuring
 
 The platform employs a sophisticated 4-layer AI architecture inspired by production intelligence systems. This design separates concerns and enables independent scaling of each layer.
 
-**Layer 1 — Data Ingestion** handles API connectors (Dealroom REST API), document parsers (PDF/PPT from CEI internal sources), CSV processors (PATSTAT patent data), and data normalizers that transform heterogeneous inputs into a unified schema.
+**Layer 1 — Data Ingestion** handles API connectors (Dealroom REST API), document parsers (PDF/PPT from CEI internal sources), manual data entry, and data normalizers that transform heterogeneous inputs into a unified schema. Patent data integration (PATSTAT) is planned for Phase 2.
 
 **Layer 2 — Intelligence Engine** performs entity extraction (identifying technology mentions using NLP), classification (mapping to Cloud-Edge-IoT-AI taxonomy), and TRL detection (assessing readiness levels from contextual signals in documents).
 
@@ -63,7 +63,7 @@ Technologies are evaluated across four equally-weighted dimensions, each normali
 
 **Market Score (25%)** — Commercial viability calculated from funding activity (30%), company count (25%), production deployments (25%), and growth rate (20%). Primary data source: Dealroom API.
 
-**Innovation Score (25%)** — R&D intensity derived from patent filings (35%), academic publications (25%), open source activity (20%), and EU research project participation (20%). Primary data source: PATSTAT.
+**Innovation Score (25%)** — R&D intensity derived from expert assessment (40%), CEI document mentions (30%), and EU research project participation (30%). For MVP, this is based on CEI assessments and manual entry. Patent data integration (PATSTAT) is planned for Phase 2 to enhance this dimension.
 
 **EU Alignment (25%)** — Strategic fit with European priorities based on policy document mentions, Horizon Europe funding allocation, and IPCEI (Important Projects of Common European Interest) inclusion.
 
@@ -77,7 +77,7 @@ The composite score directly determines radar ring placement, providing actionab
 
 The data pipeline implements an ETL (Extract-Transform-Load) flow optimized for heterogeneous data sources. This architecture handles structured APIs, semi-structured files, and unstructured documents through a unified processing framework.
 
-**External Sources** — Dealroom API (company and funding data), PATSTAT CSV exports (patent filings), and CEI internal documents (strategic assessments and reports).
+**External Sources** — Dealroom API (company and funding data), CEI internal documents (strategic assessments and reports), and manual data entry. Patent data (PATSTAT) integration is planned for Phase 2.
 
 **Ingestion** — Handles API authentication, rate limiting, file parsing, and initial validation. Each source has dedicated connectors with error handling and retry logic.
 
@@ -113,7 +113,7 @@ The platform integrates multiple heterogeneous data sources to provide comprehen
 
 **Signal 1: Investment (Dealroom API)** — Company profiles, funding rounds, investor networks, and growth metrics. Provides the foundation for Market Score calculation. REST API with structured JSON responses.
 
-**Signal 2: Patents (PATSTAT/EPO)** — European Patent Office data on patent filings (both granted and applied for status), citations, and patent families. Primary source for Innovation Score. Delivered as CSV exports for batch processing.
+**Signal 2: Patents (PATSTAT/EPO) — Phase 2** — European Patent Office data on patent filings. Planned for Phase 2 to enhance Innovation Score with patent-based metrics.
 
 **Signal 3: Market/Media Response (Tech Coverage)** — Technology coverage from industry publications, analyst reports, and media mentions. Sourced from CEI documents initially, with potential API integration for automated tracking.
 
@@ -176,8 +176,8 @@ Three key signals are monitored to identify emerging technologies before mainstr
 | Signal | Indicator | Data Source | Description |
 |--------|-----------|-------------|-------------|
 | Signal 1 | Investment | Dealroom | Funding rounds, valuations, investor activity |
-| Signal 2 | Patents | PATSTAT/EPO | Granted and applied for patents, citation networks |
-| Signal 3 | Market/Media Response | Tech Coverage | Industry publications, analyst reports, media mentions |
+| Signal 2 | CEI Assessments | CEI Documents | Expert evaluations, technology reports, policy analysis |
+| Signal 3 | Patents (Phase 2) | PATSTAT/EPO | Patent filings, citation networks (future enhancement) |
 
 ---
 
