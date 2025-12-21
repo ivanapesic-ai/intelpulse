@@ -1,6 +1,6 @@
 # AI-CE Heatmap Platform - Project Timeline
 
-**Project Start:** January 6, 2026  
+**Project Start:** January 8, 2026  
 **Target Launch:** March 13, 2026  
 **Total Duration:** 10 weeks
 
@@ -9,7 +9,7 @@
 ## Timeline Overview
 
 ```
-Week 1-2:  Design Sprint & Data Workshop
+Week 1-2:  Data Workshop & Design Sprint
 Week 3-4:  Foundation & Core Infrastructure
 Week 5-6:  Visualization Development
 Week 7-8:  Data Integration & AI Processing
@@ -20,20 +20,21 @@ Week 9-10: Polish, Testing & Launch
 
 ## Detailed Phase Breakdown
 
-### Phase 1: Design Sprint & Data Workshop
-**Duration:** Weeks 1-2 (January 6-17, 2026)
+### Phase 1: Data Workshop & Design Sprint
+**Duration:** Weeks 1-2 (January 8-17, 2026)
 
 | Milestone | Target Date | Deliverables | Dependencies |
 |-----------|-------------|--------------|--------------|
-| Kickoff Meeting | Jan 6 | Project charter, team alignment | - |
-| Data Format Workshop | Jan 8 | Data schema definition | BluSpecs API documentation |
-| UI/UX Design Review | Jan 13 | Wireframe approval | Stakeholder availability |
-| Design Sprint Complete | Jan 17 | Final mockups, user flows | Design feedback |
+| Kickoff Meeting | Jan 8 | Data sources review, taxonomy workshop | BluSpecs API docs |
+| Data Format Finalized | Jan 10 | Data schema definition | Kickoff outcomes |
+| Design Sprint Start | Jan 13 | Wireframes, user flows | Data format approved |
+| Design Sprint Complete | Jan 17 | Final mockups, UI approval | Design feedback |
 
 **Key Activities:**
+- Kickoff focuses on data sources and mapping
 - Finalize technology taxonomy (4 quadrants, maturity levels)
 - Define data schema for Dealroom/PATSTAT/CEI integration
-- Review and approve mockup designs
+- Design sprint follows data decisions
 - Establish Schedule 1 acceptance criteria
 
 ---
