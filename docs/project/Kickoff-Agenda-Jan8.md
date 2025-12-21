@@ -1,8 +1,9 @@
-# Kickoff Meeting Agenda
+# Data-Focused Kickoff Meeting Agenda
 
 **Project:** AI-CE Heatmap Platform  
 **Date:** January 8, 2025  
-**Duration:** 2 hours (recommended)  
+**Duration:** 2 hours  
+**Focus:** Data Sources, Mapping & Integration  
 **Location:** [To be confirmed]
 
 ---
@@ -16,116 +17,149 @@
 ### BluSpecs
 - [Product Owner]
 - [Domain Expert]
-- [Technical Contact]
+- [Technical Contact / Data Owner]
 
 ---
 
 ## Agenda
 
-### 1. Welcome & Introductions (10 min)
-- Team introductions
-- Roles and responsibilities
-- Communication preferences
+### 1. Welcome & Project Context (10 min)
+- Brief introductions
+- Project objectives recap
+- Meeting focus: Establishing data foundation
 
-### 2. Project Vision Alignment (15 min)
-- Review project objectives
-- Success criteria discussion
-- Key stakeholder expectations
-- Target users and use cases
-
-### 3. Timeline Review (15 min)
-- Walk through 10-week timeline
-- Confirm key milestones
-- Identify potential scheduling conflicts
-- Agree on weekly sync schedule
-
-### 4. Schedule 1 Discussion (20 min)
-- Review deliverables per phase
-- Discuss acceptance criteria
-- Clarify any ambiguities
-- Payment milestone confirmation
+### 2. Data Sources Overview (15 min)
+- Inventory of all available data sources
+- Current state of access and credentials
+- Data ownership and responsibilities
+- Identify any additional sources not yet discussed
 
 ---
 
-### ☕ Break (10 min)
+### 3. Dealroom API Deep Dive (20 min)
+
+| Topic | Questions to Address |
+|-------|---------------------|
+| **Access Status** | API credentials available? Sandbox vs Production? |
+| **Data Fields** | Which fields are accessible? Company, funding, employees? |
+| **Coverage** | Geographic scope? Technology sector filtering? |
+| **Limits** | Rate limits? Query restrictions? Data export allowed? |
+| **Freshness** | Update frequency? Historical data available? |
+
+**Action Items to Define:**
+- [ ] API access handover date
+- [ ] Sample data extraction target
+- [ ] Field mapping to our taxonomy
 
 ---
 
-### 5. Data Deep Dive (30 min)
+### ☕ Break (5 min)
 
-#### 5.1 Dealroom API
-- API access status
-- Available data fields
-- Rate limits and restrictions
-- Authentication method
+---
 
-#### 5.2 CEI Documents
-- Document types and formats
-- Sample documents availability
-- Key information to extract
-- Volume of documents
+### 4. CEI Documents Analysis (20 min)
 
-#### 5.3 PATSTAT
-- Data access method (API/export)
-- Relevant patent classifications
-- Geographic scope
-- Update frequency
+| Topic | Questions to Address |
+|-------|---------------------|
+| **Volume** | How many documents? Estimated growth rate? |
+| **Formats** | PDF, PPT, Word? Scanned vs native digital? |
+| **Structure** | Consistent templates or varied formats? |
+| **Content** | Technology mentions? TRL assessments? Policy references? |
+| **Access** | Where are they stored? Access permissions? |
 
-#### 5.4 Technology Taxonomy
-- Review proposed quadrants
-- Discuss maturity level definitions
-- Validate with sample technologies
-- Identify edge cases
+**Action Items to Define:**
+- [ ] Sample documents to share (minimum 5)
+- [ ] Document classification categories
+- [ ] AI parsing priority order
 
-### 6. Technical Decisions (10 min)
-- Confirm EU hosting requirements
-- Discuss any integration constraints
-- Security requirements
-- Performance expectations
+---
 
-### 7. Next Steps & Action Items (10 min)
-- Immediate action items
-- First week priorities
-- Document sharing setup
-- Communication channel setup
+### 5. PATSTAT & Patent Data (15 min)
+
+| Topic | Questions to Address |
+|-------|---------------------|
+| **Access Method** | API, bulk export, or third-party service? |
+| **Scope** | Which patent classifications (CPC/IPC)? |
+| **Geography** | EU focus? Global coverage needed? |
+| **Metrics** | Patent counts? Citations? Filing trends? |
+| **Updates** | How often to refresh? |
+
+**Action Items to Define:**
+- [ ] Data access method confirmation
+- [ ] Classification codes relevant to CE technologies
+- [ ] Sample patent data format
+
+---
+
+### 6. Technology Taxonomy Workshop (20 min)
+
+#### 6.1 Quadrant Structure
+Review and validate the four proposed quadrants:
+
+| Quadrant | Description | Sample Technologies |
+|----------|-------------|---------------------|
+| **Materials & Chemistry** | Advanced materials, green chemistry | [To be defined] |
+| **Digital & AI** | Software, automation, data analytics | [To be defined] |
+| **Energy & Storage** | Batteries, renewables, efficiency | [To be defined] |
+| **Manufacturing** | Processes, robotics, 3D printing | [To be defined] |
+
+#### 6.2 Maturity Levels
+Validate TRL mapping:
+- TRL 1-3: Research phase
+- TRL 4-6: Development phase
+- TRL 7-9: Deployment phase
+
+#### 6.3 Exercise: Categorize 5 Sample Technologies
+*Hands-on validation of taxonomy with real examples*
+
+---
+
+### 7. Data Mapping & Integration Planning (10 min)
+
+- Review Data Mapping Worksheet (separate document)
+- Identify field mappings across sources
+- Discuss data normalization needs
+- Define composite score calculation inputs
+
+---
+
+### 8. Next Steps & Data Handover Plan (5 min)
+
+| Data Source | Owner | Handover Date | Format |
+|-------------|-------|---------------|--------|
+| Dealroom API access | BluSpecs | Jan 10 | API credentials |
+| CEI sample documents | BluSpecs | Jan 10 | Shared folder |
+| PATSTAT sample data | BluSpecs | Jan 15 | CSV/API |
+| Technology taxonomy approval | Both | Jan 12 | Spreadsheet |
 
 ---
 
 ## Pre-Meeting Preparation
 
 ### House Eleven Oy to Prepare
-- [ ] Finalized timeline document
-- [ ] Draft Schedule 1 for discussion
-- [ ] Mockups ready for review
-- [ ] Data requirements questionnaire
-- [ ] Technical architecture overview
+- [x] Data Requirements Questionnaire
+- [x] Data Mapping Worksheet
+- [x] Project Timeline
+- [ ] Sample taxonomy spreadsheet
 
 ### BluSpecs to Prepare
-- [ ] Dealroom API credentials/documentation
-- [ ] Sample CEI documents (3-5 minimum)
-- [ ] PATSTAT data sample or access details
-- [ ] List of priority technology domains
-- [ ] Key stakeholder availability for design sprint
+- [ ] Dealroom API documentation/credentials
+- [ ] 5+ sample CEI documents
+- [ ] PATSTAT access details or sample export
+- [ ] List of 10-20 priority technologies to categorize
+- [ ] Existing technology classifications (if any)
 
 ---
 
-## Key Questions to Address
+## Key Data Questions to Resolve
 
-### Data
-1. What is the current state of Dealroom API access?
-2. How many CEI documents exist and in what formats?
-3. Is PATSTAT access via API or data export?
-4. Are there any data sources not yet discussed?
-
-### Business
-5. Who are the first Premium users expected to be?
-6. What is the expected launch communication plan?
-7. Are there any hard deadlines (conferences, board meetings)?
-
-### Technical
-8. Are there existing systems this needs to integrate with?
-9. Are there specific compliance requirements?
-10. What is the expected user load at launch?
+1. **Dealroom**: What exact API endpoints and fields are available to us?
+2. **CEI Documents**: Are there templates or is every document unique?
+3. **PATSTAT**: Bulk export or API - which is preferred/possible?
+4. **Taxonomy**: Is there an existing classification we should align with?
+5. **Gaps**: What data do we need that no source currently provides?
+6. **Quality**: What data quality issues should we anticipate?
+7. **Updates**: What is the refresh cycle expectation (daily/weekly/monthly)?
 
 ---
 
@@ -133,25 +167,22 @@
 
 By the end of this meeting, we should have:
 
-- [ ] Agreed timeline with any modifications
-- [ ] Schedule 1 finalized or clear path to finalization
-- [ ] Data access plan with owners and dates
-- [ ] Technology taxonomy first draft
-- [ ] Communication channels established
-- [ ] First week action items assigned
+- [ ] Complete inventory of data sources with access status
+- [ ] Agreed technology taxonomy (4 quadrants confirmed)
+- [ ] Data handover schedule with owners and dates
+- [ ] Initial field mapping for each data source
+- [ ] Identified data gaps and mitigation strategies
+- [ ] Clear next steps for data integration phase
 
 ---
 
-## Post-Meeting Actions
+## Future Meetings
 
-| Action Item | Owner | Due Date |
-|-------------|-------|----------|
-| Share meeting notes | House Eleven | Jan 9 |
-| Provide Dealroom API access | BluSpecs | Jan 10 |
-| Share sample CEI documents | BluSpecs | Jan 10 |
-| Finalize Schedule 1 | Both | Jan 10 |
-| Set up shared document space | House Eleven | Jan 9 |
-| Schedule Data Workshop | Both | Jan 8 |
+| Meeting | Focus | Target Date |
+|---------|-------|-------------|
+| **UX/UI Design Sprint** | User research, wireframes, prototypes | Week 3 (Jan 20-24) |
+| **Technical Architecture** | System design, API structure | Week 2 (Jan 13-17) |
+| **Data Workshop #2** | Scoring algorithm, normalization | Week 2 (Jan 15) |
 
 ---
 
@@ -165,5 +196,6 @@ By the end of this meeting, we should have:
 
 ---
 
-*Document Version: 1.0*  
-*Created: December 21, 2024*
+*Document Version: 2.0*  
+*Last Updated: December 21, 2024*  
+*Focus: Data-centric kickoff*
