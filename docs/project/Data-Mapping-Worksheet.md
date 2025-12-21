@@ -1,297 +1,267 @@
 # Data Mapping Worksheet
-
-**Project:** AI-CE Heatmap Platform  
-**Purpose:** Map data fields from source systems to platform data model  
-**Status:** Draft - To be completed during Kickoff Meeting
+## AI-CE Heatmap Platform
 
 ---
 
-## 1. Platform Data Model (Target Schema)
+## Quick Reference (One-Page Summary)
 
-### Core Technology Entity
+| What We're Doing | Why It Matters |
+|------------------|----------------|
+| **Collecting data about technologies** | To show which technologies are promising for the EU |
+| **From 4 main sources** | Dealroom, CEI Documents, PATSTAT, Public websites |
+| **Organizing into 4 groups** | Materials, Digital, Energy, Manufacturing |
+| **Scoring each technology** | So users can compare and prioritize |
 
-| Field | Type | Description | Required | Source |
-|-------|------|-------------|----------|--------|
-| `technology_id` | UUID | Unique identifier | Yes | Generated |
-| `name` | Text | Technology name | Yes | Multiple |
-| `description` | Text | Brief description | Yes | CEI/Manual |
-| `quadrant` | Enum | Materials, Digital, Energy, Manufacturing | Yes | Taxonomy |
-| `maturity_ring` | Enum | Adopt, Trial, Assess, Hold | Yes | Calculated |
-| `trl_score` | Integer | 1-9 | Yes | CEI/AI |
-| `market_score` | Decimal | 0-9 | Yes | Calculated |
-| `innovation_score` | Decimal | 0-9 | Yes | Calculated |
-| `eu_alignment_score` | Decimal | 0-9 | Yes | Calculated |
-| `composite_score` | Decimal | 0-9 | Yes | Calculated |
-| `last_updated` | Timestamp | Last data refresh | Yes | System |
-
-### Supporting Entities
-
-| Entity | Purpose | Key Fields |
-|--------|---------|------------|
-| `companies` | Market data | name, funding, employees, location, sector |
-| `patents` | Innovation data | title, applicant, filing_date, cpc_codes, citations |
-| `documents` | CEI assessments | title, type, date, extracted_technologies |
-| `policies` | EU alignment | name, technologies_mentioned, relevance_score |
+**The Big Picture:** We're building a system that gathers information about technologies from different places, organizes it neatly, and gives each technology a score so decision-makers can see which ones are worth investing in.
 
 ---
 
-## 2. Source: Dealroom API
+## 1. What Data Do We Need?
 
-### Available Data (To Be Confirmed)
+Think of each technology like a product listing on Amazon. We need:
 
-| Dealroom Field | Platform Field | Transformation | Status |
-|----------------|----------------|----------------|--------|
-| `company.name` | `companies.name` | Direct | ⬜ TBC |
-| `company.total_funding` | `companies.funding` | Convert to EUR | ⬜ TBC |
-| `company.employees` | `companies.employees` | Direct | ⬜ TBC |
-| `company.hq_location` | `companies.location` | Normalize | ⬜ TBC |
-| `company.industries` | `companies.sector` | Map to taxonomy | ⬜ TBC |
-| `company.technologies` | Technology link | Entity resolution | ⬜ TBC |
-| `company.founded_date` | `companies.founded` | Direct | ⬜ TBC |
-| `funding_rounds` | Funding history | Aggregate | ⬜ TBC |
+### Basic Information
+| What | Example | Why We Need It |
+|------|---------|----------------|
+| **Name** | "Solid-state batteries" | To identify the technology |
+| **Category** | "Energy" | To organize technologies into groups |
+| **Description** | "Next-gen batteries that..." | To explain what it does |
+| **Maturity level** | "Ready to use" or "Still in research" | To show how developed it is |
 
-### Questions for BluSpecs
+### Scores (Like Star Ratings)
+| Score Type | What It Measures | Scale |
+|------------|------------------|-------|
+| **Readiness** | How close to real-world use? | 0-9 |
+| **Market potential** | How big is the business opportunity? | 0-9 |
+| **Innovation** | How many patents and new ideas? | 0-9 |
+| **EU Priority** | How important to EU policies? | 0-9 |
+| **Overall Score** | Average of all above | 0-9 |
 
-- [ ] Which Dealroom subscription tier do we have access to?
-- [ ] Can we filter by technology/sector at API level?
-- [ ] Is historical data available (for trend analysis)?
-- [ ] What is the rate limit and how should we handle pagination?
-
-### Mapping Notes
-
-*Space for notes during meeting:*
-
----
-
----
-
-## 3. Source: CEI Documents
-
-### Document Types
-
-| Document Type | Expected Content | Extraction Method | Volume |
-|---------------|------------------|-------------------|--------|
-| Technology Assessment | TRL, description, applications | AI parsing | ⬜ TBC |
-| Policy Brief | EU policy alignment, priorities | AI parsing | ⬜ TBC |
-| Market Report | Company mentions, trends | AI parsing | ⬜ TBC |
-| Presentation | Mixed content | AI parsing | ⬜ TBC |
-| Research Paper | Deep technical content | AI parsing | ⬜ TBC |
-
-### Field Extraction Targets
-
-| Extracted Data | Platform Field | Confidence Threshold | Manual Review |
-|----------------|----------------|---------------------|---------------|
-| Technology mentions | Technology link | >70% | <70% flagged |
-| TRL assessment | `trl_score` | >80% | Required |
-| Company mentions | Company link | >70% | <70% flagged |
-| Policy references | `policies` link | >60% | <60% flagged |
-| Date/timeframe | Context metadata | >90% | N/A |
-
-### Questions for BluSpecs
-
-- [ ] Are documents structured (templates) or freeform?
-- [ ] What languages are documents in?
-- [ ] Are there existing metadata or tags?
-- [ ] Can we get document history (versioning)?
-
-### Mapping Notes
-
-*Space for notes during meeting:*
+### Supporting Details
+- **Companies working on it** (names, funding, location)
+- **Patents filed** (how many, by whom)
+- **Related EU policies** (which EU programs mention it)
+- **Recent news** (latest developments)
 
 ---
 
+## 2. Where Does the Data Come From?
+
+We have 4 main sources - think of them like different libraries:
+
+### Source 1: Dealroom (Company & Market Data)
+**What it is:** A database of tech companies and startups  
+**What we get from it:**
+- Company names and descriptions
+- How much funding they've received
+- Where they're located
+- What technology they work on
+
+**Questions for BluSpecs:**
+- ❓ Do we already have access to Dealroom?
+- ❓ Which filters should we use? (EU only? Certain industries?)
+- ❓ How often should we update this data?
+
 ---
 
-## 4. Source: PATSTAT
+### Source 2: CEI Documents (Your Internal Reports)
+**What it is:** PowerPoints, PDFs, and reports from the CEI team  
+**What we get from it:**
+- Technology assessments
+- Maturity ratings
+- Strategic priorities
+- Policy references
 
-### Patent Data Fields
+**Questions for BluSpecs:**
+- ❓ How many documents exist? (Rough estimate)
+- ❓ What formats? (PPT, PDF, Word, Excel?)
+- ❓ Are they confidential? Who can see what?
+- ❓ Is there a standard template, or are they all different?
+- ❓ Where are they stored? (SharePoint, email, etc.)
 
-| PATSTAT Field | Platform Field | Transformation | Status |
-|---------------|----------------|----------------|--------|
-| `appln_title` | `patents.title` | Direct | ⬜ TBC |
-| `appln_filing_date` | `patents.filing_date` | Date format | ⬜ TBC |
-| `applicant_name` | `patents.applicant` | Normalize | ⬜ TBC |
-| `cpc_class_symbol` | `patents.cpc_codes` | Array | ⬜ TBC |
-| `cited_appln_id` | Citation count | Aggregate | ⬜ TBC |
-| `appln_auth` | `patents.jurisdiction` | Map country | ⬜ TBC |
+---
 
-### CPC Classifications to Track
+### Source 3: PATSTAT (Patent Database)
+**What it is:** European patent information  
+**What we get from it:**
+- Number of patents per technology
+- Who filed them (companies, universities)
+- Which countries are innovating
 
-| CPC Code | Technology Area | Quadrant |
+**Questions for BluSpecs:**
+- ❓ Do we have PATSTAT access, or should we use free alternatives?
+- ❓ How should we link patents to technologies? (Keywords? Categories?)
+
+---
+
+### Source 4: Public Sources (Free Online Data)
+**What it is:** Public websites, EU portals, news  
+**What we get from it:**
+- EU funding announcements
+- Policy documents
+- Industry news
+- Research publications
+
+**Examples:**
+- EU Horizon Europe portal
+- European Commission websites
+- Industry news sites
+
+---
+
+## 3. How Do We Organize Technologies?
+
+### The 4 Categories (Quadrants)
+Like sections in a department store:
+
+| Category | What's Included | Examples |
 |----------|-----------------|----------|
-| Y02E | Energy | Energy & Storage |
-| Y02P | Manufacturing | Manufacturing |
-| Y02W | Waste | Materials & Chemistry |
-| C08J | Polymers | Materials & Chemistry |
-| G06N | AI/ML | Digital & AI |
-| B33Y | 3D Printing | Manufacturing |
-| H01M | Batteries | Energy & Storage |
-| *Add more during meeting* | | |
+| 🔬 **Advanced Materials** | New materials and chemicals | Graphene, bio-plastics, rare earth alternatives |
+| 💻 **Digital Technologies** | Software, AI, computing | AI chips, quantum computing, cybersecurity |
+| ⚡ **Clean Energy** | Power and sustainability | Batteries, hydrogen, solar, wind |
+| 🏭 **Smart Manufacturing** | How things are made | Robotics, 3D printing, automation |
 
-### Questions for BluSpecs
+### The 4 Maturity Levels (Rings)
+How ready is the technology?
 
-- [ ] PATSTAT access method: API, bulk download, or service provider?
-- [ ] Which years of data do we need?
-- [ ] EU patents only or global?
-- [ ] How to handle patent families (avoid double-counting)?
+| Level | What It Means | Score Range |
+|-------|---------------|-------------|
+| 🟢 **Adopt** | Ready to use now, proven technology | 7.5 - 9.0 |
+| 🟡 **Trial** | Worth testing, showing promise | 5.0 - 7.4 |
+| 🟠 **Assess** | Keep an eye on it, still developing | 3.0 - 4.9 |
+| 🔴 **Hold** | Too early, needs more research | 0.0 - 2.9 |
 
-### Mapping Notes
-
-*Space for notes during meeting:*
+**Question for BluSpecs:**
+- ❓ Are these categories and levels correct? Should we adjust them?
 
 ---
 
----
+## 4. How Do We Score Technologies?
 
-## 5. Source: Public Data
+### The Scoring Recipe
+Each technology gets 4 scores, which are averaged into one overall score:
 
-### Additional Data Sources
+```
+Overall Score = (Readiness + Market + Innovation + EU Priority) ÷ 4
+```
 
-| Source | Data Type | Access Method | Frequency |
-|--------|-----------|---------------|-----------|
-| Horizon Europe | EU project funding | CORDIS API | Monthly |
-| OpenAlex | Publications | API | Weekly |
-| GitHub | Open source activity | API | Weekly |
-| News sources | Trend signals | RSS/API | Daily |
+### Score Breakdown
 
-### Questions for BluSpecs
+#### 1. Readiness Score (How mature?)
+Based on:
+- Expert assessments from CEI documents
+- Evidence of real-world deployments
+- How many companies are using it
 
-- [ ] Which public sources are priorities?
-- [ ] Any existing data partnerships?
-- [ ] Restrictions on certain data types?
+#### 2. Market Score (How big is the opportunity?)
+Based on:
+- Total funding raised by companies in this space
+- Number of active companies
+- Growth rate (is it accelerating?)
 
----
+#### 3. Innovation Score (How much R&D activity?)
+Based on:
+- Number of patents filed
+- Research publications
+- Open-source projects
+- EU-funded research projects
 
-## 6. Technology Taxonomy Mapping
+#### 4. EU Priority Score (How important to EU?)
+Based on:
+- Mentions in EU policy documents
+- Horizon Europe funding
+- IPCEI (Important Projects of Common European Interest) inclusion
 
-### Quadrant Definitions
-
-| Quadrant | Definition | Keywords | Example Technologies |
-|----------|------------|----------|---------------------|
-| **Materials & Chemistry** | Physical materials, chemical processes, sustainable materials | polymer, composite, bio-based, recycling, chemistry | ⬜ TBC |
-| **Digital & AI** | Software, data, automation, intelligence | AI, ML, IoT, blockchain, digital twin | ⬜ TBC |
-| **Energy & Storage** | Power generation, storage, efficiency | battery, solar, hydrogen, grid, efficiency | ⬜ TBC |
-| **Manufacturing** | Production processes, equipment, logistics | 3D printing, robotics, automation, logistics | ⬜ TBC |
-
-### Maturity Ring Criteria
-
-| Ring | Composite Score | TRL Range | Description |
-|------|-----------------|-----------|-------------|
-| **Adopt** | 7.5 - 9.0 | TRL 7-9 | Market-ready, proven at scale |
-| **Trial** | 5.0 - 7.4 | TRL 5-7 | Worth experimenting with |
-| **Assess** | 3.0 - 4.9 | TRL 3-5 | Worth watching, early stage |
-| **Hold** | 0.0 - 2.9 | TRL 1-3 | Research phase, not ready |
+**Question for BluSpecs:**
+- ❓ Are these the right factors? Should any be weighted more heavily?
 
 ---
 
-## 7. Composite Score Calculation
+## 5. Questions Checklist for BluSpecs
 
-### Score Components
+### Must Answer Before We Start Building
 
-| Dimension | Weight | Inputs | Source |
-|-----------|--------|--------|--------|
-| **TRL Score** | 25% | Expert assessment, AI detection, deployment evidence | CEI docs |
-| **Market Score** | 25% | Funding (30%), Companies (25%), Deployments (25%), Growth (20%) | Dealroom |
-| **Innovation Score** | 25% | Patents (35%), Publications (25%), Open Source (20%), EU Projects (20%) | PATSTAT, Public |
-| **EU Alignment** | 25% | Policy mentions, Horizon funding, IPCEI inclusion | CEI docs, CORDIS |
+#### About Data Access
+- [ ] Dealroom: Do we have access? What's the login?
+- [ ] PATSTAT: Do we have access? Or use alternatives?
+- [ ] CEI Documents: Where are they stored? Who can share them?
 
-### Normalization Rules
+#### About the Technology List
+- [ ] Is there an existing list of technologies to start with?
+- [ ] How many technologies should we include? (10? 50? 200?)
+- [ ] Who decides what technologies to add or remove?
 
-| Input Metric | Normalization Method | Scale |
-|--------------|---------------------|-------|
-| Funding amount | Log scale, percentile | 0-9 |
-| Company count | Percentile ranking | 0-9 |
-| Patent count | Percentile ranking | 0-9 |
-| TRL assessment | Direct mapping | 1-9 |
+#### About Scoring
+- [ ] Who will review and approve the scoring methodology?
+- [ ] Should any scores be manually adjustable by admins?
+- [ ] How often should scores be recalculated?
 
-### Questions for BluSpecs
-
-- [ ] Are these weights appropriate?
-- [ ] Any dimensions to add/remove?
-- [ ] How to handle missing data points?
+#### About Users
+- [ ] Who are the main users? (Analysts? Executives? Public?)
+- [ ] What should public users see vs. logged-in users?
+- [ ] How many admin users will there be?
 
 ---
 
-## 8. Data Quality Considerations
+## 6. Next Steps
 
-### Quality Checks
+### Before January 8 Meeting
+1. **BluSpecs to provide:**
+   - [ ] Sample CEI documents (2-3 examples)
+   - [ ] Technology list (if one exists)
+   - [ ] Dealroom access details
+   - [ ] Answers to questions above
 
-| Check | Rule | Action if Failed |
-|-------|------|------------------|
-| Completeness | >80% required fields | Flag for manual entry |
-| Freshness | <6 months old | Mark as stale |
-| Consistency | Cross-source validation | Flag discrepancies |
-| Accuracy | Confidence score | Manual review queue |
+### During January 8 Meeting
+2. **Walk through this worksheet together**
+3. **Confirm data sources and access**
+4. **Agree on technology categories**
+5. **Review scoring approach**
 
-### Known Data Gaps (To Be Identified)
-
-| Gap | Impact | Mitigation |
-|-----|--------|------------|
-| *Identify during meeting* | | |
-| | | |
-| | | |
-
----
-
-## 9. Data Refresh Strategy
-
-### Refresh Schedule
-
-| Data Source | Frequency | Method | Trigger |
-|-------------|-----------|--------|---------|
-| Dealroom | Weekly | Scheduled job | Auto |
-| CEI Documents | On upload | Event-driven | Manual |
-| PATSTAT | Monthly | Batch import | Admin |
-| Public Sources | Weekly | Scheduled job | Auto |
-
-### Manual Override
-
-- Admin can trigger full refresh anytime
-- Individual technology manual update available
-- Audit log for all changes
+### After January 8 Meeting
+6. **We create detailed technical specifications**
+7. **Begin building data connections**
 
 ---
 
-## 10. Action Items from Mapping Session
+## Appendix: Technical Details
 
-| Item | Owner | Due Date | Status |
-|------|-------|----------|--------|
-| | | | ⬜ |
-| | | | ⬜ |
-| | | | ⬜ |
-| | | | ⬜ |
-| | | | ⬜ |
+*This section is for developers - skip if you're not technical*
 
----
+### Data Model (Database Structure)
 
-## Appendix: Sample Technology Mapping Exercise
+**Technologies Table**
+```
+- id: Unique identifier for each technology
+- name: Technology name
+- slug: URL-friendly name
+- quadrant: Category (materials, digital, energy, manufacturing)
+- ring: Maturity level (adopt, trial, assess, hold)
+- description: What the technology does
+- scores: The 4 individual scores
+- composite_score: Overall average score
+- metadata: Extra information (flexible)
+- created_at: When it was added
+- updated_at: When it was last changed
+```
 
-*Complete during meeting with 5 sample technologies:*
+**Related Tables**
+- Companies: Companies working on each technology
+- Patents: Patent filings linked to technologies
+- Documents: CEI documents and their extracted data
+- Policies: EU policy references
+- Data Sources: Where each piece of data came from
 
-### Technology 1: [Name]
+### Sample Technology Mapping
 
-| Attribute | Value | Source | Confidence |
-|-----------|-------|--------|------------|
-| Quadrant | | | |
-| TRL | | | |
-| Key Companies | | | |
-| Patent Activity | | | |
-| EU Alignment | | | |
-
-### Technology 2: [Name]
-
-| Attribute | Value | Source | Confidence |
-|-----------|-------|--------|------------|
-| Quadrant | | | |
-| TRL | | | |
-| Key Companies | | | |
-| Patent Activity | | | |
-| EU Alignment | | | |
-
-*(Repeat for 3 more technologies)*
+| Technology | Quadrant | Ring | TRL | Market | Innovation | EU | Overall |
+|------------|----------|------|-----|--------|------------|-----|---------|
+| Solid-state batteries | Energy | Trial | 6 | 7 | 8 | 8 | 7.3 |
+| Industrial AI | Digital | Adopt | 8 | 9 | 7 | 6 | 7.5 |
+| Green hydrogen | Energy | Assess | 5 | 6 | 6 | 9 | 6.5 |
 
 ---
 
-*Document Version: 1.0*  
-*Created: December 21, 2024*  
-*Purpose: Working document for data mapping session*
+*Document Version: 2.0 (Simplified)*  
+*Last Updated: January 2025*  
+*For: BluSpecs Kickoff Meeting*
