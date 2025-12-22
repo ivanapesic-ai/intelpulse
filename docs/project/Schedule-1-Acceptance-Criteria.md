@@ -8,27 +8,13 @@
 
 ## 1. Overview
 
-This Schedule defines the specific deliverables, acceptance criteria, and payment milestones for the AI-CE Heatmap Platform development project.
+This Schedule defines the specific deliverables and acceptance criteria for the AI-CE Heatmap Platform development project.
 
 ---
 
-## 2. Payment Schedule Summary
+## 2. Phase 1: Design Sprint & Data Workshop
 
-| Phase | Amount | % of Total | Due Upon |
-|-------|--------|------------|----------|
-| Phase 1: Design Sprint | €2,500 | 13.5% | Completion of design sprint |
-| Phase 2: Foundation | €4,000 | 21.6% | Auth & Admin demo |
-| Phase 3: Visualization | €5,000 | 27.0% | Visualization review |
-| Phase 4: Data Integration | €4,500 | 24.3% | Integration testing |
-| Phase 5: Launch | €2,500 | 13.5% | Production deployment |
-| **Total** | **€18,500** | **100%** | |
-
----
-
-## 3. Phase 1: Design Sprint & Data Workshop
-
-**Duration:** Weeks 1-2 (January 8-21, 2025)  
-**Payment:** €2,500
+**Duration:** Weeks 1-2 (January 8-21, 2025)
 
 ### Deliverables
 
@@ -50,15 +36,14 @@ This Schedule defines the specific deliverables, acceptance criteria, and paymen
 ### Client Dependencies
 
 - Provide domain expertise for taxonomy definition
-- Provide sample data from each source (Dealroom, CEI, PATSTAT)
+- Provide sample data from each source (Dealroom, CEI)
 - Designate decision-maker for design approval
 
 ---
 
-## 4. Phase 2: Foundation & Core Infrastructure
+## 3. Phase 2: Foundation & Core Infrastructure
 
-**Duration:** Weeks 3-4 (January 22 - February 4, 2025)  
-**Payment:** €4,000
+**Duration:** Weeks 3-4 (January 22 - February 4, 2025)
 
 ### Deliverables
 
@@ -86,10 +71,9 @@ This Schedule defines the specific deliverables, acceptance criteria, and paymen
 
 ---
 
-## 5. Phase 3: Visualization Development
+## 4. Phase 3: Visualization Development
 
-**Duration:** Weeks 5-6 (February 5-18, 2025)  
-**Payment:** €5,000
+**Duration:** Weeks 5-6 (February 5-18, 2025)
 
 ### Deliverables
 
@@ -120,10 +104,9 @@ This Schedule defines the specific deliverables, acceptance criteria, and paymen
 
 ---
 
-## 6. Phase 4: Data Integration & AI Processing
+## 5. Phase 4: Data Integration & AI Processing
 
-**Duration:** Weeks 7-8 (February 19 - March 4, 2025)  
-**Payment:** €4,500
+**Duration:** Weeks 7-8 (February 19 - March 4, 2025)
 
 ### Deliverables
 
@@ -131,32 +114,28 @@ This Schedule defines the specific deliverables, acceptance criteria, and paymen
 |----|-------------|-------------|
 | 4.1 | Dealroom Integration | Company and funding data pipeline |
 | 4.2 | CEI Document Parser | AI-powered text extraction |
-| 4.3 | PATSTAT Integration | Patent data correlation |
-| 4.4 | Scoring Algorithm | Composite score calculation |
-| 4.5 | Data Validation | Quality checks and error handling |
+| 4.3 | Scoring Algorithm | Composite score calculation |
+| 4.4 | Data Validation | Quality checks and error handling |
 
 ### Acceptance Criteria
 
 - [ ] **4.1** Successfully imports company data from Dealroom API
 - [ ] **4.2** Extracts technology mentions from sample CEI documents
 - [ ] **4.2** Accuracy ≥80% on provided test documents
-- [ ] **4.3** Correlates patent counts with technology entries
-- [ ] **4.4** Scores calculated from all available data sources
-- [ ] **4.4** Score methodology documented
-- [ ] **4.5** Invalid data flagged for admin review
+- [ ] **4.3** Scores calculated from all available data sources
+- [ ] **4.3** Score methodology documented
+- [ ] **4.4** Invalid data flagged for admin review
 
 ### Client Dependencies
 
 - Dealroom API credentials provided
 - Minimum 10 sample CEI documents provided
-- PATSTAT data access or export provided
 
 ---
 
-## 7. Phase 5: Polish, Testing & Launch
+## 6. Phase 5: Polish, Testing & Launch
 
-**Duration:** Weeks 9-10 (March 5-14, 2025)  
-**Payment:** €2,500
+**Duration:** Weeks 9-10 (March 5-14, 2025)
 
 ### Deliverables
 
@@ -188,14 +167,14 @@ Platform acceptance requires:
 
 ---
 
-## 8. Change Management
+## 7. Change Management
 
-### Minor Changes (No Cost Impact)
+### Minor Changes
 - UI tweaks within approved design
 - Bug fixes
 - Performance optimizations
 
-### Major Changes (Requires Quote)
+### Major Changes
 - New features not in original scope
 - Additional data source integrations
 - Changes to core architecture
@@ -203,13 +182,12 @@ Platform acceptance requires:
 ### Change Request Process
 1. Client submits written change request
 2. Provider assesses impact within 3 business days
-3. If cost impact, Provider submits quote
-4. Client approves or withdraws request
-5. Timeline adjusted by mutual agreement
+3. Client approves or withdraws request
+4. Timeline adjusted by mutual agreement
 
 ---
 
-## 9. Acceptance Process
+## 8. Acceptance Process
 
 ### Per-Phase Acceptance
 1. Provider notifies Client of phase completion
@@ -226,7 +204,7 @@ If parties cannot agree on acceptance criteria interpretation:
 
 ---
 
-## 10. Signatures
+## 9. Signatures
 
 **House Eleven Oy**
 
