@@ -2,7 +2,7 @@
 
 **Agreement Reference:** AI-CE Heatmap Platform Service Agreement  
 **Parties:** House Eleven Oy (Provider) and BluSpecs (Client)  
-**Effective Date:** January 8, 2025
+**Effective Date:** January 8, 2026
 
 ---
 
@@ -14,7 +14,7 @@ This Schedule defines the specific deliverables and acceptance criteria for the 
 
 ## 2. Phase 1: Design Sprint & Data Workshop
 
-**Duration:** Weeks 1-2 (January 8-21, 2025)
+**Duration:** Weeks 1-2 (January 8-21, 2026)
 
 ### Deliverables
 
@@ -43,7 +43,7 @@ This Schedule defines the specific deliverables and acceptance criteria for the 
 
 ## 3. Phase 2: Foundation & Core Infrastructure
 
-**Duration:** Weeks 3-4 (January 22 - February 4, 2025)
+**Duration:** Weeks 3-4 (January 22 - February 4, 2026)
 
 ### Deliverables
 
@@ -73,7 +73,7 @@ This Schedule defines the specific deliverables and acceptance criteria for the 
 
 ## 4. Phase 3: Visualization Development
 
-**Duration:** Weeks 5-6 (February 5-18, 2025)
+**Duration:** Weeks 5-6 (February 5-18, 2026)
 
 ### Deliverables
 
@@ -106,7 +106,7 @@ This Schedule defines the specific deliverables and acceptance criteria for the 
 
 ## 5. Phase 4: Data Integration & AI Processing
 
-**Duration:** Weeks 7-8 (February 19 - March 4, 2025)
+**Duration:** Weeks 7-8 (February 19 - March 4, 2026)
 
 ### Deliverables
 
@@ -135,7 +135,7 @@ This Schedule defines the specific deliverables and acceptance criteria for the 
 
 ## 6. Phase 5: Polish, Testing & Launch
 
-**Duration:** Weeks 9-10 (March 5-14, 2025)
+**Duration:** Weeks 9-10 (March 5-14, 2026)
 
 ### Deliverables
 
@@ -223,5 +223,5 @@ Signature: _______________________
 ---
 
 *Schedule Version: 1.0*  
-*Created: December 21, 2024*  
-*To be finalized during Kickoff Meeting: January 8, 2025*
+*Created: December 21, 2025*  
+*To be finalized during Kickoff Meeting: January 8, 2026*
