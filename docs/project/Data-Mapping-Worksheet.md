@@ -78,7 +78,7 @@ For each technology, we need:
 |---------|-----|-------|
 | Technology data | Manual entry | Auto from APIs |
 | Scoring | Admin sets scores | Calculated from data |
-| Data sources | CEI documents | Dealroom, PATSTAT, etc. |
+| Data sources | CEI documents | Dealroom API, additional sources |
 | Number of technologies | 20-30 | 100+ |
 | Users | Admin only | Public + Premium |
 
