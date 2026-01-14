@@ -197,19 +197,26 @@ serve(async (req) => {
         // Count this API call
         apiCallsMade++;
 
-        // Call Dealroom API
+        // Use Basic Auth (API key as username, empty password)
+        const authHeader = `Basic ${btoa(DEALROOM_API_KEY + ":")}`;
+
+        // Call Dealroom API v1 with POST and form_data filters
         const dealroomResponse = await fetch(
-          `https://api.dealroom.co/api/v2/companies?` + new URLSearchParams({
-            query: searchTerm,
-            hq_countries: EU_COUNTRIES.join(","),
-            limit: String(Math.min(limit, 100)),
-            sort: "-total_funding",
-          }),
+          `https://api.dealroom.co/api/v1/companies?limit=${Math.min(limit, 100)}&sort=-total_funding`,
           {
+            method: "POST",
             headers: {
-              "Authorization": `Bearer ${DEALROOM_API_KEY}`,
+              "Authorization": authHeader,
               "Content-Type": "application/json",
             },
+            body: JSON.stringify({
+              form_data: {
+                must: {
+                  hq_locations: ["Europe"],
+                  industries: [searchTerm.toLowerCase()],
+                },
+              },
+            }),
           }
         );
 
@@ -221,7 +228,7 @@ serve(async (req) => {
         }
 
         const dealroomData = await dealroomResponse.json();
-        const companies: DealroomCompany[] = dealroomData.items || dealroomData.data || [];
+        const companies: DealroomCompany[] = dealroomData.items || dealroomData.companies || [];
 
         recordsFetched += companies.length;
 
