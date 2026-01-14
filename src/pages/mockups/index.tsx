@@ -62,6 +62,12 @@ const annexes = [
     icon: FileText,
     path: "/mockups/annex-b",
   },
+  {
+    title: "Dealroom API Parameters",
+    description: "Available data fields and implementation status",
+    icon: Database,
+    path: "/mockups/dealroom-api",
+  },
 ];
 
 const processSteps = [
