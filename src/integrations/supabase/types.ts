@@ -410,6 +410,7 @@ export type Database = {
         Row: {
           aliases: string[] | null
           created_at: string | null
+          dealroom_tags: string[] | null
           description: string | null
           display_name: string
           id: string
@@ -422,6 +423,7 @@ export type Database = {
         Insert: {
           aliases?: string[] | null
           created_at?: string | null
+          dealroom_tags?: string[] | null
           description?: string | null
           display_name: string
           id?: string
@@ -434,6 +436,7 @@ export type Database = {
         Update: {
           aliases?: string[] | null
           created_at?: string | null
+          dealroom_tags?: string[] | null
           description?: string | null
           display_name?: string
           id?: string
