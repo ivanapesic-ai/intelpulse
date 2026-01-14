@@ -32,22 +32,40 @@ function calculatePatentsScore(patentsCount: number): number {
   return 0;
 }
 
+// Parse employees from Dealroom's format (string like "2-10", "51-200", or number)
+function parseEmployees(employees: string | number | undefined): number {
+  if (!employees) return 0;
+  if (typeof employees === 'number') return employees;
+  const str = String(employees);
+  const match = str.match(/(\d+)-(\d+)/);
+  if (match) {
+    return Math.floor((parseInt(match[1]) + parseInt(match[2])) / 2);
+  }
+  const single = parseInt(str);
+  return isNaN(single) ? 0 : single;
+}
+
 interface DealroomCompany {
   id: string;
   name: string;
   tagline?: string;
   description?: string;
   website?: string;
-  hq_locations?: Array<{ country?: { code?: string }; city?: string }>;
+  // Dealroom returns country.name (not code) and city as string
+  hq_locations?: Array<{ country?: { code?: string; name?: string }; city?: string }>;
   founded_year?: number;
-  employee_count?: number;
-  total_funding?: { amount?: number; currency?: string };
-  valuation?: { amount?: number; currency?: string };
+  // Dealroom returns employees as string like "2-10" or "51-200"
+  employees?: string | number;
+  employee_count?: number; // Fallback
+  // Dealroom returns funding as direct number in millions
+  total_funding?: number;
+  valuation?: number;
   last_funding_date?: string;
   last_funding?: { amount?: number };
+  last_funding_amount?: number;
   growth_stage?: string;
-  investors?: Array<{ name: string }>;
-  industries?: Array<{ name: string }>;
+  investors?: Array<{ name: string }> | string[];
+  industries?: Array<{ name: string }> | string[];
   patents_count?: number;
   news?: Array<{ title: string; date: string; url: string }>;
 }
@@ -282,15 +300,32 @@ serve(async (req) => {
 
         for (const company of companies) {
           const hqLocation = company.hq_locations?.[0];
-          const hqCountry = hqLocation?.country?.code || null;
+          // Dealroom returns country.name (e.g., "Italy"), not code
+          const hqCountry = hqLocation?.country?.name || hqLocation?.country?.code || null;
           const hqCity = hqLocation?.city || null;
 
-          // Convert funding to EUR (assume already in EUR from Dealroom)
-          const totalFundingEur = company.total_funding?.amount || 0;
-          const valuationEur = company.valuation?.amount || 0;
-          const lastFundingAmount = company.last_funding?.amount || 0;
-          const employeesCount = company.employee_count || 0;
+          // Dealroom returns funding as direct number in millions EUR
+          const totalFundingEur = typeof company.total_funding === 'number' 
+            ? company.total_funding * 1_000_000 
+            : 0;
+          const valuationEur = typeof company.valuation === 'number' 
+            ? company.valuation * 1_000_000 
+            : 0;
+          const lastFundingAmount = company.last_funding_amount 
+            ? company.last_funding_amount * 1_000_000 
+            : (company.last_funding?.amount || 0);
+          
+          // Parse employees from string range like "2-10" or "51-200"
+          const employeesCount = parseEmployees(company.employees) || company.employee_count || 0;
           const patentsCount = company.patents_count || 0;
+          
+          // Parse industries/investors which can be string[] or {name: string}[]
+          const industries = Array.isArray(company.industries)
+            ? company.industries.map(i => typeof i === 'string' ? i : i.name)
+            : [];
+          const investors = Array.isArray(company.investors)
+            ? company.investors.map(i => typeof i === 'string' ? i : i.name)
+            : [];
 
           // Upsert company
           const { data: upsertedCompany, error: upsertError } = await supabase
@@ -311,8 +346,8 @@ serve(async (req) => {
                 last_funding_date: company.last_funding_date || null,
                 last_funding_amount_eur: lastFundingAmount,
                 growth_stage: company.growth_stage || null,
-                investors: company.investors?.map(i => i.name) || [],
-                industries: company.industries?.map(i => i.name) || [],
+                investors: investors,
+                industries: industries,
                 patents_count: patentsCount,
                 news_items: company.news || null,
                 raw_data: company,
