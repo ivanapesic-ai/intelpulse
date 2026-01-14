@@ -75,6 +75,14 @@ serve(async (req) => {
       throw new Error("DEALROOM_API_KEY is not configured");
     }
 
+    // Create Basic Auth header (API key as username, empty password)
+    const encoder = new TextEncoder();
+    const credentials = encoder.encode(`${DEALROOM_API_KEY}:`);
+    const base64Credentials = btoa(String.fromCharCode(...credentials));
+    const authHeader = `Basic ${base64Credentials}`;
+    
+    console.log(`API key length: ${DEALROOM_API_KEY.length}, Auth header created successfully`);
+
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       throw new Error("Supabase configuration missing");
     }
@@ -197,8 +205,7 @@ serve(async (req) => {
         // Count this API call
         apiCallsMade++;
 
-        // Use Basic Auth (API key as username, empty password)
-        const authHeader = `Basic ${btoa(DEALROOM_API_KEY + ":")}`;
+        console.log(`Searching for "${searchTerm}" with auth header...`);
 
         // Call Dealroom API v1 with POST and form_data filters
         const dealroomResponse = await fetch(
