@@ -1,1 +1,10 @@
 project_id = "oheouupmmddsgsbncxbj"
+
+[functions.dealroom-sync]
+verify_jwt = false
+
+[functions.parse-document]
+verify_jwt = false
+
+[functions.export-data]
+verify_jwt = false
