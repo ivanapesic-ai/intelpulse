@@ -14,7 +14,409 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      cei_documents: {
+        Row: {
+          created_at: string | null
+          file_size_bytes: number | null
+          file_type: Database["public"]["Enums"]["document_type"]
+          filename: string
+          id: string
+          page_count: number | null
+          parse_status: Database["public"]["Enums"]["parse_status"] | null
+          parsed_content: Json | null
+          source: Database["public"]["Enums"]["document_source"] | null
+          storage_path: string
+          title: string | null
+          updated_at: string | null
+          upload_date: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          file_size_bytes?: number | null
+          file_type: Database["public"]["Enums"]["document_type"]
+          filename: string
+          id?: string
+          page_count?: number | null
+          parse_status?: Database["public"]["Enums"]["parse_status"] | null
+          parsed_content?: Json | null
+          source?: Database["public"]["Enums"]["document_source"] | null
+          storage_path: string
+          title?: string | null
+          updated_at?: string | null
+          upload_date?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          file_size_bytes?: number | null
+          file_type?: Database["public"]["Enums"]["document_type"]
+          filename?: string
+          id?: string
+          page_count?: number | null
+          parse_status?: Database["public"]["Enums"]["parse_status"] | null
+          parsed_content?: Json | null
+          source?: Database["public"]["Enums"]["document_source"] | null
+          storage_path?: string
+          title?: string | null
+          updated_at?: string | null
+          upload_date?: string | null
+        }
+        Relationships: []
+      }
+      dealroom_cache: {
+        Row: {
+          cache_date: string
+          companies_data: Json | null
+          company_count: number | null
+          created_at: string | null
+          id: string
+          keyword: string
+          total_employees: number | null
+          total_funding_eur: number | null
+          total_patents: number | null
+        }
+        Insert: {
+          cache_date?: string
+          companies_data?: Json | null
+          company_count?: number | null
+          created_at?: string | null
+          id?: string
+          keyword: string
+          total_employees?: number | null
+          total_funding_eur?: number | null
+          total_patents?: number | null
+        }
+        Update: {
+          cache_date?: string
+          companies_data?: Json | null
+          company_count?: number | null
+          created_at?: string | null
+          id?: string
+          keyword?: string
+          total_employees?: number | null
+          total_funding_eur?: number | null
+          total_patents?: number | null
+        }
+        Relationships: []
+      }
+      dealroom_companies: {
+        Row: {
+          created_at: string | null
+          dealroom_id: string
+          description: string | null
+          employees_count: number | null
+          founded_year: number | null
+          growth_stage: string | null
+          hq_city: string | null
+          hq_country: string | null
+          id: string
+          industries: string[] | null
+          investors: string[] | null
+          last_funding_amount_eur: number | null
+          last_funding_date: string | null
+          name: string
+          news_items: Json | null
+          patents_count: number | null
+          raw_data: Json | null
+          synced_at: string | null
+          tagline: string | null
+          total_funding_eur: number | null
+          valuation_eur: number | null
+          website: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dealroom_id: string
+          description?: string | null
+          employees_count?: number | null
+          founded_year?: number | null
+          growth_stage?: string | null
+          hq_city?: string | null
+          hq_country?: string | null
+          id?: string
+          industries?: string[] | null
+          investors?: string[] | null
+          last_funding_amount_eur?: number | null
+          last_funding_date?: string | null
+          name: string
+          news_items?: Json | null
+          patents_count?: number | null
+          raw_data?: Json | null
+          synced_at?: string | null
+          tagline?: string | null
+          total_funding_eur?: number | null
+          valuation_eur?: number | null
+          website?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dealroom_id?: string
+          description?: string | null
+          employees_count?: number | null
+          founded_year?: number | null
+          growth_stage?: string | null
+          hq_city?: string | null
+          hq_country?: string | null
+          id?: string
+          industries?: string[] | null
+          investors?: string[] | null
+          last_funding_amount_eur?: number | null
+          last_funding_date?: string | null
+          name?: string
+          news_items?: Json | null
+          patents_count?: number | null
+          raw_data?: Json | null
+          synced_at?: string | null
+          tagline?: string | null
+          total_funding_eur?: number | null
+          valuation_eur?: number | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      dealroom_sync_logs: {
+        Row: {
+          completed_at: string | null
+          error_message: string | null
+          id: string
+          keywords_searched: string[] | null
+          records_created: number | null
+          records_fetched: number | null
+          records_updated: number | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["sync_status"] | null
+          sync_type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          keywords_searched?: string[] | null
+          records_created?: number | null
+          records_fetched?: number | null
+          records_updated?: number | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["sync_status"] | null
+          sync_type: string
+        }
+        Update: {
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          keywords_searched?: string[] | null
+          records_created?: number | null
+          records_fetched?: number | null
+          records_updated?: number | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["sync_status"] | null
+          sync_type?: string
+        }
+        Relationships: []
+      }
+      document_technology_mentions: {
+        Row: {
+          confidence_score: number | null
+          created_at: string | null
+          document_id: string | null
+          id: string
+          keyword_id: string | null
+          mention_context: string | null
+          page_number: number | null
+          policy_reference: string | null
+          trl_mentioned: number | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string | null
+          document_id?: string | null
+          id?: string
+          keyword_id?: string | null
+          mention_context?: string | null
+          page_number?: number | null
+          policy_reference?: string | null
+          trl_mentioned?: number | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string | null
+          document_id?: string | null
+          id?: string
+          keyword_id?: string | null
+          mention_context?: string | null
+          page_number?: number | null
+          policy_reference?: string | null
+          trl_mentioned?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_technology_mentions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "cei_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_technology_mentions_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      keyword_company_mapping: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          id: string
+          keyword_id: string | null
+          relevance_score: number | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          keyword_id?: string | null
+          relevance_score?: number | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          keyword_id?: string | null
+          relevance_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "keyword_company_mapping_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "dealroom_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "keyword_company_mapping_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      technologies: {
+        Row: {
+          composite_score: number | null
+          created_at: string | null
+          dealroom_company_count: number | null
+          description: string | null
+          document_mention_count: number | null
+          employees_score: number | null
+          id: string
+          investment_score: number | null
+          key_players: string[] | null
+          keyword_id: string | null
+          last_updated: string | null
+          name: string
+          patents_score: number | null
+          total_employees: number | null
+          total_funding_eur: number | null
+          total_patents: number | null
+          trend: Database["public"]["Enums"]["trend_direction"] | null
+        }
+        Insert: {
+          composite_score?: number | null
+          created_at?: string | null
+          dealroom_company_count?: number | null
+          description?: string | null
+          document_mention_count?: number | null
+          employees_score?: number | null
+          id?: string
+          investment_score?: number | null
+          key_players?: string[] | null
+          keyword_id?: string | null
+          last_updated?: string | null
+          name: string
+          patents_score?: number | null
+          total_employees?: number | null
+          total_funding_eur?: number | null
+          total_patents?: number | null
+          trend?: Database["public"]["Enums"]["trend_direction"] | null
+        }
+        Update: {
+          composite_score?: number | null
+          created_at?: string | null
+          dealroom_company_count?: number | null
+          description?: string | null
+          document_mention_count?: number | null
+          employees_score?: number | null
+          id?: string
+          investment_score?: number | null
+          key_players?: string[] | null
+          keyword_id?: string | null
+          last_updated?: string | null
+          name?: string
+          patents_score?: number | null
+          total_employees?: number | null
+          total_funding_eur?: number | null
+          total_patents?: number | null
+          trend?: Database["public"]["Enums"]["trend_direction"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technologies_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      technology_keywords: {
+        Row: {
+          aliases: string[] | null
+          created_at: string | null
+          description: string | null
+          display_name: string
+          id: string
+          is_active: boolean | null
+          keyword: string
+          parent_keyword_id: string | null
+          source: Database["public"]["Enums"]["keyword_source"]
+          updated_at: string | null
+        }
+        Insert: {
+          aliases?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          display_name: string
+          id?: string
+          is_active?: boolean | null
+          keyword: string
+          parent_keyword_id?: string | null
+          source: Database["public"]["Enums"]["keyword_source"]
+          updated_at?: string | null
+        }
+        Update: {
+          aliases?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          display_name?: string
+          id?: string
+          is_active?: boolean | null
+          keyword?: string
+          parent_keyword_id?: string | null
+          source?: Database["public"]["Enums"]["keyword_source"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technology_keywords_parent_keyword_id_fkey"
+            columns: ["parent_keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +425,17 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      document_source:
+        | "teams"
+        | "cei_sphere_website"
+        | "eucloudedgeiot"
+        | "manual"
+      document_type: "pdf" | "pptx" | "docx"
+      keyword_source: "cei_sphere" | "dealroom" | "manual"
+      maturity_score: "0" | "1" | "2"
+      parse_status: "pending" | "parsing" | "completed" | "failed"
+      sync_status: "pending" | "running" | "completed" | "failed"
+      trend_direction: "up" | "down" | "stable"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +562,19 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      document_source: [
+        "teams",
+        "cei_sphere_website",
+        "eucloudedgeiot",
+        "manual",
+      ],
+      document_type: ["pdf", "pptx", "docx"],
+      keyword_source: ["cei_sphere", "dealroom", "manual"],
+      maturity_score: ["0", "1", "2"],
+      parse_status: ["pending", "parsing", "completed", "failed"],
+      sync_status: ["pending", "running", "completed", "failed"],
+      trend_direction: ["up", "down", "stable"],
+    },
   },
 } as const
