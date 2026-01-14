@@ -168,26 +168,45 @@ serve(async (req) => {
 
     const logId = syncLog?.id;
 
-    // Get all active keywords from database
+    // Get all active keywords from database (now including dealroom_tags)
     const { data: keywords, error: keywordsError } = await supabase
       .from("technology_keywords")
-      .select("id, keyword, display_name, aliases, source")
+      .select("id, keyword, display_name, aliases, source, dealroom_tags")
       .eq("is_active", true);
 
     if (keywordsError) {
       throw new Error(`Failed to fetch keywords: ${keywordsError.message}`);
     }
 
-    // Build search terms (avoid wasting calls on non-Dealroom taxonomy by default)
     const activeKeywords = keywords || [];
-    const dealroomKeywords = activeKeywords.filter((k) => k.source === "dealroom");
-    const keywordsToSearch = dealroomKeywords.length > 0 ? dealroomKeywords : activeKeywords;
 
-    const searchTerms = keyword
-      ? [keyword]
-      : keywordsToSearch.slice(0, keywordsPerSync).map((k) => k.display_name);
+    // Build search terms from dealroom_tags (Dealroom's actual taxonomy)
+    // If a specific keyword is provided, use it directly; otherwise aggregate dealroom_tags
+    let searchTerms: string[] = [];
+    let keywordTagMapping: Map<string, string[]> = new Map(); // tag -> keyword_ids that use this tag
 
-    // Update sync log with the actual keywords we are about to query
+    if (keyword) {
+      // Direct search with provided term
+      searchTerms = [keyword];
+    } else {
+      // Collect all unique dealroom_tags from keywords that have them
+      const tagSet = new Set<string>();
+      for (const kw of activeKeywords) {
+        const tags = kw.dealroom_tags || [];
+        for (const tag of tags) {
+          tagSet.add(tag.toLowerCase());
+          // Track which keywords map to this tag
+          const existing = keywordTagMapping.get(tag.toLowerCase()) || [];
+          existing.push(kw.id);
+          keywordTagMapping.set(tag.toLowerCase(), existing);
+        }
+      }
+      searchTerms = Array.from(tagSet).slice(0, keywordsPerSync);
+    }
+
+    console.log(`Will search for ${searchTerms.length} Dealroom tags:`, searchTerms);
+
+    // Update sync log with the actual tags we are about to query
     if (logId) {
       await supabase
         .from("dealroom_sync_logs")
@@ -206,7 +225,7 @@ serve(async (req) => {
       ? currentUsage.api_calls_limit - currentUsage.api_calls_used 
       : 50000;
 
-    for (const searchTerm of searchTerms) {
+    for (const searchTag of searchTerms) {
       // Check if we'd exceed quota
       if (apiCallsMade >= remainingCalls) {
         errors.push(`Stopped early: API quota would be exceeded`);
@@ -217,10 +236,10 @@ serve(async (req) => {
         // Count this API call
         apiCallsMade++;
 
-        console.log(`Searching for "${searchTerm}" with auth header...`);
+        console.log(`Searching Dealroom for tag "${searchTag}"...`);
 
         // Call Dealroom API v1 with POST and form_data filters
-        // Use tags + sub_industries for keyword-based search (not industries which requires taxonomy values)
+        // Using tags filter with Dealroom's actual taxonomy terms
         const dealroomResponse = await fetch(
           `https://api.dealroom.co/api/v1/companies?limit=${Math.min(limit, 100)}&sort=-total_funding`,
           {
@@ -235,8 +254,8 @@ serve(async (req) => {
                   hq_locations: ["Europe"],
                 },
                 should: {
-                  tags: [searchTerm.toLowerCase()],
-                  sub_industries: [searchTerm.toLowerCase()],
+                  tags: [searchTag],
+                  sub_industries: [searchTag],
                 },
               },
             }),
@@ -245,24 +264,21 @@ serve(async (req) => {
 
         if (!dealroomResponse.ok) {
           const errorText = await dealroomResponse.text();
-          console.error(`Dealroom API error for "${searchTerm}":`, dealroomResponse.status, errorText);
-          errors.push(`${searchTerm}: ${dealroomResponse.status} - ${errorText.substring(0, 100)}`);
+          console.error(`Dealroom API error for tag "${searchTag}":`, dealroomResponse.status, errorText);
+          errors.push(`${searchTag}: ${dealroomResponse.status} - ${errorText.substring(0, 100)}`);
           continue;
         }
 
         const dealroomData = await dealroomResponse.json();
         const companies: DealroomCompany[] = dealroomData.items || dealroomData.companies || [];
         
-        console.log(`Response for "${searchTerm}": status=${dealroomResponse.status}, total=${dealroomData.total || companies.length}`);
+        console.log(`Tag "${searchTag}": found ${dealroomData.total || companies.length} companies`);
 
         recordsFetched += companies.length;
 
-        // Find matching keyword
-        const matchingKeyword = keywords?.find(
-          k => k.display_name.toLowerCase() === searchTerm.toLowerCase() ||
-               k.keyword.toLowerCase() === searchTerm.toLowerCase() ||
-               k.aliases?.some((a: string) => a.toLowerCase() === searchTerm.toLowerCase())
-        );
+        // Find all keywords that have this tag in their dealroom_tags
+        const matchingKeywordIds = keywordTagMapping.get(searchTag) || [];
+        const matchingKeywords = keywords?.filter(k => matchingKeywordIds.includes(k.id)) || [];
 
         for (const company of companies) {
           const hqLocation = company.hq_locations?.[0];
@@ -316,18 +332,20 @@ serve(async (req) => {
           if (upsertedCompany) {
             recordsCreated++;
 
-            // Create keyword-company mapping if we have a matching keyword
-            if (matchingKeyword && upsertedCompany.id) {
-              await supabase
-                .from("keyword_company_mapping")
-                .upsert(
-                  {
-                    keyword_id: matchingKeyword.id,
-                    company_id: upsertedCompany.id,
-                    relevance_score: 1.0,
-                  },
-                  { onConflict: "keyword_id,company_id" }
-                );
+            // Create keyword-company mappings for ALL keywords that have this tag
+            for (const matchingKeyword of matchingKeywords) {
+              if (upsertedCompany.id) {
+                await supabase
+                  .from("keyword_company_mapping")
+                  .upsert(
+                    {
+                      keyword_id: matchingKeyword.id,
+                      company_id: upsertedCompany.id,
+                      relevance_score: 1.0,
+                    },
+                    { onConflict: "keyword_id,company_id" }
+                  );
+              }
             }
           }
         }
@@ -335,8 +353,8 @@ serve(async (req) => {
         // Small delay between API calls to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (searchError) {
-        console.error(`Error searching for "${searchTerm}":`, searchError);
-        errors.push(`${searchTerm}: ${searchError instanceof Error ? searchError.message : "Unknown error"}`);
+        console.error(`Error searching for tag "${searchTag}":`, searchError);
+        errors.push(`${searchTag}: ${searchError instanceof Error ? searchError.message : "Unknown error"}`);
       }
     }
 
