@@ -1,0 +1,175 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import type { TechnologyKeyword, Technology, KeywordSource } from "@/types/database";
+
+// Fetch all active keywords
+export function useKeywords(source?: KeywordSource) {
+  return useQuery({
+    queryKey: ["keywords", source],
+    queryFn: async () => {
+      let query = supabase
+        .from("technology_keywords")
+        .select("*")
+        .eq("is_active", true)
+        .order("display_name");
+
+      if (source) {
+        query = query.eq("source", source);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      return (data || []).map((row): TechnologyKeyword => ({
+        id: row.id,
+        keyword: row.keyword,
+        source: row.source as KeywordSource,
+        displayName: row.display_name,
+        description: row.description || undefined,
+        parentKeywordId: row.parent_keyword_id || undefined,
+        aliases: row.aliases || undefined,
+        isActive: row.is_active,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      }));
+    },
+  });
+}
+
+// Fetch all technologies with their keyword info
+export function useTechnologies() {
+  return useQuery({
+    queryKey: ["technologies"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("technologies")
+        .select(`
+          *,
+          technology_keywords (
+            id,
+            keyword,
+            source,
+            display_name
+          )
+        `)
+        .order("composite_score", { ascending: false });
+
+      if (error) throw error;
+
+      return (data || []).map((row): Technology & { keyword?: TechnologyKeyword } => ({
+        id: row.id,
+        keywordId: row.keyword_id,
+        name: row.name,
+        description: row.description || "",
+        investmentScore: (row.investment_score || 0) as 0 | 1 | 2,
+        employeesScore: (row.employees_score || 0) as 0 | 1 | 2,
+        patentsScore: (row.patents_score || 0) as 0 | 1 | 2,
+        compositeScore: Number(row.composite_score) || 0,
+        trend: (row.trend || "stable") as "up" | "down" | "stable",
+        keyPlayers: row.key_players || [],
+        totalPatents: row.total_patents || 0,
+        totalFundingEur: Number(row.total_funding_eur) || 0,
+        totalEmployees: row.total_employees || 0,
+        dealroomCompanyCount: row.dealroom_company_count || 0,
+        documentMentionCount: row.document_mention_count || 0,
+        lastUpdated: row.last_updated,
+        createdAt: row.created_at,
+        keyword: row.technology_keywords ? {
+          id: row.technology_keywords.id,
+          keyword: row.technology_keywords.keyword,
+          source: row.technology_keywords.source as KeywordSource,
+          displayName: row.technology_keywords.display_name,
+          isActive: true,
+          createdAt: "",
+          updatedAt: "",
+        } : undefined,
+      }));
+    },
+  });
+}
+
+// Get technology by ID
+export function useTechnology(id: string) {
+  return useQuery({
+    queryKey: ["technology", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("technologies")
+        .select(`
+          *,
+          technology_keywords (*)
+        `)
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+
+      return {
+        id: data.id,
+        keywordId: data.keyword_id,
+        name: data.name,
+        description: data.description || "",
+        investmentScore: (data.investment_score || 0) as 0 | 1 | 2,
+        employeesScore: (data.employees_score || 0) as 0 | 1 | 2,
+        patentsScore: (data.patents_score || 0) as 0 | 1 | 2,
+        compositeScore: Number(data.composite_score) || 0,
+        trend: (data.trend || "stable") as "up" | "down" | "stable",
+        keyPlayers: data.key_players || [],
+        totalPatents: data.total_patents || 0,
+        totalFundingEur: Number(data.total_funding_eur) || 0,
+        totalEmployees: data.total_employees || 0,
+        dealroomCompanyCount: data.dealroom_company_count || 0,
+        documentMentionCount: data.document_mention_count || 0,
+        lastUpdated: data.last_updated,
+        createdAt: data.created_at,
+      } as Technology;
+    },
+    enabled: !!id,
+  });
+}
+
+// Get keyword statistics
+export function useKeywordStats() {
+  return useQuery({
+    queryKey: ["keyword-stats"],
+    queryFn: async () => {
+      const { data: keywords, error: keywordsError } = await supabase
+        .from("technology_keywords")
+        .select("source")
+        .eq("is_active", true);
+
+      if (keywordsError) throw keywordsError;
+
+      const { data: technologies, error: techError } = await supabase
+        .from("technologies")
+        .select("composite_score, total_funding_eur, total_patents, total_employees");
+
+      if (techError) throw techError;
+
+      const sourceCount = (keywords || []).reduce((acc, k) => {
+        acc[k.source] = (acc[k.source] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const totalFunding = (technologies || []).reduce((sum, t) => sum + (Number(t.total_funding_eur) || 0), 0);
+      const totalPatents = (technologies || []).reduce((sum, t) => sum + (t.total_patents || 0), 0);
+      const totalEmployees = (technologies || []).reduce((sum, t) => sum + (t.total_employees || 0), 0);
+      const avgCompositeScore = technologies?.length
+        ? (technologies || []).reduce((sum, t) => sum + (Number(t.composite_score) || 0), 0) / technologies.length
+        : 0;
+
+      return {
+        totalKeywords: keywords?.length || 0,
+        totalTechnologies: technologies?.length || 0,
+        ceiSphereCount: sourceCount.cei_sphere || 0,
+        dealroomCount: sourceCount.dealroom || 0,
+        manualCount: sourceCount.manual || 0,
+        totalFunding,
+        totalPatents,
+        totalEmployees,
+        avgCompositeScore,
+      };
+    },
+  });
+}
