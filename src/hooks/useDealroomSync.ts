@@ -1,8 +1,43 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { DealroomCompany, DealroomSyncLog } from "@/types/database";
 import { toast } from "sonner";
 
+interface DealroomCompany {
+  id: string;
+  dealroomId: string;
+  name: string;
+  tagline?: string;
+  description?: string;
+  website?: string;
+  hqCountry?: string;
+  hqCity?: string;
+  foundedYear?: number;
+  employeesCount: number;
+  totalFundingEur: number;
+  valuationEur?: number;
+  lastFundingDate?: string;
+  lastFundingAmountEur?: number;
+  growthStage?: string;
+  investors: string[];
+  industries: string[];
+  patentsCount: number;
+  newsItems?: Array<{ title: string; date: string; url: string }>;
+  syncedAt: string;
+}
+
+interface DealroomSyncLog {
+  id: string;
+  syncType: string;
+  keywordsSearched: string[];
+  recordsFetched: number;
+  recordsCreated: number;
+  recordsUpdated: number;
+  apiCallsMade: number;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  errorMessage?: string;
+  startedAt: string;
+  completedAt?: string;
+}
 // Fetch Dealroom companies
 export function useDealroomCompanies(options?: {
   country?: string;
@@ -79,6 +114,7 @@ export function useDealroomSyncLogs(limit = 10) {
         recordsFetched: row.records_fetched || 0,
         recordsCreated: row.records_created || 0,
         recordsUpdated: row.records_updated || 0,
+        apiCallsMade: row.api_calls_made || 0,
         status: row.status as DealroomSyncLog["status"],
         errorMessage: row.error_message || undefined,
         startedAt: row.started_at,
@@ -88,12 +124,42 @@ export function useDealroomSyncLogs(limit = 10) {
   });
 }
 
+// Fetch API usage for current period
+export function useDealroomApiUsage() {
+  return useQuery({
+    queryKey: ["dealroom-api-usage"],
+    queryFn: async () => {
+      const now = new Date().toISOString().split("T")[0];
+      const { data, error } = await supabase
+        .from("dealroom_api_usage")
+        .select("*")
+        .gte("period_end", now)
+        .order("period_start", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== "PGRST116") throw error;
+      
+      if (!data) return null;
+
+      return {
+        id: data.id,
+        periodStart: data.period_start,
+        periodEnd: data.period_end,
+        apiCallsLimit: data.api_calls_limit,
+        apiCallsUsed: data.api_calls_used,
+        lastSyncDate: data.last_sync_date,
+      };
+    },
+  });
+}
+
 // Trigger Dealroom sync
 export function useDealroomSync() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (options?: { keyword?: string; limit?: number }) => {
+    mutationFn: async (options?: { keyword?: string; limit?: number; keywordsPerSync?: number }) => {
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/dealroom-sync`,
         {
@@ -106,21 +172,27 @@ export function useDealroomSync() {
             action: "sync",
             keyword: options?.keyword,
             limit: options?.limit || 100,
+            keywordsPerSync: options?.keywordsPerSync || 10,
           }),
         }
       );
 
+      const result = await response.json();
+      
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Sync failed");
+        if (result.quotaExceeded) {
+          throw new Error(`API quota exceeded. Used ${result.usage?.used}/${result.usage?.limit} calls. Resets on ${result.usage?.periodEnd}`);
+        }
+        throw new Error(result.error || "Sync failed");
       }
 
-      return response.json();
+      return result;
     },
     onSuccess: (data) => {
-      toast.success(`Sync completed: ${data.recordsFetched} records fetched`);
+      toast.success(`Sync completed: ${data.recordsFetched} records fetched (${data.apiCallsMade} API calls)`);
       queryClient.invalidateQueries({ queryKey: ["dealroom-companies"] });
       queryClient.invalidateQueries({ queryKey: ["dealroom-sync-logs"] });
+      queryClient.invalidateQueries({ queryKey: ["dealroom-api-usage"] });
       queryClient.invalidateQueries({ queryKey: ["technologies"] });
     },
     onError: (error) => {

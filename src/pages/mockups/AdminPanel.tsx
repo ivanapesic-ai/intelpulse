@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, RefreshCw, Users, BarChart3, Database, Trash2, Edit, FileText, Upload, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
+import { ArrowLeft, Plus, RefreshCw, Users, BarChart3, Database, Trash2, Edit, FileText, Upload, CheckCircle, XCircle, Clock, AlertCircle, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { useDealroomCompanies, useDealroomSyncLogs, useDealroomSync, useDealroomCountryStats } from "@/hooks/useDealroomSync";
+import { useDealroomCompanies, useDealroomSyncLogs, useDealroomSync, useDealroomCountryStats, useDealroomApiUsage } from "@/hooks/useDealroomSync";
 import { useDocuments, useDocumentStats } from "@/hooks/useDocuments";
 import { useKeywords, useKeywordStats } from "@/hooks/useTechnologies";
 import { formatFundingEur, formatNumber } from "@/types/database";
@@ -50,6 +50,7 @@ export default function AdminPanel() {
   const { data: documentStats } = useDocumentStats();
   const { data: keywords } = useKeywords();
   const { data: keywordStats } = useKeywordStats();
+  const { data: apiUsage } = useDealroomApiUsage();
   
   const dealroomSync = useDealroomSync();
 
@@ -61,6 +62,11 @@ export default function AdminPanel() {
   const totalCompanies = companies?.length || 0;
   const totalKeywords = keywordStats?.totalKeywords || 0;
   const lastSyncLog = syncLogs?.[0];
+
+  // API Usage calculations
+  const usagePercent = apiUsage ? (apiUsage.apiCallsUsed / apiUsage.apiCallsLimit) * 100 : 0;
+  const usageStatus = usagePercent >= 90 ? "critical" : usagePercent >= 70 ? "warning" : "normal";
+  const usageColor = usageStatus === "critical" ? "bg-destructive" : usageStatus === "warning" ? "bg-warning" : "bg-primary";
 
   return (
     <div className="min-h-screen bg-background">
@@ -167,6 +173,55 @@ export default function AdminPanel() {
 
           {/* Dealroom Sync Tab */}
           <TabsContent value="dealroom" className="space-y-4">
+            {/* API Usage Card */}
+            <Card className={`border-2 ${usageStatus === "critical" ? "border-destructive/50" : usageStatus === "warning" ? "border-warning/50" : "border-border"}`}>
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Zap className={`h-5 w-5 ${usageStatus === "critical" ? "text-destructive" : usageStatus === "warning" ? "text-warning" : "text-primary"}`} />
+                    <CardTitle className="text-lg text-foreground">Dealroom API Usage</CardTitle>
+                  </div>
+                  {usageStatus !== "normal" && (
+                    <Badge variant="outline" className={usageStatus === "critical" ? "bg-destructive/10 text-destructive border-destructive/30" : "bg-warning/10 text-warning border-warning/30"}>
+                      {usageStatus === "critical" ? "Near Limit" : "Approaching Limit"}
+                    </Badge>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-baseline justify-between">
+                  <div>
+                    <span className="text-3xl font-bold text-foreground">{formatNumber(apiUsage?.apiCallsUsed || 0)}</span>
+                    <span className="text-muted-foreground ml-1">/ {formatNumber(apiUsage?.apiCallsLimit || 50000)} calls</span>
+                  </div>
+                  <span className={`text-lg font-semibold ${usageStatus === "critical" ? "text-destructive" : usageStatus === "warning" ? "text-warning" : "text-primary"}`}>
+                    {usagePercent.toFixed(1)}%
+                  </span>
+                </div>
+                <Progress value={usagePercent} className={`h-3 ${usageColor}`} />
+                <div className="grid grid-cols-3 gap-4 pt-2">
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground">Period</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {apiUsage?.periodStart ? new Date(apiUsage.periodStart).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"} - {apiUsage?.periodEnd ? new Date(apiUsage.periodEnd).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground">Last Sync</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {apiUsage?.lastSyncDate ? new Date(apiUsage.lastSyncDate).toLocaleDateString() : "Never"}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground">Remaining</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {formatNumber((apiUsage?.apiCallsLimit || 50000) - (apiUsage?.apiCallsUsed || 0))} calls
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <div className="grid lg:grid-cols-3 gap-4">
               {/* Sync Controls */}
               <Card className="lg:col-span-2">
@@ -177,10 +232,10 @@ export default function AdminPanel() {
                   </div>
                   <Button 
                     onClick={handleDealroomSync} 
-                    disabled={dealroomSync.isPending}
+                    disabled={dealroomSync.isPending || usagePercent >= 100}
                   >
                     <RefreshCw className={`h-4 w-4 mr-2 ${dealroomSync.isPending ? "animate-spin" : ""}`} />
-                    {dealroomSync.isPending ? "Syncing..." : "Sync Now"}
+                    {dealroomSync.isPending ? "Syncing..." : usagePercent >= 100 ? "Quota Exceeded" : "Sync Now"}
                   </Button>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -215,6 +270,7 @@ export default function AdminPanel() {
                               <div>
                                 <p className="text-sm font-medium text-foreground">
                                   {log.recordsFetched} fetched, {log.recordsCreated} created
+                                  {log.apiCallsMade > 0 && <span className="text-muted-foreground ml-1">({log.apiCallsMade} API calls)</span>}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
                                   {new Date(log.startedAt).toLocaleString()}

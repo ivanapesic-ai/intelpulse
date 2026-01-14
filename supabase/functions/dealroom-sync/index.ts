@@ -52,6 +52,15 @@ interface DealroomCompany {
   news?: Array<{ title: string; date: string; url: string }>;
 }
 
+interface ApiUsage {
+  id: string;
+  period_start: string;
+  period_end: string;
+  api_calls_limit: number;
+  api_calls_used: number;
+  last_sync_date: string | null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -72,7 +81,66 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { action, keyword, limit = 100 } = await req.json();
+    const { action, keyword, limit = 100, keywordsPerSync = 10 } = await req.json();
+
+    // Check API usage quota before proceeding
+    const now = new Date();
+    const { data: usageData, error: usageError } = await supabase
+      .from("dealroom_api_usage")
+      .select("*")
+      .gte("period_end", now.toISOString().split("T")[0])
+      .order("period_start", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (usageError && usageError.code !== "PGRST116") {
+      console.error("Error fetching API usage:", usageError);
+    }
+
+    let currentUsage: ApiUsage | null = usageData;
+
+    // Create new period if none exists or current one expired
+    if (!currentUsage) {
+      const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      
+      const { data: newUsage, error: createError } = await supabase
+        .from("dealroom_api_usage")
+        .insert({
+          period_start: periodStart.toISOString().split("T")[0],
+          period_end: periodEnd.toISOString().split("T")[0],
+          api_calls_limit: 50000,
+          api_calls_used: 0,
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error("Error creating usage period:", createError);
+      } else {
+        currentUsage = newUsage;
+      }
+    }
+
+    // Check if quota exceeded
+    if (currentUsage && currentUsage.api_calls_used >= currentUsage.api_calls_limit) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "API quota exceeded for current billing period",
+          quotaExceeded: true,
+          usage: {
+            used: currentUsage.api_calls_used,
+            limit: currentUsage.api_calls_limit,
+            periodEnd: currentUsage.period_end,
+          },
+        }),
+        {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
 
     // Create sync log
     const { data: syncLog, error: logError } = await supabase
@@ -81,6 +149,7 @@ serve(async (req) => {
         sync_type: action || "full_sync",
         keywords_searched: keyword ? [keyword] : [],
         status: "running",
+        api_calls_made: 0,
       })
       .select()
       .single();
@@ -101,18 +170,33 @@ serve(async (req) => {
       throw new Error(`Failed to fetch keywords: ${keywordsError.message}`);
     }
 
-    // Build search query from keywords
+    // Build search query from keywords (respect keywordsPerSync limit)
     const searchTerms = keyword 
       ? [keyword]
-      : keywords?.slice(0, 10).map(k => k.display_name) || [];
+      : keywords?.slice(0, keywordsPerSync).map(k => k.display_name) || [];
 
     let recordsFetched = 0;
     let recordsCreated = 0;
     let recordsUpdated = 0;
+    let apiCallsMade = 0;
     const errors: string[] = [];
 
+    // Calculate remaining quota
+    const remainingCalls = currentUsage 
+      ? currentUsage.api_calls_limit - currentUsage.api_calls_used 
+      : 50000;
+
     for (const searchTerm of searchTerms) {
+      // Check if we'd exceed quota
+      if (apiCallsMade >= remainingCalls) {
+        errors.push(`Stopped early: API quota would be exceeded`);
+        break;
+      }
+
       try {
+        // Count this API call
+        apiCallsMade++;
+
         // Call Dealroom API
         const dealroomResponse = await fetch(
           `https://api.dealroom.co/api/v2/companies?` + new URLSearchParams({
@@ -276,7 +360,18 @@ serve(async (req) => {
       }
     }
 
-    // Update sync log
+    // Update API usage tracking
+    if (currentUsage && apiCallsMade > 0) {
+      await supabase
+        .from("dealroom_api_usage")
+        .update({
+          api_calls_used: currentUsage.api_calls_used + apiCallsMade,
+          last_sync_date: new Date().toISOString(),
+        })
+        .eq("id", currentUsage.id);
+    }
+
+    // Update sync log with API calls made
     if (logId) {
       await supabase
         .from("dealroom_sync_logs")
@@ -284,6 +379,7 @@ serve(async (req) => {
           records_fetched: recordsFetched,
           records_created: recordsCreated,
           records_updated: recordsUpdated,
+          api_calls_made: apiCallsMade,
           status: errors.length > 0 ? "completed" : "completed",
           error_message: errors.length > 0 ? errors.join("; ") : null,
           completed_at: new Date().toISOString(),
@@ -297,8 +393,14 @@ serve(async (req) => {
         recordsFetched,
         recordsCreated,
         recordsUpdated,
+        apiCallsMade,
         errors: errors.length > 0 ? errors : undefined,
         syncLogId: logId,
+        usage: currentUsage ? {
+          used: currentUsage.api_calls_used + apiCallsMade,
+          limit: currentUsage.api_calls_limit,
+          remaining: currentUsage.api_calls_limit - currentUsage.api_calls_used - apiCallsMade,
+        } : undefined,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
