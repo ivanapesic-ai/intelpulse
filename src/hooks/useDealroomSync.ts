@@ -38,6 +38,21 @@ interface DealroomSyncLog {
   startedAt: string;
   completedAt?: string;
 }
+// Get total company count
+export function useDealroomCompanyCount() {
+  return useQuery({
+    queryKey: ["dealroom-company-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("dealroom_companies")
+        .select("*", { count: "exact", head: true });
+
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+}
+
 // Fetch Dealroom companies
 export function useDealroomCompanies(options?: {
   country?: string;
