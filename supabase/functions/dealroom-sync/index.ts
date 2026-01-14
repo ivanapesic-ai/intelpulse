@@ -208,6 +208,7 @@ serve(async (req) => {
         console.log(`Searching for "${searchTerm}" with auth header...`);
 
         // Call Dealroom API v1 with POST and form_data filters
+        // Use tags + sub_industries for keyword-based search (not industries which requires taxonomy values)
         const dealroomResponse = await fetch(
           `https://api.dealroom.co/api/v1/companies?limit=${Math.min(limit, 100)}&sort=-total_funding`,
           {
@@ -220,7 +221,10 @@ serve(async (req) => {
               form_data: {
                 must: {
                   hq_locations: ["Europe"],
-                  industries: [searchTerm.toLowerCase()],
+                },
+                should: {
+                  tags: [searchTerm.toLowerCase()],
+                  sub_industries: [searchTerm.toLowerCase()],
                 },
               },
             }),
@@ -230,12 +234,14 @@ serve(async (req) => {
         if (!dealroomResponse.ok) {
           const errorText = await dealroomResponse.text();
           console.error(`Dealroom API error for "${searchTerm}":`, dealroomResponse.status, errorText);
-          errors.push(`${searchTerm}: ${dealroomResponse.status}`);
+          errors.push(`${searchTerm}: ${dealroomResponse.status} - ${errorText.substring(0, 100)}`);
           continue;
         }
 
         const dealroomData = await dealroomResponse.json();
         const companies: DealroomCompany[] = dealroomData.items || dealroomData.companies || [];
+        
+        console.log(`Response for "${searchTerm}": status=${dealroomResponse.status}, total=${dealroomData.total || companies.length}`);
 
         recordsFetched += companies.length;
 
