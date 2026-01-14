@@ -171,17 +171,29 @@ serve(async (req) => {
     // Get all active keywords from database
     const { data: keywords, error: keywordsError } = await supabase
       .from("technology_keywords")
-      .select("id, keyword, display_name, aliases")
+      .select("id, keyword, display_name, aliases, source")
       .eq("is_active", true);
 
     if (keywordsError) {
       throw new Error(`Failed to fetch keywords: ${keywordsError.message}`);
     }
 
-    // Build search query from keywords (respect keywordsPerSync limit)
-    const searchTerms = keyword 
+    // Build search terms (avoid wasting calls on non-Dealroom taxonomy by default)
+    const activeKeywords = keywords || [];
+    const dealroomKeywords = activeKeywords.filter((k) => k.source === "dealroom");
+    const keywordsToSearch = dealroomKeywords.length > 0 ? dealroomKeywords : activeKeywords;
+
+    const searchTerms = keyword
       ? [keyword]
-      : keywords?.slice(0, keywordsPerSync).map(k => k.display_name) || [];
+      : keywordsToSearch.slice(0, keywordsPerSync).map((k) => k.display_name);
+
+    // Update sync log with the actual keywords we are about to query
+    if (logId) {
+      await supabase
+        .from("dealroom_sync_logs")
+        .update({ keywords_searched: searchTerms })
+        .eq("id", logId);
+    }
 
     let recordsFetched = 0;
     let recordsCreated = 0;
