@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { useDealroomCompanies, useDealroomSyncLogs, useDealroomSync, useDealroomCountryStats, useDealroomApiUsage } from "@/hooks/useDealroomSync";
+import { useDealroomCompanies, useDealroomSyncLogs, useDealroomSync, useDealroomCountryStats, useDealroomApiUsage, useDealroomCompanyCount } from "@/hooks/useDealroomSync";
 import { useDocuments, useDocumentStats } from "@/hooks/useDocuments";
 import { useKeywords, useKeywordStats } from "@/hooks/useTechnologies";
 import { formatFundingEur, formatNumber } from "@/types/database";
@@ -44,6 +44,7 @@ export default function AdminPanel() {
   
   // Data hooks
   const { data: companies, isLoading: companiesLoading } = useDealroomCompanies({ limit: 10 });
+  const { data: companyCount } = useDealroomCompanyCount();
   const { data: syncLogs, isLoading: syncLogsLoading } = useDealroomSyncLogs(5);
   const { data: countryStats } = useDealroomCountryStats();
   const { data: documents, isLoading: documentsLoading } = useDocuments();
@@ -59,7 +60,7 @@ export default function AdminPanel() {
   };
 
   const activeUsers = users.filter((u) => u.status === "active").length;
-  const totalCompanies = companies?.length || 0;
+  const totalCompanies = companyCount || 0;
   const totalKeywords = keywordStats?.totalKeywords || 0;
   const lastSyncLog = syncLogs?.[0];
 
