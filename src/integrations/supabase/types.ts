@@ -62,6 +62,39 @@ export type Database = {
         }
         Relationships: []
       }
+      dealroom_api_usage: {
+        Row: {
+          api_calls_limit: number | null
+          api_calls_used: number | null
+          created_at: string | null
+          id: string
+          last_sync_date: string | null
+          period_end: string
+          period_start: string
+          updated_at: string | null
+        }
+        Insert: {
+          api_calls_limit?: number | null
+          api_calls_used?: number | null
+          created_at?: string | null
+          id?: string
+          last_sync_date?: string | null
+          period_end: string
+          period_start: string
+          updated_at?: string | null
+        }
+        Update: {
+          api_calls_limit?: number | null
+          api_calls_used?: number | null
+          created_at?: string | null
+          id?: string
+          last_sync_date?: string | null
+          period_end?: string
+          period_start?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       dealroom_cache: {
         Row: {
           cache_date: string
@@ -175,6 +208,7 @@ export type Database = {
       }
       dealroom_sync_logs: {
         Row: {
+          api_calls_made: number | null
           completed_at: string | null
           error_message: string | null
           id: string
@@ -187,6 +221,7 @@ export type Database = {
           sync_type: string
         }
         Insert: {
+          api_calls_made?: number | null
           completed_at?: string | null
           error_message?: string | null
           id?: string
@@ -199,6 +234,7 @@ export type Database = {
           sync_type: string
         }
         Update: {
+          api_calls_made?: number | null
           completed_at?: string | null
           error_message?: string | null
           id?: string
