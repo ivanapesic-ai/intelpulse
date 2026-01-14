@@ -400,7 +400,7 @@ export type Database = {
           {
             foreignKeyName: "technologies_keyword_id_fkey"
             columns: ["keyword_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "technology_keywords"
             referencedColumns: ["id"]
           },
