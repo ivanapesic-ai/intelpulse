@@ -22,15 +22,15 @@ const WEBSITE_CONFIGS = {
   ceisphere: {
     baseUrl: 'https://ceisphere.eu',
     paths: {
-      publications: '/outputs-publications',
+      publications: '/publications',
       news: '/news',
-      projects: '/projects',
+      projects: '/market-insights',
     }
   },
   eucloudedgeiot: {
     baseUrl: 'https://eucloudedgeiot.eu',
     paths: {
-      publications: '/outputs-publications',
+      publications: '/key-results',
       news: '/news',
       projects: '/projects',
     }
