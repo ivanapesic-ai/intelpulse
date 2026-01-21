@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, RefreshCw, Users, BarChart3, Database, Trash2, Edit, FileText, Upload, CheckCircle, XCircle, Clock, AlertCircle, Zap, Tag } from "lucide-react";
+import { ArrowLeft, Plus, RefreshCw, Users, BarChart3, Database, Trash2, Edit, FileText, Upload, CheckCircle, XCircle, Clock, AlertCircle, Zap, Tag, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { useDocuments, useDocumentStats } from "@/hooks/useDocuments";
 import { useKeywords, useKeywordStats } from "@/hooks/useTechnologies";
 import { formatFundingEur, formatNumber } from "@/types/database";
 import { TagMappingEditor } from "@/components/admin/TagMappingEditor";
+import { WebScrapingPanel } from "@/components/admin/WebScrapingPanel";
 
 interface User {
   id: string;
@@ -167,6 +168,10 @@ export default function AdminPanel() {
         <Tabs defaultValue="dealroom" className="space-y-6">
           <TabsList>
             <TabsTrigger value="dealroom">Dealroom Sync</TabsTrigger>
+            <TabsTrigger value="web-scraping" className="flex items-center gap-1.5">
+              <Globe className="h-3.5 w-3.5" />
+              Web Scraping
+            </TabsTrigger>
             <TabsTrigger value="tag-mapping" className="flex items-center gap-1.5">
               <Tag className="h-3.5 w-3.5" />
               Tag Mapping
@@ -384,6 +389,11 @@ export default function AdminPanel() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Web Scraping Tab */}
+          <TabsContent value="web-scraping">
+            <WebScrapingPanel />
           </TabsContent>
 
           {/* Tag Mapping Tab */}

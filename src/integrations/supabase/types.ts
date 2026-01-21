@@ -338,6 +338,42 @@ export type Database = {
           },
         ]
       }
+      scraped_web_content: {
+        Row: {
+          created_at: string
+          id: string
+          markdown_content: string | null
+          page_type: string
+          scraped_at: string
+          title: string | null
+          updated_at: string
+          url: string
+          website: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          markdown_content?: string | null
+          page_type?: string
+          scraped_at?: string
+          title?: string | null
+          updated_at?: string
+          url: string
+          website: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          markdown_content?: string | null
+          page_type?: string
+          scraped_at?: string
+          title?: string | null
+          updated_at?: string
+          url?: string
+          website?: string
+        }
+        Relationships: []
+      }
       technologies: {
         Row: {
           composite_score: number | null
@@ -455,6 +491,83 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      web_technology_mentions: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          id: string
+          keyword_id: string
+          mention_context: string | null
+          source_url: string | null
+          trl_mentioned: number | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          keyword_id: string
+          mention_context?: string | null
+          source_url?: string | null
+          trl_mentioned?: number | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          keyword_id?: string
+          mention_context?: string | null
+          source_url?: string | null
+          trl_mentioned?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "web_technology_mentions_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      website_scrape_logs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          mentions_extracted: number | null
+          pages_scraped: number | null
+          scrape_type: string
+          started_at: string
+          status: string
+          website: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          mentions_extracted?: number | null
+          pages_scraped?: number | null
+          scrape_type: string
+          started_at?: string
+          status?: string
+          website: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          mentions_extracted?: number | null
+          pages_scraped?: number | null
+          scrape_type?: string
+          started_at?: string
+          status?: string
+          website?: string
+        }
+        Relationships: []
       }
     }
     Views: {
