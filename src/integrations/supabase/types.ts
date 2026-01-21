@@ -441,12 +441,14 @@ export type Database = {
       }
       technologies: {
         Row: {
+          avg_trl_mentioned: number | null
           composite_score: number | null
           created_at: string | null
           dealroom_company_count: number | null
           description: string | null
           document_mention_count: number | null
           employees_score: number | null
+          eu_alignment_score: number | null
           id: string
           investment_score: number | null
           key_players: string[] | null
@@ -454,19 +456,23 @@ export type Database = {
           last_updated: string | null
           name: string
           patents_score: number | null
+          policy_mention_count: number | null
           total_employees: number | null
           total_funding_eur: number | null
           total_patents: number | null
           trend: Database["public"]["Enums"]["trend_direction"] | null
+          trl_score: number | null
           visibility_score: number | null
         }
         Insert: {
+          avg_trl_mentioned?: number | null
           composite_score?: number | null
           created_at?: string | null
           dealroom_company_count?: number | null
           description?: string | null
           document_mention_count?: number | null
           employees_score?: number | null
+          eu_alignment_score?: number | null
           id?: string
           investment_score?: number | null
           key_players?: string[] | null
@@ -474,19 +480,23 @@ export type Database = {
           last_updated?: string | null
           name: string
           patents_score?: number | null
+          policy_mention_count?: number | null
           total_employees?: number | null
           total_funding_eur?: number | null
           total_patents?: number | null
           trend?: Database["public"]["Enums"]["trend_direction"] | null
+          trl_score?: number | null
           visibility_score?: number | null
         }
         Update: {
+          avg_trl_mentioned?: number | null
           composite_score?: number | null
           created_at?: string | null
           dealroom_company_count?: number | null
           description?: string | null
           document_mention_count?: number | null
           employees_score?: number | null
+          eu_alignment_score?: number | null
           id?: string
           investment_score?: number | null
           key_players?: string[] | null
@@ -494,10 +504,12 @@ export type Database = {
           last_updated?: string | null
           name?: string
           patents_score?: number | null
+          policy_mention_count?: number | null
           total_employees?: number | null
           total_funding_eur?: number | null
           total_patents?: number | null
           trend?: Database["public"]["Enums"]["trend_direction"] | null
+          trl_score?: number | null
           visibility_score?: number | null
         }
         Relationships: [
@@ -645,6 +657,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_eu_alignment_score: {
+        Args: { policy_count: number }
+        Returns: number
+      }
+      calculate_trl_score: { Args: { avg_trl: number }; Returns: number }
       calculate_visibility_score: {
         Args: { mention_count: number }
         Returns: number
