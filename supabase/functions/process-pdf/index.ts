@@ -1,0 +1,422 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+interface PdfQueueRow {
+  id: string;
+  url: string;
+  source_type: string;
+  zenodo_record_id: string | null;
+  status: string;
+  retry_count: number;
+}
+
+interface TechKeyword {
+  id: string;
+  keyword: string;
+  display_name: string;
+  aliases: string[] | null;
+}
+
+// Zenodo API to get direct download URL
+async function getZenodoDownloadUrl(recordId: string, apiToken: string): Promise<string | null> {
+  try {
+    const response = await fetch(`https://zenodo.org/api/records/${recordId}`, {
+      headers: {
+        'Authorization': `Bearer ${apiToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      console.error(`Zenodo API error: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    const files = data.files || [];
+    
+    // Find the first PDF file
+    const pdfFile = files.find((f: any) => 
+      f.key?.toLowerCase().endsWith('.pdf') || f.type === 'pdf'
+    );
+
+    if (pdfFile) {
+      // Use the links.self to get direct download URL
+      return pdfFile.links?.self || pdfFile.links?.download || null;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Zenodo API error:', error);
+    return null;
+  }
+}
+
+// Download PDF with retry logic
+async function downloadPdfWithRetry(
+  url: string, 
+  maxRetries: number = 3,
+  zenodoToken?: string
+): Promise<{ buffer: ArrayBuffer; filename: string; size: number } | null> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      // Add exponential backoff
+      if (attempt > 0) {
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+      }
+
+      const headers: Record<string, string> = {
+        'User-Agent': 'Mozilla/5.0 (compatible; BluSpecs-Radar/1.0)',
+      };
+
+      // Add Zenodo auth if available
+      if (zenodoToken && url.includes('zenodo.org')) {
+        headers['Authorization'] = `Bearer ${zenodoToken}`;
+      }
+
+      const response = await fetch(url, { headers });
+
+      if (response.status === 503) {
+        console.log(`Attempt ${attempt + 1}: 503 error, retrying...`);
+        continue;
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('pdf') && !contentType.includes('octet-stream')) {
+        throw new Error(`Invalid content type: ${contentType}`);
+      }
+
+      const buffer = await response.arrayBuffer();
+      
+      // Validate it's actually a PDF
+      const header = new Uint8Array(buffer.slice(0, 5));
+      const pdfMagic = String.fromCharCode(...header);
+      if (!pdfMagic.startsWith('%PDF')) {
+        throw new Error('Not a valid PDF file');
+      }
+
+      // Extract filename from URL
+      const urlPath = new URL(url).pathname;
+      const filename = decodeURIComponent(urlPath.split('/').pop() || 'document.pdf');
+
+      return { buffer, filename, size: buffer.byteLength };
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      console.log(`Attempt ${attempt + 1} failed:`, lastError.message);
+    }
+  }
+
+  console.error('All download attempts failed:', lastError?.message);
+  return null;
+}
+
+// Extract text from PDF using Gemini
+async function extractPdfText(
+  pdfBuffer: ArrayBuffer, 
+  filename: string,
+  apiKey: string
+): Promise<string | null> {
+  try {
+    const base64Pdf = btoa(
+      new Uint8Array(pdfBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+    );
+
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `Extract all readable text from this PDF document. Focus on technology names, TRL levels, research findings, and policy references. Return the extracted text content only.`,
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:application/pdf;base64,${base64Pdf}`,
+                },
+              },
+            ],
+          },
+        ],
+        max_tokens: 8000,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Gemini API error:', response.status, errorText);
+      return null;
+    }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || null;
+  } catch (error) {
+    console.error('PDF text extraction error:', error);
+    return null;
+  }
+}
+
+// Parse extracted text for technology mentions
+async function extractTechMentions(
+  content: string,
+  sourceUrl: string,
+  keywords: TechKeyword[],
+  apiKey: string,
+  supabase: any
+): Promise<number> {
+  try {
+    const keywordList = keywords.map(k => ({
+      id: k.id,
+      name: k.display_name,
+      aliases: k.aliases || [],
+    }));
+
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a technology analyst extracting technology mentions from documents. For each technology found, identify the context, any TRL level mentioned (1-9), and policy references. Return JSON array only.`,
+          },
+          {
+            role: 'user',
+            content: `Analyze this document for mentions of these technologies:
+${JSON.stringify(keywordList, null, 2)}
+
+Document content:
+${content.slice(0, 15000)}
+
+Return JSON array: [{"keyword_id": "...", "context": "...", "trl": null or 1-9, "confidence": 0.0-1.0, "policy_reference": null or "..."}]`,
+          },
+        ],
+        max_tokens: 4000,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Tech extraction API error:', response.status);
+      return 0;
+    }
+
+    const data = await response.json();
+    const responseText = data.choices?.[0]?.message?.content || '';
+    
+    // Parse JSON from response
+    const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) return 0;
+
+    const mentions = JSON.parse(jsonMatch[0]);
+    if (!Array.isArray(mentions) || mentions.length === 0) return 0;
+
+    // Insert mentions into web_technology_mentions
+    const validMentions = mentions
+      .filter((m: any) => m.keyword_id && keywords.some(k => k.id === m.keyword_id))
+      .map((m: any) => ({
+        keyword_id: m.keyword_id,
+        source_url: sourceUrl,
+        mention_context: m.context?.slice(0, 500),
+        trl_mentioned: m.trl,
+        confidence_score: m.confidence || 0.7,
+      }));
+
+    if (validMentions.length > 0) {
+      const { error } = await supabase
+        .from('web_technology_mentions')
+        .insert(validMentions);
+
+      if (error) {
+        console.error('Error inserting mentions:', error);
+        return 0;
+      }
+    }
+
+    return validMentions.length;
+  } catch (error) {
+    console.error('Tech extraction error:', error);
+    return 0;
+  }
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { pdfId } = await req.json();
+
+    if (!pdfId) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Missing pdfId' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get environment variables
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
+    const zenodoToken = Deno.env.get('ZENODO_API_TOKEN');
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Fetch the PDF queue item
+    const { data: pdfItem, error: fetchError } = await supabase
+      .from('pdf_processing_queue')
+      .select('*')
+      .eq('id', pdfId)
+      .single();
+
+    if (fetchError || !pdfItem) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'PDF not found in queue' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const pdf = pdfItem as PdfQueueRow;
+
+    // Update status to processing
+    await supabase
+      .from('pdf_processing_queue')
+      .update({ status: 'processing' })
+      .eq('id', pdfId);
+
+    let downloadUrl = pdf.url;
+
+    // For Zenodo, resolve the direct download URL
+    if (pdf.source_type === 'zenodo' && pdf.zenodo_record_id && zenodoToken) {
+      const resolvedUrl = await getZenodoDownloadUrl(pdf.zenodo_record_id, zenodoToken);
+      if (resolvedUrl) {
+        downloadUrl = resolvedUrl;
+        console.log('Resolved Zenodo URL:', resolvedUrl);
+      }
+    }
+
+    // Download the PDF
+    const downloadResult = await downloadPdfWithRetry(downloadUrl, 3, zenodoToken);
+
+    if (!downloadResult) {
+      await supabase
+        .from('pdf_processing_queue')
+        .update({
+          status: 'failed',
+          error_message: 'Download failed after retries',
+          retry_count: pdf.retry_count + 1,
+        })
+        .eq('id', pdfId);
+
+      return new Response(
+        JSON.stringify({ success: false, error: 'Download failed' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check file size (20MB limit)
+    if (downloadResult.size > 20 * 1024 * 1024) {
+      await supabase
+        .from('pdf_processing_queue')
+        .update({
+          status: 'skipped',
+          error_message: 'File too large (>20MB)',
+          file_size_bytes: downloadResult.size,
+          filename: downloadResult.filename,
+        })
+        .eq('id', pdfId);
+
+      return new Response(
+        JSON.stringify({ success: false, error: 'File too large' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Extract text from PDF
+    const extractedText = await extractPdfText(downloadResult.buffer, downloadResult.filename, lovableApiKey);
+
+    if (!extractedText) {
+      await supabase
+        .from('pdf_processing_queue')
+        .update({
+          status: 'failed',
+          error_message: 'Text extraction failed',
+          file_size_bytes: downloadResult.size,
+          filename: downloadResult.filename,
+          retry_count: pdf.retry_count + 1,
+        })
+        .eq('id', pdfId);
+
+      return new Response(
+        JSON.stringify({ success: false, error: 'Text extraction failed' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Fetch keywords for matching
+    const { data: keywords } = await supabase
+      .from('technology_keywords')
+      .select('id, keyword, display_name, aliases')
+      .eq('is_active', true);
+
+    // Extract technology mentions
+    const mentionsCount = await extractTechMentions(
+      extractedText,
+      pdf.url,
+      keywords || [],
+      lovableApiKey,
+      supabase
+    );
+
+    // Update queue item as completed
+    await supabase
+      .from('pdf_processing_queue')
+      .update({
+        status: 'completed',
+        file_size_bytes: downloadResult.size,
+        filename: downloadResult.filename,
+        mentions_extracted: mentionsCount,
+        processed_at: new Date().toISOString(),
+      })
+      .eq('id', pdfId);
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        mentionsExtracted: mentionsCount,
+        filename: downloadResult.filename,
+        fileSize: downloadResult.size,
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Process PDF error:', error);
+    return new Response(
+      JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});

@@ -338,6 +338,65 @@ export type Database = {
           },
         ]
       }
+      pdf_processing_queue: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          file_size_bytes: number | null
+          filename: string | null
+          id: string
+          mentions_extracted: number | null
+          processed_at: string | null
+          retry_count: number | null
+          source_page_id: string | null
+          source_type: string
+          status: string
+          storage_path: string | null
+          url: string
+          zenodo_record_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          file_size_bytes?: number | null
+          filename?: string | null
+          id?: string
+          mentions_extracted?: number | null
+          processed_at?: string | null
+          retry_count?: number | null
+          source_page_id?: string | null
+          source_type?: string
+          status?: string
+          storage_path?: string | null
+          url: string
+          zenodo_record_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          file_size_bytes?: number | null
+          filename?: string | null
+          id?: string
+          mentions_extracted?: number | null
+          processed_at?: string | null
+          retry_count?: number | null
+          source_page_id?: string | null
+          source_type?: string
+          status?: string
+          storage_path?: string | null
+          url?: string
+          zenodo_record_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdf_processing_queue_source_page_id_fkey"
+            columns: ["source_page_id"]
+            isOneToOne: false
+            referencedRelation: "scraped_web_content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scraped_web_content: {
         Row: {
           created_at: string
