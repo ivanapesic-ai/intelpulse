@@ -56,23 +56,26 @@ async function getZenodoDownloadUrl(recordId: string, apiToken: string): Promise
   }
 }
 
-// Download PDF with retry logic
+// Download PDF with retry logic and exponential backoff
 async function downloadPdfWithRetry(
   url: string, 
-  maxRetries: number = 3,
+  maxRetries: number = 5,
   zenodoToken?: string
 ): Promise<{ buffer: ArrayBuffer; filename: string; size: number } | null> {
   let lastError: Error | null = null;
   
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      // Add exponential backoff
+      // Longer exponential backoff for Zenodo rate limits
       if (attempt > 0) {
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        const delayMs = Math.min(Math.pow(2, attempt) * 2000, 30000); // 2s, 4s, 8s, 16s, 30s
+        console.log(`Waiting ${delayMs}ms before retry ${attempt + 1}...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
       }
 
       const headers: Record<string, string> = {
-        'User-Agent': 'Mozilla/5.0 (compatible; BluSpecs-Radar/1.0)',
+        'User-Agent': 'Mozilla/5.0 (compatible; BluSpecs-Radar/1.0; research-platform)',
+        'Accept': 'application/pdf,*/*',
       };
 
       // Add Zenodo auth if available
@@ -80,15 +83,23 @@ async function downloadPdfWithRetry(
         headers['Authorization'] = `Bearer ${zenodoToken}`;
       }
 
-      const response = await fetch(url, { headers });
+      console.log(`Attempt ${attempt + 1}: Downloading ${url}`);
+      const response = await fetch(url, { headers, redirect: 'follow' });
 
       if (response.status === 503) {
-        console.log(`Attempt ${attempt + 1}: 503 error, retrying...`);
+        console.log(`Attempt ${attempt + 1}: 503 Service Unavailable, will retry...`);
+        continue;
+      }
+
+      if (response.status === 429) {
+        console.log(`Attempt ${attempt + 1}: 429 Rate Limited, will retry with longer delay...`);
+        // Extra delay for rate limiting
+        await new Promise(resolve => setTimeout(resolve, 10000));
         continue;
       }
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const contentType = response.headers.get('content-type') || '';
@@ -109,6 +120,7 @@ async function downloadPdfWithRetry(
       const urlPath = new URL(url).pathname;
       const filename = decodeURIComponent(urlPath.split('/').pop() || 'document.pdf');
 
+      console.log(`Successfully downloaded: ${filename} (${buffer.byteLength} bytes)`);
       return { buffer, filename, size: buffer.byteLength };
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
