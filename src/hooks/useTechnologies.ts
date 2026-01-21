@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { TechnologyKeyword, Technology, KeywordSource } from "@/types/database";
+import { toast } from "@/hooks/use-toast";
 
-// Fetch all active keywords
+// Fetch all active keywords (including dealroom_tags for mapping)
 export function useKeywords(source?: KeywordSource) {
   return useQuery({
     queryKey: ["keywords", source],
@@ -29,10 +30,47 @@ export function useKeywords(source?: KeywordSource) {
         description: row.description || undefined,
         parentKeywordId: row.parent_keyword_id || undefined,
         aliases: row.aliases || undefined,
+        dealroomTags: row.dealroom_tags || [],
         isActive: row.is_active,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
       }));
+    },
+  });
+}
+
+// Update dealroom_tags for a keyword
+export function useUpdateKeywordTags() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ keywordId, tags }: { keywordId: string; tags: string[] }) => {
+      const { data, error } = await supabase
+        .from("technology_keywords")
+        .update({ 
+          dealroom_tags: tags,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", keywordId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["keywords"] });
+      toast({
+        title: "Tags updated",
+        description: "Dealroom tags have been saved successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to update tags",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 }

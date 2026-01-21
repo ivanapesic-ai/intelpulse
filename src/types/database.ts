@@ -11,6 +11,7 @@ export interface TechnologyKeyword {
   description?: string;
   parentKeywordId?: string;
   aliases?: string[];
+  dealroomTags?: string[];
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

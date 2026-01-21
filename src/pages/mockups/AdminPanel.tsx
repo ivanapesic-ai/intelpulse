@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, RefreshCw, Users, BarChart3, Database, Trash2, Edit, FileText, Upload, CheckCircle, XCircle, Clock, AlertCircle, Zap } from "lucide-react";
+import { ArrowLeft, Plus, RefreshCw, Users, BarChart3, Database, Trash2, Edit, FileText, Upload, CheckCircle, XCircle, Clock, AlertCircle, Zap, Tag } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import { useDealroomCompanies, useDealroomSyncLogs, useDealroomSync, useDealroom
 import { useDocuments, useDocumentStats } from "@/hooks/useDocuments";
 import { useKeywords, useKeywordStats } from "@/hooks/useTechnologies";
 import { formatFundingEur, formatNumber } from "@/types/database";
+import { TagMappingEditor } from "@/components/admin/TagMappingEditor";
 
 interface User {
   id: string;
@@ -166,6 +167,10 @@ export default function AdminPanel() {
         <Tabs defaultValue="dealroom" className="space-y-6">
           <TabsList>
             <TabsTrigger value="dealroom">Dealroom Sync</TabsTrigger>
+            <TabsTrigger value="tag-mapping" className="flex items-center gap-1.5">
+              <Tag className="h-3.5 w-3.5" />
+              Tag Mapping
+            </TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="keywords">Keywords</TabsTrigger>
             <TabsTrigger value="users">User Management</TabsTrigger>
@@ -379,6 +384,11 @@ export default function AdminPanel() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Tag Mapping Tab */}
+          <TabsContent value="tag-mapping">
+            <TagMappingEditor />
           </TabsContent>
 
           {/* Documents Tab */}
