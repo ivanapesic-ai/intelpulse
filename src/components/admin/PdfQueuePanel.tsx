@@ -14,9 +14,12 @@ import {
   XCircle,
   Clock,
   AlertCircle,
-  Loader2
+  Loader2,
+  Play,
+  Square
 } from 'lucide-react';
-import { usePdfQueue, usePdfQueueStats, useProcessPdf, useSkipPdf, useRetryPdf, type PdfQueueItem } from '@/hooks/usePdfQueue';
+import { usePdfQueue, usePdfQueueStats, useProcessPdf, useSkipPdf, useRetryPdf, useProcessAllPending, type PdfQueueItem } from '@/hooks/usePdfQueue';
+import { Progress } from '@/components/ui/progress';
 import { format } from 'date-fns';
 
 const statusConfig: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
@@ -161,18 +164,65 @@ export function PdfQueuePanel() {
   const processPdf = useProcessPdf();
   const skipPdf = useSkipPdf();
   const retryPdf = useRetryPdf();
+  const batch = useProcessAllPending();
 
   const filteredPdfs = activeTab === 'all' 
     ? allPdfs 
     : allPdfs.filter(pdf => pdf.status === activeTab);
 
+  const pendingCount = stats?.pending || 0;
+  const progressPercent = batch.total > 0 ? (batch.current / batch.total) * 100 : 0;
+
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2">
-          <FileText className="h-5 w-5" />
-          PDF Processing Queue
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            PDF Processing Queue
+          </CardTitle>
+          
+          <div className="flex items-center gap-2">
+            {batch.isRunning ? (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={batch.stop}
+                className="gap-1"
+              >
+                <Square className="h-3 w-3" />
+                Stop
+              </Button>
+            ) : (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={batch.start}
+                disabled={pendingCount === 0 || processPdf.isPending}
+                className="gap-1"
+              >
+                <Play className="h-3 w-3" />
+                Process All ({pendingCount})
+              </Button>
+            )}
+          </div>
+        </div>
+        
+        {/* Batch progress indicator */}
+        {batch.isRunning && (
+          <div className="mt-3 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">
+                Processing {batch.current}/{batch.total}: {batch.currentPdfName}...
+              </span>
+              <div className="flex items-center gap-3 text-xs">
+                <span className="text-green-600">{batch.successCount} ✓</span>
+                <span className="text-red-600">{batch.failCount} ✗</span>
+              </div>
+            </div>
+            <Progress value={progressPercent} className="h-2" />
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Stats row */}
