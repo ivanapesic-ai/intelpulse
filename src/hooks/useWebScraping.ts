@@ -24,12 +24,34 @@ export interface ScrapedWebContent {
   scrapedAt: string;
 }
 
+// Database row types for new tables (not yet in generated types)
+interface WebsiteScrapeLogRow {
+  id: string;
+  website: string;
+  scrape_type: string;
+  status: string;
+  pages_scraped: number | null;
+  mentions_extracted: number | null;
+  started_at: string;
+  completed_at: string | null;
+  error_message: string | null;
+}
+
+interface ScrapedWebContentRow {
+  id: string;
+  url: string;
+  website: string;
+  page_type: string;
+  title: string | null;
+  scraped_at: string;
+}
+
 export function useWebScrapeLogs(limit = 10) {
   return useQuery({
     queryKey: ['web-scrape-logs', limit],
     queryFn: async (): Promise<WebsiteScrapeLog[]> => {
       const { data, error } = await supabase
-        .from('website_scrape_logs')
+        .from('website_scrape_logs' as any)
         .select('*')
         .order('started_at', { ascending: false })
         .limit(limit);
@@ -39,16 +61,17 @@ export function useWebScrapeLogs(limit = 10) {
         return [];
       }
 
-      return (data || []).map(row => ({
+      const rows = (data || []) as unknown as WebsiteScrapeLogRow[];
+      return rows.map(row => ({
         id: row.id,
         website: row.website,
         scrapeType: row.scrape_type,
-        status: row.status,
+        status: row.status as WebsiteScrapeLog['status'],
         pagesScraped: row.pages_scraped || 0,
         mentionsExtracted: row.mentions_extracted || 0,
         startedAt: row.started_at,
-        completedAt: row.completed_at,
-        errorMessage: row.error_message,
+        completedAt: row.completed_at || undefined,
+        errorMessage: row.error_message || undefined,
       }));
     },
     refetchInterval: 5000, // Refetch every 5 seconds while scraping
@@ -60,7 +83,7 @@ export function useScrapedContent(website?: string) {
     queryKey: ['scraped-content', website],
     queryFn: async (): Promise<ScrapedWebContent[]> => {
       let query = supabase
-        .from('scraped_web_content')
+        .from('scraped_web_content' as any)
         .select('id, url, website, page_type, title, scraped_at')
         .order('scraped_at', { ascending: false })
         .limit(50);
@@ -76,12 +99,13 @@ export function useScrapedContent(website?: string) {
         return [];
       }
 
-      return (data || []).map(row => ({
+      const rows = (data || []) as unknown as ScrapedWebContentRow[];
+      return rows.map(row => ({
         id: row.id,
         url: row.url,
         website: row.website,
         pageType: row.page_type,
-        title: row.title,
+        title: row.title || undefined,
         scrapedAt: row.scraped_at,
       }));
     },
@@ -94,15 +118,15 @@ export function useWebScrapingStats() {
     queryFn: async () => {
       const [logsResult, contentResult] = await Promise.all([
         supabase
-          .from('website_scrape_logs')
+          .from('website_scrape_logs' as any)
           .select('website, status, pages_scraped, mentions_extracted')
           .eq('status', 'completed'),
         supabase
-          .from('scraped_web_content')
+          .from('scraped_web_content' as any)
           .select('website', { count: 'exact' }),
       ]);
 
-      const logs = logsResult.data || [];
+      const logs = (logsResult.data || []) as unknown as { website: string; status: string; pages_scraped: number | null; mentions_extracted: number | null }[];
       const totalPages = contentResult.count || 0;
 
       const ceiSpherePages = logs
@@ -133,9 +157,9 @@ export function useScrapeWebsite() {
     mutationFn: async (options: { website: 'ceisphere' | 'eucloudedgeiot'; scrapeType: 'publications' | 'news' | 'projects' | 'all' }) => {
       return firecrawlApi.scrapeWebsite(options);
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       if (data.success) {
-        toast.success(`Scraped ${data.pagesScraped} pages, extracted ${data.mentionsExtracted} mentions`);
+        toast.success(`Scraped ${data.pagesScraped || 0} pages, extracted ${data.mentionsExtracted || 0} mentions`);
         queryClient.invalidateQueries({ queryKey: ['web-scrape-logs'] });
         queryClient.invalidateQueries({ queryKey: ['scraped-content'] });
         queryClient.invalidateQueries({ queryKey: ['web-scraping-stats'] });

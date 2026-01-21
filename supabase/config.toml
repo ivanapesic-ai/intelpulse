@@ -8,3 +8,12 @@ verify_jwt = false
 
 [functions.export-data]
 verify_jwt = false
+
+[functions.firecrawl-scrape]
+verify_jwt = false
+
+[functions.firecrawl-map]
+verify_jwt = false
+
+[functions.website-scrape]
+verify_jwt = false
