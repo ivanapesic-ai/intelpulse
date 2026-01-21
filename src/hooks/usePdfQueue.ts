@@ -1,3 +1,4 @@
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -181,4 +182,119 @@ export function useRetryPdf() {
       toast.error(error instanceof Error ? error.message : 'Failed to queue retry');
     },
   });
+}
+
+export interface BatchProcessState {
+  isRunning: boolean;
+  current: number;
+  total: number;
+  successCount: number;
+  failCount: number;
+  currentPdfName: string;
+}
+
+export function useProcessAllPending() {
+  const queryClient = useQueryClient();
+  const [state, setState] = useState<BatchProcessState>({
+    isRunning: false,
+    current: 0,
+    total: 0,
+    successCount: 0,
+    failCount: 0,
+    currentPdfName: '',
+  });
+  const stopRef = useRef(false);
+  const consecutiveFailures = useRef(0);
+
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const start = async () => {
+    stopRef.current = false;
+    consecutiveFailures.current = 0;
+
+    // Fetch all pending PDFs
+    const { data, error } = await supabase
+      .from('pdf_processing_queue' as any)
+      .select('id, url, filename')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true });
+
+    if (error || !data || data.length === 0) {
+      toast.info('No pending PDFs to process');
+      return;
+    }
+
+    const pendingPdfs = data as unknown as { id: string; url: string; filename: string | null }[];
+    
+    setState({
+      isRunning: true,
+      current: 0,
+      total: pendingPdfs.length,
+      successCount: 0,
+      failCount: 0,
+      currentPdfName: '',
+    });
+
+    for (let i = 0; i < pendingPdfs.length; i++) {
+      if (stopRef.current) {
+        toast.info('Batch processing stopped');
+        break;
+      }
+
+      const pdf = pendingPdfs[i];
+      const filename = pdf.filename || pdf.url.split('/').pop() || 'unknown.pdf';
+      
+      setState(prev => ({
+        ...prev,
+        current: i + 1,
+        currentPdfName: filename.slice(0, 30),
+      }));
+
+      try {
+        const response = await supabase.functions.invoke('process-pdf', {
+          body: { pdfId: pdf.id },
+        });
+
+        if (response.error || !response.data?.success) {
+          consecutiveFailures.current++;
+          setState(prev => ({ ...prev, failCount: prev.failCount + 1 }));
+          
+          if (consecutiveFailures.current >= 3) {
+            toast.error('3 consecutive failures - pausing batch (Zenodo may be down)');
+            break;
+          }
+        } else {
+          consecutiveFailures.current = 0;
+          setState(prev => ({ ...prev, successCount: prev.successCount + 1 }));
+        }
+
+        // Refresh data after each PDF
+        queryClient.invalidateQueries({ queryKey: ['pdf-queue'] });
+        queryClient.invalidateQueries({ queryKey: ['pdf-queue-stats'] });
+
+        // Wait 10 seconds before next PDF (unless it's the last one)
+        if (i < pendingPdfs.length - 1 && !stopRef.current) {
+          await delay(10000);
+        }
+      } catch (err) {
+        consecutiveFailures.current++;
+        setState(prev => ({ ...prev, failCount: prev.failCount + 1 }));
+        
+        if (consecutiveFailures.current >= 3) {
+          toast.error('3 consecutive failures - pausing batch');
+          break;
+        }
+      }
+    }
+
+    setState(prev => ({ ...prev, isRunning: false, currentPdfName: '' }));
+    toast.success(`Batch complete: ${state.successCount} succeeded, ${state.failCount} failed`);
+  };
+
+  const stop = () => {
+    stopRef.current = true;
+    toast.info('Stopping after current PDF...');
+  };
+
+  return { ...state, start, stop };
 }
