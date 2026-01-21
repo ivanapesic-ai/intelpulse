@@ -95,34 +95,38 @@ export function useTechnologies() {
 
       if (error) throw error;
 
-      return (data || []).map((row): Technology & { keyword?: TechnologyKeyword } => ({
-        id: row.id,
-        keywordId: row.keyword_id,
-        name: row.name,
-        description: row.description || "",
-        investmentScore: (row.investment_score || 0) as 0 | 1 | 2,
-        employeesScore: (row.employees_score || 0) as 0 | 1 | 2,
-        patentsScore: (row.patents_score || 0) as 0 | 1 | 2,
-        compositeScore: Number(row.composite_score) || 0,
-        trend: (row.trend || "stable") as "up" | "down" | "stable",
-        keyPlayers: row.key_players || [],
-        totalPatents: row.total_patents || 0,
-        totalFundingEur: Number(row.total_funding_eur) || 0,
-        totalEmployees: row.total_employees || 0,
-        dealroomCompanyCount: row.dealroom_company_count || 0,
-        documentMentionCount: row.document_mention_count || 0,
-        lastUpdated: row.last_updated,
-        createdAt: row.created_at,
-        keyword: row.technology_keywords ? {
-          id: row.technology_keywords.id,
-          keyword: row.technology_keywords.keyword,
-          source: row.technology_keywords.source as KeywordSource,
-          displayName: row.technology_keywords.display_name,
-          isActive: true,
-          createdAt: "",
-          updatedAt: "",
-        } : undefined,
-      }));
+      return (data || []).map((row): Technology & { keyword?: TechnologyKeyword } => {
+        const rowAny = row as Record<string, unknown>;
+        return {
+          id: row.id,
+          keywordId: row.keyword_id,
+          name: row.name,
+          description: row.description || "",
+          investmentScore: (row.investment_score || 0) as 0 | 1 | 2,
+          employeesScore: (row.employees_score || 0) as 0 | 1 | 2,
+          patentsScore: (row.patents_score || 0) as 0 | 1 | 2,
+          visibilityScore: ((rowAny.visibility_score as number) || 0) as 0 | 1 | 2,
+          compositeScore: Number(row.composite_score) || 0,
+          trend: (row.trend || "stable") as "up" | "down" | "stable",
+          keyPlayers: row.key_players || [],
+          totalPatents: row.total_patents || 0,
+          totalFundingEur: Number(row.total_funding_eur) || 0,
+          totalEmployees: row.total_employees || 0,
+          dealroomCompanyCount: row.dealroom_company_count || 0,
+          documentMentionCount: row.document_mention_count || 0,
+          lastUpdated: row.last_updated,
+          createdAt: row.created_at,
+          keyword: row.technology_keywords ? {
+            id: row.technology_keywords.id,
+            keyword: row.technology_keywords.keyword,
+            source: row.technology_keywords.source as KeywordSource,
+            displayName: row.technology_keywords.display_name,
+            isActive: true,
+            createdAt: "",
+            updatedAt: "",
+          } : undefined,
+        };
+      });
     },
   });
 }
@@ -143,6 +147,7 @@ export function useTechnology(id: string) {
 
       if (error) throw error;
 
+      const dataAny = data as Record<string, unknown>;
       return {
         id: data.id,
         keywordId: data.keyword_id,
@@ -151,6 +156,7 @@ export function useTechnology(id: string) {
         investmentScore: (data.investment_score || 0) as 0 | 1 | 2,
         employeesScore: (data.employees_score || 0) as 0 | 1 | 2,
         patentsScore: (data.patents_score || 0) as 0 | 1 | 2,
+        visibilityScore: ((dataAny.visibility_score as number) || 0) as 0 | 1 | 2,
         compositeScore: Number(data.composite_score) || 0,
         trend: (data.trend || "stable") as "up" | "down" | "stable",
         keyPlayers: data.key_players || [],
