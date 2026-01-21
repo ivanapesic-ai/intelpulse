@@ -247,7 +247,7 @@ export function useProcessAllPending() {
       setState(prev => ({
         ...prev,
         current: i + 1,
-        currentPdfName: filename.slice(0, 30),
+        currentPdfName: filename.length > 50 ? filename.slice(0, 47) + '...' : filename,
       }));
 
       try {
