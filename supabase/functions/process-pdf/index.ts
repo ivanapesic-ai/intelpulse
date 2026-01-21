@@ -23,37 +23,59 @@ interface TechKeyword {
 }
 
 // Zenodo API to get direct download URL
+// Zenodo API with retry logic
 async function getZenodoDownloadUrl(recordId: string, apiToken: string): Promise<string | null> {
-  try {
-    const response = await fetch(`https://zenodo.org/api/records/${recordId}`, {
-      headers: {
-        'Authorization': `Bearer ${apiToken}`,
-      },
-    });
+  const maxRetries = 3;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        const delayMs = Math.pow(2, attempt) * 3000; // 3s, 6s, 12s
+        console.log(`Zenodo API retry ${attempt + 1}, waiting ${delayMs}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+      
+      const response = await fetch(`https://zenodo.org/api/records/${recordId}`, {
+        headers: {
+          'Authorization': `Bearer ${apiToken}`,
+          'Accept': 'application/json',
+        },
+      });
 
-    if (!response.ok) {
-      console.error(`Zenodo API error: ${response.status}`);
+      if (response.status === 503 || response.status === 429) {
+        console.log(`Zenodo API returned ${response.status}, will retry...`);
+        continue;
+      }
+
+      if (!response.ok) {
+        console.error(`Zenodo API error: ${response.status}`);
+        return null;
+      }
+
+      const data = await response.json();
+      const files = data.files || [];
+      
+      // Find the first PDF file
+      const pdfFile = files.find((f: any) => 
+        f.key?.toLowerCase().endsWith('.pdf') || f.type === 'pdf'
+      );
+
+      if (pdfFile) {
+        // Use the links.self to get direct download URL
+        const downloadUrl = pdfFile.links?.self || pdfFile.links?.download || null;
+        console.log(`Resolved Zenodo ${recordId} to: ${downloadUrl}`);
+        return downloadUrl;
+      }
+
+      console.log(`No PDF found in Zenodo record ${recordId}`);
       return null;
+    } catch (error) {
+      console.error('Zenodo API error:', error);
+      if (attempt === maxRetries - 1) return null;
     }
-
-    const data = await response.json();
-    const files = data.files || [];
-    
-    // Find the first PDF file
-    const pdfFile = files.find((f: any) => 
-      f.key?.toLowerCase().endsWith('.pdf') || f.type === 'pdf'
-    );
-
-    if (pdfFile) {
-      // Use the links.self to get direct download URL
-      return pdfFile.links?.self || pdfFile.links?.download || null;
-    }
-
-    return null;
-  } catch (error) {
-    console.error('Zenodo API error:', error);
-    return null;
   }
+  
+  return null;
 }
 
 // Download PDF with retry logic and exponential backoff
