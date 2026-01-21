@@ -46,7 +46,8 @@ export function MaturityScoreDisplay({
 interface CompositeScoreBarProps {
   investmentScore: MaturityScore;
   employeesScore: MaturityScore;
-  patentsScore: MaturityScore;
+  patentsScore?: MaturityScore;
+  visibilityScore?: MaturityScore;
   className?: string;
 }
 
@@ -54,18 +55,24 @@ export function CompositeScoreBar({
   investmentScore, 
   employeesScore, 
   patentsScore,
+  visibilityScore,
   className 
 }: CompositeScoreBarProps) {
   const scores = [
     { label: "Investment", score: investmentScore },
     { label: "Employees", score: employeesScore },
-    { label: "Patents", score: patentsScore },
+    { label: "Visibility", score: visibilityScore ?? 0 as MaturityScore },
   ];
+
+  // Only include patents if provided and non-zero (for future PATSTAT integration)
+  if (patentsScore !== undefined && patentsScore > 0) {
+    scores.push({ label: "Patents", score: patentsScore });
+  }
 
   return (
     <div className={cn("space-y-2", className)}>
       {scores.map(({ label, score }) => {
-        const config = MATURITY_SCORE_CONFIG[score];
+        const config = MATURITY_SCORE_CONFIG[score as MaturityScore];
         const width = ((score + 1) / 3) * 100; // 0->33%, 1->66%, 2->100%
         
         return (

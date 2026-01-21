@@ -35,7 +35,8 @@ export interface Technology {
   investmentScore: MaturityScore;
   employeesScore: MaturityScore;
   patentsScore: MaturityScore;
-  compositeScore: number; // Average of above (0-2)
+  visibilityScore: MaturityScore; // Based on document/web mentions
+  compositeScore: number; // Average of investment, employees, visibility (0-2)
   
   trend: TrendDirection;
   keyPlayers: string[];
