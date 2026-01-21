@@ -54,7 +54,7 @@ export default function TechnologyExplorer() {
     ? [
         { dimension: "Investment", value: selectedTech.investmentScore, fullMark: 2 },
         { dimension: "Employees", value: selectedTech.employeesScore, fullMark: 2 },
-        { dimension: "Patents", value: selectedTech.patentsScore, fullMark: 2 },
+        { dimension: "Visibility", value: selectedTech.visibilityScore, fullMark: 2 },
       ]
     : [];
 
@@ -190,7 +190,7 @@ export default function TechnologyExplorer() {
                       )}
                       <span className="capitalize">{tech.trend}</span>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 flex-wrap">
                       <Badge 
                         variant="outline" 
                         className={MATURITY_SCORE_CONFIG[tech.investmentScore as 0|1|2]?.color || ""}
@@ -202,6 +202,12 @@ export default function TechnologyExplorer() {
                         className={MATURITY_SCORE_CONFIG[tech.employeesScore as 0|1|2]?.color || ""}
                       >
                         Emp: {tech.employeesScore}
+                      </Badge>
+                      <Badge 
+                        variant="outline" 
+                        className={MATURITY_SCORE_CONFIG[tech.visibilityScore as 0|1|2]?.color || ""}
+                      >
+                        Vis: {tech.visibilityScore}
                       </Badge>
                     </div>
                   </div>
@@ -351,7 +357,7 @@ export default function TechnologyExplorer() {
                         {[
                           { label: "Investment", score: selectedTech.investmentScore },
                           { label: "Employees", score: selectedTech.employeesScore },
-                          { label: "Patents", score: selectedTech.patentsScore },
+                          { label: "Visibility", score: selectedTech.visibilityScore, tooltip: `${selectedTech.documentMentionCount} mentions` },
                         ].map((item) => {
                           const config = MATURITY_SCORE_CONFIG[item.score as 0|1|2];
                           return (
