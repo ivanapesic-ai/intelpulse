@@ -30,7 +30,7 @@ const WEBSITE_CONFIGS = {
   eucloudedgeiot: {
     baseUrl: 'https://eucloudedgeiot.eu',
     paths: {
-      publications: '/key-results',
+      publications: '/papers',
       news: '/news',
       projects: '/projects',
     }
