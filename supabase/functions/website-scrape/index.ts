@@ -446,95 +446,45 @@ Deno.serve(async (req) => {
               totalMentionsExtracted += mentions;
             }
 
-            // Process PDF links found on this page
-            if (lovableApiKey && pdfLinks.length > 0) {
-              console.log(`Found ${pdfLinks.length} PDF links on ${pageUrl}`);
+            // Queue PDF links for later processing (instead of inline processing)
+            if (pdfLinks.length > 0) {
+              console.log(`Found ${pdfLinks.length} PDF links on ${pageUrl}, queueing for processing`);
               
-              for (const pdfUrl of pdfLinks.slice(0, 3)) { // Limit to 3 PDFs per page
+              // Get the source page ID for linking
+              const { data: sourcePage } = await supabase
+                .from('scraped_web_content')
+                .select('id')
+                .eq('url', pageUrl)
+                .maybeSingle();
+
+              for (const pdfUrl of pdfLinks) {
                 try {
-                  // Check if we already processed this PDF
-                  const { data: existing } = await supabase
-                    .from('cei_documents')
-                    .select('id')
-                    .ilike('storage_path', `%${pdfUrl.split('/').pop()?.split('?')[0] || ''}%`)
-                    .maybeSingle();
+                  // Determine source type and extract Zenodo record ID if applicable
+                  const isZenodo = pdfUrl.includes('zenodo.org');
+                  const zenodoRecordMatch = pdfUrl.match(/zenodo\.org\/records?\/(\d+)/);
+                  const zenodoRecordId = zenodoRecordMatch ? zenodoRecordMatch[1] : null;
 
-                  if (existing) {
-                    console.log(`PDF already processed: ${pdfUrl}`);
-                    continue;
-                  }
+                  // Queue the PDF for processing (upsert to avoid duplicates)
+                  await supabase
+                    .from('pdf_processing_queue')
+                    .upsert({
+                      url: pdfUrl,
+                      source_page_id: sourcePage?.id || null,
+                      source_type: isZenodo ? 'zenodo' : 'direct',
+                      zenodo_record_id: zenodoRecordId,
+                      status: 'pending',
+                    }, { onConflict: 'url', ignoreDuplicates: true });
 
-                  // Download PDF
-                  const pdfResult = await downloadPdf(pdfUrl);
-                  if (!pdfResult) continue;
-
-                  const { buffer, filename } = pdfResult;
-
-                  // Upload to storage
-                  const storagePath = `scraped/${website}/${Date.now()}-${filename}`;
-                  const { error: uploadError } = await supabase.storage
-                    .from('scraped-documents')
-                    .upload(storagePath, buffer, {
-                      contentType: 'application/pdf',
-                    });
-
-                  if (uploadError) {
-                    console.error(`Failed to upload PDF: ${uploadError.message}`);
-                    continue;
-                  }
-
-                  // Create document record
-                  const { data: doc, error: docError } = await supabase
-                    .from('cei_documents')
-                    .insert({
-                      filename,
-                      file_type: 'pdf',
-                      storage_path: storagePath,
-                      source: 'scraped',
-                      title: filename.replace(/\.pdf$/i, '').replace(/-/g, ' '),
-                      parse_status: 'parsing',
-                    })
-                    .select()
-                    .single();
-
-                  if (docError || !doc) {
-                    console.error(`Failed to create document record:`, docError);
-                    continue;
-                  }
-
-                  // Extract text from PDF
-                  const pdfText = await extractPdfText(buffer, filename, lovableApiKey);
-
-                  if (pdfText) {
-                    // Parse for technology mentions
-                    const mentions = await parseDocumentContent(
-                      doc.id,
-                      pdfText,
-                      supabase,
-                      lovableApiKey
-                    );
-                    totalMentionsExtracted += mentions;
-                    totalPdfsProcessed++;
-                    console.log(`Processed PDF ${filename}: ${mentions} mentions`);
-                  } else {
-                    // Mark as failed if no text extracted
-                    await supabase
-                      .from('cei_documents')
-                      .update({ parse_status: 'failed' })
-                      .eq('id', doc.id);
-                  }
-
-                  // Small delay to avoid rate limits
-                  await new Promise(r => setTimeout(r, 1000));
-                } catch (pdfError) {
-                  console.error(`Error processing PDF ${pdfUrl}:`, pdfError);
+                  totalPdfsProcessed++; // Count as queued
+                } catch (queueError) {
+                  console.error(`Error queueing PDF ${pdfUrl}:`, queueError);
                 }
               }
 
-              // Update scraped content with PDF processing count
+              // Update scraped content with PDF count found
               await supabase
                 .from('scraped_web_content')
-                .update({ pdfs_processed: pdfLinks.slice(0, 3).length })
+                .update({ pdfs_processed: pdfLinks.length })
                 .eq('url', pageUrl);
             }
           }

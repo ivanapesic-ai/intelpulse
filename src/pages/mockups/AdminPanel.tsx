@@ -12,6 +12,7 @@ import { useKeywords, useKeywordStats } from "@/hooks/useTechnologies";
 import { formatFundingEur, formatNumber } from "@/types/database";
 import { TagMappingEditor } from "@/components/admin/TagMappingEditor";
 import { WebScrapingPanel } from "@/components/admin/WebScrapingPanel";
+import { PdfQueuePanel } from "@/components/admin/PdfQueuePanel";
 
 interface User {
   id: string;
@@ -392,8 +393,9 @@ export default function AdminPanel() {
           </TabsContent>
 
           {/* Web Scraping Tab */}
-          <TabsContent value="web-scraping">
+          <TabsContent value="web-scraping" className="space-y-6">
             <WebScrapingPanel />
+            <PdfQueuePanel />
           </TabsContent>
 
           {/* Tag Mapping Tab */}
