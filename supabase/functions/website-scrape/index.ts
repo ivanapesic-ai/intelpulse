@@ -15,6 +15,7 @@ interface ScrapedPage {
   title?: string;
   markdown?: string;
   scrapedAt: string;
+  pdfLinks?: string[];
 }
 
 // Target URLs for each website
@@ -36,6 +37,278 @@ const WEBSITE_CONFIGS = {
     }
   }
 };
+
+// Patterns to detect PDF links
+const PDF_PATTERNS = [
+  /https?:\/\/zenodo\.org\/records?\/\d+\/files\/[^"'\s<>]+\.pdf/gi,
+  /https?:\/\/[^"'\s<>]+\.pdf(?:\?[^"'\s<>]*)?/gi,
+  /https?:\/\/zenodo\.org\/api\/records\/\d+\/files-archive/gi,
+];
+
+// Extract PDF links from content
+function extractPdfLinks(markdown: string, html?: string): string[] {
+  const content = markdown + (html || '');
+  const links = new Set<string>();
+  
+  for (const pattern of PDF_PATTERNS) {
+    const matches = content.matchAll(new RegExp(pattern));
+    for (const match of matches) {
+      // Clean up the URL
+      let url = match[0].replace(/['"<>].*$/, '');
+      if (url.endsWith('.pdf') || url.includes('zenodo.org')) {
+        links.add(url);
+      }
+    }
+  }
+  
+  // Also look for Zenodo record pages (not direct PDF links)
+  const zenodoRecordPattern = /https?:\/\/zenodo\.org\/records?\/(\d+)/gi;
+  const zenodoMatches = content.matchAll(zenodoRecordPattern);
+  for (const match of zenodoMatches) {
+    // Add the record URL for later processing
+    links.add(match[0]);
+  }
+  
+  return [...links];
+}
+
+// Download PDF from URL
+async function downloadPdf(url: string): Promise<{ buffer: ArrayBuffer; filename: string } | null> {
+  try {
+    console.log(`Attempting to download PDF from: ${url}`);
+    
+    // Handle Zenodo record pages - fetch the record and find the PDF
+    if (url.includes('zenodo.org/record') && !url.includes('/files/')) {
+      const recordMatch = url.match(/zenodo\.org\/records?\/(\d+)/);
+      if (recordMatch) {
+        const recordId = recordMatch[1];
+        // Fetch record metadata to get file links
+        const metaResponse = await fetch(`https://zenodo.org/api/records/${recordId}`, {
+          headers: { 'Accept': 'application/json' },
+        });
+        
+        if (metaResponse.ok) {
+          const metadata = await metaResponse.json();
+          const pdfFile = metadata.files?.find((f: any) => f.key?.endsWith('.pdf'));
+          if (pdfFile) {
+            url = pdfFile.links?.self || `https://zenodo.org/records/${recordId}/files/${pdfFile.key}`;
+            console.log(`Resolved Zenodo record to PDF: ${url}`);
+          } else {
+            console.log(`No PDF found in Zenodo record ${recordId}`);
+            return null;
+          }
+        }
+      }
+    }
+    
+    const response = await fetch(url, {
+      headers: { 'Accept': 'application/pdf,*/*' },
+      redirect: 'follow',
+    });
+    
+    if (!response.ok) {
+      console.error(`Failed to download PDF: ${response.status} ${response.statusText}`);
+      return null;
+    }
+    
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('pdf') && !url.endsWith('.pdf')) {
+      console.log(`Skipping non-PDF content type: ${contentType}`);
+      return null;
+    }
+    
+    const buffer = await response.arrayBuffer();
+    
+    // Skip if too large (> 20MB)
+    if (buffer.byteLength > 20 * 1024 * 1024) {
+      console.log(`Skipping PDF larger than 20MB: ${buffer.byteLength} bytes`);
+      return null;
+    }
+    
+    // Extract filename from URL or use timestamp
+    let filename = url.split('/').pop()?.split('?')[0] || `document-${Date.now()}.pdf`;
+    if (!filename.endsWith('.pdf')) {
+      filename += '.pdf';
+    }
+    
+    console.log(`Successfully downloaded PDF: ${filename} (${buffer.byteLength} bytes)`);
+    return { buffer, filename };
+  } catch (error) {
+    console.error(`Error downloading PDF from ${url}:`, error);
+    return null;
+  }
+}
+
+// Extract text from PDF using Lovable AI (Gemini multimodal)
+async function extractPdfText(
+  pdfBuffer: ArrayBuffer,
+  filename: string,
+  apiKey: string
+): Promise<string | null> {
+  try {
+    console.log(`Extracting text from PDF: ${filename}`);
+    
+    // Convert to base64
+    const uint8Array = new Uint8Array(pdfBuffer);
+    let binary = '';
+    for (let i = 0; i < uint8Array.length; i++) {
+      binary += String.fromCharCode(uint8Array[i]);
+    }
+    const base64 = btoa(binary);
+    
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'file',
+                file: {
+                  filename: filename,
+                  file_data: `data:application/pdf;base64,${base64}`,
+                },
+              },
+              {
+                type: 'text',
+                text: 'Extract and return all text content from this PDF document. Preserve the document structure with headers, paragraphs, and any lists. Focus on the main content.',
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`AI API error: ${response.status} - ${errorText}`);
+      return null;
+    }
+    
+    const data = await response.json();
+    const extractedText = data.choices?.[0]?.message?.content;
+    
+    if (extractedText) {
+      console.log(`Extracted ${extractedText.length} characters from PDF`);
+    }
+    
+    return extractedText || null;
+  } catch (error) {
+    console.error(`Error extracting PDF text:`, error);
+    return null;
+  }
+}
+
+// Parse document content for technology mentions (reused from parse-document)
+async function parseDocumentContent(
+  documentId: string,
+  content: string,
+  supabase: any,
+  apiKey: string
+): Promise<number> {
+  try {
+    // Fetch active keywords
+    const { data: keywords } = await supabase
+      .from('technology_keywords')
+      .select('id, keyword, display_name, aliases')
+      .eq('is_active', true);
+
+    if (!keywords?.length) {
+      console.log('No active keywords found for parsing');
+      return 0;
+    }
+
+    const keywordList = keywords.map((k: any) => 
+      `${k.display_name}${k.aliases?.length ? ` (also: ${k.aliases.join(', ')})` : ''}`
+    ).join('\n- ');
+
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert at extracting technology references from documents. Analyze the document content and identify mentions of these technologies:
+- ${keywordList}
+
+For each mention found, extract:
+1. The exact technology name (must match one from the list above)
+2. A brief context quote (max 200 chars) showing how it's mentioned
+3. TRL level if mentioned (1-9), otherwise null
+4. Confidence score (0.0-1.0) based on how clearly it's referenced
+5. Any policy references or EU initiative mentions
+
+Return JSON array of mentions. Only include genuine, substantive mentions, not passing references.`
+          },
+          {
+            role: 'user',
+            content: `Extract technology mentions from this document:\n\n${content.slice(0, 15000)}`
+          }
+        ],
+        response_format: { type: 'json_object' },
+      }),
+    });
+
+    if (!response.ok) return 0;
+
+    const aiResult = await response.json();
+    const aiContent = aiResult.choices?.[0]?.message?.content;
+    if (!aiContent) return 0;
+
+    const parsed = JSON.parse(aiContent);
+    const mentions = parsed.mentions || parsed.technologies || parsed.results || [];
+
+    let mentionsCreated = 0;
+    for (const mention of mentions) {
+      const matchedKeyword = keywords.find(
+        (k: any) => 
+          k.display_name.toLowerCase() === mention.keyword?.toLowerCase() ||
+          k.display_name.toLowerCase() === mention.technology?.toLowerCase() ||
+          k.keyword.toLowerCase() === mention.keyword?.toLowerCase()
+      );
+
+      if (matchedKeyword) {
+        await supabase.from('document_technology_mentions').insert({
+          document_id: documentId,
+          keyword_id: matchedKeyword.id,
+          mention_context: mention.context?.slice(0, 500),
+          trl_mentioned: mention.trl_mentioned || mention.trl,
+          confidence_score: mention.confidence || mention.confidence_score || 0.7,
+          policy_reference: mention.policy_reference,
+        });
+        mentionsCreated++;
+      }
+    }
+
+    // Update document status
+    await supabase
+      .from('cei_documents')
+      .update({
+        parse_status: 'completed',
+        parsed_content: { 
+          summary: `Extracted ${mentionsCreated} technology mentions`,
+          processedAt: new Date().toISOString()
+        },
+      })
+      .eq('id', documentId);
+
+    return mentionsCreated;
+  } catch (error) {
+    console.error('Error parsing document content:', error);
+    return 0;
+  }
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -91,6 +364,7 @@ Deno.serve(async (req) => {
 
     const scrapedPages: ScrapedPage[] = [];
     let totalMentionsExtracted = 0;
+    let totalPdfsProcessed = 0;
 
     for (const path of pathsToScrape) {
       const fullUrl = `${config.baseUrl}${path}`;
@@ -125,7 +399,7 @@ Deno.serve(async (req) => {
             },
             body: JSON.stringify({
               url: pageUrl,
-              formats: ['markdown'],
+              formats: ['markdown', 'html', 'links'],
               onlyMainContent: true,
             }),
           });
@@ -133,11 +407,18 @@ Deno.serve(async (req) => {
           const scrapeData = await scrapeResponse.json();
           
           if (scrapeData.success && scrapeData.data?.markdown) {
+            // Extract PDF links from the page content
+            const pdfLinks = extractPdfLinks(
+              scrapeData.data.markdown, 
+              scrapeData.data.html
+            );
+            
             const pageContent: ScrapedPage = {
               url: pageUrl,
               title: scrapeData.data?.metadata?.title,
               markdown: scrapeData.data.markdown,
               scrapedAt: new Date().toISOString(),
+              pdfLinks,
             };
             scrapedPages.push(pageContent);
 
@@ -151,16 +432,110 @@ Deno.serve(async (req) => {
                 title: pageContent.title,
                 markdown_content: pageContent.markdown,
                 scraped_at: pageContent.scrapedAt,
+                pdf_links: pdfLinks,
               }, { onConflict: 'url' });
 
-            // Extract technology mentions using AI
+            // Extract technology mentions from web content
             if (lovableApiKey && pageContent.markdown) {
               const mentions = await extractTechMentions(
                 pageContent.markdown,
+                pageUrl,
                 lovableApiKey,
                 supabase
               );
               totalMentionsExtracted += mentions;
+            }
+
+            // Process PDF links found on this page
+            if (lovableApiKey && pdfLinks.length > 0) {
+              console.log(`Found ${pdfLinks.length} PDF links on ${pageUrl}`);
+              
+              for (const pdfUrl of pdfLinks.slice(0, 3)) { // Limit to 3 PDFs per page
+                try {
+                  // Check if we already processed this PDF
+                  const { data: existing } = await supabase
+                    .from('cei_documents')
+                    .select('id')
+                    .ilike('storage_path', `%${pdfUrl.split('/').pop()?.split('?')[0] || ''}%`)
+                    .maybeSingle();
+
+                  if (existing) {
+                    console.log(`PDF already processed: ${pdfUrl}`);
+                    continue;
+                  }
+
+                  // Download PDF
+                  const pdfResult = await downloadPdf(pdfUrl);
+                  if (!pdfResult) continue;
+
+                  const { buffer, filename } = pdfResult;
+
+                  // Upload to storage
+                  const storagePath = `scraped/${website}/${Date.now()}-${filename}`;
+                  const { error: uploadError } = await supabase.storage
+                    .from('scraped-documents')
+                    .upload(storagePath, buffer, {
+                      contentType: 'application/pdf',
+                    });
+
+                  if (uploadError) {
+                    console.error(`Failed to upload PDF: ${uploadError.message}`);
+                    continue;
+                  }
+
+                  // Create document record
+                  const { data: doc, error: docError } = await supabase
+                    .from('cei_documents')
+                    .insert({
+                      filename,
+                      file_type: 'pdf',
+                      storage_path: storagePath,
+                      source: 'scraped',
+                      title: filename.replace(/\.pdf$/i, '').replace(/-/g, ' '),
+                      parse_status: 'parsing',
+                    })
+                    .select()
+                    .single();
+
+                  if (docError || !doc) {
+                    console.error(`Failed to create document record:`, docError);
+                    continue;
+                  }
+
+                  // Extract text from PDF
+                  const pdfText = await extractPdfText(buffer, filename, lovableApiKey);
+
+                  if (pdfText) {
+                    // Parse for technology mentions
+                    const mentions = await parseDocumentContent(
+                      doc.id,
+                      pdfText,
+                      supabase,
+                      lovableApiKey
+                    );
+                    totalMentionsExtracted += mentions;
+                    totalPdfsProcessed++;
+                    console.log(`Processed PDF ${filename}: ${mentions} mentions`);
+                  } else {
+                    // Mark as failed if no text extracted
+                    await supabase
+                      .from('cei_documents')
+                      .update({ parse_status: 'failed' })
+                      .eq('id', doc.id);
+                  }
+
+                  // Small delay to avoid rate limits
+                  await new Promise(r => setTimeout(r, 1000));
+                } catch (pdfError) {
+                  console.error(`Error processing PDF ${pdfUrl}:`, pdfError);
+                }
+              }
+
+              // Update scraped content with PDF processing count
+              await supabase
+                .from('scraped_web_content')
+                .update({ pdfs_processed: pdfLinks.slice(0, 3).length })
+                .eq('url', pageUrl);
             }
           }
         } catch (pageError) {
@@ -178,19 +553,25 @@ Deno.serve(async (req) => {
           completed_at: new Date().toISOString(),
           pages_scraped: scrapedPages.length,
           mentions_extracted: totalMentionsExtracted,
+          pdfs_processed: totalPdfsProcessed,
         })
         .eq('id', scrapeLog.id);
     }
 
-    console.log(`Scrape complete: ${scrapedPages.length} pages, ${totalMentionsExtracted} mentions`);
+    console.log(`Scrape complete: ${scrapedPages.length} pages, ${totalPdfsProcessed} PDFs, ${totalMentionsExtracted} mentions`);
 
     return new Response(
       JSON.stringify({
         success: true,
         website,
         pagesScraped: scrapedPages.length,
+        pdfsProcessed: totalPdfsProcessed,
         mentionsExtracted: totalMentionsExtracted,
-        pages: scrapedPages.map(p => ({ url: p.url, title: p.title })),
+        pages: scrapedPages.map(p => ({ 
+          url: p.url, 
+          title: p.title,
+          pdfLinks: p.pdfLinks?.length || 0
+        })),
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -204,8 +585,10 @@ Deno.serve(async (req) => {
   }
 });
 
+// Extract technology mentions from web content (simplified version)
 async function extractTechMentions(
   markdown: string,
+  sourceUrl: string,
   apiKey: string,
   supabase: any
 ): Promise<number> {
@@ -220,7 +603,7 @@ async function extractTechMentions(
 
     const keywordList = keywords.map((k: any) => k.display_name).join(', ');
 
-    const response = await fetch('https://api.lovable.dev/v1/chat/completions', {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
@@ -268,7 +651,7 @@ Only include actual mentions, not speculation. Return empty array if no matches.
       if (matchedKeyword) {
         await supabase.from('web_technology_mentions').insert({
           keyword_id: matchedKeyword.id,
-          source_url: markdown.slice(0, 500), // Store partial content as reference
+          source_url: sourceUrl,
           mention_context: mention.context,
           trl_mentioned: mention.trl_mentioned,
           confidence_score: mention.confidence || 0.7,
