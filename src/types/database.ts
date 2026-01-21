@@ -31,12 +31,17 @@ export interface Technology {
   name: string;
   description: string;
   
-  // New 0-2 scoring system
-  investmentScore: MaturityScore;
-  employeesScore: MaturityScore;
-  patentsScore: MaturityScore;
-  visibilityScore: MaturityScore; // Based on document/web mentions
-  compositeScore: number; // Average of investment, employees, visibility (0-2)
+  // 4-Dimension Scoring System (per proposal)
+  investmentScore: MaturityScore;   // Market: Dealroom funding signals
+  employeesScore: MaturityScore;    // Market: Dealroom employee signals
+  trlScore: MaturityScore;          // TRL: Average TRL from document mentions
+  euAlignmentScore: MaturityScore;  // EU Alignment: Policy reference count
+  visibilityScore: MaturityScore;   // Visibility: Document/web mention count
+  compositeScore: number;           // Average of (Investment + Employees + TRL + EU Alignment) / 4
+  
+  // Supporting metrics
+  avgTrlMentioned?: number;         // Raw average TRL from mentions
+  policyMentionCount: number;       // Raw count of policy references
   
   trend: TrendDirection;
   keyPlayers: string[];
