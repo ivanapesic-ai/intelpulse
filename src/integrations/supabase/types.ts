@@ -458,6 +458,7 @@ export type Database = {
           total_funding_eur: number | null
           total_patents: number | null
           trend: Database["public"]["Enums"]["trend_direction"] | null
+          visibility_score: number | null
         }
         Insert: {
           composite_score?: number | null
@@ -477,6 +478,7 @@ export type Database = {
           total_funding_eur?: number | null
           total_patents?: number | null
           trend?: Database["public"]["Enums"]["trend_direction"] | null
+          visibility_score?: number | null
         }
         Update: {
           composite_score?: number | null
@@ -496,6 +498,7 @@ export type Database = {
           total_funding_eur?: number | null
           total_patents?: number | null
           trend?: Database["public"]["Enums"]["trend_direction"] | null
+          visibility_score?: number | null
         }
         Relationships: [
           {
@@ -642,7 +645,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_visibility_score: {
+        Args: { mention_count: number }
+        Returns: number
+      }
     }
     Enums: {
       document_source:
