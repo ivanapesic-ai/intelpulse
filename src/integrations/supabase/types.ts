@@ -344,6 +344,8 @@ export type Database = {
           id: string
           markdown_content: string | null
           page_type: string
+          pdf_links: Json | null
+          pdfs_processed: number | null
           scraped_at: string
           title: string | null
           updated_at: string
@@ -355,6 +357,8 @@ export type Database = {
           id?: string
           markdown_content?: string | null
           page_type?: string
+          pdf_links?: Json | null
+          pdfs_processed?: number | null
           scraped_at?: string
           title?: string | null
           updated_at?: string
@@ -366,6 +370,8 @@ export type Database = {
           id?: string
           markdown_content?: string | null
           page_type?: string
+          pdf_links?: Json | null
+          pdfs_processed?: number | null
           scraped_at?: string
           title?: string | null
           updated_at?: string
@@ -538,6 +544,7 @@ export type Database = {
           id: string
           mentions_extracted: number | null
           pages_scraped: number | null
+          pdfs_processed: number | null
           scrape_type: string
           started_at: string
           status: string
@@ -550,6 +557,7 @@ export type Database = {
           id?: string
           mentions_extracted?: number | null
           pages_scraped?: number | null
+          pdfs_processed?: number | null
           scrape_type: string
           started_at?: string
           status?: string
@@ -562,6 +570,7 @@ export type Database = {
           id?: string
           mentions_extracted?: number | null
           pages_scraped?: number | null
+          pdfs_processed?: number | null
           scrape_type?: string
           started_at?: string
           status?: string
@@ -582,6 +591,7 @@ export type Database = {
         | "cei_sphere_website"
         | "eucloudedgeiot"
         | "manual"
+        | "scraped"
       document_type: "pdf" | "pptx" | "docx"
       keyword_source: "cei_sphere" | "dealroom" | "manual"
       maturity_score: "0" | "1" | "2"
@@ -720,6 +730,7 @@ export const Constants = {
         "cei_sphere_website",
         "eucloudedgeiot",
         "manual",
+        "scraped",
       ],
       document_type: ["pdf", "pptx", "docx"],
       keyword_source: ["cei_sphere", "dealroom", "manual"],
