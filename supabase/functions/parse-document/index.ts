@@ -53,19 +53,33 @@ serve(async (req) => {
       terms: [k.keyword, k.display_name, ...(k.aliases || [])],
     })) || [];
 
-    // Build prompt for AI extraction
+    // Build prompt for AI extraction with enhanced TRL and policy detection
     const systemPrompt = `You are an expert at extracting technology information from documents about Cloud, Edge, IoT, and AI/ML technologies in the European context.
 
 Your task is to analyze the document content and extract:
 1. Technology mentions - identify which technologies from the provided list are mentioned
-2. TRL (Technology Readiness Level) - if mentioned, extract the TRL level (1-9)
-3. Policy references - extract any EU policy, regulation, or initiative references
+2. TRL (Technology Readiness Level) - IMPORTANT: Look for explicit TRL mentions like "TRL 6", "TRL 7-9", "technology readiness level 5", or implicit indicators like "prototype", "pilot", "commercial deployment"
+3. Policy references - IMPORTANT: Look for EU policies, regulations, and initiatives including:
+   - Horizon Europe, Horizon 2020
+   - EU AI Act, Data Act, GDPR, Digital Services Act
+   - IPCEI (Important Projects of Common European Interest)
+   - EU Chips Act, Cyber Resilience Act
+   - European Data Strategy, Digital Decade
+   - CEI-SPHERE, EUCloudEdgeIoT
+   - Any mentions of EU funding, grants, or regulatory frameworks
+
+TRL Level Mapping (if not explicitly stated, infer from context):
+- TRL 1-3: Basic research, concept, experimental proof
+- TRL 4-5: Lab validation, relevant environment validation
+- TRL 6: Prototype demonstration, pilot testing
+- TRL 7-8: System prototype, actual system proven
+- TRL 9: Commercial deployment, market ready
 
 For each technology mention, provide:
 - keyword_id: The ID of the matched keyword
 - mention_context: A brief quote or summary of how the technology is mentioned (max 200 chars)
-- trl_mentioned: The TRL level if mentioned (1-9), or null
-- policy_reference: Any related policy/regulation mentioned, or null
+- trl_mentioned: The TRL level if mentioned or inferable (1-9), or null if completely unknown
+- policy_reference: Any related EU policy/regulation mentioned (be specific, e.g., "Horizon Europe", "EU AI Act"), or null
 - confidence_score: How confident you are in this match (0.0-1.0)
 - page_number: The page number if available, or null
 
@@ -76,7 +90,7 @@ Respond with a JSON object in this exact format:
       "keyword_id": "uuid-here",
       "mention_context": "brief quote or summary",
       "trl_mentioned": 7,
-      "policy_reference": "EU AI Act",
+      "policy_reference": "Horizon Europe",
       "confidence_score": 0.95,
       "page_number": 1
     }

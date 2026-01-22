@@ -405,11 +405,12 @@ serve(async (req) => {
         if (mappings && mappings.length > 0) {
           const companyIds = mappings.map(m => m.company_id);
 
-          // Get aggregate stats for these companies
+          // Get aggregate stats for these companies (include name for key_players)
           const { data: companies } = await supabase
             .from("dealroom_companies")
-            .select("total_funding_eur, employees_count, patents_count")
-            .in("id", companyIds);
+            .select("name, total_funding_eur, employees_count, patents_count")
+            .in("id", companyIds)
+            .order("total_funding_eur", { ascending: false });
 
           if (companies && companies.length > 0) {
             const totalFunding = companies.reduce((sum, c) => sum + (c.total_funding_eur || 0), 0);
@@ -421,7 +422,13 @@ serve(async (req) => {
             const employeesScore = calculateEmployeesScore(totalEmployees / companies.length);
             const patentsScore = calculatePatentsScore(totalPatents);
 
-            // Upsert technology record
+            // Extract top 5 companies by funding as key players
+            const keyPlayers = companies
+              .slice(0, 5)
+              .map(c => c.name)
+              .filter((name): name is string => !!name);
+
+            // Upsert technology record with key_players
             await supabase
               .from("technologies")
               .upsert(
@@ -436,6 +443,7 @@ serve(async (req) => {
                   total_employees: totalEmployees,
                   total_patents: totalPatents,
                   dealroom_company_count: companies.length,
+                  key_players: keyPlayers,
                   last_updated: new Date().toISOString(),
                 },
                 { onConflict: "keyword_id" }
