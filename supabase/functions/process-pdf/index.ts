@@ -386,18 +386,28 @@ Return ONLY a JSON array: [{"keyword_id": "uuid", "context": "...", "trl": 5, "t
         };
       });
 
-    // KeyBERT semantic scoring: compute similarity between context and keyword
-    console.log('Computing KeyBERT semantic similarities...');
-    for (const mention of validMentionsRaw) {
-      if (mention.mention_context && mention.keyword_text) {
-        const [contextEmb, keywordEmb] = await Promise.all([
-          getEmbedding(mention.mention_context),
-          getEmbedding(mention.keyword_text)
-        ]);
-        if (contextEmb && keywordEmb) {
-          mention.semantic_similarity = Math.round(cosineSimilarity(contextEmb, keywordEmb) * 1000) / 1000;
+    // KeyBERT semantic scoring: skip if too many mentions to avoid CPU timeout
+    const MAX_SEMANTIC_SCORING = 5;
+    if (validMentionsRaw.length <= MAX_SEMANTIC_SCORING) {
+      console.log(`Computing semantic similarities for ${validMentionsRaw.length} mentions...`);
+      // Process in parallel with Promise.all to reduce time
+      await Promise.all(validMentionsRaw.map(async (mention) => {
+        if (mention.mention_context && mention.keyword_text) {
+          try {
+            const [contextEmb, keywordEmb] = await Promise.all([
+              getEmbedding(mention.mention_context.slice(0, 200)), // Truncate for speed
+              getEmbedding(mention.keyword_text)
+            ]);
+            if (contextEmb && keywordEmb) {
+              mention.semantic_similarity = Math.round(cosineSimilarity(contextEmb, keywordEmb) * 1000) / 1000;
+            }
+          } catch (e) {
+            console.log(`Semantic scoring failed for ${mention.keyword_text}:`, e);
+          }
         }
-      }
+      }));
+    } else {
+      console.log(`Skipping semantic scoring: ${validMentionsRaw.length} mentions exceeds limit of ${MAX_SEMANTIC_SCORING}`);
     }
 
     // Remove keyword_text before inserting (not a DB column)
