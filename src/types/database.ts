@@ -43,6 +43,11 @@ export interface Technology {
   avgTrlMentioned?: number;         // Raw average TRL from mentions
   policyMentionCount: number;       // Raw count of policy references
   
+  // Headai-style scoring (Weight, Frequency, Relevance)
+  weightedFrequencyScore?: number;  // SUM(position_weight * relevance_score)
+  avgRelevanceScore?: number;       // Average relevance across all mentions
+  documentDiversity?: number;       // Count of unique source documents
+  
   trend: TrendDirection;
   keyPlayers: string[];
   totalPatents: number;

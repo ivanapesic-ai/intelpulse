@@ -110,6 +110,10 @@ export function useTechnologies() {
           compositeScore: Number(row.composite_score) || 0,
           avgTrlMentioned: (rowAny.avg_trl_mentioned as number) || undefined,
           policyMentionCount: ((rowAny.policy_mention_count as number) || 0),
+          // Headai-style scoring
+          weightedFrequencyScore: Number(rowAny.weighted_frequency_score) || 0,
+          avgRelevanceScore: Number(rowAny.avg_relevance_score) || 0,
+          documentDiversity: (rowAny.document_diversity as number) || 0,
           trend: (row.trend || "stable") as "up" | "down" | "stable",
           keyPlayers: row.key_players || [],
           totalPatents: row.total_patents || 0,
@@ -164,6 +168,10 @@ export function useTechnology(id: string) {
         compositeScore: Number(data.composite_score) || 0,
         avgTrlMentioned: (dataAny.avg_trl_mentioned as number) || undefined,
         policyMentionCount: ((dataAny.policy_mention_count as number) || 0),
+        // Headai-style scoring
+        weightedFrequencyScore: Number(dataAny.weighted_frequency_score) || 0,
+        avgRelevanceScore: Number(dataAny.avg_relevance_score) || 0,
+        documentDiversity: (dataAny.document_diversity as number) || 0,
         trend: (data.trend || "stable") as "up" | "down" | "stable",
         keyPlayers: data.key_players || [],
         totalPatents: data.total_patents || 0,

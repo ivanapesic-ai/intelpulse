@@ -258,6 +258,8 @@ export type Database = {
           mention_context: string | null
           page_number: number | null
           policy_reference: string | null
+          position_weight: number | null
+          relevance_score: number | null
           trl_mentioned: number | null
         }
         Insert: {
@@ -269,6 +271,8 @@ export type Database = {
           mention_context?: string | null
           page_number?: number | null
           policy_reference?: string | null
+          position_weight?: number | null
+          relevance_score?: number | null
           trl_mentioned?: number | null
         }
         Update: {
@@ -280,6 +284,8 @@ export type Database = {
           mention_context?: string | null
           page_number?: number | null
           policy_reference?: string | null
+          position_weight?: number | null
+          relevance_score?: number | null
           trl_mentioned?: number | null
         }
         Relationships: [
@@ -441,11 +447,13 @@ export type Database = {
       }
       technologies: {
         Row: {
+          avg_relevance_score: number | null
           avg_trl_mentioned: number | null
           composite_score: number | null
           created_at: string | null
           dealroom_company_count: number | null
           description: string | null
+          document_diversity: number | null
           document_mention_count: number | null
           employees_score: number | null
           eu_alignment_score: number | null
@@ -463,13 +471,16 @@ export type Database = {
           trend: Database["public"]["Enums"]["trend_direction"] | null
           trl_score: number | null
           visibility_score: number | null
+          weighted_frequency_score: number | null
         }
         Insert: {
+          avg_relevance_score?: number | null
           avg_trl_mentioned?: number | null
           composite_score?: number | null
           created_at?: string | null
           dealroom_company_count?: number | null
           description?: string | null
+          document_diversity?: number | null
           document_mention_count?: number | null
           employees_score?: number | null
           eu_alignment_score?: number | null
@@ -487,13 +498,16 @@ export type Database = {
           trend?: Database["public"]["Enums"]["trend_direction"] | null
           trl_score?: number | null
           visibility_score?: number | null
+          weighted_frequency_score?: number | null
         }
         Update: {
+          avg_relevance_score?: number | null
           avg_trl_mentioned?: number | null
           composite_score?: number | null
           created_at?: string | null
           dealroom_company_count?: number | null
           description?: string | null
+          document_diversity?: number | null
           document_mention_count?: number | null
           employees_score?: number | null
           eu_alignment_score?: number | null
@@ -511,6 +525,7 @@ export type Database = {
           trend?: Database["public"]["Enums"]["trend_direction"] | null
           trl_score?: number | null
           visibility_score?: number | null
+          weighted_frequency_score?: number | null
         }
         Relationships: [
           {
@@ -580,6 +595,8 @@ export type Database = {
           keyword_id: string
           mention_context: string | null
           policy_reference: string | null
+          position_weight: number | null
+          relevance_score: number | null
           source_url: string | null
           trl_mentioned: number | null
         }
@@ -590,6 +607,8 @@ export type Database = {
           keyword_id: string
           mention_context?: string | null
           policy_reference?: string | null
+          position_weight?: number | null
+          relevance_score?: number | null
           source_url?: string | null
           trl_mentioned?: number | null
         }
@@ -600,6 +619,8 @@ export type Database = {
           keyword_id?: string
           mention_context?: string | null
           policy_reference?: string | null
+          position_weight?: number | null
+          relevance_score?: number | null
           source_url?: string | null
           trl_mentioned?: number | null
         }
