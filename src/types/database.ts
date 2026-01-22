@@ -133,6 +133,59 @@ export interface DealroomSyncLog {
   completedAt?: string;
 }
 
+// Evidence linking document mentions to companies
+export interface CompanyTechnologyEvidence {
+  id: string;
+  companyId: string;
+  keywordId: string;
+  sourceType: 'document' | 'web' | 'dealroom';
+  sourceReference: string;
+  trlMentioned?: number;
+  policyReference?: string;
+  context?: string;
+  confidenceScore: number;
+  createdAt: string;
+}
+
+// Materialized view for integrated technology intelligence
+export interface TechnologyIntelligence {
+  id: string;
+  keywordId: string;
+  name: string;
+  displayName: string;
+  keywordDescription?: string;
+  // Dealroom signals
+  dealroomCompanyCount: number;
+  totalFundingEur: number;
+  totalEmployees: number;
+  totalPatents: number;
+  keyPlayers: string[];
+  // Document signals
+  documentMentionCount: number;
+  avgTrlMentioned?: number;
+  policyMentionCount: number;
+  documentDiversity: number;
+  // H11 scores
+  compositeScore: number;
+  avgSemanticScore?: number;
+  networkCentrality?: number;
+  corpusRarityScore?: number;
+  avgRelevanceScore?: number;
+  weightedFrequencyScore?: number;
+  // Component scores
+  visibilityScore: number;
+  trlScore: number;
+  euAlignmentScore: number;
+  investmentScore?: number;
+  employeesScore?: number;
+  // Aggregated data
+  companyNames: string[];
+  trlDistribution: { low: number; mid: number; high: number; unknown: number };
+  evidenceBySource: { document: number; web: number; dealroom: number };
+  lastUpdated: string;
+  trend: TrendDirection;
+}
+
 // Score color/label helpers
 export const MATURITY_SCORE_CONFIG: Record<MaturityScore, { label: string; color: string; bgColor: string; description: string }> = {
   0: { 

@@ -62,6 +62,60 @@ export type Database = {
         }
         Relationships: []
       }
+      company_technology_evidence: {
+        Row: {
+          company_id: string | null
+          confidence_score: number | null
+          context: string | null
+          created_at: string | null
+          id: string
+          keyword_id: string | null
+          policy_reference: string | null
+          source_reference: string
+          source_type: string
+          trl_mentioned: number | null
+        }
+        Insert: {
+          company_id?: string | null
+          confidence_score?: number | null
+          context?: string | null
+          created_at?: string | null
+          id?: string
+          keyword_id?: string | null
+          policy_reference?: string | null
+          source_reference: string
+          source_type: string
+          trl_mentioned?: number | null
+        }
+        Update: {
+          company_id?: string | null
+          confidence_score?: number | null
+          context?: string | null
+          created_at?: string | null
+          id?: string
+          keyword_id?: string | null
+          policy_reference?: string | null
+          source_reference?: string
+          source_type?: string
+          trl_mentioned?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_technology_evidence_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "dealroom_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_technology_evidence_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dealroom_api_usage: {
         Row: {
           api_calls_limit: number | null
@@ -741,7 +795,49 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      technology_intelligence: {
+        Row: {
+          avg_relevance_score: number | null
+          avg_semantic_score: number | null
+          avg_trl_mentioned: number | null
+          company_names: string[] | null
+          composite_score: number | null
+          corpus_rarity_score: number | null
+          dealroom_company_count: number | null
+          display_name: string | null
+          document_diversity: number | null
+          document_mention_count: number | null
+          employees_score: number | null
+          eu_alignment_score: number | null
+          evidence_by_source: Json | null
+          id: string | null
+          investment_score: number | null
+          key_players: string[] | null
+          keyword_description: string | null
+          keyword_id: string | null
+          last_updated: string | null
+          name: string | null
+          network_centrality: number | null
+          policy_mention_count: number | null
+          total_employees: number | null
+          total_funding_eur: number | null
+          total_patents: number | null
+          trend: Database["public"]["Enums"]["trend_direction"] | null
+          trl_distribution: Json | null
+          trl_score: number | null
+          visibility_score: number | null
+          weighted_frequency_score: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technologies_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: true
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       calculate_eu_alignment_score: {
@@ -755,6 +851,15 @@ export type Database = {
         Args: { mention_count: number }
         Returns: number
       }
+      populate_company_evidence: {
+        Args: never
+        Returns: {
+          companies_linked: number
+          evidence_created: number
+          technologies_linked: number
+        }[]
+      }
+      refresh_technology_intelligence: { Args: never; Returns: undefined }
       refresh_technology_scores: {
         Args: { tech_keyword_id: string }
         Returns: undefined
