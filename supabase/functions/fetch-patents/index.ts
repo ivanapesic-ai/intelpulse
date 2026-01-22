@@ -6,92 +6,60 @@ const corsHeaders = {
 };
 
 interface PatentResult {
-  title: string;
-  applicationNumber: string;
-  publicationDate: string;
-  applicant?: string;
-  abstract?: string;
+  patent_title: string;
+  patent_number: string;
+  patent_date: string;
+  assignee?: string;
 }
 
-// EPO OPS API endpoints
-const EPO_AUTH_URL = 'https://ops.epo.org/3.2/auth/accesstoken';
-const EPO_SEARCH_URL = 'https://ops.epo.org/3.2/rest-services/published-data/search';
+// USPTO PatentsView API - Free, no auth required
+const USPTO_API_URL = 'https://api.patentsview.org/patents/query';
 
-// Get OAuth token from EPO
-async function getEPOAccessToken(consumerKey: string, consumerSecret: string): Promise<string | null> {
+// Search USPTO for patents by keyword
+async function searchUSPTOPatents(
+  keyword: string,
+  limit = 25
+): Promise<{ patents: PatentResult[]; count: number }> {
   try {
-    const credentials = btoa(`${consumerKey}:${consumerSecret}`);
-    
-    const response = await fetch(EPO_AUTH_URL, {
+    // Build query for patent title or abstract containing keyword
+    const query = {
+      _or: [
+        { _text_any: { patent_title: keyword } },
+        { _text_any: { patent_abstract: keyword } }
+      ]
+    };
+
+    const response = await fetch(USPTO_API_URL, {
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${credentials}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
-      body: 'grant_type=client_credentials',
+      body: JSON.stringify({
+        q: query,
+        f: ['patent_title', 'patent_number', 'patent_date', 'assignee_organization'],
+        o: { per_page: limit },
+        s: [{ patent_date: 'desc' }]
+      }),
     });
-    
-    if (!response.ok) {
-      console.error('EPO auth failed:', response.status);
-      return null;
-    }
-    
-    const data = await response.json();
-    return data.access_token;
-  } catch (error) {
-    console.error('EPO auth error:', error);
-    return null;
-  }
-}
 
-// Search EPO for patents by keyword
-async function searchEPOPatents(
-  accessToken: string,
-  keyword: string,
-  limit = 10
-): Promise<PatentResult[]> {
-  try {
-    // CQL query for patent search
-    const query = encodeURIComponent(`ta="${keyword}" OR ti="${keyword}"`);
-    
-    const response = await fetch(
-      `${EPO_SEARCH_URL}?q=${query}&Range=1-${limit}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Accept': 'application/json',
-        },
-      }
-    );
-    
     if (!response.ok) {
-      console.error('EPO search failed:', response.status, await response.text());
-      return [];
+      console.error('USPTO search failed:', response.status, await response.text());
+      return { patents: [], count: 0 };
     }
-    
+
     const data = await response.json();
-    const results = data['ops:world-patent-data']?.['ops:biblio-search']?.['ops:search-result']?.['ops:publication-reference'] || [];
-    
-    // Parse results (EPO response structure is complex)
-    const patents: PatentResult[] = [];
-    const resultArray = Array.isArray(results) ? results : [results];
-    
-    for (const result of resultArray) {
-      const docId = result?.['document-id'];
-      if (docId) {
-        patents.push({
-          title: keyword, // EPO search doesn't return title directly
-          applicationNumber: `${docId?.country?.$}${docId?.['doc-number']?.$}`,
-          publicationDate: docId?.date?.$ || '',
-          applicant: undefined,
-        });
-      }
-    }
-    
-    return patents;
+    const totalCount = data.total_patent_count || 0;
+    const patents: PatentResult[] = (data.patents || []).map((p: any) => ({
+      patent_title: p.patent_title,
+      patent_number: p.patent_number,
+      patent_date: p.patent_date,
+      assignee: p.assignees?.[0]?.assignee_organization,
+    }));
+
+    return { patents, count: totalCount };
   } catch (error) {
-    console.error('EPO search error:', error);
-    return [];
+    console.error('USPTO search error:', error);
+    return { patents: [], count: 0 };
   }
 }
 
@@ -102,51 +70,28 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const epoConsumerKey = Deno.env.get('EPO_CONSUMER_KEY');
-  const epoConsumerSecret = Deno.env.get('EPO_CONSUMER_SECRET');
   
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-  // Check if EPO credentials are configured
-  if (!epoConsumerKey || !epoConsumerSecret) {
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: 'EPO OPS credentials not configured. Please add EPO_CONSUMER_KEY and EPO_CONSUMER_SECRET.',
-        needsSetup: true,
-      }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
-
   try {
     const { keywordId, keyword } = await req.json();
-    
-    // Get EPO access token
-    const accessToken = await getEPOAccessToken(epoConsumerKey, epoConsumerSecret);
-    if (!accessToken) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Failed to authenticate with EPO OPS' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
     // If specific keyword provided, search for it
     if (keyword) {
-      const patents = await searchEPOPatents(accessToken, keyword, 10);
+      const { patents, count } = await searchUSPTOPatents(keyword, 10);
       
       // Update the technology with patent count
-      if (keywordId && patents.length > 0) {
+      if (keywordId && count > 0) {
         await supabase
           .from('technologies')
           .update({
-            total_patents: patents.length,
+            total_patents: count,
           })
           .eq('keyword_id', keywordId);
       }
       
       return new Response(
-        JSON.stringify({ success: true, patents, count: patents.length }),
+        JSON.stringify({ success: true, patents, count }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -169,18 +114,18 @@ Deno.serve(async (req) => {
     const patentCounts: Record<string, number> = {};
 
     for (const tech of technologies) {
-      // Rate limit - EPO has strict limits
-      await new Promise(r => setTimeout(r, 500));
+      // Rate limit - be nice to USPTO API
+      await new Promise(r => setTimeout(r, 300));
       
-      const patents = await searchEPOPatents(accessToken, tech.name, 25);
+      const { count } = await searchUSPTOPatents(tech.name, 1);
       
-      if (patents.length > 0) {
+      if (count > 0) {
         await supabase
           .from('technologies')
-          .update({ total_patents: patents.length })
+          .update({ total_patents: count })
           .eq('keyword_id', tech.keyword_id);
         
-        patentCounts[tech.name] = patents.length;
+        patentCounts[tech.name] = count;
         totalUpdated++;
       }
     }
@@ -192,6 +137,7 @@ Deno.serve(async (req) => {
         success: true, 
         updated: totalUpdated,
         counts: patentCounts,
+        source: 'USPTO PatentsView'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
