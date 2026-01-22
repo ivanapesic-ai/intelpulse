@@ -454,6 +454,7 @@ export type Database = {
           avg_semantic_score: number | null
           avg_trl_mentioned: number | null
           composite_score: number | null
+          corpus_rarity_score: number | null
           created_at: string | null
           dealroom_company_count: number | null
           description: string | null
@@ -483,6 +484,7 @@ export type Database = {
           avg_semantic_score?: number | null
           avg_trl_mentioned?: number | null
           composite_score?: number | null
+          corpus_rarity_score?: number | null
           created_at?: string | null
           dealroom_company_count?: number | null
           description?: string | null
@@ -512,6 +514,7 @@ export type Database = {
           avg_semantic_score?: number | null
           avg_trl_mentioned?: number | null
           composite_score?: number | null
+          corpus_rarity_score?: number | null
           created_at?: string | null
           dealroom_company_count?: number | null
           description?: string | null
@@ -746,6 +749,7 @@ export type Database = {
         Returns: number
       }
       calculate_network_centrality: { Args: never; Returns: undefined }
+      calculate_tfidf_scores: { Args: never; Returns: undefined }
       calculate_trl_score: { Args: { avg_trl: number }; Returns: number }
       calculate_visibility_score: {
         Args: { mention_count: number }

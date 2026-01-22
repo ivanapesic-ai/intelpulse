@@ -43,9 +43,10 @@ export interface Technology {
   avgTrlMentioned?: number;         // Raw average TRL from mentions
   policyMentionCount: number;       // Raw count of policy references
   
-  // H11 Hybrid Scoring (KeyBERT semantic + TextRank network + Position structural)
+  // H11 Hybrid Scoring (KeyBERT semantic + TextRank network + TF-IDF rarity + Position structural)
   avgSemanticScore?: number;          // KeyBERT: Avg cosine similarity between tech and doc context
   networkCentrality?: number;         // TextRank: PageRank-style centrality from co-occurrences
+  corpusRarityScore?: number;         // TF-IDF: Inverse document frequency (rarer = higher)
   weightedFrequencyScore?: number;    // SUM(position_weight * relevance_score)
   avgRelevanceScore?: number;         // Average relevance across all mentions
   documentDiversity?: number;         // Count of unique source documents
