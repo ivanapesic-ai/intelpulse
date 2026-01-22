@@ -25,23 +25,34 @@ export type MaturityScore = 0 | 1 | 2;
 
 export type TrendDirection = 'up' | 'down' | 'stable';
 
+export interface NewsItem {
+  title: string;
+  url: string;
+  date: string;
+  source: string;
+}
+
 export interface Technology {
   id: string;
   keywordId: string;
   name: string;
   description: string;
   
-  // 4-Dimension Scoring System (per proposal)
+  // 3-Dimension Scoring System (Investment, Employees, TRL)
   investmentScore: MaturityScore;   // Market: Dealroom funding signals
   employeesScore: MaturityScore;    // Market: Dealroom employee signals
   trlScore: MaturityScore;          // TRL: Average TRL from document mentions
-  euAlignmentScore: MaturityScore;  // EU Alignment: Policy reference count
+  euAlignmentScore: MaturityScore;  // EU Alignment: Policy reference count (deprecated - always 0)
   visibilityScore: MaturityScore;   // Visibility: Document/web mention count
-  compositeScore: number;           // Average of (Investment + Employees + TRL + EU Alignment) / 4
+  compositeScore: number;           // Average of (Investment + Employees + TRL) / 3
   
   // Supporting metrics
   avgTrlMentioned?: number;         // Raw average TRL from mentions
   policyMentionCount: number;       // Raw count of policy references
+  
+  // News aggregation from web scraping
+  newsMentionCount: number;         // Count of news/publication mentions
+  recentNews: NewsItem[];           // Array of recent news items
   
   // H11 Hybrid Scoring (KeyBERT semantic + TextRank network + TF-IDF rarity + Position structural)
   avgSemanticScore?: number;          // KeyBERT: Avg cosine similarity between tech and doc context

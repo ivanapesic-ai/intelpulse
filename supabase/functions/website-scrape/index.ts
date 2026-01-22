@@ -494,6 +494,9 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Aggregate news mentions per technology keyword
+    await aggregateNewsToTechnologies(supabase, scrapedPages);
+
     // Update scrape log
     if (scrapeLog?.id) {
       await supabase
@@ -534,6 +537,61 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+// Aggregate news from scraped pages to technologies table
+async function aggregateNewsToTechnologies(supabase: any, scrapedPages: ScrapedPage[]): Promise<void> {
+  try {
+    // Get all technology keywords with their web mentions
+    const { data: keywords } = await supabase
+      .from('technology_keywords')
+      .select('id, display_name')
+      .eq('is_active', true);
+
+    if (!keywords?.length) return;
+
+    for (const keyword of keywords) {
+      // Count web mentions for this keyword
+      const { count: mentionCount } = await supabase
+        .from('web_technology_mentions')
+        .select('*', { count: 'exact', head: true })
+        .eq('keyword_id', keyword.id);
+
+      // Get recent news items (pages that mention this technology)
+      const { data: mentions } = await supabase
+        .from('web_technology_mentions')
+        .select('source_url, mention_context, created_at')
+        .eq('keyword_id', keyword.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      // Build recent news array from scraped pages
+      const recentNews = [];
+      for (const mention of mentions || []) {
+        const matchingPage = scrapedPages.find(p => p.url === mention.source_url);
+        recentNews.push({
+          title: matchingPage?.title || mention.source_url.split('/').pop() || 'Article',
+          url: mention.source_url,
+          date: mention.created_at,
+          source: mention.source_url.includes('ceisphere') ? 'CEI-Sphere' : 
+                  mention.source_url.includes('eucloudedgeiot') ? 'EUCloudEdgeIoT' : 'Web',
+        });
+      }
+
+      // Update the technology with news data
+      await supabase
+        .from('technologies')
+        .update({
+          news_mention_count: mentionCount || 0,
+          recent_news: recentNews,
+        })
+        .eq('keyword_id', keyword.id);
+    }
+
+    console.log(`Aggregated news for ${keywords.length} technologies`);
+  } catch (error) {
+    console.error('Error aggregating news to technologies:', error);
+  }
+}
 
 // Extract technology mentions from web content (simplified version)
 async function extractTechMentions(
