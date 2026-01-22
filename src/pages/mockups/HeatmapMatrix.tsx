@@ -18,7 +18,6 @@ const columns = [
   { key: "investmentScore", label: "Investment", description: "Market investment signals (0-2)" },
   { key: "employeesScore", label: "Employees", description: "Workforce growth signals (0-2)" },
   { key: "trlScore", label: "TRL", description: "Technology Readiness Level (0-2)" },
-  { key: "euAlignmentScore", label: "EU Align", description: "EU Strategic Alignment (0-2)" },
   { key: "visibilityScore", label: "Visibility", description: "Document/web mentions (0-2)" },
   { key: "compositeScore", label: "Overall", description: "Composite Score (0-2)" },
 ];
