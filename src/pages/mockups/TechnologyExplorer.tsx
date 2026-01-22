@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, TrendingUp, TrendingDown, Minus, FileText, DollarSign, Users, Calendar, Building2, Loader2 } from "lucide-react";
+import { Search, TrendingUp, TrendingDown, Minus, FileText, DollarSign, Users, Calendar, Building2, Loader2, Gauge, BarChart3, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -393,6 +393,44 @@ export default function TechnologyExplorer() {
                       </div>
                       <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
                         Visibility: {selectedTech.documentMentionCount} doc mentions
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  {/* Headai-Style Scoring */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm text-foreground flex items-center gap-2">
+                        <BarChart3 className="h-4 w-4" />
+                        Document Relevance Signals
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="text-center p-3 bg-muted/50 rounded-lg">
+                          <Gauge className="h-5 w-5 mx-auto mb-1 text-primary" />
+                          <p className="text-lg font-bold text-foreground">
+                            {selectedTech.weightedFrequencyScore?.toFixed(1) || "0.0"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Weighted Freq</p>
+                        </div>
+                        <div className="text-center p-3 bg-muted/50 rounded-lg">
+                          <Target className="h-5 w-5 mx-auto mb-1 text-primary" />
+                          <p className="text-lg font-bold text-foreground">
+                            {selectedTech.avgRelevanceScore?.toFixed(2) || "0.50"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Avg Relevance</p>
+                        </div>
+                        <div className="text-center p-3 bg-muted/50 rounded-lg">
+                          <FileText className="h-5 w-5 mx-auto mb-1 text-primary" />
+                          <p className="text-lg font-bold text-foreground">
+                            {selectedTech.documentDiversity || 0}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Sources</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
+                        Headai-style scoring: Position weight × Relevance across {selectedTech.documentMentionCount} mentions
                       </p>
                     </CardContent>
                   </Card>

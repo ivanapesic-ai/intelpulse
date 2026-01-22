@@ -208,7 +208,7 @@ async function extractPdfText(
   }
 }
 
-// Enhanced system prompt for TRL and policy extraction
+// Enhanced system prompt for TRL, policy, and Headai-style scoring extraction
 const EXTRACTION_SYSTEM_PROMPT = `You are an expert technology analyst specializing in EU research and innovation policy. Your task is to extract technology mentions from documents with a focus on:
 
 1. **Technology Readiness Level (TRL) Assessment**
@@ -234,7 +234,23 @@ const EXTRACTION_SYSTEM_PROMPT = `You are an expert technology analyst specializ
    - European Green Deal (tech context)
    - GAIA-X, European Cloud Initiative
 
-3. **Context Extraction**
+3. **Position Weight (Headai-style)**
+   Assess WHERE in the document the technology appears:
+   - "title" = 4 (appears in document title or main heading)
+   - "heading" = 3 (appears in section headings or subheadings)
+   - "abstract" = 3 (appears in abstract, executive summary, or introduction)
+   - "conclusion" = 2 (appears in conclusions or recommendations)
+   - "body" = 1 (appears in regular body text)
+   - "footnote" = 0.5 (appears in footnotes, references, or appendices)
+
+4. **Relevance Score (Headai-style)**
+   Assess HOW CENTRAL the technology is to the document topic:
+   - 0.8-1.0 = CENTRAL: The technology is a main focus, discussed in depth, or is the primary subject
+   - 0.5-0.7 = SIGNIFICANT: The technology is meaningfully discussed but not the main focus
+   - 0.2-0.4 = MENTIONED: The technology is referenced in passing or as background
+   - 0.1 = TANGENTIAL: Barely mentioned, possibly only in a list or reference
+
+5. **Context Extraction**
    Capture the surrounding text (1-2 sentences) that provides evidence for the TRL assessment or policy connection.
 
 Return a JSON array with your findings. Be thorough but only include technologies from the provided list.`;
@@ -281,9 +297,11 @@ For each technology mention found, extract:
 - trl: The TRL level if identifiable (1-9), or null
 - trl_evidence: Brief note on why you assigned this TRL (e.g., "mentions prototype testing")
 - policy_reference: Any EU policy/framework mentioned in connection (e.g., "Horizon Europe", "EU AI Act"), or null
+- position: Where in the document ("title", "heading", "abstract", "conclusion", "body", "footnote")
+- relevance: How central is this technology to the document topic (0.1-1.0)
 - confidence: Your confidence score (0.0-1.0)
 
-Return ONLY a JSON array: [{"keyword_id": "uuid", "context": "...", "trl": 5, "trl_evidence": "...", "policy_reference": "Horizon Europe", "confidence": 0.85}]`,
+Return ONLY a JSON array: [{"keyword_id": "uuid", "context": "...", "trl": 5, "trl_evidence": "...", "policy_reference": "Horizon Europe", "position": "heading", "relevance": 0.8, "confidence": 0.85}]`,
           },
         ],
         max_tokens: 6000,
@@ -307,7 +325,17 @@ Return ONLY a JSON array: [{"keyword_id": "uuid", "context": "...", "trl": 5, "t
 
     console.log(`Extracted ${mentions.length} potential mentions, validating...`);
 
-    // Insert mentions into web_technology_mentions (now includes policy_reference)
+    // Map position strings to numeric weights (Headai-style)
+    const positionWeightMap: Record<string, number> = {
+      title: 4,
+      heading: 3,
+      abstract: 3,
+      conclusion: 2,
+      body: 1,
+      footnote: 1, // Using integer, 0.5 rounds to 1
+    };
+
+    // Insert mentions into web_technology_mentions with Headai-style scoring
     const validMentions = mentions
       .filter((m: any) => m.keyword_id && keywords.some(k => k.id === m.keyword_id))
       .map((m: any) => ({
@@ -316,6 +344,8 @@ Return ONLY a JSON array: [{"keyword_id": "uuid", "context": "...", "trl": 5, "t
         mention_context: m.context?.slice(0, 500),
         trl_mentioned: m.trl,
         policy_reference: m.policy_reference || null,
+        position_weight: positionWeightMap[m.position] || 1,
+        relevance_score: Math.min(1, Math.max(0.1, m.relevance || 0.5)),
         confidence_score: m.confidence || 0.7,
       }));
 
@@ -323,6 +353,8 @@ Return ONLY a JSON array: [{"keyword_id": "uuid", "context": "...", "trl": 5, "t
     if (validMentions.length > 0) {
       console.log(`TRL values: ${validMentions.map(m => m.trl_mentioned).join(', ')}`);
       console.log(`Policy refs: ${validMentions.filter(m => m.policy_reference).length}`);
+      console.log(`Avg position weight: ${(validMentions.reduce((sum, m) => sum + m.position_weight, 0) / validMentions.length).toFixed(1)}`);
+      console.log(`Avg relevance: ${(validMentions.reduce((sum, m) => sum + m.relevance_score, 0) / validMentions.length).toFixed(2)}`);
     }
 
     if (validMentions.length > 0) {
