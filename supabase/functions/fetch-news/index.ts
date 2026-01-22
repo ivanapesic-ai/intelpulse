@@ -60,11 +60,15 @@ async function fetchHNTopStories(limit = 100): Promise<HNStory[]> {
   return Promise.all(storyPromises);
 }
 
-// Search HN Algolia API for specific keywords
+// Search HN Algolia API for specific keywords - only 2025 onwards
 async function searchHNAlgolia(query: string, limit = 10): Promise<NewsItem[]> {
   const encodedQuery = encodeURIComponent(query);
+  
+  // Filter to only get stories from 2025 onwards (Unix timestamp for Jan 1, 2025)
+  const jan2025Timestamp = 1735689600; // 2025-01-01 00:00:00 UTC
+  
   const res = await fetch(
-    `https://hn.algolia.com/api/v1/search?query=${encodedQuery}&tags=story&hitsPerPage=${limit}`
+    `https://hn.algolia.com/api/v1/search?query=${encodedQuery}&tags=story&hitsPerPage=${limit}&numericFilters=created_at_i>${jan2025Timestamp}`
   );
   
   if (!res.ok) return [];
