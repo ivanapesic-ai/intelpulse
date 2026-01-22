@@ -523,8 +523,10 @@ export type Database = {
           last_updated: string | null
           name: string
           network_centrality: number | null
+          news_mention_count: number | null
           patents_score: number | null
           policy_mention_count: number | null
+          recent_news: Json | null
           total_employees: number | null
           total_funding_eur: number | null
           total_patents: number | null
@@ -553,8 +555,10 @@ export type Database = {
           last_updated?: string | null
           name: string
           network_centrality?: number | null
+          news_mention_count?: number | null
           patents_score?: number | null
           policy_mention_count?: number | null
+          recent_news?: Json | null
           total_employees?: number | null
           total_funding_eur?: number | null
           total_patents?: number | null
@@ -583,8 +587,10 @@ export type Database = {
           last_updated?: string | null
           name?: string
           network_centrality?: number | null
+          news_mention_count?: number | null
           patents_score?: number | null
           policy_mention_count?: number | null
+          recent_news?: Json | null
           total_employees?: number | null
           total_funding_eur?: number | null
           total_patents?: number | null

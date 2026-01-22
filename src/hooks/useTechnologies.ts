@@ -110,6 +110,9 @@ export function useTechnologies() {
           compositeScore: Number(row.composite_score) || 0,
           avgTrlMentioned: (rowAny.avg_trl_mentioned as number) || undefined,
           policyMentionCount: ((rowAny.policy_mention_count as number) || 0),
+          // News aggregation
+          newsMentionCount: ((rowAny.news_mention_count as number) || 0),
+          recentNews: ((rowAny.recent_news as Array<{ title: string; url: string; date: string; source: string }>) || []),
           // H11 Hybrid Scoring (KeyBERT + TextRank + TF-IDF + Position)
           avgSemanticScore: Number(rowAny.avg_semantic_score) || undefined,
           networkCentrality: Number(rowAny.network_centrality) || undefined,
@@ -171,9 +174,13 @@ export function useTechnology(id: string) {
         compositeScore: Number(data.composite_score) || 0,
         avgTrlMentioned: (dataAny.avg_trl_mentioned as number) || undefined,
         policyMentionCount: ((dataAny.policy_mention_count as number) || 0),
+        // News aggregation
+        newsMentionCount: ((dataAny.news_mention_count as number) || 0),
+        recentNews: ((dataAny.recent_news as Array<{ title: string; url: string; date: string; source: string }>) || []),
         // H11 Hybrid Scoring (KeyBERT + TextRank + Position)
         avgSemanticScore: Number(dataAny.avg_semantic_score) || undefined,
         networkCentrality: Number(dataAny.network_centrality) || undefined,
+        corpusRarityScore: Number(dataAny.corpus_rarity_score) || undefined,
         weightedFrequencyScore: Number(dataAny.weighted_frequency_score) || 0,
         avgRelevanceScore: Number(dataAny.avg_relevance_score) || 0,
         documentDiversity: (dataAny.document_diversity as number) || 0,

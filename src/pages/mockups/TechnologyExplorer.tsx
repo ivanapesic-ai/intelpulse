@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, TrendingUp, TrendingDown, Minus, FileText, DollarSign, Users, Calendar, Building2, Loader2, Gauge, BarChart3, Target, Sparkles } from "lucide-react";
+import { Search, TrendingUp, TrendingDown, Minus, FileText, DollarSign, Users, Calendar, Building2, Loader2, Gauge, BarChart3, Target, Sparkles, Newspaper, ExternalLink, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -346,7 +346,11 @@ export default function TechnologyExplorer() {
                           <FileText className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm text-muted-foreground">Patents</span>
                         </div>
-                        <p className="text-2xl font-bold text-foreground">{selectedTech.totalPatents}</p>
+                        <div className="flex items-center gap-2">
+                          <Lock className="h-4 w-4 text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground italic">Phase 2</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">PATSTAT integration</p>
                       </CardContent>
                     </Card>
                   </div>
@@ -382,11 +386,55 @@ export default function TechnologyExplorer() {
                           );
                         })}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
-                        Visibility: {selectedTech.documentMentionCount} doc mentions
-                      </p>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground pt-3 border-t border-border">
+                        <span>Visibility: {selectedTech.documentMentionCount} doc mentions</span>
+                        {selectedTech.newsMentionCount > 0 && (
+                          <span className="flex items-center gap-1">
+                            <Newspaper className="h-3 w-3" />
+                            {selectedTech.newsMentionCount} news
+                          </span>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
+
+                  {/* Recent News */}
+                  {selectedTech.recentNews && selectedTech.recentNews.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-sm text-foreground flex items-center gap-2">
+                          <Newspaper className="h-4 w-4" />
+                          Recent News
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {selectedTech.recentNews.slice(0, 3).map((news, index) => (
+                            <a
+                              key={index}
+                              href={news.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-start gap-2 p-2 rounded hover:bg-muted/50 transition-colors group"
+                            >
+                              <ExternalLink className="h-3 w-3 mt-1 text-muted-foreground group-hover:text-primary shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-sm text-foreground line-clamp-1 group-hover:text-primary">
+                                  {news.title}
+                                </p>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <Badge variant="outline" className="text-xs px-1 py-0">
+                                    {news.source}
+                                  </Badge>
+                                  <span>{new Date(news.date).toLocaleDateString()}</span>
+                                </div>
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
                   {/* H11 Hybrid Scoring */}
                   <Card>
