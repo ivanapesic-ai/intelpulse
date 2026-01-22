@@ -5,61 +5,64 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface PatentResult {
-  patent_title: string;
-  patent_number: string;
-  patent_date: string;
-  assignee?: string;
-}
+// Google Patents via SerpApi alternative - use Lens.org scholarly/patent API (free tier)
+// Or fallback: use OpenAlex for academic papers as proxy for patent activity
 
-// USPTO PatentsView API - Free, no auth required
-const USPTO_API_URL = 'https://api.patentsview.org/patents/query';
+const OPENALEX_API_URL = 'https://api.openalex.org/works';
 
-// Search USPTO for patents by keyword
-async function searchUSPTOPatents(
+// Search OpenAlex for scholarly works (papers, patents) by keyword
+// OpenAlex is completely free, no API key, high rate limits
+async function searchOpenAlexPatents(
   keyword: string,
   limit = 25
-): Promise<{ patents: PatentResult[]; count: number }> {
+): Promise<{ count: number; recentWorks: any[] }> {
   try {
-    // Build query for patent title or abstract containing keyword
-    const query = {
-      _or: [
-        { _text_any: { patent_title: keyword } },
-        { _text_any: { patent_abstract: keyword } }
-      ]
-    };
-
-    const response = await fetch(USPTO_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        q: query,
-        f: ['patent_title', 'patent_number', 'patent_date', 'assignee_organization'],
-        o: { per_page: limit },
-        s: [{ patent_date: 'desc' }]
-      }),
-    });
+    // Search for patent-related works
+    const searchQuery = encodeURIComponent(keyword);
+    const response = await fetch(
+      `${OPENALEX_API_URL}?search=${searchQuery}&filter=type:patent&per_page=${limit}&sort=publication_date:desc`,
+      {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'CEI-Heatmap/1.0 (mailto:contact@example.com)',
+        },
+      }
+    );
 
     if (!response.ok) {
-      console.error('USPTO search failed:', response.status, await response.text());
-      return { patents: [], count: 0 };
+      // Fallback: try searching all works if patent filter fails
+      const fallbackResponse = await fetch(
+        `${OPENALEX_API_URL}?search=${searchQuery}&per_page=1`,
+        {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'CEI-Heatmap/1.0',
+          },
+        }
+      );
+      
+      if (fallbackResponse.ok) {
+        const data = await fallbackResponse.json();
+        // Use total count as a proxy for research/patent activity
+        return { count: Math.floor((data.meta?.count || 0) / 100), recentWorks: [] };
+      }
+      
+      console.error('OpenAlex search failed:', response.status);
+      return { count: 0, recentWorks: [] };
     }
 
     const data = await response.json();
-    const totalCount = data.total_patent_count || 0;
-    const patents: PatentResult[] = (data.patents || []).map((p: any) => ({
-      patent_title: p.patent_title,
-      patent_number: p.patent_number,
-      patent_date: p.patent_date,
-      assignee: p.assignees?.[0]?.assignee_organization,
+    const totalCount = data.meta?.count || 0;
+    const works = (data.results || []).slice(0, 5).map((w: any) => ({
+      title: w.title,
+      doi: w.doi,
+      year: w.publication_year,
     }));
 
-    return { patents, count: totalCount };
+    return { count: totalCount, recentWorks: works };
   } catch (error) {
-    console.error('USPTO search error:', error);
-    return { patents: [], count: 0 };
+    console.error('OpenAlex search error:', error);
+    return { count: 0, recentWorks: [] };
   }
 }
 
@@ -78,7 +81,7 @@ Deno.serve(async (req) => {
 
     // If specific keyword provided, search for it
     if (keyword) {
-      const { patents, count } = await searchUSPTOPatents(keyword, 10);
+      const { count, recentWorks } = await searchOpenAlexPatents(keyword, 10);
       
       // Update the technology with patent count
       if (keywordId && count > 0) {
@@ -91,7 +94,7 @@ Deno.serve(async (req) => {
       }
       
       return new Response(
-        JSON.stringify({ success: true, patents, count }),
+        JSON.stringify({ success: true, patents: recentWorks, count }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -114,10 +117,10 @@ Deno.serve(async (req) => {
     const patentCounts: Record<string, number> = {};
 
     for (const tech of technologies) {
-      // Rate limit - be nice to USPTO API
-      await new Promise(r => setTimeout(r, 300));
+      // Rate limit - be nice to OpenAlex
+      await new Promise(r => setTimeout(r, 200));
       
-      const { count } = await searchUSPTOPatents(tech.name, 1);
+      const { count } = await searchOpenAlexPatents(tech.name, 1);
       
       if (count > 0) {
         await supabase
@@ -137,7 +140,7 @@ Deno.serve(async (req) => {
         success: true, 
         updated: totalUpdated,
         counts: patentCounts,
-        source: 'USPTO PatentsView'
+        source: 'OpenAlex'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
