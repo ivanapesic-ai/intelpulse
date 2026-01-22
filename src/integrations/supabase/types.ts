@@ -579,6 +579,7 @@ export type Database = {
           id: string
           keyword_id: string
           mention_context: string | null
+          policy_reference: string | null
           source_url: string | null
           trl_mentioned: number | null
         }
@@ -588,6 +589,7 @@ export type Database = {
           id?: string
           keyword_id: string
           mention_context?: string | null
+          policy_reference?: string | null
           source_url?: string | null
           trl_mentioned?: number | null
         }
@@ -597,6 +599,7 @@ export type Database = {
           id?: string
           keyword_id?: string
           mention_context?: string | null
+          policy_reference?: string | null
           source_url?: string | null
           trl_mentioned?: number | null
         }
@@ -665,6 +668,10 @@ export type Database = {
       calculate_visibility_score: {
         Args: { mention_count: number }
         Returns: number
+      }
+      refresh_technology_scores: {
+        Args: { tech_keyword_id: string }
+        Returns: undefined
       }
     }
     Enums: {

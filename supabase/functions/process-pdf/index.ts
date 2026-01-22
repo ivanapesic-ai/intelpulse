@@ -208,6 +208,37 @@ async function extractPdfText(
   }
 }
 
+// Enhanced system prompt for TRL and policy extraction
+const EXTRACTION_SYSTEM_PROMPT = `You are an expert technology analyst specializing in EU research and innovation policy. Your task is to extract technology mentions from documents with a focus on:
+
+1. **Technology Readiness Level (TRL) Assessment**
+   Explicitly identify TRL levels (1-9) using these definitions:
+   - TRL 1-3 (Research): "basic research", "concept", "proof of concept", "laboratory studies", "theoretical"
+   - TRL 4-5 (Validation): "validation", "laboratory environment", "relevant environment", "component testing"
+   - TRL 6 (Prototype): "prototype", "demonstration", "pilot system", "simulated environment"
+   - TRL 7-8 (Proven): "operational environment", "system complete", "qualified", "proven in operational"
+   - TRL 9 (Commercial): "commercial", "market ready", "deployed", "production", "operational system"
+
+2. **EU Policy and Framework References**
+   Identify mentions of these EU policies and frameworks:
+   - Horizon Europe, Horizon 2020
+   - EU AI Act, AI Regulation
+   - IPCEI (Important Projects of Common European Interest)
+   - EU Chips Act, European Chips Act
+   - Data Act, Data Governance Act
+   - GDPR, Digital Services Act (DSA)
+   - Cyber Resilience Act (CRA)
+   - CEI-SPHERE, EUCloudEdgeIoT
+   - European Data Strategy
+   - Digital Decade, Digital Compass
+   - European Green Deal (tech context)
+   - GAIA-X, European Cloud Initiative
+
+3. **Context Extraction**
+   Capture the surrounding text (1-2 sentences) that provides evidence for the TRL assessment or policy connection.
+
+Return a JSON array with your findings. Be thorough but only include technologies from the provided list.`;
+
 // Parse extracted text for technology mentions
 async function extractTechMentions(
   content: string,
@@ -234,7 +265,7 @@ async function extractTechMentions(
         messages: [
           {
             role: 'system',
-            content: `You are a technology analyst extracting technology mentions from documents. For each technology found, identify the context, any TRL level mentioned (1-9), and policy references. Return JSON array only.`,
+            content: EXTRACTION_SYSTEM_PROMPT,
           },
           {
             role: 'user',
@@ -244,10 +275,18 @@ ${JSON.stringify(keywordList, null, 2)}
 Document content:
 ${content.slice(0, 15000)}
 
-Return JSON array: [{"keyword_id": "...", "context": "...", "trl": null or 1-9, "confidence": 0.0-1.0, "policy_reference": null or "..."}]`,
+For each technology mention found, extract:
+- keyword_id: The exact ID from the list above
+- context: The evidence text (1-2 sentences max, 200 chars)
+- trl: The TRL level if identifiable (1-9), or null
+- trl_evidence: Brief note on why you assigned this TRL (e.g., "mentions prototype testing")
+- policy_reference: Any EU policy/framework mentioned in connection (e.g., "Horizon Europe", "EU AI Act"), or null
+- confidence: Your confidence score (0.0-1.0)
+
+Return ONLY a JSON array: [{"keyword_id": "uuid", "context": "...", "trl": 5, "trl_evidence": "...", "policy_reference": "Horizon Europe", "confidence": 0.85}]`,
           },
         ],
-        max_tokens: 4000,
+        max_tokens: 6000,
       }),
     });
 
@@ -266,7 +305,9 @@ Return JSON array: [{"keyword_id": "...", "context": "...", "trl": null or 1-9, 
     const mentions = JSON.parse(jsonMatch[0]);
     if (!Array.isArray(mentions) || mentions.length === 0) return 0;
 
-    // Insert mentions into web_technology_mentions
+    console.log(`Extracted ${mentions.length} potential mentions, validating...`);
+
+    // Insert mentions into web_technology_mentions (now includes policy_reference)
     const validMentions = mentions
       .filter((m: any) => m.keyword_id && keywords.some(k => k.id === m.keyword_id))
       .map((m: any) => ({
@@ -274,8 +315,15 @@ Return JSON array: [{"keyword_id": "...", "context": "...", "trl": null or 1-9, 
         source_url: sourceUrl,
         mention_context: m.context?.slice(0, 500),
         trl_mentioned: m.trl,
+        policy_reference: m.policy_reference || null,
         confidence_score: m.confidence || 0.7,
       }));
+
+    console.log(`Valid mentions to insert: ${validMentions.length}`);
+    if (validMentions.length > 0) {
+      console.log(`TRL values: ${validMentions.map(m => m.trl_mentioned).join(', ')}`);
+      console.log(`Policy refs: ${validMentions.filter(m => m.policy_reference).length}`);
+    }
 
     if (validMentions.length > 0) {
       const { error } = await supabase
