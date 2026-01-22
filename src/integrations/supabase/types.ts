@@ -260,6 +260,7 @@ export type Database = {
           policy_reference: string | null
           position_weight: number | null
           relevance_score: number | null
+          semantic_similarity: number | null
           trl_mentioned: number | null
         }
         Insert: {
@@ -273,6 +274,7 @@ export type Database = {
           policy_reference?: string | null
           position_weight?: number | null
           relevance_score?: number | null
+          semantic_similarity?: number | null
           trl_mentioned?: number | null
         }
         Update: {
@@ -286,6 +288,7 @@ export type Database = {
           policy_reference?: string | null
           position_weight?: number | null
           relevance_score?: number | null
+          semantic_similarity?: number | null
           trl_mentioned?: number | null
         }
         Relationships: [
@@ -448,6 +451,7 @@ export type Database = {
       technologies: {
         Row: {
           avg_relevance_score: number | null
+          avg_semantic_score: number | null
           avg_trl_mentioned: number | null
           composite_score: number | null
           created_at: string | null
@@ -463,6 +467,7 @@ export type Database = {
           keyword_id: string | null
           last_updated: string | null
           name: string
+          network_centrality: number | null
           patents_score: number | null
           policy_mention_count: number | null
           total_employees: number | null
@@ -475,6 +480,7 @@ export type Database = {
         }
         Insert: {
           avg_relevance_score?: number | null
+          avg_semantic_score?: number | null
           avg_trl_mentioned?: number | null
           composite_score?: number | null
           created_at?: string | null
@@ -490,6 +496,7 @@ export type Database = {
           keyword_id?: string | null
           last_updated?: string | null
           name: string
+          network_centrality?: number | null
           patents_score?: number | null
           policy_mention_count?: number | null
           total_employees?: number | null
@@ -502,6 +509,7 @@ export type Database = {
         }
         Update: {
           avg_relevance_score?: number | null
+          avg_semantic_score?: number | null
           avg_trl_mentioned?: number | null
           composite_score?: number | null
           created_at?: string | null
@@ -517,6 +525,7 @@ export type Database = {
           keyword_id?: string | null
           last_updated?: string | null
           name?: string
+          network_centrality?: number | null
           patents_score?: number | null
           policy_mention_count?: number | null
           total_employees?: number | null
@@ -532,6 +541,54 @@ export type Database = {
             foreignKeyName: "technologies_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: true
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      technology_cooccurrences: {
+        Row: {
+          avg_combined_relevance: number | null
+          cooccurrence_count: number | null
+          created_at: string | null
+          id: string
+          keyword_id_a: string
+          keyword_id_b: string
+          last_seen_at: string | null
+          source_documents: number | null
+        }
+        Insert: {
+          avg_combined_relevance?: number | null
+          cooccurrence_count?: number | null
+          created_at?: string | null
+          id?: string
+          keyword_id_a: string
+          keyword_id_b: string
+          last_seen_at?: string | null
+          source_documents?: number | null
+        }
+        Update: {
+          avg_combined_relevance?: number | null
+          cooccurrence_count?: number | null
+          created_at?: string | null
+          id?: string
+          keyword_id_a?: string
+          keyword_id_b?: string
+          last_seen_at?: string | null
+          source_documents?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technology_cooccurrences_keyword_id_a_fkey"
+            columns: ["keyword_id_a"]
+            isOneToOne: false
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technology_cooccurrences_keyword_id_b_fkey"
+            columns: ["keyword_id_b"]
+            isOneToOne: false
             referencedRelation: "technology_keywords"
             referencedColumns: ["id"]
           },
@@ -597,6 +654,7 @@ export type Database = {
           policy_reference: string | null
           position_weight: number | null
           relevance_score: number | null
+          semantic_similarity: number | null
           source_url: string | null
           trl_mentioned: number | null
         }
@@ -609,6 +667,7 @@ export type Database = {
           policy_reference?: string | null
           position_weight?: number | null
           relevance_score?: number | null
+          semantic_similarity?: number | null
           source_url?: string | null
           trl_mentioned?: number | null
         }
@@ -621,6 +680,7 @@ export type Database = {
           policy_reference?: string | null
           position_weight?: number | null
           relevance_score?: number | null
+          semantic_similarity?: number | null
           source_url?: string | null
           trl_mentioned?: number | null
         }
@@ -685,6 +745,7 @@ export type Database = {
         Args: { policy_count: number }
         Returns: number
       }
+      calculate_network_centrality: { Args: never; Returns: undefined }
       calculate_trl_score: { Args: { avg_trl: number }; Returns: number }
       calculate_visibility_score: {
         Args: { mention_count: number }
@@ -692,6 +753,10 @@ export type Database = {
       }
       refresh_technology_scores: {
         Args: { tech_keyword_id: string }
+        Returns: undefined
+      }
+      upsert_cooccurrence: {
+        Args: { kw_a: string; kw_b: string; relevance_score?: number }
         Returns: undefined
       }
     }
