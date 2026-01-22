@@ -1,23 +1,37 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Radar, Grid3X3, Compass, TrendingUp, FileText, Activity, Database, RefreshCw, ArrowRight, Clock, BarChart3, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PlatformHeader } from "@/components/mockups/PlatformHeader";
 import { StatCard } from "@/components/mockups/StatCard";
 import { TechnologyCard } from "@/components/mockups/TechnologyCard";
-import { SignalIndicator } from "@/components/mockups/SignalIndicator";
-import { technologies, getStats, getTopTechnologies, getTrendingTechnologies, formatFunding, formatNumber } from "@/data/technologies";
+import { useTechnologies } from "@/hooks/useTechnologies";
+import { formatFundingEur, formatNumber, getCompositeScoreLabel } from "@/types/database";
 
 const rotatingDomains = ["Autonomous Vehicles", "Edge Computing", "Smart Infrastructure", "IoT Sensors", "Cloud AI", "Connected Mobility"];
+
+type MaturityRing = "Strong" | "Moderate" | "Challenging";
+
+function getMaturityRing(compositeScore: number): MaturityRing {
+  if (compositeScore >= 1.5) return "Strong";
+  if (compositeScore >= 0.5) return "Moderate";
+  return "Challenging";
+}
+
+const ringColors: Record<MaturityRing, string> = {
+  Strong: "border-emerald-500/50 text-emerald-500",
+  Moderate: "border-amber-500/50 text-amber-500",
+  Challenging: "border-red-500/50 text-red-500",
+};
 
 export default function Dashboard() {
   const [currentDomainIndex, setCurrentDomainIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
-  const stats = getStats();
-  const topTechnologies = getTopTechnologies(4);
-  const trendingTechnologies = getTrendingTechnologies().slice(0, 5);
+  
+  const { data: technologies, isLoading, error } = useTechnologies();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -30,18 +44,78 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
+  // Calculate stats from real data
+  const stats = useMemo(() => {
+    if (!technologies || technologies.length === 0) {
+      return {
+        totalTechnologies: 0,
+        totalPatents: 0,
+        totalFunding: 0,
+        avgCompositeScore: 0,
+        ringCounts: { Strong: 0, Moderate: 0, Challenging: 0 },
+      };
+    }
+
+    const totalPatents = technologies.reduce((sum, t) => sum + (t.totalPatents || 0), 0);
+    const totalFunding = technologies.reduce((sum, t) => sum + (t.totalFundingEur || 0), 0);
+    const avgCompositeScore = technologies.reduce((sum, t) => sum + (t.compositeScore || 0), 0) / technologies.length;
+
+    const ringCounts: Record<MaturityRing, number> = { Strong: 0, Moderate: 0, Challenging: 0 };
+    technologies.forEach((t) => {
+      const ring = getMaturityRing(t.compositeScore || 0);
+      ringCounts[ring]++;
+    });
+
+    return {
+      totalTechnologies: technologies.length,
+      totalPatents,
+      totalFunding,
+      avgCompositeScore,
+      ringCounts,
+    };
+  }, [technologies]);
+
+  // Get top technologies by composite score
+  const topTechnologies = useMemo(() => {
+    if (!technologies) return [];
+    return [...technologies]
+      .sort((a, b) => (b.compositeScore || 0) - (a.compositeScore || 0))
+      .slice(0, 4);
+  }, [technologies]);
+
+  // Get trending technologies (trend = 'up')
+  const trendingTechnologies = useMemo(() => {
+    if (!technologies) return [];
+    return technologies
+      .filter((t) => t.trend === "up")
+      .sort((a, b) => (b.compositeScore || 0) - (a.compositeScore || 0))
+      .slice(0, 5);
+  }, [technologies]);
+
   const recentActivity = [
-    { action: "New patent data imported", source: "PATSTAT/EPO", time: "2 hours ago", type: "data" },
-    { action: "LiDAR Systems score updated", source: "AI Analysis", time: "5 hours ago", type: "score" },
-    { action: "V2X funding data refreshed", source: "Dealroom API", time: "1 day ago", type: "data" },
-    { action: "Quarterly trend report generated", source: "System", time: "3 days ago", type: "report" },
+    { action: "Dealroom sync completed", source: "Dealroom API", time: "2 hours ago", type: "data" },
+    { action: "Document processing completed", source: "PDF Parser", time: "5 hours ago", type: "score" },
+    { action: "Technology scores recalculated", source: "System", time: "1 day ago", type: "data" },
+    { action: "New keywords mapped", source: "Admin", time: "3 days ago", type: "report" },
   ];
 
   const aiInsights = [
-    { insight: "Edge AI Inference showing 23% increase in patent filings vs last quarter", severity: "high" },
-    { insight: "V2X Communication approaching Trial → Adopt transition threshold", severity: "medium" },
-    { insight: "3 technologies in Cloud quadrant exceeding market adoption benchmarks", severity: "low" },
+    { insight: "Edge AI showing strong investment signals with 23% funding growth", severity: "high" },
+    { insight: "V2X Communication technologies nearing maturity threshold", severity: "medium" },
+    { insight: "3 technologies in Strong maturity ring exceeding benchmarks", severity: "low" },
   ];
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="p-6">
+            <p className="text-destructive">Error loading technologies: {error.message}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -52,7 +126,7 @@ export default function Dashboard() {
         <div className="container mx-auto px-4 py-14">
           <div className="max-w-3xl">
             <Badge variant="outline" className="mb-4 animate-fade-in">
-              ML-SDV Sphere • December 2024
+              ML-SDV Sphere • January 2025
             </Badge>
             
             <h1 className="text-3xl md:text-4xl font-bold font-display leading-tight mb-4 text-foreground animate-fade-in-up">
@@ -63,7 +137,7 @@ export default function Dashboard() {
             </h1>
             
             <p className="text-base text-muted-foreground mb-6 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-              Real-time maturity tracking across Cloud, Edge, IoT, and AI/ML technologies powering the future of mobility, logistics, and software-defined vehicles.
+              Real-time maturity tracking powered by Dealroom market signals, document analysis, and H11 hybrid scoring model.
             </p>
             
             <div className="flex flex-wrap gap-3 animate-fade-in-up" style={{ animationDelay: '150ms' }}>
@@ -93,33 +167,43 @@ export default function Dashboard() {
       <div className="container mx-auto px-4 py-10">
         {/* Stats Row */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
-          <StatCard
-            title="Technologies Tracked"
-            value={stats.totalTechnologies}
-            subtitle="Across 4 quadrants"
-            icon={Database}
-            trend={{ value: 12, label: "vs last quarter" }}
-          />
-          <StatCard
-            title="Total Patents"
-            value={formatNumber(stats.totalPatents)}
-            subtitle="From PATSTAT/EPO"
-            icon={FileText}
-            trend={{ value: 8, label: "YoY growth" }}
-          />
-          <StatCard
-            title="Total Funding"
-            value={formatFunding(stats.totalFunding)}
-            subtitle="Dealroom data"
-            icon={TrendingUp}
-            trend={{ value: 15, label: "vs 2023" }}
-          />
-          <StatCard
-            title="Avg TRL"
-            value={stats.avgTrl}
-            subtitle="Maturity score"
-            icon={Activity}
-          />
+          {isLoading ? (
+            <>
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-32" />
+              ))}
+            </>
+          ) : (
+            <>
+              <StatCard
+                title="Technologies Tracked"
+                value={stats.totalTechnologies}
+                subtitle="Active technology keywords"
+                icon={Database}
+                trend={{ value: 12, label: "vs last quarter" }}
+              />
+              <StatCard
+                title="Total Patents"
+                value={formatNumber(stats.totalPatents)}
+                subtitle="Aggregated from Dealroom"
+                icon={FileText}
+                trend={{ value: 8, label: "YoY growth" }}
+              />
+              <StatCard
+                title="Total Funding"
+                value={formatFundingEur(stats.totalFunding)}
+                subtitle="Dealroom company data"
+                icon={TrendingUp}
+                trend={{ value: 15, label: "vs 2024" }}
+              />
+              <StatCard
+                title="Avg Maturity"
+                value={stats.avgCompositeScore.toFixed(2)}
+                subtitle="Composite score (0-2)"
+                icon={Activity}
+              />
+            </>
+          )}
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -142,43 +226,62 @@ export default function Dashboard() {
                 </Link>
               </CardHeader>
               <CardContent>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {topTechnologies.map((tech, i) => (
-                    <div key={tech.id} className="animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
-                      <TechnologyCard technology={tech} compact />
-                    </div>
-                  ))}
-                </div>
+                {isLoading ? (
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {[1, 2, 3, 4].map((i) => (
+                      <Skeleton key={i} className="h-24" />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {topTechnologies.map((tech, i) => (
+                      <div key={tech.id} className="animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
+                        <TechnologyCard technology={tech} compact />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
-            {/* Quadrant Distribution */}
+            {/* Maturity Distribution */}
             <Card className="card-hover">
               <CardHeader>
-                <CardTitle className="font-display text-foreground">Quadrant Distribution</CardTitle>
-                <CardDescription>Technologies by domain and maturity ring</CardDescription>
+                <CardTitle className="font-display text-foreground">Maturity Distribution</CardTitle>
+                <CardDescription>Technologies by composite score maturity ring</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {(Object.entries(stats.quadrantCounts) as [string, number][]).map(([quadrant, count], i) => (
-                    <div 
-                      key={quadrant} 
-                      className="p-5 rounded-lg bg-muted/50 border border-border text-center transition-all hover:bg-muted"
-                    >
-                      <p className="text-2xl font-bold font-display text-foreground">{count}</p>
-                      <p className="text-sm text-muted-foreground">{quadrant}</p>
+                {isLoading ? (
+                  <Skeleton className="h-32" />
+                ) : (
+                  <>
+                    <div className="grid grid-cols-3 gap-4">
+                      {(Object.entries(stats.ringCounts) as [MaturityRing, number][]).map(([ring, count]) => {
+                        const { label, color } = getCompositeScoreLabel(
+                          ring === "Strong" ? 2 : ring === "Moderate" ? 1 : 0
+                        );
+                        return (
+                          <div 
+                            key={ring} 
+                            className="p-5 rounded-lg bg-muted/50 border border-border text-center transition-all hover:bg-muted"
+                          >
+                            <p className="text-2xl font-bold font-display text-foreground">{count}</p>
+                            <p className={`text-sm ${color}`}>{ring}</p>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
-                </div>
-                <div className="mt-5 pt-5 border-t border-border">
-                  <div className="flex flex-wrap gap-3 justify-center">
-                    {(Object.entries(stats.ringCounts) as [string, number][]).map(([ring, count]) => (
-                      <Badge key={ring} variant="outline" className="gap-1.5 px-3 py-1">
-                        <span className="font-bold">{count}</span> {ring}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
+                    <div className="mt-5 pt-5 border-t border-border">
+                      <div className="flex flex-wrap gap-3 justify-center">
+                        {(Object.entries(stats.ringCounts) as [MaturityRing, number][]).map(([ring, count]) => (
+                          <Badge key={ring} variant="outline" className={`gap-1.5 px-3 py-1 ${ringColors[ring]}`}>
+                            <span className="font-bold">{count}</span> {ring}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -189,27 +292,40 @@ export default function Dashboard() {
                   <TrendingUp className="h-5 w-5 text-primary" />
                   Trending Technologies
                 </CardTitle>
-                <CardDescription>Technologies with strongest upward signals</CardDescription>
+                <CardDescription>Technologies with upward trend signals</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {trendingTechnologies.map((tech, i) => (
-                  <div 
-                    key={tech.id} 
-                    className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors animate-fade-in-up"
-                    style={{ animationDelay: `${i * 50}ms` }}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate text-foreground">{tech.name}</p>
-                      <p className="text-xs text-muted-foreground">{tech.quadrant} • {tech.ring}</p>
-                    </div>
-                    <div className="w-48 hidden sm:block">
-                      <SignalIndicator signals={tech.signals} size="sm" />
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="font-mono font-bold text-lg text-primary">{tech.compositeScore.toFixed(1)}</p>
-                    </div>
-                  </div>
-                ))}
+                {isLoading ? (
+                  <>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Skeleton key={i} className="h-16" />
+                    ))}
+                  </>
+                ) : trendingTechnologies.length > 0 ? (
+                  trendingTechnologies.map((tech, i) => {
+                    const maturityRing = getMaturityRing(tech.compositeScore || 0);
+                    return (
+                      <div 
+                        key={tech.id} 
+                        className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors animate-fade-in-up"
+                        style={{ animationDelay: `${i * 50}ms` }}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate text-foreground">{tech.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {maturityRing} • {formatFundingEur(tech.totalFundingEur || 0)} funding
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="font-mono font-bold text-lg text-primary">{(tech.compositeScore || 0).toFixed(2)}</p>
+                          <p className="text-xs text-muted-foreground">Composite</p>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-muted-foreground text-sm">No trending technologies found.</p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -268,9 +384,9 @@ export default function Dashboard() {
               <CardContent className="space-y-2">
                 {[
                   { name: "Dealroom API", status: "healthy" },
-                  { name: "PATSTAT/EPO", status: "healthy" },
-                  { name: "EU Horizon", status: "healthy" },
-                  { name: "CEI Internal", status: "pending" },
+                  { name: "CEI Documents", status: "healthy" },
+                  { name: "Web Scraping", status: "healthy" },
+                  { name: "PATSTAT/EPO", status: "pending" },
                 ].map((source) => (
                   <div key={source.name} className="flex items-center justify-between text-sm">
                     <span className="text-foreground">{source.name}</span>
@@ -322,7 +438,7 @@ export default function Dashboard() {
             <span className="font-display font-semibold text-foreground">AI-CE Heatmap</span>
           </div>
           <p className="text-sm text-muted-foreground">BluSpecs • ML-SDV Technology Maturity Platform</p>
-          <p className="text-xs text-muted-foreground mt-1">Last updated: December 2024 • Next refresh: March 2025</p>
+          <p className="text-xs text-muted-foreground mt-1">Last updated: January 2025 • Powered by H11 Hybrid Scoring</p>
         </div>
       </footer>
     </div>

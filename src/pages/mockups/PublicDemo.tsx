@@ -1,32 +1,53 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Lock, Radar, Grid3X3, ArrowRight, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useTechnologies } from "@/hooks/useTechnologies";
+import { formatFundingEur, getCompositeScoreLabel } from "@/types/database";
 
-const limitedTechnologies = [
-  { name: "Kubernetes", quadrant: "Cloud", ring: "Adopt", score: 8.5 },
-  { name: "Edge AI Inference", quadrant: "Edge", ring: "Trial", score: 6.8 },
-  { name: "V2X Communication", quadrant: "IoT", ring: "Assess", score: 4.5 },
-  { name: "Computer Vision", quadrant: "AI/ML", ring: "Adopt", score: 8.3 },
-  { name: "Digital Twin", quadrant: "IoT", ring: "Trial", score: 6.5 },
-];
+type MaturityRing = "Strong" | "Moderate" | "Challenging";
+
+function getMaturityRing(compositeScore: number): MaturityRing {
+  if (compositeScore >= 1.5) return "Strong";
+  if (compositeScore >= 0.5) return "Moderate";
+  return "Challenging";
+}
+
+const ringColors: Record<MaturityRing, string> = {
+  Strong: "border-emerald-500/50 text-emerald-500",
+  Moderate: "border-amber-500/50 text-amber-500",
+  Challenging: "border-red-500/50 text-red-500",
+};
 
 const premiumFeatures = [
-  "Full technology coverage (150+ technologies)",
-  "Advanced filtering (geography, funding, patents)",
+  "Full technology coverage (50+ technologies)",
+  "Advanced filtering (funding, employees, TRL)",
   "Export to CSV, PDF reports",
   "Quarterly data updates",
-  "Priority support",
+  "H11 Hybrid Scoring details",
   "API access for integrations",
 ];
 
 export default function PublicDemo() {
   const [activeView, setActiveView] = useState<"radar" | "heatmap">("radar");
   const [showAccessDialog, setShowAccessDialog] = useState(false);
+
+  const { data: technologies, isLoading } = useTechnologies();
+
+  // Get top 5 technologies for demo display
+  const demoTechnologies = useMemo(() => {
+    if (!technologies) return [];
+    return [...technologies]
+      .sort((a, b) => (b.compositeScore || 0) - (a.compositeScore || 0))
+      .slice(0, 5);
+  }, [technologies]);
+
+  const totalTechCount = technologies?.length || 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -53,7 +74,7 @@ export default function PublicDemo() {
               <DialogHeader>
                 <DialogTitle className="text-foreground">Request Premium Access</DialogTitle>
                 <DialogDescription>
-                  Get full access to 150+ technologies, advanced filtering, and data exports.
+                  Get full access to {totalTechCount}+ technologies, advanced filtering, and data exports.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
@@ -83,7 +104,7 @@ export default function PublicDemo() {
           <div>
             <p className="text-sm font-medium text-foreground">Demo Mode - Limited Data</p>
             <p className="text-xs text-muted-foreground">
-              Showing 5 of 150+ tracked technologies. Request access for full coverage.
+              Showing 5 of {totalTechCount}+ tracked technologies. Request access for full coverage.
             </p>
           </div>
         </div>
@@ -118,8 +139,8 @@ export default function PublicDemo() {
                   <div className="relative aspect-square max-w-lg mx-auto">
                     {/* Simplified Radar */}
                     <svg viewBox="0 0 100 100" className="w-full h-full">
-                      {/* Rings */}
-                      {[0.8, 0.6, 0.4, 0.2].map((r, i) => (
+                      {/* Rings for 0-2 scale */}
+                      {[0.9, 0.65, 0.4, 0.15].map((r, i) => (
                         <circle
                           key={i}
                           cx="50"
@@ -134,50 +155,58 @@ export default function PublicDemo() {
                       <line x1="50" y1="5" x2="50" y2="95" stroke="hsl(var(--border))" strokeWidth="0.3" />
                       <line x1="5" y1="50" x2="95" y2="50" stroke="hsl(var(--border))" strokeWidth="0.3" />
 
-                      {/* Sample dots */}
-                      <circle cx="60" cy="25" r="2" fill="hsl(var(--primary))" />
-                      <circle cx="70" cy="40" r="2" fill="hsl(270 60% 50%)" />
-                      <circle cx="35" cy="65" r="2" fill="hsl(var(--success))" />
-                      <circle cx="25" cy="30" r="2" fill="hsl(var(--destructive))" />
-                      <circle cx="55" cy="55" r="2" fill="hsl(var(--success))" />
+                      {/* Sample dots representing maturity rings */}
+                      <circle cx="60" cy="25" r="2" fill="hsl(160 72% 35%)" /> {/* Strong */}
+                      <circle cx="70" cy="40" r="2" fill="hsl(160 72% 35%)" /> {/* Strong */}
+                      <circle cx="35" cy="65" r="2" fill="hsl(38 92% 50%)" /> {/* Moderate */}
+                      <circle cx="25" cy="30" r="2" fill="hsl(0 72% 50%)" /> {/* Challenging */}
+                      <circle cx="55" cy="55" r="2" fill="hsl(38 92% 50%)" /> {/* Moderate */}
                     </svg>
 
-                    {/* Quadrant labels */}
-                    <div className="absolute top-2 right-4 text-primary font-semibold text-sm">Cloud</div>
-                    <div className="absolute bottom-2 right-4 font-semibold text-sm" style={{ color: "hsl(270 60% 50%)" }}>Edge</div>
-                    <div className="absolute bottom-2 left-4 text-success font-semibold text-sm">IoT</div>
-                    <div className="absolute top-2 left-4 text-destructive font-semibold text-sm">AI/ML</div>
+                    {/* Ring labels */}
+                    <div className="absolute top-2 right-4 font-semibold text-sm text-emerald-500">Strong</div>
+                    <div className="absolute bottom-2 right-4 font-semibold text-sm text-amber-500">Moderate</div>
+                    <div className="absolute bottom-2 left-4 font-semibold text-sm text-red-500">Challenging</div>
+                    <div className="absolute top-2 left-4 text-muted-foreground font-semibold text-sm">0-2 Scale</div>
 
                     {/* Blur overlay for premium content */}
                     <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {/* Simplified Heatmap */}
+                    {/* Simplified Heatmap with 0-2 scale */}
                     <div className="grid grid-cols-5 gap-1 text-center text-xs font-medium text-muted-foreground mb-2">
                       <div></div>
                       <div>TRL</div>
-                      <div>Market</div>
-                      <div>Innovation</div>
+                      <div>Investment</div>
+                      <div>Employees</div>
                       <div>Overall</div>
                     </div>
-                    {limitedTechnologies.slice(0, 3).map((tech) => (
-                      <div key={tech.name} className="grid grid-cols-5 gap-1">
-                        <div className="text-sm font-medium truncate pr-2 text-foreground">{tech.name}</div>
-                        <div className="h-10 rounded bg-success/60 flex items-center justify-center text-sm font-mono text-foreground">
-                          {(Math.random() * 3 + 6).toFixed(1)}
+                    {isLoading ? (
+                      <>
+                        {[1, 2, 3].map((i) => (
+                          <Skeleton key={i} className="h-10 w-full" />
+                        ))}
+                      </>
+                    ) : (
+                      demoTechnologies.slice(0, 3).map((tech) => (
+                        <div key={tech.name} className="grid grid-cols-5 gap-1">
+                          <div className="text-sm font-medium truncate pr-2 text-foreground">{tech.name}</div>
+                          <div className="h-10 rounded bg-success/60 flex items-center justify-center text-sm font-mono text-foreground">
+                            {(tech.trlScore || 0).toFixed(1)}
+                          </div>
+                          <div className="h-10 rounded bg-success/40 flex items-center justify-center text-sm font-mono text-foreground">
+                            {(tech.investmentScore || 0).toFixed(1)}
+                          </div>
+                          <div className="h-10 rounded bg-warning/50 flex items-center justify-center text-sm font-mono text-foreground">
+                            {(tech.employeesScore || 0).toFixed(1)}
+                          </div>
+                          <div className="h-10 rounded bg-success/50 flex items-center justify-center text-sm font-mono font-semibold text-foreground">
+                            {(tech.compositeScore || 0).toFixed(2)}
+                          </div>
                         </div>
-                        <div className="h-10 rounded bg-success/40 flex items-center justify-center text-sm font-mono text-foreground">
-                          {(Math.random() * 3 + 5).toFixed(1)}
-                        </div>
-                        <div className="h-10 rounded bg-warning/50 flex items-center justify-center text-sm font-mono text-foreground">
-                          {(Math.random() * 3 + 4).toFixed(1)}
-                        </div>
-                        <div className="h-10 rounded bg-success/50 flex items-center justify-center text-sm font-mono font-semibold text-foreground">
-                          {tech.score.toFixed(1)}
-                        </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
 
                     {/* Blur overlay */}
                     <div className="relative h-32 overflow-hidden">
@@ -208,42 +237,45 @@ export default function PublicDemo() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg text-foreground">Sample Technologies</CardTitle>
-                <CardDescription>Showing 5 of 150+ technologies in the ML-SDV sphere</CardDescription>
+                <CardDescription>Showing 5 of {totalTechCount}+ technologies in the ML-SDV sphere</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {limitedTechnologies.map((tech) => (
-                    <div
-                      key={tech.name}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border"
-                    >
-                      <div>
-                        <p className="font-medium text-foreground">{tech.name}</p>
-                        <div className="flex gap-2 mt-1">
-                          <Badge variant="outline" className="text-xs">
-                            {tech.quadrant}
-                          </Badge>
-                          <Badge
-                            variant="outline"
-                            className={`text-xs ${
-                              tech.ring === "Adopt"
-                                ? "border-success/50 text-success"
-                                : tech.ring === "Trial"
-                                ? "border-primary/50 text-primary"
-                                : "border-warning/50 text-warning"
-                            }`}
-                          >
-                            {tech.ring}
-                          </Badge>
+                {isLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Skeleton key={i} className="h-20" />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {demoTechnologies.map((tech) => {
+                      const maturityRing = getMaturityRing(tech.compositeScore || 0);
+                      const { color } = getCompositeScoreLabel(tech.compositeScore || 0);
+                      return (
+                        <div
+                          key={tech.name}
+                          className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border"
+                        >
+                          <div>
+                            <p className="font-medium text-foreground">{tech.name}</p>
+                            <div className="flex gap-2 mt-1">
+                              <Badge variant="outline" className={`text-xs ${ringColors[maturityRing]}`}>
+                                {maturityRing}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {formatFundingEur(tech.totalFundingEur || 0)}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className={`text-2xl font-bold font-mono ${color}`}>{(tech.compositeScore || 0).toFixed(2)}</p>
+                            <p className="text-xs text-muted-foreground">Composite (0-2)</p>
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold font-mono text-foreground">{tech.score.toFixed(1)}</p>
-                        <p className="text-xs text-muted-foreground">Maturity Score</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -277,11 +309,11 @@ export default function PublicDemo() {
                 <CardTitle className="text-sm font-medium text-foreground">Demo Limitations</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm text-muted-foreground">
-                <p>• 5 technologies (vs 150+ in premium)</p>
-                <p>• Basic domain filter only</p>
+                <p>• 5 technologies (vs {totalTechCount}+ in premium)</p>
+                <p>• Basic maturity view only</p>
                 <p>• No export capabilities</p>
                 <p>• No drill-down to details</p>
-                <p>• Sample data only</p>
+                <p>• Limited scoring dimensions</p>
               </CardContent>
             </Card>
 
@@ -296,15 +328,15 @@ export default function PublicDemo() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-success" />
-                  <span className="text-foreground">PATSTAT/EPO (Patents)</span>
+                  <span className="text-foreground">CEI Documents (TRL & Policy)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-success" />
-                  <span className="text-foreground">EU Horizon (Research)</span>
+                  <span className="text-foreground">Web Scraping (Visibility)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-primary" />
-                  <span className="text-foreground">CEI Internal Assessments</span>
+                  <span className="text-foreground">H11 Hybrid Scoring Model</span>
                 </div>
               </CardContent>
             </Card>
@@ -314,7 +346,7 @@ export default function PublicDemo() {
         {/* Footer */}
         <footer className="mt-12 text-center text-sm text-muted-foreground">
           <p>BluSpecs AI-CE Heatmap • ML-SDV Technology Maturity Platform</p>
-          <p className="mt-1">Last updated: December 2024 • Next refresh: March 2025</p>
+          <p className="mt-1">Last updated: January 2025 • Powered by H11 Hybrid Scoring</p>
         </footer>
       </div>
     </div>
