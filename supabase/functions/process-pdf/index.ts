@@ -447,6 +447,43 @@ Return ONLY a JSON array: [{"keyword_id": "uuid", "context": "...", "trl": 5, "t
         }
         console.log(`Created ${(keywordIds.length * (keywordIds.length - 1)) / 2} co-occurrence pairs`);
       }
+
+      // Create company evidence records linking document mentions to related companies
+      console.log('Creating company evidence records...');
+      const uniqueKeywordIds = [...new Set(validMentions.map(m => m.keyword_id))];
+      let evidenceCreated = 0;
+
+      for (const keywordId of uniqueKeywordIds) {
+        // Get companies linked to this keyword
+        const { data: mappings } = await supabase
+          .from('keyword_company_mapping')
+          .select('company_id')
+          .eq('keyword_id', keywordId);
+
+        if (!mappings || mappings.length === 0) continue;
+
+        const mention = validMentions.find(m => m.keyword_id === keywordId);
+        if (!mention) continue;
+
+        // Create evidence record for each company-keyword pair
+        for (const { company_id } of mappings) {
+          const { error: evidenceError } = await supabase
+            .from('company_technology_evidence')
+            .upsert({
+              company_id,
+              keyword_id: keywordId,
+              source_type: 'web',
+              source_reference: sourceUrl,
+              trl_mentioned: mention.trl_mentioned,
+              policy_reference: mention.policy_reference,
+              context: mention.mention_context?.substring(0, 500),
+              confidence_score: mention.confidence_score || 0.7
+            }, { onConflict: 'company_id,keyword_id,source_reference' });
+
+          if (!evidenceError) evidenceCreated++;
+        }
+      }
+      console.log(`Created ${evidenceCreated} company evidence records`);
     }
 
     return validMentions.length;
