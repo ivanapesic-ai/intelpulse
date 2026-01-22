@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { encode as encodeBase64 } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,6 +22,10 @@ interface TechKeyword {
   display_name: string;
   aliases: string[] | null;
 }
+
+// This project focuses on technology intelligence (not companies). Company evidence creation is expensive
+// (many DB reads/writes) and can contribute to WORKER_LIMIT failures on larger documents.
+const ENABLE_COMPANY_EVIDENCE = (Deno.env.get("ENABLE_COMPANY_EVIDENCE") || "false") === "true";
 
 // Zenodo API to get direct download URL
 // Zenodo API with retry logic
@@ -161,9 +166,9 @@ async function extractPdfText(
   apiKey: string
 ): Promise<string | null> {
   try {
-    const base64Pdf = btoa(
-      new Uint8Array(pdfBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
-    );
+    // IMPORTANT: Avoid O(n^2) string concatenation for large PDFs (can trigger WORKER_LIMIT).
+    // Deno std base64 encoder is significantly more efficient.
+    const base64Pdf = encodeBase64(pdfBuffer);
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -437,63 +442,78 @@ Return ONLY a JSON array: [{"keyword_id": "uuid", "context": "...", "trl": 5, "t
       if (validMentions.length >= 2) {
         console.log(`Building co-occurrence pairs for ${validMentions.length} mentions...`);
         const keywordIds = [...new Set(validMentions.map(m => m.keyword_id))];
-        
-        // Create pairs and upsert co-occurrences
+
+        // Create pairs and upsert co-occurrences (batched to reduce overall runtime)
+        const pairs: Array<{ a: string; b: string; relevance: number }> = [];
         for (let i = 0; i < keywordIds.length; i++) {
           for (let j = i + 1; j < keywordIds.length; j++) {
             const mentionA = validMentions.find(m => m.keyword_id === keywordIds[i]);
             const mentionB = validMentions.find(m => m.keyword_id === keywordIds[j]);
             const avgRelevance = (
-              (mentionA?.relevance_score ?? 0.5) + 
+              (mentionA?.relevance_score ?? 0.5) +
               (mentionB?.relevance_score ?? 0.5)
             ) / 2;
-            
-            await supabase.rpc('upsert_cooccurrence', {
-              kw_a: keywordIds[i],
-              kw_b: keywordIds[j],
-              relevance_score: avgRelevance
-            });
+            pairs.push({ a: keywordIds[i], b: keywordIds[j], relevance: avgRelevance });
           }
         }
-        console.log(`Created ${(keywordIds.length * (keywordIds.length - 1)) / 2} co-occurrence pairs`);
+
+        const BATCH_SIZE = 8;
+        for (let i = 0; i < pairs.length; i += BATCH_SIZE) {
+          const batch = pairs.slice(i, i + BATCH_SIZE);
+          await Promise.all(
+            batch.map((p) =>
+              supabase.rpc('upsert_cooccurrence', {
+                kw_a: p.a,
+                kw_b: p.b,
+                relevance_score: p.relevance,
+              })
+            )
+          );
+        }
+
+        console.log(`Created ${pairs.length} co-occurrence pairs`);
       }
 
       // Create company evidence records linking document mentions to related companies
-      console.log('Creating company evidence records...');
-      const uniqueKeywordIds = [...new Set(validMentions.map(m => m.keyword_id))];
-      let evidenceCreated = 0;
+      if (ENABLE_COMPANY_EVIDENCE) {
+        console.log('Creating company evidence records...');
+        const uniqueKeywordIds = [...new Set(validMentions.map(m => m.keyword_id))];
+        let evidenceCreated = 0;
 
-      for (const keywordId of uniqueKeywordIds) {
-        // Get companies linked to this keyword
-        const { data: mappings } = await supabase
-          .from('keyword_company_mapping')
-          .select('company_id')
-          .eq('keyword_id', keywordId);
+        for (const keywordId of uniqueKeywordIds) {
+          // Get companies linked to this keyword
+          const { data: mappings } = await supabase
+            .from('keyword_company_mapping')
+            .select('company_id')
+            .eq('keyword_id', keywordId);
 
-        if (!mappings || mappings.length === 0) continue;
+          if (!mappings || mappings.length === 0) continue;
 
-        const mention = validMentions.find(m => m.keyword_id === keywordId);
-        if (!mention) continue;
+          const mention = validMentions.find(m => m.keyword_id === keywordId);
+          if (!mention) continue;
 
-        // Create evidence record for each company-keyword pair
-        for (const { company_id } of mappings) {
-          const { error: evidenceError } = await supabase
-            .from('company_technology_evidence')
-            .upsert({
-              company_id,
-              keyword_id: keywordId,
-              source_type: 'web',
-              source_reference: sourceUrl,
-              trl_mentioned: mention.trl_mentioned,
-              policy_reference: mention.policy_reference,
-              context: mention.mention_context?.substring(0, 500),
-              confidence_score: mention.confidence_score || 0.7
-            }, { onConflict: 'company_id,keyword_id,source_reference' });
+          // Create evidence record for each company-keyword pair
+          for (const { company_id } of mappings) {
+            const { error: evidenceError } = await supabase
+              .from('company_technology_evidence')
+              .upsert({
+                company_id,
+                keyword_id: keywordId,
+                source_type: 'web',
+                source_reference: sourceUrl,
+                trl_mentioned: mention.trl_mentioned,
+                policy_reference: mention.policy_reference,
+                context: mention.mention_context?.substring(0, 500),
+                confidence_score: mention.confidence_score || 0.7
+              }, { onConflict: 'company_id,keyword_id,source_reference' });
 
-          if (!evidenceError) evidenceCreated++;
+            if (!evidenceError) evidenceCreated++;
+          }
         }
+        console.log(`Created ${evidenceCreated} company evidence records`);
+      } else {
+        console.log('Skipping company evidence creation (ENABLE_COMPANY_EVIDENCE=false)');
       }
-      console.log(`Created ${evidenceCreated} company evidence records`);
     }
 
     return validMentions.length;
