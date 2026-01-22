@@ -208,7 +208,7 @@ async function extractPdfText(
   }
 }
 
-// Enhanced system prompt for TRL, policy, and Headai-style scoring extraction
+// Enhanced system prompt for TRL, policy, and H11 hybrid scoring extraction
 const EXTRACTION_SYSTEM_PROMPT = `You are an expert technology analyst specializing in EU research and innovation policy. Your task is to extract technology mentions from documents with a focus on:
 
 1. **Technology Readiness Level (TRL) Assessment**
@@ -234,7 +234,7 @@ const EXTRACTION_SYSTEM_PROMPT = `You are an expert technology analyst specializ
    - European Green Deal (tech context)
    - GAIA-X, European Cloud Initiative
 
-3. **Position Weight (Headai-style)**
+3. **Position Weight (H11 structural scoring)**
    Assess WHERE in the document the technology appears:
    - "title" = 4 (appears in document title or main heading)
    - "heading" = 3 (appears in section headings or subheadings)
@@ -243,7 +243,7 @@ const EXTRACTION_SYSTEM_PROMPT = `You are an expert technology analyst specializ
    - "body" = 1 (appears in regular body text)
    - "footnote" = 0.5 (appears in footnotes, references, or appendices)
 
-4. **Relevance Score (Headai-style)**
+4. **Relevance Score (H11 semantic scoring)**
    Assess HOW CENTRAL the technology is to the document topic:
    - 0.8-1.0 = CENTRAL: The technology is a main focus, discussed in depth, or is the primary subject
    - 0.5-0.7 = SIGNIFICANT: The technology is meaningfully discussed but not the main focus
@@ -325,7 +325,7 @@ Return ONLY a JSON array: [{"keyword_id": "uuid", "context": "...", "trl": 5, "t
 
     console.log(`Extracted ${mentions.length} potential mentions, validating...`);
 
-    // Map position strings to numeric weights (Headai-style)
+    // Map position strings to numeric weights (H11 structural scoring)
     const positionWeightMap: Record<string, number> = {
       title: 4,
       heading: 3,
@@ -365,6 +365,31 @@ Return ONLY a JSON array: [{"keyword_id": "uuid", "context": "...", "trl": 5, "t
       if (error) {
         console.error('Error inserting mentions:', error);
         return 0;
+      }
+
+      // H11 TextRank: Track co-occurrences between technologies found in same document
+      if (validMentions.length >= 2) {
+        console.log(`Building co-occurrence pairs for ${validMentions.length} mentions...`);
+        const keywordIds = [...new Set(validMentions.map(m => m.keyword_id))];
+        
+        // Create pairs and upsert co-occurrences
+        for (let i = 0; i < keywordIds.length; i++) {
+          for (let j = i + 1; j < keywordIds.length; j++) {
+            const mentionA = validMentions.find(m => m.keyword_id === keywordIds[i]);
+            const mentionB = validMentions.find(m => m.keyword_id === keywordIds[j]);
+            const avgRelevance = (
+              (mentionA?.relevance_score ?? 0.5) + 
+              (mentionB?.relevance_score ?? 0.5)
+            ) / 2;
+            
+            await supabase.rpc('upsert_cooccurrence', {
+              kw_a: keywordIds[i],
+              kw_b: keywordIds[j],
+              relevance_score: avgRelevance
+            });
+          }
+        }
+        console.log(`Created ${(keywordIds.length * (keywordIds.length - 1)) / 2} co-occurrence pairs`);
       }
     }
 

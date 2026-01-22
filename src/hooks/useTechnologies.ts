@@ -110,7 +110,9 @@ export function useTechnologies() {
           compositeScore: Number(row.composite_score) || 0,
           avgTrlMentioned: (rowAny.avg_trl_mentioned as number) || undefined,
           policyMentionCount: ((rowAny.policy_mention_count as number) || 0),
-          // Headai-style scoring
+          // H11 Hybrid Scoring (KeyBERT + TextRank + Position)
+          avgSemanticScore: Number(rowAny.avg_semantic_score) || undefined,
+          networkCentrality: Number(rowAny.network_centrality) || undefined,
           weightedFrequencyScore: Number(rowAny.weighted_frequency_score) || 0,
           avgRelevanceScore: Number(rowAny.avg_relevance_score) || 0,
           documentDiversity: (rowAny.document_diversity as number) || 0,
@@ -168,7 +170,9 @@ export function useTechnology(id: string) {
         compositeScore: Number(data.composite_score) || 0,
         avgTrlMentioned: (dataAny.avg_trl_mentioned as number) || undefined,
         policyMentionCount: ((dataAny.policy_mention_count as number) || 0),
-        // Headai-style scoring
+        // H11 Hybrid Scoring (KeyBERT + TextRank + Position)
+        avgSemanticScore: Number(dataAny.avg_semantic_score) || undefined,
+        networkCentrality: Number(dataAny.network_centrality) || undefined,
         weightedFrequencyScore: Number(dataAny.weighted_frequency_score) || 0,
         avgRelevanceScore: Number(dataAny.avg_relevance_score) || 0,
         documentDiversity: (dataAny.document_diversity as number) || 0,

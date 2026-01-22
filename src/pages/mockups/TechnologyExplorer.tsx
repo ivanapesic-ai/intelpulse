@@ -397,32 +397,48 @@ export default function TechnologyExplorer() {
                     </CardContent>
                   </Card>
 
-                  {/* Headai-Style Scoring */}
+                  {/* H11 Hybrid Scoring */}
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-sm text-foreground flex items-center gap-2">
                         <BarChart3 className="h-4 w-4" />
-                        Document Relevance Signals
+                        H11 Relevance Signals
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div className="text-center p-3 bg-muted/50 rounded-lg" title="KeyBERT semantic similarity between technology and document context">
+                          <Target className="h-5 w-5 mx-auto mb-1 text-primary" />
+                          <p className="text-lg font-bold text-foreground">
+                            {selectedTech.avgSemanticScore?.toFixed(2) || "—"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Semantic Match</p>
+                        </div>
+                        <div className="text-center p-3 bg-muted/50 rounded-lg" title="TextRank network centrality based on technology co-occurrences">
+                          <BarChart3 className="h-5 w-5 mx-auto mb-1 text-primary" />
+                          <p className="text-lg font-bold text-foreground">
+                            {selectedTech.networkCentrality?.toFixed(2) || "—"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Network Score</p>
+                        </div>
+                      </div>
                       <div className="grid grid-cols-3 gap-3">
                         <div className="text-center p-3 bg-muted/50 rounded-lg">
-                          <Gauge className="h-5 w-5 mx-auto mb-1 text-primary" />
+                          <Gauge className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
                           <p className="text-lg font-bold text-foreground">
                             {selectedTech.weightedFrequencyScore?.toFixed(1) || "0.0"}
                           </p>
                           <p className="text-xs text-muted-foreground">Weighted Freq</p>
                         </div>
                         <div className="text-center p-3 bg-muted/50 rounded-lg">
-                          <Target className="h-5 w-5 mx-auto mb-1 text-primary" />
+                          <Target className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
                           <p className="text-lg font-bold text-foreground">
                             {selectedTech.avgRelevanceScore?.toFixed(2) || "0.50"}
                           </p>
                           <p className="text-xs text-muted-foreground">Avg Relevance</p>
                         </div>
                         <div className="text-center p-3 bg-muted/50 rounded-lg">
-                          <FileText className="h-5 w-5 mx-auto mb-1 text-primary" />
+                          <FileText className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
                           <p className="text-lg font-bold text-foreground">
                             {selectedTech.documentDiversity || 0}
                           </p>
@@ -430,7 +446,7 @@ export default function TechnologyExplorer() {
                         </div>
                       </div>
                       <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
-                        Headai-style scoring: Position weight × Relevance across {selectedTech.documentMentionCount} mentions
+                        H11 scoring: KeyBERT + TextRank + Position across {selectedTech.documentMentionCount} mentions
                       </p>
                     </CardContent>
                   </Card>
