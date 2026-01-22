@@ -346,11 +346,17 @@ export default function TechnologyExplorer() {
                           <FileText className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm text-muted-foreground">Patents</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Lock className="h-4 w-4 text-muted-foreground" />
-                          <p className="text-sm text-muted-foreground italic">Phase 2</p>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">PATSTAT integration</p>
+                        {selectedTech.totalPatents > 0 ? (
+                          <p className="text-2xl font-bold text-foreground">{selectedTech.totalPatents}</p>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <Lock className="h-4 w-4 text-muted-foreground" />
+                              <p className="text-sm text-muted-foreground italic">No data</p>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">Run EPO sync in Admin</p>
+                          </>
+                        )}
                       </CardContent>
                     </Card>
                   </div>

@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Globe, RefreshCw, CheckCircle, XCircle, Clock, ExternalLink, FileText, Zap } from 'lucide-react';
+import { Globe, RefreshCw, CheckCircle, XCircle, Clock, ExternalLink, FileText, Zap, Newspaper, ScrollText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useWebScrapeLogs, useScrapedContent, useWebScrapingStats, useScrapeWebsite } from '@/hooks/useWebScraping';
+import { useFetchNews, useFetchPatents } from '@/hooks/useExternalData';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-muted text-muted-foreground border-muted',
@@ -26,6 +27,8 @@ export function WebScrapingPanel() {
   const { data: content } = useScrapedContent();
   const { data: stats } = useWebScrapingStats();
   const scrapeWebsite = useScrapeWebsite();
+  const fetchNews = useFetchNews();
+  const fetchPatents = useFetchPatents();
 
   const handleScrape = () => {
     scrapeWebsite.mutate({ website: selectedWebsite, scrapeType: selectedType });
@@ -82,6 +85,72 @@ export function WebScrapingPanel() {
           </CardContent>
         </Card>
       </div>
+
+      {/* External Data Sources */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-foreground flex items-center gap-2">
+            <Zap className="h-5 w-5" />
+            External Data Sources
+          </CardTitle>
+          <CardDescription>
+            Fetch tech news from HackerNews and patent data from EPO
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid sm:grid-cols-2 gap-4">
+            {/* HackerNews */}
+            <div className="p-4 rounded-lg border border-border bg-card">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 rounded-full bg-orange-500/10">
+                  <Newspaper className="h-5 w-5 text-orange-500" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-foreground">HackerNews</h4>
+                  <p className="text-xs text-muted-foreground">Free API • Tech news</p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Search recent tech news from HackerNews for each technology keyword.
+              </p>
+              <Button 
+                onClick={() => fetchNews.mutate({})} 
+                disabled={fetchNews.isPending}
+                className="w-full"
+                variant="outline"
+              >
+                <Newspaper className={`h-4 w-4 mr-2 ${fetchNews.isPending ? 'animate-pulse' : ''}`} />
+                {fetchNews.isPending ? 'Fetching News...' : 'Fetch HackerNews'}
+              </Button>
+            </div>
+
+            {/* EPO Patents */}
+            <div className="p-4 rounded-lg border border-border bg-card">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 rounded-full bg-blue-500/10">
+                  <ScrollText className="h-5 w-5 text-blue-500" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-foreground">EPO Patents</h4>
+                  <p className="text-xs text-muted-foreground">Free API • EU patents</p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Search European Patent Office for patent counts per technology.
+              </p>
+              <Button 
+                onClick={() => fetchPatents.mutate({})} 
+                disabled={fetchPatents.isPending}
+                className="w-full"
+                variant="outline"
+              >
+                <ScrollText className={`h-4 w-4 mr-2 ${fetchPatents.isPending ? 'animate-pulse' : ''}`} />
+                {fetchPatents.isPending ? 'Fetching Patents...' : 'Fetch Patents'}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Scrape Controls */}
       <Card>
