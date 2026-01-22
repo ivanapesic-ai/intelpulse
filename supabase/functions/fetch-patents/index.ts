@@ -10,55 +10,43 @@ const corsHeaders = {
 
 const OPENALEX_API_URL = 'https://api.openalex.org/works';
 
-// Search OpenAlex for scholarly works (papers, patents) by keyword
+// Search OpenAlex for scholarly works by keyword
 // OpenAlex is completely free, no API key, high rate limits
-async function searchOpenAlexPatents(
+// We count academic papers as a proxy for technology R&D activity
+async function searchOpenAlexWorks(
   keyword: string,
   limit = 25
 ): Promise<{ count: number; recentWorks: any[] }> {
   try {
-    // Search for patent-related works
     const searchQuery = encodeURIComponent(keyword);
+    
+    // Search all works (articles, preprints, etc.) - better coverage than patent filter
     const response = await fetch(
-      `${OPENALEX_API_URL}?search=${searchQuery}&filter=type:patent&per_page=${limit}&sort=publication_date:desc`,
+      `${OPENALEX_API_URL}?search=${searchQuery}&per_page=${limit}&sort=publication_date:desc&mailto=contact@example.com`,
       {
         headers: {
           'Accept': 'application/json',
-          'User-Agent': 'CEI-Heatmap/1.0 (mailto:contact@example.com)',
         },
       }
     );
 
     if (!response.ok) {
-      // Fallback: try searching all works if patent filter fails
-      const fallbackResponse = await fetch(
-        `${OPENALEX_API_URL}?search=${searchQuery}&per_page=1`,
-        {
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'CEI-Heatmap/1.0',
-          },
-        }
-      );
-      
-      if (fallbackResponse.ok) {
-        const data = await fallbackResponse.json();
-        // Use total count as a proxy for research/patent activity
-        return { count: Math.floor((data.meta?.count || 0) / 100), recentWorks: [] };
-      }
-      
-      console.error('OpenAlex search failed:', response.status);
+      console.error('OpenAlex search failed:', response.status, await response.text());
       return { count: 0, recentWorks: [] };
     }
 
     const data = await response.json();
     const totalCount = data.meta?.count || 0;
+    
     const works = (data.results || []).slice(0, 5).map((w: any) => ({
       title: w.title,
       doi: w.doi,
       year: w.publication_year,
+      type: w.type,
+      cited_by_count: w.cited_by_count,
     }));
 
+    console.log(`OpenAlex: Found ${totalCount} works for "${keyword}"`);
     return { count: totalCount, recentWorks: works };
   } catch (error) {
     console.error('OpenAlex search error:', error);
@@ -81,7 +69,7 @@ Deno.serve(async (req) => {
 
     // If specific keyword provided, search for it
     if (keyword) {
-      const { count, recentWorks } = await searchOpenAlexPatents(keyword, 10);
+      const { count, recentWorks } = await searchOpenAlexWorks(keyword, 10);
       
       // Update the technology with patent count
       if (keywordId && count > 0) {
@@ -120,7 +108,7 @@ Deno.serve(async (req) => {
       // Rate limit - be nice to OpenAlex
       await new Promise(r => setTimeout(r, 200));
       
-      const { count } = await searchOpenAlexPatents(tech.name, 1);
+      const { count } = await searchOpenAlexWorks(tech.name, 1);
       
       if (count > 0) {
         await supabase
