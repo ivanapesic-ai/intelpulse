@@ -1,84 +1,102 @@
 import { useState, useMemo } from "react";
-import { Download, TrendingUp, TrendingDown, Minus, ChevronRight } from "lucide-react";
+import { Download, TrendingUp, TrendingDown, Minus, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PlatformHeader } from "@/components/mockups/PlatformHeader";
-import { QuadrantFilter } from "@/components/mockups/QuadrantFilter";
 import { SignalIndicator } from "@/components/mockups/SignalIndicator";
-import { technologies, Technology, TechnologyQuadrant, TechnologyRing, formatFunding, getStats } from "@/data/technologies";
+import { useTechnologies } from "@/hooks/useTechnologies";
 import { cn } from "@/lib/utils";
+import { formatFundingEur, MATURITY_SCORE_CONFIG, type MaturityScore } from "@/types/database";
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Cell, PieChart, Pie } from "recharts";
 
-const ringRadii: Record<TechnologyRing, number> = {
-  Adopt: 0.22,
-  Trial: 0.42,
-  Assess: 0.62,
-  Hold: 0.82,
+// Map composite score (0-2) to maturity ring
+type MaturityRing = "Strong" | "Moderate" | "Challenging";
+
+function getMaturityRing(compositeScore: number): MaturityRing {
+  if (compositeScore >= 1.5) return "Strong";
+  if (compositeScore >= 0.5) return "Moderate";
+  return "Challenging";
+}
+
+// Ring radii for positioning (inverted - Strong is center)
+const ringRadii: Record<MaturityRing, number> = {
+  Strong: 0.22,
+  Moderate: 0.45,
+  Challenging: 0.72,
 };
 
-const quadrantAngles: Record<TechnologyQuadrant, { start: number; end: number }> = {
-  Cloud: { start: -Math.PI / 2, end: 0 },
-  Edge: { start: 0, end: Math.PI / 2 },
-  IoT: { start: Math.PI / 2, end: Math.PI },
-  "AI/ML": { start: Math.PI, end: (3 * Math.PI) / 2 },
+const ringColors: Record<MaturityRing, { bg: string; text: string }> = {
+  Strong: { bg: "hsl(160 72% 35%)", text: "text-success" },
+  Moderate: { bg: "hsl(38 92% 45%)", text: "text-warning" },
+  Challenging: { bg: "hsl(0 72% 50%)", text: "text-destructive" },
 };
 
-const ringColors: Record<TechnologyRing, { bg: string; text: string }> = {
-  Adopt: { bg: "hsl(160 72% 35%)", text: "text-success" },
-  Trial: { bg: "hsl(214 100% 49%)", text: "text-primary" },
-  Assess: { bg: "hsl(38 92% 45%)", text: "text-warning" },
-  Hold: { bg: "hsl(0 72% 50%)", text: "text-destructive" },
-};
+// Simple color palette for technologies
+const techColors = [
+  "hsl(214 100% 49%)", // blue
+  "hsl(270 60% 50%)",  // purple
+  "hsl(160 72% 35%)",  // green
+  "hsl(350 70% 50%)",  // red
+  "hsl(38 92% 50%)",   // orange
+  "hsl(190 80% 45%)",  // cyan
+];
 
-const quadrantColors: Record<TechnologyQuadrant, string> = {
-  Cloud: "hsl(214 100% 49%)",
-  Edge: "hsl(270 60% 50%)",
-  IoT: "hsl(160 72% 35%)",
-  "AI/ML": "hsl(350 70% 50%)",
-};
+function getTechColor(index: number): string {
+  return techColors[index % techColors.length];
+}
 
 export default function TechnologyRadar() {
-  const [selectedTech, setSelectedTech] = useState<Technology | null>(null);
+  const { data: technologies = [], isLoading } = useTechnologies();
+  const [selectedTechId, setSelectedTechId] = useState<string | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-  const [hoveredTech, setHoveredTech] = useState<string | null>(null);
-  const [activeQuadrants, setActiveQuadrants] = useState<Set<TechnologyQuadrant>>(
-    new Set(["Cloud", "Edge", "IoT", "AI/ML"])
-  );
+  const [hoveredTechId, setHoveredTechId] = useState<string | null>(null);
 
-  const stats = getStats();
+  const selectedTech = technologies.find(t => t.id === selectedTechId);
 
-  const toggleQuadrant = (quadrant: TechnologyQuadrant) => {
-    const newActive = new Set(activeQuadrants);
-    if (newActive.has(quadrant)) {
-      if (newActive.size > 1) newActive.delete(quadrant);
-    } else {
-      newActive.add(quadrant);
-    }
-    setActiveQuadrants(newActive);
-  };
-
-  const openDetails = (tech: Technology) => {
-    setSelectedTech(tech);
+  const openDetails = (techId: string) => {
+    setSelectedTechId(techId);
     setDetailDialogOpen(true);
   };
 
-  const filteredTechnologies = useMemo(() => {
-    return technologies.filter((tech) => activeQuadrants.has(tech.quadrant));
-  }, [activeQuadrants]);
+  // Calculate stats from real data
+  const stats = useMemo(() => {
+    const ringCounts: Record<MaturityRing, number> = {
+      Strong: 0,
+      Moderate: 0,
+      Challenging: 0,
+    };
 
-  const getPosition = (tech: Technology, index: number) => {
-    const radius = ringRadii[tech.ring];
-    const angles = quadrantAngles[tech.quadrant];
-    const angleRange = angles.end - angles.start;
-    const techsInQuadrantRing = technologies.filter(
-      (t) => t.quadrant === tech.quadrant && t.ring === tech.ring
-    );
-    const techIndex = techsInQuadrantRing.findIndex((t) => t.id === tech.id);
-    const angleOffset = (angleRange / (techsInQuadrantRing.length + 1)) * (techIndex + 1);
-    const angle = angles.start + angleOffset;
+    let totalCompositeScore = 0;
+
+    technologies.forEach(tech => {
+      const ring = getMaturityRing(tech.compositeScore);
+      ringCounts[ring]++;
+      totalCompositeScore += tech.compositeScore;
+    });
+
+    return {
+      totalTechnologies: technologies.length,
+      avgCompositeScore: technologies.length > 0 
+        ? (totalCompositeScore / technologies.length).toFixed(1) 
+        : "0",
+      ringCounts,
+    };
+  }, [technologies]);
+
+  // Position calculation for radar dots
+  const getPosition = (tech: typeof technologies[0], index: number) => {
+    const ring = getMaturityRing(tech.compositeScore);
+    const radius = ringRadii[ring];
+    
+    // Distribute technologies evenly in a ring
+    const techsInRing = technologies.filter(t => getMaturityRing(t.compositeScore) === ring);
+    const techIndex = techsInRing.findIndex(t => t.id === tech.id);
+    const angle = (2 * Math.PI / techsInRing.length) * techIndex - Math.PI / 2;
+    
+    // Add slight jitter for visual separation
     const jitter = (radius * 0.08) * ((index % 3) - 1);
     const finalRadius = radius + jitter;
 
@@ -88,33 +106,40 @@ export default function TechnologyRadar() {
     };
   };
 
-  const quadrantDistributionData = Object.entries(stats.quadrantCounts).map(([name, value]) => ({
-    name,
-    value,
-    color: quadrantColors[name as TechnologyQuadrant],
-  }));
-
+  // Charts data from real technologies
   const ringDistributionData = Object.entries(stats.ringCounts).map(([name, value]) => ({
     name,
     value,
-    color: ringColors[name as TechnologyRing].bg,
+    color: ringColors[name as MaturityRing].bg,
   }));
 
-  const topTechData = filteredTechnologies
-    .sort((a, b) => b.compositeScore - a.compositeScore)
+  const topTechData = technologies
     .slice(0, 8)
-    .map((tech) => ({
+    .map((tech, index) => ({
       name: tech.name.length > 15 ? tech.name.slice(0, 15) + "..." : tech.name,
       score: tech.compositeScore,
-      color: quadrantColors[tech.quadrant],
+      color: getTechColor(index),
     }));
 
+  // Radar chart data for selected technology (using 0-2 scale)
   const radarChartData = selectedTech ? [
-    { dimension: "TRL", value: selectedTech.trl, fullMark: 9 },
-    { dimension: "Market", value: selectedTech.marketScore, fullMark: 9 },
-    { dimension: "Innovation", value: selectedTech.innovationScore, fullMark: 9 },
-    { dimension: "EU Align", value: selectedTech.euAlignmentScore, fullMark: 9 },
+    { dimension: "Investment", value: selectedTech.investmentScore, fullMark: 2 },
+    { dimension: "Employees", value: selectedTech.employeesScore, fullMark: 2 },
+    { dimension: "TRL", value: selectedTech.trlScore, fullMark: 2 },
+    { dimension: "EU Align", value: selectedTech.euAlignmentScore, fullMark: 2 },
+    { dimension: "Visibility", value: selectedTech.visibilityScore, fullMark: 2 },
   ] : [];
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <PlatformHeader />
+        <div className="container mx-auto px-4 py-8 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -126,11 +151,10 @@ export default function TechnologyRadar() {
           <div className="flex-1">
             <h1 className="text-2xl font-bold font-display text-foreground mb-2">Technology Radar</h1>
             <p className="text-muted-foreground">
-              {filteredTechnologies.length} technologies across maturity rings and domain quadrants
+              {technologies.length} technologies across maturity rings (real data from database)
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <QuadrantFilter activeQuadrants={activeQuadrants} onToggle={toggleQuadrant} />
             <Button variant="outline" size="sm">
               <Download className="h-4 w-4 mr-2" />
               Export
@@ -145,14 +169,13 @@ export default function TechnologyRadar() {
               <CardContent className="p-0">
                 <div className="relative aspect-square max-w-2xl mx-auto p-4">
                   <svg viewBox="0 0 100 100" className="w-full h-full">
-                    {/* Background quadrants */}
-                    <path d="M50,50 L50,4 A46,46 0 0,1 96,50 Z" fill="hsl(214 100% 49% / 0.06)" stroke="hsl(var(--border))" strokeWidth="0.2" />
-                    <path d="M50,50 L96,50 A46,46 0 0,1 50,96 Z" fill="hsl(270 60% 50% / 0.06)" stroke="hsl(var(--border))" strokeWidth="0.2" />
-                    <path d="M50,50 L50,96 A46,46 0 0,1 4,50 Z" fill="hsl(160 72% 35% / 0.06)" stroke="hsl(var(--border))" strokeWidth="0.2" />
-                    <path d="M50,50 L4,50 A46,46 0 0,1 50,4 Z" fill="hsl(350 70% 50% / 0.06)" stroke="hsl(var(--border))" strokeWidth="0.2" />
+                    {/* Background gradient circles */}
+                    <circle cx="50" cy="50" r="46" fill="hsl(var(--muted) / 0.3)" />
+                    <circle cx="50" cy="50" r="30" fill="hsl(var(--muted) / 0.2)" />
+                    <circle cx="50" cy="50" r="15" fill="hsl(var(--muted) / 0.1)" />
 
                     {/* Ring circles */}
-                    {[0.82, 0.62, 0.42, 0.22].map((radius, i) => (
+                    {[0.72, 0.45, 0.22].map((radius, i) => (
                       <circle
                         key={i}
                         cx="50"
@@ -165,16 +188,13 @@ export default function TechnologyRadar() {
                       />
                     ))}
 
-                    {/* Axis lines */}
-                    <line x1="50" y1="4" x2="50" y2="96" stroke="hsl(var(--border))" strokeWidth="0.3" />
-                    <line x1="4" y1="50" x2="96" y2="50" stroke="hsl(var(--border))" strokeWidth="0.3" />
-
                     {/* Technology dots */}
-                    {filteredTechnologies.map((tech, index) => {
+                    {technologies.map((tech, index) => {
                       const pos = getPosition(tech, index);
-                      const isSelected = selectedTech?.id === tech.id;
-                      const isHovered = hoveredTech === tech.id;
+                      const isSelected = selectedTechId === tech.id;
+                      const isHovered = hoveredTechId === tech.id;
                       const isHighlighted = isSelected || isHovered;
+                      const color = getTechColor(index);
 
                       return (
                         <g key={tech.id}>
@@ -183,7 +203,7 @@ export default function TechnologyRadar() {
                               cx={pos.x}
                               cy={pos.y}
                               r="3.5"
-                              fill={quadrantColors[tech.quadrant]}
+                              fill={color}
                               opacity="0.2"
                             />
                           )}
@@ -193,26 +213,26 @@ export default function TechnologyRadar() {
                                 cx={pos.x}
                                 cy={pos.y}
                                 r={isHighlighted ? 2 : 1.5}
-                                fill={quadrantColors[tech.quadrant]}
+                                fill={color}
                                 className="cursor-pointer transition-all duration-200"
                                 stroke={isHighlighted ? "hsl(var(--foreground))" : "none"}
                                 strokeWidth={isHighlighted ? 0.4 : 0}
-                                onClick={() => setSelectedTech(tech)}
-                                onMouseEnter={() => setHoveredTech(tech.id)}
-                                onMouseLeave={() => setHoveredTech(null)}
-                                onDoubleClick={() => openDetails(tech)}
+                                onClick={() => setSelectedTechId(tech.id)}
+                                onMouseEnter={() => setHoveredTechId(tech.id)}
+                                onMouseLeave={() => setHoveredTechId(null)}
+                                onDoubleClick={() => openDetails(tech.id)}
                               />
                             </TooltipTrigger>
                             <TooltipContent side="top" className="max-w-xs">
                               <div className="space-y-2">
                                 <div className="flex items-center justify-between gap-3">
                                   <p className="font-semibold text-foreground">{tech.name}</p>
-                                  <span className="font-mono font-bold text-primary">{tech.compositeScore.toFixed(1)}</span>
+                                  <span className="font-mono font-bold text-primary">{tech.compositeScore.toFixed(2)}</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground line-clamp-2">{tech.description}</p>
                                 <div className="flex items-center gap-2">
-                                  <Badge variant="outline" className="text-xs">{tech.quadrant}</Badge>
-                                  <Badge variant="outline" className="text-xs">{tech.ring}</Badge>
+                                  <Badge variant="outline" className="text-xs">{getMaturityRing(tech.compositeScore)}</Badge>
+                                  <Badge variant="outline" className="text-xs">{tech.dealroomCompanyCount} companies</Badge>
                                 </div>
                               </div>
                             </TooltipContent>
@@ -224,23 +244,14 @@ export default function TechnologyRadar() {
 
                   {/* Ring labels */}
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
-                    <span className="text-[10px] text-success font-medium uppercase tracking-wide">Adopt</span>
+                    <span className="text-[10px] text-success font-medium uppercase tracking-wide">Strong</span>
                   </div>
                   <div className="absolute top-[30%] left-1/2 -translate-x-1/2">
-                    <span className="text-[10px] text-primary font-medium uppercase tracking-wide">Trial</span>
+                    <span className="text-[10px] text-warning font-medium uppercase tracking-wide">Moderate</span>
                   </div>
-                  <div className="absolute top-[18%] left-1/2 -translate-x-1/2">
-                    <span className="text-[10px] text-warning font-medium uppercase tracking-wide">Assess</span>
+                  <div className="absolute top-[12%] left-1/2 -translate-x-1/2">
+                    <span className="text-[10px] text-destructive font-medium uppercase tracking-wide">Challenging</span>
                   </div>
-                  <div className="absolute top-[8%] left-1/2 -translate-x-1/2">
-                    <span className="text-[10px] text-destructive font-medium uppercase tracking-wide">Hold</span>
-                  </div>
-
-                  {/* Quadrant labels */}
-                  <div className="absolute top-3 right-3 text-xs font-semibold text-primary">Cloud</div>
-                  <div className="absolute bottom-3 right-3 text-xs font-semibold" style={{ color: "hsl(270 60% 50%)" }}>Edge</div>
-                  <div className="absolute bottom-3 left-3 text-xs font-semibold text-success">IoT</div>
-                  <div className="absolute top-3 left-3 text-xs font-semibold" style={{ color: "hsl(350 70% 50%)" }}>AI/ML</div>
                 </div>
               </CardContent>
             </Card>
@@ -256,11 +267,12 @@ export default function TechnologyRadar() {
                   <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={topTechData} layout="vertical" margin={{ left: 0, right: 10 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-                      <XAxis type="number" domain={[0, 9]} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                      <XAxis type="number" domain={[0, 2]} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
                       <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={80} />
                       <RechartsTooltip 
                         contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }}
                         labelStyle={{ color: "hsl(var(--foreground))" }}
+                        formatter={(value: number) => value.toFixed(2)}
                       />
                       <Bar dataKey="score" radius={[0, 4, 4, 0]}>
                         {topTechData.map((entry, index) => (
@@ -272,52 +284,37 @@ export default function TechnologyRadar() {
                 </CardContent>
               </Card>
 
-              {/* Distribution Pie Charts */}
+              {/* Distribution Pie Chart */}
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-foreground">Distribution</CardTitle>
+                  <CardTitle className="text-sm font-medium text-foreground">Distribution by Maturity</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground text-center mb-2">By Quadrant</p>
-                      <ResponsiveContainer width="100%" height={100}>
-                        <PieChart>
-                          <Pie
-                            data={quadrantDistributionData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={25}
-                            outerRadius={40}
-                            dataKey="value"
-                            strokeWidth={0}
-                          >
-                            {quadrantDistributionData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground text-center mb-2">By Maturity</p>
-                      <ResponsiveContainer width="100%" height={100}>
-                        <PieChart>
-                          <Pie
-                            data={ringDistributionData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={25}
-                            outerRadius={40}
-                            dataKey="value"
-                            strokeWidth={0}
-                          >
-                            {ringDistributionData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                        </PieChart>
-                      </ResponsiveContainer>
+                  <div className="flex items-center gap-4">
+                    <ResponsiveContainer width="50%" height={120}>
+                      <PieChart>
+                        <Pie
+                          data={ringDistributionData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={30}
+                          outerRadius={50}
+                          dataKey="value"
+                          strokeWidth={0}
+                        >
+                          {ringDistributionData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="space-y-2">
+                      {ringDistributionData.map((item) => (
+                        <div key={item.name} className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full" style={{ background: item.color }} />
+                          <span className="text-xs text-muted-foreground">{item.name}: {item.value}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </CardContent>
@@ -338,8 +335,8 @@ export default function TechnologyRadar() {
                   <p className="text-xs text-muted-foreground">Technologies</p>
                 </div>
                 <div className="p-3 rounded-lg bg-muted/50 text-center">
-                  <p className="text-2xl font-bold text-foreground">{stats.avgTrl}</p>
-                  <p className="text-xs text-muted-foreground">Avg TRL</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.avgCompositeScore}</p>
+                  <p className="text-xs text-muted-foreground">Avg Score</p>
                 </div>
               </CardContent>
             </Card>
@@ -350,7 +347,7 @@ export default function TechnologyRadar() {
                 <CardTitle className="text-sm font-medium text-foreground">Maturity Rings</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {(["Adopt", "Trial", "Assess", "Hold"] as TechnologyRing[]).map((ring) => (
+                {(["Strong", "Moderate", "Challenging"] as MaturityRing[]).map((ring) => (
                   <div key={ring} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full" style={{ background: ringColors[ring].bg }} />
@@ -370,7 +367,7 @@ export default function TechnologyRadar() {
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-medium text-foreground">Selected</CardTitle>
-                    <span className="font-mono font-bold text-lg text-primary">{selectedTech.compositeScore.toFixed(1)}</span>
+                    <span className="font-mono font-bold text-lg text-primary">{selectedTech.compositeScore.toFixed(2)}</span>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -380,9 +377,11 @@ export default function TechnologyRadar() {
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline">{selectedTech.quadrant}</Badge>
-                    <Badge variant="outline">{selectedTech.ring}</Badge>
-                    <Badge variant="outline">TRL {selectedTech.trl}</Badge>
+                    <Badge variant="outline">{getMaturityRing(selectedTech.compositeScore)}</Badge>
+                    <Badge variant="outline">{selectedTech.dealroomCompanyCount} companies</Badge>
+                    {selectedTech.documentMentionCount > 0 && (
+                      <Badge variant="outline">{selectedTech.documentMentionCount} mentions</Badge>
+                    )}
                   </div>
 
                   {/* Mini Radar Chart */}
@@ -402,9 +401,35 @@ export default function TechnologyRadar() {
                     </ResponsiveContainer>
                   </div>
 
-                  <SignalIndicator signals={selectedTech.signals} showLabels size="sm" />
+                  {/* Score breakdown */}
+                  <div className="grid grid-cols-5 gap-1 text-center">
+                    {[
+                      { label: "Inv", value: selectedTech.investmentScore },
+                      { label: "Emp", value: selectedTech.employeesScore },
+                      { label: "TRL", value: selectedTech.trlScore },
+                      { label: "EU", value: selectedTech.euAlignmentScore },
+                      { label: "Vis", value: selectedTech.visibilityScore },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="p-1">
+                        <p className={cn("text-sm font-bold", MATURITY_SCORE_CONFIG[value as MaturityScore]?.color || "text-muted-foreground")}>
+                          {value}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">{label}</p>
+                      </div>
+                    ))}
+                  </div>
 
-                  <Button className="w-full" size="sm" onClick={() => openDetails(selectedTech)}>
+                  <SignalIndicator 
+                    signals={{
+                      investment: selectedTech.investmentScore * 50,
+                      patents: selectedTech.visibilityScore * 50,
+                      media: selectedTech.documentMentionCount > 0 ? Math.min(100, selectedTech.documentMentionCount * 20) : 0,
+                    }} 
+                    showLabels 
+                    size="sm" 
+                  />
+
+                  <Button className="w-full" size="sm" onClick={() => openDetails(selectedTech.id)}>
                     View Full Details
                     <ChevronRight className="h-4 w-4 ml-1" />
                   </Button>
@@ -425,25 +450,26 @@ export default function TechnologyRadar() {
               </CardHeader>
               <CardContent>
                 <div className="max-h-64 overflow-y-auto space-y-1 pr-2">
-                  {filteredTechnologies
-                    .sort((a, b) => b.compositeScore - a.compositeScore)
-                    .map((tech) => (
-                      <button
-                        key={tech.id}
-                        onClick={() => setSelectedTech(tech)}
-                        onDoubleClick={() => openDetails(tech)}
-                        className={cn(
-                          "w-full flex items-center justify-between p-2 rounded text-left text-sm hover:bg-muted/50 transition-colors",
-                          selectedTech?.id === tech.id && "bg-primary/10"
-                        )}
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: ringColors[tech.ring].bg }} />
-                          <span className="truncate text-foreground">{tech.name}</span>
-                        </div>
-                        <span className="font-mono text-xs text-muted-foreground">{tech.compositeScore.toFixed(1)}</span>
-                      </button>
-                    ))}
+                  {technologies.map((tech) => (
+                    <button
+                      key={tech.id}
+                      onClick={() => setSelectedTechId(tech.id)}
+                      onDoubleClick={() => openDetails(tech.id)}
+                      className={cn(
+                        "w-full flex items-center justify-between p-2 rounded text-left text-sm hover:bg-muted/50 transition-colors",
+                        selectedTechId === tech.id && "bg-primary/10"
+                      )}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span 
+                          className="w-2 h-2 rounded-full shrink-0" 
+                          style={{ background: ringColors[getMaturityRing(tech.compositeScore)].bg }} 
+                        />
+                        <span className="truncate text-foreground">{tech.name}</span>
+                      </div>
+                      <span className="font-mono text-xs text-muted-foreground">{tech.compositeScore.toFixed(2)}</span>
+                    </button>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -461,23 +487,21 @@ export default function TechnologyRadar() {
             <div className="space-y-6">
               <p className="text-muted-foreground">{selectedTech.description}</p>
               
-              <div className="grid grid-cols-4 gap-4 text-center">
-                <div className="p-3 rounded-lg bg-muted/50">
-                  <p className="text-2xl font-bold text-foreground">{selectedTech.trl}</p>
-                  <p className="text-xs text-muted-foreground">TRL</p>
-                </div>
-                <div className="p-3 rounded-lg bg-muted/50">
-                  <p className="text-2xl font-bold text-foreground">{selectedTech.marketScore.toFixed(1)}</p>
-                  <p className="text-xs text-muted-foreground">Market</p>
-                </div>
-                <div className="p-3 rounded-lg bg-muted/50">
-                  <p className="text-2xl font-bold text-foreground">{selectedTech.innovationScore.toFixed(1)}</p>
-                  <p className="text-xs text-muted-foreground">Innovation</p>
-                </div>
-                <div className="p-3 rounded-lg bg-muted/50">
-                  <p className="text-2xl font-bold text-foreground">{selectedTech.euAlignmentScore.toFixed(1)}</p>
-                  <p className="text-xs text-muted-foreground">EU Align</p>
-                </div>
+              <div className="grid grid-cols-5 gap-4 text-center">
+                {[
+                  { label: "Investment", value: selectedTech.investmentScore },
+                  { label: "Employees", value: selectedTech.employeesScore },
+                  { label: "TRL", value: selectedTech.trlScore },
+                  { label: "EU Align", value: selectedTech.euAlignmentScore },
+                  { label: "Visibility", value: selectedTech.visibilityScore },
+                ].map(({ label, value }) => (
+                  <div key={label} className={cn("p-3 rounded-lg", MATURITY_SCORE_CONFIG[value as MaturityScore]?.bgColor || "bg-muted/50")}>
+                    <p className={cn("text-2xl font-bold", MATURITY_SCORE_CONFIG[value as MaturityScore]?.color || "text-foreground")}>
+                      {value}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{label}</p>
+                  </div>
+                ))}
               </div>
 
               <div className="h-48">
@@ -500,16 +524,24 @@ export default function TechnologyRadar() {
                 <div>
                   <p className="text-sm font-medium text-foreground mb-2">Key Players</p>
                   <div className="flex flex-wrap gap-1">
-                    {selectedTech.keyPlayers.map((player) => (
-                      <Badge key={player} variant="outline" className="text-xs">{player}</Badge>
-                    ))}
+                    {selectedTech.keyPlayers && selectedTech.keyPlayers.length > 0 ? (
+                      selectedTech.keyPlayers.map((player) => (
+                        <Badge key={player} variant="outline" className="text-xs">{player}</Badge>
+                      ))
+                    ) : (
+                      <span className="text-xs text-muted-foreground">No key players tracked yet</span>
+                    )}
                   </div>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-foreground mb-2">Metrics</p>
                   <div className="space-y-1 text-sm text-muted-foreground">
-                    <p>{selectedTech.patents.toLocaleString()} patents</p>
-                    <p>{formatFunding(selectedTech.fundingEur)} funding</p>
+                    <p>{selectedTech.dealroomCompanyCount} companies</p>
+                    <p>{formatFundingEur(selectedTech.totalFundingEur)} funding</p>
+                    <p>{selectedTech.totalEmployees.toLocaleString()} employees</p>
+                    {selectedTech.documentMentionCount > 0 && (
+                      <p>{selectedTech.documentMentionCount} document mentions</p>
+                    )}
                   </div>
                 </div>
               </div>
