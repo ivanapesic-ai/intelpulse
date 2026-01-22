@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, TrendingUp, TrendingDown, Minus, FileText, DollarSign, Users, Calendar, Building2, Loader2, Gauge, BarChart3, Target } from "lucide-react";
+import { Search, TrendingUp, TrendingDown, Minus, FileText, DollarSign, Users, Calendar, Building2, Loader2, Gauge, BarChart3, Target, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -406,38 +406,45 @@ export default function TechnologyExplorer() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-2 gap-3 mb-3">
+                      <div className="grid grid-cols-3 gap-3 mb-3">
                         <div className="text-center p-3 bg-muted/50 rounded-lg" title="KeyBERT semantic similarity between technology and document context">
                           <Target className="h-5 w-5 mx-auto mb-1 text-primary" />
                           <p className="text-lg font-bold text-foreground">
                             {selectedTech.avgSemanticScore?.toFixed(2) || "—"}
                           </p>
-                          <p className="text-xs text-muted-foreground">Semantic Match</p>
+                          <p className="text-xs text-muted-foreground">Semantic</p>
                         </div>
                         <div className="text-center p-3 bg-muted/50 rounded-lg" title="TextRank network centrality based on technology co-occurrences">
                           <BarChart3 className="h-5 w-5 mx-auto mb-1 text-primary" />
                           <p className="text-lg font-bold text-foreground">
                             {selectedTech.networkCentrality?.toFixed(2) || "—"}
                           </p>
-                          <p className="text-xs text-muted-foreground">Network Score</p>
+                          <p className="text-xs text-muted-foreground">Network</p>
+                        </div>
+                        <div className="text-center p-3 bg-muted/50 rounded-lg" title="TF-IDF corpus rarity - higher means rarer/more unique technology">
+                          <Sparkles className="h-5 w-5 mx-auto mb-1 text-primary" />
+                          <p className="text-lg font-bold text-foreground">
+                            {selectedTech.corpusRarityScore?.toFixed(2) || "—"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Rarity</p>
                         </div>
                       </div>
                       <div className="grid grid-cols-3 gap-3">
-                        <div className="text-center p-3 bg-muted/50 rounded-lg">
+                        <div className="text-center p-3 bg-muted/50 rounded-lg" title="Position-weighted frequency score">
                           <Gauge className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
                           <p className="text-lg font-bold text-foreground">
                             {selectedTech.weightedFrequencyScore?.toFixed(1) || "0.0"}
                           </p>
                           <p className="text-xs text-muted-foreground">Weighted Freq</p>
                         </div>
-                        <div className="text-center p-3 bg-muted/50 rounded-lg">
+                        <div className="text-center p-3 bg-muted/50 rounded-lg" title="Average relevance score across all mentions">
                           <Target className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
                           <p className="text-lg font-bold text-foreground">
                             {selectedTech.avgRelevanceScore?.toFixed(2) || "0.50"}
                           </p>
                           <p className="text-xs text-muted-foreground">Avg Relevance</p>
                         </div>
-                        <div className="text-center p-3 bg-muted/50 rounded-lg">
+                        <div className="text-center p-3 bg-muted/50 rounded-lg" title="Number of unique document sources">
                           <FileText className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
                           <p className="text-lg font-bold text-foreground">
                             {selectedTech.documentDiversity || 0}
@@ -446,7 +453,7 @@ export default function TechnologyExplorer() {
                         </div>
                       </div>
                       <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
-                        H11 scoring: KeyBERT + TextRank + Position across {selectedTech.documentMentionCount} mentions
+                        H11 Hybrid: KeyBERT (15%) + TextRank (15%) + TF-IDF (10%) + Position (15%) + TRL (15%) + EU (10%) + Invest/Emp (20%)
                       </p>
                     </CardContent>
                   </Card>

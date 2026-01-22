@@ -255,6 +255,38 @@ const EXTRACTION_SYSTEM_PROMPT = `You are an expert technology analyst specializ
 
 Return a JSON array with your findings. Be thorough but only include technologies from the provided list.`;
 
+// Calculate cosine similarity between two vectors
+function cosineSimilarity(a: number[], b: number[]): number {
+  if (a.length !== b.length) return 0;
+  let dotProduct = 0;
+  let normA = 0;
+  let normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dotProduct += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB) || 1);
+}
+
+// Get embedding from Supabase AI (gte-small model)
+async function getEmbedding(text: string): Promise<number[] | null> {
+  try {
+    // Use Supabase AI session for embeddings
+    const Supabase = (globalThis as any).Supabase;
+    if (!Supabase?.ai?.Session) {
+      console.log('Supabase.ai not available, skipping semantic scoring');
+      return null;
+    }
+    const session = new Supabase.ai.Session('gte-small');
+    const result = await session.run(text, { mean_pool: true, normalize: true });
+    return result as number[];
+  } catch (error) {
+    console.error('Embedding error:', error);
+    return null;
+  }
+}
+
 // Parse extracted text for technology mentions
 async function extractTechMentions(
   content: string,
@@ -335,26 +367,50 @@ Return ONLY a JSON array: [{"keyword_id": "uuid", "context": "...", "trl": 5, "t
       footnote: 1, // Using integer, 0.5 rounds to 1
     };
 
-    // Insert mentions into web_technology_mentions with Headai-style scoring
-    const validMentions = mentions
+    // Insert mentions into web_technology_mentions with H11-style scoring
+    const validMentionsRaw = mentions
       .filter((m: any) => m.keyword_id && keywords.some(k => k.id === m.keyword_id))
-      .map((m: any) => ({
-        keyword_id: m.keyword_id,
-        source_url: sourceUrl,
-        mention_context: m.context?.slice(0, 500),
-        trl_mentioned: m.trl,
-        policy_reference: m.policy_reference || null,
-        position_weight: positionWeightMap[m.position] || 1,
-        relevance_score: Math.min(1, Math.max(0.1, m.relevance || 0.5)),
-        confidence_score: m.confidence || 0.7,
-      }));
+      .map((m: any) => {
+        const keyword = keywords.find(k => k.id === m.keyword_id);
+        return {
+          keyword_id: m.keyword_id,
+          keyword_text: keyword?.display_name || '',
+          source_url: sourceUrl,
+          mention_context: m.context?.slice(0, 500),
+          trl_mentioned: m.trl,
+          policy_reference: m.policy_reference || null,
+          position_weight: positionWeightMap[m.position] || 1,
+          relevance_score: Math.min(1, Math.max(0.1, m.relevance || 0.5)),
+          confidence_score: m.confidence || 0.7,
+          semantic_similarity: null as number | null,
+        };
+      });
+
+    // KeyBERT semantic scoring: compute similarity between context and keyword
+    console.log('Computing KeyBERT semantic similarities...');
+    for (const mention of validMentionsRaw) {
+      if (mention.mention_context && mention.keyword_text) {
+        const [contextEmb, keywordEmb] = await Promise.all([
+          getEmbedding(mention.mention_context),
+          getEmbedding(mention.keyword_text)
+        ]);
+        if (contextEmb && keywordEmb) {
+          mention.semantic_similarity = Math.round(cosineSimilarity(contextEmb, keywordEmb) * 1000) / 1000;
+        }
+      }
+    }
+
+    // Remove keyword_text before inserting (not a DB column)
+    const validMentions = validMentionsRaw.map(({ keyword_text, ...rest }) => rest);
 
     console.log(`Valid mentions to insert: ${validMentions.length}`);
     if (validMentions.length > 0) {
+      const semanticScores = validMentions.filter(m => m.semantic_similarity !== null);
       console.log(`TRL values: ${validMentions.map(m => m.trl_mentioned).join(', ')}`);
       console.log(`Policy refs: ${validMentions.filter(m => m.policy_reference).length}`);
       console.log(`Avg position weight: ${(validMentions.reduce((sum, m) => sum + m.position_weight, 0) / validMentions.length).toFixed(1)}`);
       console.log(`Avg relevance: ${(validMentions.reduce((sum, m) => sum + m.relevance_score, 0) / validMentions.length).toFixed(2)}`);
+      console.log(`Semantic scores: ${semanticScores.length}/${validMentions.length} (avg: ${semanticScores.length > 0 ? (semanticScores.reduce((sum, m) => sum + (m.semantic_similarity || 0), 0) / semanticScores.length).toFixed(3) : 'N/A'})`);
     }
 
     if (validMentions.length > 0) {

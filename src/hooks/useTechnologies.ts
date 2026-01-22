@@ -110,9 +110,10 @@ export function useTechnologies() {
           compositeScore: Number(row.composite_score) || 0,
           avgTrlMentioned: (rowAny.avg_trl_mentioned as number) || undefined,
           policyMentionCount: ((rowAny.policy_mention_count as number) || 0),
-          // H11 Hybrid Scoring (KeyBERT + TextRank + Position)
+          // H11 Hybrid Scoring (KeyBERT + TextRank + TF-IDF + Position)
           avgSemanticScore: Number(rowAny.avg_semantic_score) || undefined,
           networkCentrality: Number(rowAny.network_centrality) || undefined,
+          corpusRarityScore: Number(rowAny.corpus_rarity_score) || undefined,
           weightedFrequencyScore: Number(rowAny.weighted_frequency_score) || 0,
           avgRelevanceScore: Number(rowAny.avg_relevance_score) || 0,
           documentDiversity: (rowAny.document_diversity as number) || 0,
