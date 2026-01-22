@@ -126,7 +126,6 @@ export default function TechnologyRadar() {
     { dimension: "Investment", value: selectedTech.investmentScore, fullMark: 2 },
     { dimension: "Employees", value: selectedTech.employeesScore, fullMark: 2 },
     { dimension: "TRL", value: selectedTech.trlScore, fullMark: 2 },
-    { dimension: "EU Align", value: selectedTech.euAlignmentScore, fullMark: 2 },
     { dimension: "Visibility", value: selectedTech.visibilityScore, fullMark: 2 },
   ] : [];
 

@@ -50,13 +50,12 @@ export default function TechnologyExplorer() {
     setDetailOpen(true);
   };
 
-  // 4-Dimension scoring per proposal: Investment, Employees, TRL, EU Alignment
+  // 3-Dimension scoring: Investment, Employees, TRL
   const radarData = selectedTech
     ? [
         { dimension: "Investment", value: selectedTech.investmentScore, fullMark: 2 },
         { dimension: "Employees", value: selectedTech.employeesScore, fullMark: 2 },
         { dimension: "TRL", value: selectedTech.trlScore, fullMark: 2 },
-        { dimension: "EU Align", value: selectedTech.euAlignmentScore, fullMark: 2 },
       ]
     : [];
 
@@ -214,13 +213,6 @@ export default function TechnologyExplorer() {
                       >
                         TRL: {tech.trlScore}
                       </Badge>
-                      <Badge 
-                        variant="outline" 
-                        className={MATURITY_SCORE_CONFIG[tech.euAlignmentScore as 0|1|2]?.color || ""}
-                        title="EU Alignment Score"
-                      >
-                        EU: {tech.euAlignmentScore}
-                      </Badge>
                     </div>
                   </div>
                 </CardContent>
@@ -370,7 +362,6 @@ export default function TechnologyExplorer() {
                           { label: "Investment", score: selectedTech.investmentScore, tooltip: "Dealroom funding signals" },
                           { label: "Employees", score: selectedTech.employeesScore, tooltip: "Dealroom employee count" },
                           { label: "TRL (Readiness)", score: selectedTech.trlScore, tooltip: selectedTech.avgTrlMentioned ? `Avg TRL ${selectedTech.avgTrlMentioned.toFixed(1)}` : "No TRL data" },
-                          { label: "EU Alignment", score: selectedTech.euAlignmentScore, tooltip: `${selectedTech.policyMentionCount} policy mentions` },
                         ].map((item) => {
                           const config = MATURITY_SCORE_CONFIG[item.score as 0|1|2];
                           return (
