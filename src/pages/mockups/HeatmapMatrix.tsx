@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Download, Filter, ArrowUpDown, Map, BarChart3, Grid3X3, Globe } from "lucide-react";
+import { Download, Filter, ArrowUpDown, Map, BarChart3, Grid3X3, Globe, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PlatformHeader } from "@/components/mockups/PlatformHeader";
 import { EUMap } from "@/components/mockups/EUMap";
 import { useTechnologies } from "@/hooks/useTechnologies";
+import { useEUCountryStats } from "@/hooks/useCompaniesForTechnology";
 import { Technology, MATURITY_SCORE_CONFIG, formatFundingEur } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, ScatterChart, Scatter, ZAxis, Treemap } from "recharts";
@@ -59,19 +60,7 @@ const ringColors: Record<MaturityRing, string> = {
   Challenging: "hsl(0 72% 50%)",
 };
 
-// EU Country data for geographic visualization (demo data - would come from DB in production)
-const euCountryData = [
-  { country: "Germany", code: "DE", lat: 51.1657, lng: 10.4515, techCount: 28, funding: 4500000000, focus: "Automotive AI" },
-  { country: "France", code: "FR", lat: 46.2276, lng: 2.2137, techCount: 22, funding: 3200000000, focus: "Edge Computing" },
-  { country: "Netherlands", code: "NL", lat: 52.1326, lng: 5.2913, techCount: 18, funding: 2100000000, focus: "IoT Infrastructure" },
-  { country: "Sweden", code: "SE", lat: 60.1282, lng: 18.6435, techCount: 15, funding: 1800000000, focus: "V2X Communication" },
-  { country: "Finland", code: "FI", lat: 61.9241, lng: 25.7482, techCount: 12, funding: 950000000, focus: "Smart Mobility" },
-  { country: "Spain", code: "ES", lat: 40.4637, lng: -3.7492, techCount: 14, funding: 1200000000, focus: "Cloud Native" },
-  { country: "Italy", code: "IT", lat: 41.8719, lng: 12.5674, techCount: 16, funding: 1400000000, focus: "Digital Twin" },
-  { country: "Belgium", code: "BE", lat: 50.5039, lng: 4.4699, techCount: 10, funding: 780000000, focus: "5G Networks" },
-  { country: "Austria", code: "AT", lat: 47.5162, lng: 14.5501, techCount: 8, funding: 520000000, focus: "Sensor Networks" },
-  { country: "Poland", code: "PL", lat: 51.9194, lng: 19.1451, techCount: 11, funding: 680000000, focus: "Edge AI" },
-];
+// EU Country data now comes from useEUCountryStats hook
 
 export default function HeatmapMatrix() {
   const [sortColumn, setSortColumn] = useState<string>("compositeScore");
@@ -80,6 +69,10 @@ export default function HeatmapMatrix() {
   const [activeView, setActiveView] = useState<"matrix" | "geo" | "bubble" | "treemap">("matrix");
   
   const { data: technologies, isLoading, error } = useTechnologies();
+  const { data: euCountryData, isLoading: countryLoading } = useEUCountryStats();
+  
+  // Fallback for EU country data
+  const countryData = euCountryData || [];
 
   const handleSort = (column: string) => {
     if (sortColumn === column) {
@@ -362,7 +355,13 @@ export default function HeatmapMatrix() {
                 </CardHeader>
                 <CardContent>
                   <div className="relative h-[450px] rounded-lg overflow-hidden border border-border">
-                    <EUMap data={euCountryData} />
+                    {countryLoading ? (
+                      <div className="flex items-center justify-center h-full">
+                        <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : (
+                      <EUMap data={countryData} />
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -375,26 +374,31 @@ export default function HeatmapMatrix() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {euCountryData
-                        .sort((a, b) => b.techCount - a.techCount)
-                        .slice(0, 6)
-                        .map((country, i) => (
+                      {(countryData.length > 0 ? [...countryData].sort((a, b) => b.techCount - a.techCount).slice(0, 6) : []).map((country, i) => {
+                        const maxCount = countryData.reduce((max, c) => Math.max(max, c.techCount), 1);
+                        return (
                           <div key={country.code} className="flex items-center gap-3">
                             <span className="text-sm font-medium text-muted-foreground w-4">{i + 1}</span>
                             <div className="flex-1">
                               <div className="flex items-center justify-between mb-1">
                                 <span className="text-sm font-medium text-foreground">{country.country}</span>
-                                <span className="text-xs text-muted-foreground">{country.techCount}</span>
+                                <span className="text-xs text-muted-foreground">{country.techCount} companies</span>
                               </div>
                               <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                                 <div 
                                   className="h-full bg-primary rounded-full transition-all"
-                                  style={{ width: `${(country.techCount / 28) * 100}%` }}
+                                  style={{ width: `${(country.techCount / maxCount) * 100}%` }}
                                 />
                               </div>
                             </div>
                           </div>
-                        ))}
+                        );
+                      })}
+                      {countryData.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          Run Dealroom sync to populate country data
+                        </p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -405,8 +409,8 @@ export default function HeatmapMatrix() {
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={150}>
-                      <BarChart data={euCountryData.slice(0, 5)} layout="vertical">
-                        <XAxis type="number" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                      <BarChart data={[...countryData].sort((a, b) => b.funding - a.funding).slice(0, 5)} layout="vertical">
+                        <XAxis type="number" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => `€${(v / 1e6).toFixed(0)}M`} />
                         <YAxis type="category" dataKey="code" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={30} />
                         <Bar dataKey="funding" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                       </BarChart>
