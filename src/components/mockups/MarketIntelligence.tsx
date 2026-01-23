@@ -1,11 +1,10 @@
-import { Building2, DollarSign, MapPin, TrendingUp, Target, RefreshCw, Clock } from "lucide-react";
+import { Building2, DollarSign, MapPin, TrendingUp, Target, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatFundingEur, formatNumber } from "@/types/database";
 import { useMarketIntelligence } from "@/hooks/useMarketIntelligence";
-import { useDealroomSyncLogs, useDealroomSync } from "@/hooks/useDealroomSync";
+import { useDealroomSyncLogs } from "@/hooks/useDealroomSync";
 import { formatDistanceToNow } from "date-fns";
 
 interface MarketIntelligenceProps {
@@ -15,8 +14,6 @@ interface MarketIntelligenceProps {
 
 export function MarketIntelligence({ keywordId, technologyName }: MarketIntelligenceProps) {
   const { data: syncLogs } = useDealroomSyncLogs(1);
-  const syncMutation = useDealroomSync();
-  
   const lastSync = syncLogs?.[0];
   const lastSyncTime = lastSync?.completedAt || lastSync?.startedAt;
   const { data, isLoading, error } = useMarketIntelligence(keywordId);
@@ -65,24 +62,14 @@ export function MarketIntelligence({ keywordId, technologyName }: MarketIntellig
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Clock className="h-4 w-4" />
           {lastSyncTime ? (
-            <span>Last synced {formatDistanceToNow(new Date(lastSyncTime), { addSuffix: true })}</span>
+            <span>Data last synced {formatDistanceToNow(new Date(lastSyncTime), { addSuffix: true })}</span>
           ) : (
             <span>No sync data available</span>
           )}
-          {lastSync?.status === 'running' && (
-            <Badge variant="outline" className="ml-2 text-xs animate-pulse">Syncing...</Badge>
-          )}
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => syncMutation.mutate({ limit: 100 })}
-          disabled={syncMutation.isPending}
-          className="gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
-          {syncMutation.isPending ? 'Syncing...' : 'Refresh Data'}
-        </Button>
+        <span className="text-xs text-muted-foreground">
+          Refresh data from Admin Panel
+        </span>
       </div>
 
       {/* Market Summary */}
