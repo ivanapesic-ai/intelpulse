@@ -3,6 +3,57 @@ import { supabase } from "@/integrations/supabase/client";
 import type { TechnologyKeyword, Technology, KeywordSource } from "@/types/database";
 import { toast } from "@/hooks/use-toast";
 
+// AI-powered tag mapping
+export function useAITagMapping() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (options: { keywordIds?: string[]; mode?: "single" | "unmapped" }) => {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-tag-mapper`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            keywordIds: options.keywordIds,
+            mode: options.mode || "unmapped",
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 429) {
+          throw new Error("Rate limit exceeded. Please try again later.");
+        }
+        if (response.status === 402) {
+          throw new Error("AI credits exhausted. Please add funds.");
+        }
+        throw new Error(errorData.error || "AI mapping failed");
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["keywords"] });
+      toast({
+        title: "AI mapping complete",
+        description: `Successfully mapped ${data.updated}/${data.processed} keywords to Dealroom tags.`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "AI mapping failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
 // Fetch all active keywords (including dealroom_tags for mapping)
 export function useKeywords(source?: KeywordSource) {
   return useQuery({
