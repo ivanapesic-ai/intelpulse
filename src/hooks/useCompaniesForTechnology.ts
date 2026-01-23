@@ -1,6 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 export interface CompanyForTechnology {
   id: string;
@@ -172,33 +171,6 @@ export function useEUCountryStats() {
           employees: data.totalEmployees,
         }))
         .sort((a, b) => b.techCount - a.techCount);
-    },
-  });
-}
-
-// Trigger patent/research data fetch
-export function useFetchResearch() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (options?: { keywordId?: string; keyword?: string }) => {
-      const { data, error } = await supabase.functions.invoke("fetch-patents", {
-        body: options || {},
-      });
-
-      if (error) throw error;
-      return data as { success: boolean; updated?: number; count?: number; error?: string };
-    },
-    onSuccess: (data) => {
-      if (data.success) {
-        toast.success(`Updated research data for ${data.updated || 0} technologies`);
-        queryClient.invalidateQueries({ queryKey: ["technologies"] });
-      } else {
-        toast.error(data.error || "Failed to fetch research data");
-      }
-    },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Failed to fetch research data");
     },
   });
 }

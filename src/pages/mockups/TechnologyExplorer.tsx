@@ -356,20 +356,14 @@ export default function TechnologyExplorer() {
                           <CardContent className="pt-4">
                             <div className="flex items-center gap-2 mb-1">
                               <FileText className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm text-muted-foreground">Research</span>
+                              <span className="text-sm text-muted-foreground">Patents</span>
                             </div>
                             {selectedTech.totalPatents > 0 ? (
                               <p className="text-2xl font-bold text-foreground">{formatNumber(selectedTech.totalPatents)}</p>
                             ) : (
-                              <>
-                                <div className="flex items-center gap-2">
-                                  <Lock className="h-4 w-4 text-muted-foreground" />
-                                  <p className="text-sm text-muted-foreground italic">No data</p>
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-1">Run sync in Admin</p>
-                              </>
+                              <p className="text-sm text-muted-foreground italic">No data</p>
                             )}
-                            <p className="text-xs text-muted-foreground">OpenAlex publications</p>
+                            <p className="text-xs text-muted-foreground">Dealroom patents count</p>
                           </CardContent>
                         </Card>
                       </div>

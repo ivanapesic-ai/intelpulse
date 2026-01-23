@@ -411,8 +411,10 @@ serve(async (req) => {
         const matchingKeywords = keywords?.filter(k => matchingKeywordIds.includes(k.id)) || [];
 
         for (const company of companies) {
-          // Get company status - we now keep acquired companies to track acquisitions!
-          const companyStatus = company.status?.toLowerCase() || 'active';
+          // Dealroom uses 'company_status' field (not 'status')
+          // Values: "operational", "low-activity", "acquired", "closed", etc.
+          const rawData = company as unknown as Record<string, unknown>;
+          const companyStatus = (rawData.company_status as string || company.status || 'active').toLowerCase();
           
           // Skip only truly closed/dead companies, but KEEP acquired companies
           if (companyStatus === 'closed' || companyStatus === 'dead') {
@@ -432,9 +434,14 @@ serve(async (req) => {
             ? company.acquisition_amount * 1_000_000
             : null;
           
-          if (companyStatus === 'acquired' && acquiredBy) {
+          if ((companyStatus === 'acquired' || acquiredBy) && acquiredBy) {
             console.log(`Acquired company: ${company.name} → acquired by ${acquiredBy}`);
           }
+          
+          // Dealroom uses 'job_openings' (not 'jobs_count')
+          const jobsCount = typeof rawData.job_openings === 'number' 
+            ? rawData.job_openings 
+            : (company.jobs_count ?? 0);
 
           const hqLocation = company.hq_locations?.[0];
           // Dealroom returns country.name (e.g., "Italy"), not code
@@ -523,7 +530,7 @@ serve(async (req) => {
                 // New high-priority fields
                 status: companyStatus,
                 employee_growth: company.employee_growth ?? null,
-                jobs_count: company.jobs_count ?? 0,
+                jobs_count: jobsCount,
                 tech_stack: techStack,
                 lead_investors: leadInvestors,
                 funding_rounds: fundingRounds,
