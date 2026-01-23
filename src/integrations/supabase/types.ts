@@ -730,6 +730,8 @@ export type Database = {
         Row: {
           aliases: string[] | null
           created_at: string | null
+          dealroom_industries: string[] | null
+          dealroom_sub_industries: string[] | null
           dealroom_tags: string[] | null
           description: string | null
           display_name: string
@@ -743,6 +745,8 @@ export type Database = {
         Insert: {
           aliases?: string[] | null
           created_at?: string | null
+          dealroom_industries?: string[] | null
+          dealroom_sub_industries?: string[] | null
           dealroom_tags?: string[] | null
           description?: string | null
           display_name: string
@@ -756,6 +760,8 @@ export type Database = {
         Update: {
           aliases?: string[] | null
           created_at?: string | null
+          dealroom_industries?: string[] | null
+          dealroom_sub_industries?: string[] | null
           dealroom_tags?: string[] | null
           description?: string | null
           display_name?: string

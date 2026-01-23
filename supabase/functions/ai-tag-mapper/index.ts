@@ -23,7 +23,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch DYNAMIC taxonomy from database instead of hardcoded list
+    // Fetch DYNAMIC taxonomy from database - grouped by type
     const { data: taxonomyData, error: taxonomyError } = await supabase
       .from("dealroom_taxonomy")
       .select("name, taxonomy_type")
@@ -33,19 +33,18 @@ serve(async (req) => {
       console.warn("Failed to fetch taxonomy, using fallback:", taxonomyError);
     }
 
-    // Build taxonomy list from database (industries, sub-industries, and technology tags)
-    const dealroomTaxonomy = taxonomyData?.map(t => t.name) || [];
+    // Group taxonomy by type
+    const industries: string[] = [];
+    const subIndustries: string[] = [];
+    const techTags: string[] = [];
     
-    // If no taxonomy loaded, provide a minimal fallback
-    if (dealroomTaxonomy.length === 0) {
-      dealroomTaxonomy.push(
-        "electric mobility", "electric vehicles", "automotive", "cloud computing",
-        "edge computing", "internet of things", "artificial intelligence", 
-        "energy storage", "renewable energy", "smart grid", "sustainability"
-      );
-    }
+    (taxonomyData || []).forEach(t => {
+      if (t.taxonomy_type === "industry") industries.push(t.name);
+      else if (t.taxonomy_type === "sub_industry") subIndustries.push(t.name);
+      else if (t.taxonomy_type === "technology") techTags.push(t.name);
+    });
 
-    console.log(`Loaded ${dealroomTaxonomy.length} taxonomy terms from database`);
+    console.log(`Loaded taxonomy: ${industries.length} industries, ${subIndustries.length} sub-industries, ${techTags.length} tech tags`);
 
     // Fetch keywords to map
     let query = supabase
@@ -55,7 +54,7 @@ serve(async (req) => {
     if (mode === "single" && keywordIds?.length) {
       query = query.in("id", keywordIds);
     } else if (mode === "unmapped") {
-      // Fetch all unmapped keywords
+      // Fetch keywords missing ALL types of mappings
       query = query.or("dealroom_tags.is.null,dealroom_tags.eq.{}");
     }
 
@@ -71,35 +70,51 @@ serve(async (req) => {
 
     console.log(`Processing ${keywords.length} keywords for AI tag mapping`);
 
-    // Build prompt for AI
+    // Build prompt for AI with structured taxonomy
     const keywordList = keywords.map(k => 
-      `- "${k.display_name}" (keyword: ${k.keyword}, source: ${k.source || "unknown"})`
+      `- "${k.display_name}" (keyword: ${k.keyword}, description: ${k.description || "N/A"})`
     ).join("\n");
 
-    const systemPrompt = `You are an expert at mapping technology taxonomy terms to Dealroom's company tag system. 
-Your task is to suggest the most relevant Dealroom tags for each technology keyword.
+    const systemPrompt = `You are an expert at mapping technology taxonomy terms to Dealroom's company classification system.
+Your task is to suggest the most relevant Dealroom industries, sub-industries, AND technology tags for each CEI-SPHERE keyword.
 
-AVAILABLE DEALROOM TAGS (${dealroomTaxonomy.length} categories - industries, sub-industries, and technology tags):
-${dealroomTaxonomy.slice(0, 200).join(", ")}${dealroomTaxonomy.length > 200 ? `... and ${dealroomTaxonomy.length - 200} more` : ""}
+AVAILABLE DEALROOM TAXONOMY:
+
+INDUSTRIES (${industries.length} total):
+${industries.slice(0, 50).join(", ")}${industries.length > 50 ? `... and ${industries.length - 50} more` : ""}
+
+SUB-INDUSTRIES (${subIndustries.length} total):
+${subIndustries.slice(0, 80).join(", ")}${subIndustries.length > 80 ? `... and ${subIndustries.length - 80} more` : ""}
+
+TECHNOLOGY TAGS (${techTags.length} total):
+${techTags.slice(0, 100).join(", ")}${techTags.length > 100 ? `... and ${techTags.length - 100} more` : ""}
 
 RULES:
-1. Select 1-4 most relevant tags per keyword
-2. Prefer specific tags over generic ones
-3. Consider the keyword's domain context (automotive, cloud, IoT, AI, energy, etc.)
-4. Tags must be exact matches from the available list
-5. Return JSON only, no explanations`;
+1. For EACH keyword, suggest:
+   - 1-2 industries (broad categories like "transportation", "energy")
+   - 1-3 sub-industries (specific sectors like "electric vehicles", "energy storage")
+   - 1-4 technology tags (granular terms like "battery technology", "charging infrastructure")
+2. Prefer specific, relevant terms over generic ones
+3. Consider the keyword's domain context (automotive, energy, IoT, AI, etc.)
+4. All suggested terms must be EXACT matches from the available lists
+5. Return structured JSON only, no explanations`;
 
-    const userPrompt = `Map these technology keywords to Dealroom tags:
+    const userPrompt = `Map these CEI-SPHERE technology keywords to Dealroom taxonomy:
 
 ${keywordList}
 
 Return a JSON array with this structure:
 [
-  { "keyword_id": "<id>", "tags": ["tag1", "tag2"] },
+  { 
+    "keyword_id": "<id>", 
+    "industries": ["industry1", "industry2"],
+    "sub_industries": ["sub1", "sub2"],
+    "tags": ["tag1", "tag2", "tag3"]
+  },
   ...
 ]`;
 
-    // Call Lovable AI
+    // Call Lovable AI with structured tool
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -116,8 +131,8 @@ Return a JSON array with this structure:
           {
             type: "function",
             function: {
-              name: "map_keywords_to_tags",
-              description: "Map technology keywords to Dealroom tags",
+              name: "map_keywords_to_taxonomy",
+              description: "Map technology keywords to Dealroom industries, sub-industries, and tags",
               parameters: {
                 type: "object",
                 properties: {
@@ -127,12 +142,23 @@ Return a JSON array with this structure:
                       type: "object",
                       properties: {
                         keyword_id: { type: "string" },
+                        industries: { 
+                          type: "array", 
+                          items: { type: "string" },
+                          description: "Broad industry categories"
+                        },
+                        sub_industries: { 
+                          type: "array", 
+                          items: { type: "string" },
+                          description: "Specific sub-industry sectors"
+                        },
                         tags: { 
                           type: "array", 
-                          items: { type: "string" }
+                          items: { type: "string" },
+                          description: "Granular technology tags"
                         }
                       },
-                      required: ["keyword_id", "tags"]
+                      required: ["keyword_id", "industries", "sub_industries", "tags"]
                     }
                   }
                 },
@@ -141,7 +167,7 @@ Return a JSON array with this structure:
             }
           }
         ],
-        tool_choice: { type: "function", function: { name: "map_keywords_to_tags" } }
+        tool_choice: { type: "function", function: { name: "map_keywords_to_taxonomy" } }
       }),
     });
 
@@ -167,7 +193,13 @@ Return a JSON array with this structure:
     console.log("AI response:", JSON.stringify(aiResult, null, 2));
 
     // Extract mappings from tool call
-    let mappings: Array<{ keyword_id: string; tags: string[] }> = [];
+    interface Mapping {
+      keyword_id: string;
+      industries: string[];
+      sub_industries: string[];
+      tags: string[];
+    }
+    let mappings: Mapping[] = [];
     
     const toolCall = aiResult.choices?.[0]?.message?.tool_calls?.[0];
     if (toolCall?.function?.arguments) {
@@ -175,20 +207,30 @@ Return a JSON array with this structure:
       mappings = parsed.mappings || [];
     }
 
-    // Validate tags against our loaded taxonomy (case-insensitive)
-    const validTaxonomy = new Set(dealroomTaxonomy.map(t => t.toLowerCase()));
+    // Validate against our loaded taxonomy (case-insensitive)
+    const validIndustries = new Set(industries.map(t => t.toLowerCase()));
+    const validSubIndustries = new Set(subIndustries.map(t => t.toLowerCase()));
+    const validTags = new Set(techTags.map(t => t.toLowerCase()));
+
     mappings = mappings.map(m => ({
       ...m,
-      tags: m.tags.filter(t => validTaxonomy.has(t.toLowerCase()))
+      industries: m.industries.filter(t => validIndustries.has(t.toLowerCase())),
+      sub_industries: m.sub_industries.filter(t => validSubIndustries.has(t.toLowerCase())),
+      tags: m.tags.filter(t => validTags.has(t.toLowerCase()))
     }));
 
-    // Update database with new mappings
+    // Update database with new mappings (all three columns)
     let updated = 0;
     for (const mapping of mappings) {
-      if (mapping.tags.length > 0) {
+      const hasContent = mapping.industries.length > 0 || mapping.sub_industries.length > 0 || mapping.tags.length > 0;
+      if (hasContent) {
         const { error: updateError } = await supabase
           .from("technology_keywords")
-          .update({ dealroom_tags: mapping.tags })
+          .update({ 
+            dealroom_industries: mapping.industries,
+            dealroom_sub_industries: mapping.sub_industries,
+            dealroom_tags: mapping.tags 
+          })
           .eq("id", mapping.keyword_id);
 
         if (updateError) {
@@ -209,6 +251,8 @@ Return a JSON array with this structure:
         mappings: mappings.map(m => ({
           keywordId: m.keyword_id,
           keyword: keywords.find(k => k.id === m.keyword_id)?.display_name,
+          industries: m.industries,
+          subIndustries: m.sub_industries,
           tags: m.tags
         }))
       }),

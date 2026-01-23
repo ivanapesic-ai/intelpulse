@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, RefreshCw, Users, BarChart3, Database, Trash2, Edit, FileText, Upload, CheckCircle, XCircle, Clock, AlertCircle, Zap, Tag, Globe, Layers } from "lucide-react";
+import { ArrowLeft, Plus, RefreshCw, Users, BarChart3, Database, Trash2, Edit, FileText, Upload, CheckCircle, XCircle, Clock, AlertCircle, Zap, Globe, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,10 +11,9 @@ import { useDocuments, useDocumentStats } from "@/hooks/useDocuments";
 import { useKeywords, useKeywordStats } from "@/hooks/useTechnologies";
 
 import { formatFundingEur, formatNumber } from "@/types/database";
-import { TagMappingEditor } from "@/components/admin/TagMappingEditor";
 import { WebScrapingPanel } from "@/components/admin/WebScrapingPanel";
 import { PdfQueuePanel } from "@/components/admin/PdfQueuePanel";
-import { TaxonomyBrowser } from "@/components/admin/TaxonomyBrowser";
+import { KeywordManager } from "@/components/admin/KeywordManager";
 
 interface User {
   id: string;
@@ -168,30 +167,25 @@ export default function AdminPanel() {
           </Card>
         </div>
 
-        <Tabs defaultValue="dealroom" className="space-y-6">
+        <Tabs defaultValue="keywords" className="space-y-6">
           <TabsList className="flex flex-wrap">
-            <TabsTrigger value="dealroom">Dealroom Sync</TabsTrigger>
-            <TabsTrigger value="taxonomy" className="flex items-center gap-1.5">
-              <Layers className="h-3.5 w-3.5" />
-              Taxonomy
+            <TabsTrigger value="keywords" className="flex items-center gap-1.5">
+              <Settings className="h-3.5 w-3.5" />
+              Keyword Management
             </TabsTrigger>
+            <TabsTrigger value="dealroom">Dealroom Sync</TabsTrigger>
             <TabsTrigger value="web-scraping" className="flex items-center gap-1.5">
               <Globe className="h-3.5 w-3.5" />
               Web Scraping
             </TabsTrigger>
-            <TabsTrigger value="tag-mapping" className="flex items-center gap-1.5">
-              <Tag className="h-3.5 w-3.5" />
-              Tag Mapping
-            </TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="keywords">Keywords</TabsTrigger>
             <TabsTrigger value="users">User Management</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
-          {/* Taxonomy Browser Tab */}
-          <TabsContent value="taxonomy">
-            <TaxonomyBrowser />
+          {/* Keyword Management Tab - Unified */}
+          <TabsContent value="keywords">
+            <KeywordManager />
           </TabsContent>
 
           {/* Dealroom Sync Tab */}
@@ -409,11 +403,6 @@ export default function AdminPanel() {
             <PdfQueuePanel />
           </TabsContent>
 
-          {/* Tag Mapping Tab */}
-          <TabsContent value="tag-mapping">
-            <TagMappingEditor />
-          </TabsContent>
-
           {/* Documents Tab */}
           <TabsContent value="documents" className="space-y-4">
             <Card>
@@ -493,48 +482,6 @@ export default function AdminPanel() {
             </Card>
           </TabsContent>
 
-          {/* Keywords Tab */}
-          <TabsContent value="keywords" className="space-y-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="text-foreground">Technology Keywords</CardTitle>
-                  <CardDescription>CEI-SPHERE and Dealroom taxonomy ({totalKeywords} keywords)</CardDescription>
-                </div>
-                <Button size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Keyword
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="grid sm:grid-cols-2 gap-6">
-                  {/* CEI-SPHERE Keywords */}
-                  <div>
-                    <h4 className="text-sm font-medium text-blue-400 mb-3">CEI-SPHERE ({keywordStats?.ceiSphereCount || 0})</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {keywords?.filter(k => k.source === "cei_sphere").map((kw) => (
-                        <Badge key={kw.id} variant="outline" className="text-blue-400 border-blue-400/30">
-                          {kw.displayName}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Dealroom Keywords */}
-                  <div>
-                    <h4 className="text-sm font-medium text-purple-400 mb-3">Dealroom ({keywordStats?.dealroomCount || 0})</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {keywords?.filter(k => k.source === "dealroom").map((kw) => (
-                        <Badge key={kw.id} variant="outline" className="text-purple-400 border-purple-400/30">
-                          {kw.displayName}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           {/* Users Tab */}
           <TabsContent value="users" className="space-y-4">
