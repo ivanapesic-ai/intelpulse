@@ -1,10 +1,10 @@
 import { useState, useMemo } from "react";
-import { X, Check, Tag, AlertCircle, CheckCircle2, Search } from "lucide-react";
+import { X, Check, Tag, AlertCircle, CheckCircle2, Search, Sparkles, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useKeywords, useUpdateKeywordTags } from "@/hooks/useTechnologies";
+import { useKeywords, useUpdateKeywordTags, useAITagMapping } from "@/hooks/useTechnologies";
 import type { TechnologyKeyword } from "@/types/database";
 
 type FilterStatus = "all" | "missing" | "mapped";
@@ -12,11 +12,21 @@ type FilterStatus = "all" | "missing" | "mapped";
 export function TagMappingEditor() {
   const { data: keywords, isLoading } = useKeywords("cei_sphere");
   const updateTags = useUpdateKeywordTags();
+  const aiMapping = useAITagMapping();
   
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+
+  // Handler for AI auto-mapping
+  const handleAutoMapAll = () => {
+    aiMapping.mutate({ mode: "unmapped" });
+  };
+
+  const handleAutoMapSingle = (keywordId: string) => {
+    aiMapping.mutate({ keywordIds: [keywordId], mode: "single" });
+  };
 
   // Calculate stats
   const stats = useMemo(() => {
@@ -115,7 +125,19 @@ export function TagMappingEditor() {
                 Map CEI-SPHERE keywords to Dealroom tags for better search results
               </CardDescription>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={handleAutoMapAll}
+                disabled={aiMapping.isPending || stats.missing === 0}
+                className="gap-2"
+              >
+                {aiMapping.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                {aiMapping.isPending ? "Mapping..." : `Auto-map ${stats.missing} Missing`}
+              </Button>
               <div className="text-right">
                 <p className="text-2xl font-bold text-foreground">{stats.mapped}/{stats.total}</p>
                 <p className="text-xs text-muted-foreground">keywords mapped</p>
@@ -270,15 +292,32 @@ export function TagMappingEditor() {
                     )}
                   </div>
 
-                  {/* Edit button */}
+                  {/* Action buttons */}
                   {editingId !== keyword.id && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleStartEdit(keyword)}
-                    >
-                      Edit
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {!isMapped(keyword) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleAutoMapSingle(keyword.id)}
+                          disabled={aiMapping.isPending}
+                          title="Auto-map with AI"
+                        >
+                          {aiMapping.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStartEdit(keyword)}
+                      >
+                        Edit
+                      </Button>
+                    </div>
                   )}
                 </div>
               ))
