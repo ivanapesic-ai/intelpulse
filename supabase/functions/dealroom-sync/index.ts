@@ -311,6 +311,24 @@ serve(async (req) => {
                   sub_industries: [searchTag],
                 },
               },
+              // Explicitly request extended fields for market intelligence
+              fields: [
+                // Core company info
+                "id", "name", "tagline", "description", "website",
+                "hq_locations", "employees", "total_funding", "valuation",
+                "growth_stage", "founded_year", "status",
+                // Strategic intelligence - investors & funding
+                "investors", "lead_investors", "funding_rounds",
+                "last_funding_date", "last_funding",
+                // Acquisition tracking
+                "acquired_by", "acquisition_date", "acquisition_amount",
+                // Growth & hiring signals
+                "employee_growth", "jobs_count",
+                // Technology & industry
+                "industries", "technologies", "patents_count",
+                // News
+                "news"
+              ],
             }),
           }
         );
