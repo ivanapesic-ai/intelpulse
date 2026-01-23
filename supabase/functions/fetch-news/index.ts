@@ -22,29 +22,56 @@ interface NewsItem {
   score?: number;
 }
 
-// Technology keywords to search for in HN stories
+// Technology keywords to search for in HN stories - ML-SDV focused
 const TECH_KEYWORDS_MAP: Record<string, string[]> = {
+  // Core AI/ML technologies
   'edge computing': ['edge computing', 'edge ai', 'edge cloud', 'fog computing'],
   'federated learning': ['federated learning', 'federated ml', 'distributed learning'],
-  'digital twin': ['digital twin', 'virtual twin', 'digital replica'],
-  'swarm intelligence': ['swarm intelligence', 'swarm ai', 'collective intelligence'],
+  'digital twin': ['digital twin', 'virtual twin', 'digital replica', 'simulation twin'],
+  'swarm intelligence': ['swarm intelligence', 'swarm ai', 'collective intelligence', 'swarm robotics'],
   'neuromorphic computing': ['neuromorphic', 'brain-inspired computing', 'spiking neural'],
-  'quantum computing': ['quantum computing', 'quantum machine learning', 'qml'],
+  'quantum computing': ['quantum computing', 'quantum machine learning', 'qml', 'quantum algorithm'],
   'homomorphic encryption': ['homomorphic encryption', 'fhe', 'fully homomorphic'],
-  'zero knowledge': ['zero knowledge', 'zkp', 'zk-snark', 'zk-stark'],
+  'zero knowledge': ['zero knowledge', 'zkp', 'zk-snark', 'zk-stark', 'zero-knowledge proof'],
   'confidential computing': ['confidential computing', 'trusted execution', 'tee', 'secure enclave'],
-  'mlops': ['mlops', 'machine learning operations', 'ml pipeline'],
+  'mlops': ['mlops', 'machine learning operations', 'ml pipeline', 'model deployment'],
   'automl': ['automl', 'automated machine learning', 'neural architecture search'],
-  'generative ai': ['generative ai', 'genai', 'llm', 'large language model', 'gpt', 'claude'],
-  'computer vision': ['computer vision', 'image recognition', 'object detection'],
+  'generative ai': ['generative ai', 'genai', 'llm', 'large language model'],
+  'computer vision': ['computer vision', 'image recognition', 'object detection', 'visual ai'],
   'natural language processing': ['nlp', 'natural language', 'text processing', 'transformers'],
-  'reinforcement learning': ['reinforcement learning', 'rl', 'deep rl'],
-  'iot': ['iot', 'internet of things', 'smart sensors', 'connected devices'],
+  'reinforcement learning': ['reinforcement learning', 'rl', 'deep rl', 'policy gradient'],
+  
+  // ML-SDV / Automotive technologies
+  'autonomous driving': ['autonomous driving', 'self-driving', 'waymo', 'autonomous vehicle', 'robotaxi', 'adas'],
+  'ev charging': ['ev charging', 'charging station', 'evse', 'charge point', 'ev infrastructure', 'chargepoint'],
+  'fleet management': ['fleet management', 'fleet tracking', 'vehicle telematics', 'fleet optimization'],
+  'supply chain management': ['supply chain ai', 'logistics automation', 'warehouse robotics', 'inventory ai', 'supply chain optimization'],
+  'predictive maintenance': ['predictive maintenance', 'condition monitoring', 'equipment monitoring', 'failure prediction'],
+  'vehicle-to-everything': ['v2x', 'vehicle-to-everything', 'v2v', 'vehicle communication', 'connected car'],
+  'lidar': ['lidar', 'laser sensing', 'point cloud', '3d sensing', 'velodyne', 'luminar'],
+  'battery technology': ['battery technology', 'solid state battery', 'battery management', 'ev battery', 'lithium'],
+  'software-defined vehicle': ['software-defined vehicle', 'sdv', 'vehicle software', 'automotive software'],
+  'hd mapping': ['hd mapping', 'high-definition map', 'automotive mapping', 'lidar mapping'],
+  'sensor fusion': ['sensor fusion', 'multi-sensor', 'perception stack', 'sensor integration'],
+  'electric mobility': ['electric mobility', 'emobility', 'electric vehicle', 'ev startup'],
+  
+  // Infrastructure technologies
+  'iot': ['iot', 'internet of things', 'smart sensors', 'connected devices', 'industrial iot'],
   'blockchain': ['blockchain', 'distributed ledger', 'smart contracts', 'web3'],
-  '5g': ['5g', '6g', 'mobile edge', 'network slicing'],
-  'kubernetes': ['kubernetes', 'k8s', 'container orchestration'],
-  'serverless': ['serverless', 'faas', 'function as a service', 'lambda'],
+  '5g': ['5g', '6g', 'mobile edge', 'network slicing', '5g network'],
+  'kubernetes': ['kubernetes', 'k8s', 'container orchestration', 'cloud native'],
+  'serverless': ['serverless', 'faas', 'function as a service', 'edge function'],
 };
+
+// Check if news article is relevant based on title matching
+function isRelevantNews(title: string, keywords: string[]): boolean {
+  const titleLower = title.toLowerCase();
+  // Title must contain at least one of the search keywords
+  return keywords.some(kw => titleLower.includes(kw.toLowerCase()));
+}
+
+// Minimum HN score threshold for quality filtering
+const MIN_SCORE_THRESHOLD = 10;
 
 // Fetch top stories from HackerNews
 async function fetchHNTopStories(limit = 100): Promise<HNStory[]> {
@@ -100,15 +127,21 @@ Deno.serve(async (req) => {
       const searchTerms = TECH_KEYWORDS_MAP[keyword.toLowerCase()] || [keyword];
       const allNews: NewsItem[] = [];
       
-      for (const term of searchTerms.slice(0, 2)) { // Limit searches
-        const news = await searchHNAlgolia(term, 5);
+      for (const term of searchTerms.slice(0, 3)) { // Search up to 3 terms
+        const news = await searchHNAlgolia(term, 10); // Fetch more to filter
         allNews.push(...news);
       }
       
-      // Deduplicate by URL
+      // Filter for relevance and quality
+      const relevantNews = allNews.filter(n => 
+        (n.score || 0) >= MIN_SCORE_THRESHOLD && 
+        isRelevantNews(n.title, searchTerms)
+      );
+      
+      // Deduplicate by URL and take top 5
       const uniqueNews = Array.from(
-        new Map(allNews.map(n => [n.url, n])).values()
-      ).slice(0, 5);
+        new Map(relevantNews.map(n => [n.url, n])).values()
+      ).sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 5);
       
       // Update the technology with news data
       if (keywordId) {
@@ -148,17 +181,23 @@ Deno.serve(async (req) => {
       const searchTerms = TECH_KEYWORDS_MAP[tech.name.toLowerCase()] || [tech.name];
       const allNews: NewsItem[] = [];
       
-      // Search with rate limiting
-      for (const term of searchTerms.slice(0, 2)) {
-        const news = await searchHNAlgolia(term, 5);
+      // Search with rate limiting - fetch more to allow filtering
+      for (const term of searchTerms.slice(0, 3)) {
+        const news = await searchHNAlgolia(term, 10);
         allNews.push(...news);
         await new Promise(r => setTimeout(r, 100)); // Small delay to avoid rate limits
       }
       
-      // Deduplicate
+      // Filter for relevance and quality
+      const relevantNews = allNews.filter(n => 
+        (n.score || 0) >= MIN_SCORE_THRESHOLD && 
+        isRelevantNews(n.title, searchTerms)
+      );
+      
+      // Deduplicate and sort by score
       const uniqueNews = Array.from(
-        new Map(allNews.map(n => [n.url, n])).values()
-      ).slice(0, 5);
+        new Map(relevantNews.map(n => [n.url, n])).values()
+      ).sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 5);
       
       if (uniqueNews.length > 0) {
         await supabase
