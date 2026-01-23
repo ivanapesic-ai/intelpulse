@@ -190,22 +190,28 @@ export type Database = {
           created_at: string | null
           dealroom_id: string
           description: string | null
+          employee_growth: number | null
           employees_count: number | null
           founded_year: number | null
+          funding_rounds: Json | null
           growth_stage: string | null
           hq_city: string | null
           hq_country: string | null
           id: string
           industries: string[] | null
           investors: string[] | null
+          jobs_count: number | null
           last_funding_amount_eur: number | null
           last_funding_date: string | null
+          lead_investors: string[] | null
           name: string
           news_items: Json | null
           patents_count: number | null
           raw_data: Json | null
+          status: string | null
           synced_at: string | null
           tagline: string | null
+          tech_stack: string[] | null
           total_funding_eur: number | null
           valuation_eur: number | null
           website: string | null
@@ -214,22 +220,28 @@ export type Database = {
           created_at?: string | null
           dealroom_id: string
           description?: string | null
+          employee_growth?: number | null
           employees_count?: number | null
           founded_year?: number | null
+          funding_rounds?: Json | null
           growth_stage?: string | null
           hq_city?: string | null
           hq_country?: string | null
           id?: string
           industries?: string[] | null
           investors?: string[] | null
+          jobs_count?: number | null
           last_funding_amount_eur?: number | null
           last_funding_date?: string | null
+          lead_investors?: string[] | null
           name: string
           news_items?: Json | null
           patents_count?: number | null
           raw_data?: Json | null
+          status?: string | null
           synced_at?: string | null
           tagline?: string | null
+          tech_stack?: string[] | null
           total_funding_eur?: number | null
           valuation_eur?: number | null
           website?: string | null
@@ -238,22 +250,28 @@ export type Database = {
           created_at?: string | null
           dealroom_id?: string
           description?: string | null
+          employee_growth?: number | null
           employees_count?: number | null
           founded_year?: number | null
+          funding_rounds?: Json | null
           growth_stage?: string | null
           hq_city?: string | null
           hq_country?: string | null
           id?: string
           industries?: string[] | null
           investors?: string[] | null
+          jobs_count?: number | null
           last_funding_amount_eur?: number | null
           last_funding_date?: string | null
+          lead_investors?: string[] | null
           name?: string
           news_items?: Json | null
           patents_count?: number | null
           raw_data?: Json | null
+          status?: string | null
           synced_at?: string | null
           tagline?: string | null
+          tech_stack?: string[] | null
           total_funding_eur?: number | null
           valuation_eur?: number | null
           website?: string | null
