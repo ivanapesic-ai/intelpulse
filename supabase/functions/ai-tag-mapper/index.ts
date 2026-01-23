@@ -50,7 +50,7 @@ serve(async (req) => {
     // Fetch keywords to map
     let query = supabase
       .from("technology_keywords")
-      .select("id, keyword, display_name, category, source");
+      .select("id, keyword, display_name, source, description");
 
     if (mode === "single" && keywordIds?.length) {
       query = query.in("id", keywordIds);
@@ -73,7 +73,7 @@ serve(async (req) => {
 
     // Build prompt for AI
     const keywordList = keywords.map(k => 
-      `- "${k.display_name}" (keyword: ${k.keyword}, category: ${k.category || "general"})`
+      `- "${k.display_name}" (keyword: ${k.keyword}, source: ${k.source || "unknown"})`
     ).join("\n");
 
     const systemPrompt = `You are an expert at mapping technology taxonomy terms to Dealroom's company tag system. 
