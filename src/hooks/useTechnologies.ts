@@ -137,7 +137,7 @@ export function useAITagMapping() {
   });
 }
 
-// Fetch all active keywords (including dealroom_tags for mapping)
+// Fetch all active keywords (including all mapping columns)
 export function useKeywords(source?: KeywordSource) {
   return useQuery({
     queryKey: ["keywords", source],
@@ -156,7 +156,10 @@ export function useKeywords(source?: KeywordSource) {
 
       if (error) throw error;
 
-      return (data || []).map((row): TechnologyKeyword => ({
+      return (data || []).map((row): TechnologyKeyword & { 
+        dealroomIndustries: string[]; 
+        dealroomSubIndustries: string[]; 
+      } => ({
         id: row.id,
         keyword: row.keyword,
         source: row.source as KeywordSource,
@@ -165,6 +168,9 @@ export function useKeywords(source?: KeywordSource) {
         parentKeywordId: row.parent_keyword_id || undefined,
         aliases: row.aliases || undefined,
         dealroomTags: row.dealroom_tags || [],
+        // Include new structured mapping columns
+        dealroomIndustries: (row as any).dealroom_industries || [],
+        dealroomSubIndustries: (row as any).dealroom_sub_industries || [],
         isActive: row.is_active,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
