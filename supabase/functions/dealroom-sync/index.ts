@@ -64,16 +64,16 @@ interface DealroomCompany {
   last_funding?: { amount?: number };
   last_funding_amount?: number;
   growth_stage?: string;
-  investors?: Array<{ name: string }> | string[];
+  investors?: { items?: Array<{ name: string }> } | Array<{ name: string }> | string[];
   industries?: Array<{ name: string }> | string[];
   patents_count?: number;
-  news?: Array<{ title: string; date: string; url: string }>;
+  news?: { items?: Array<{ title: string; date: string; url: string }> } | Array<{ title: string; date: string; url: string }>;
   // New high-priority fields
   status?: string;                    // active, closed, acquired
   employee_growth?: number;           // % growth rate
   jobs_count?: number;                // open positions
   technologies?: Array<{ name: string }> | string[];  // tech stack
-  lead_investors?: Array<{ name: string }> | string[];
+  lead_investors?: { items?: Array<{ name: string }> } | Array<{ name: string }> | string[];
   funding_rounds?: Array<{
     date?: string;
     amount?: number;
@@ -103,6 +103,65 @@ function calculateTrend(companies: Array<{ employee_growth: number | null; jobs_
   if (avgGrowth < -5 && totalJobs < 10) return 'down';
   
   return 'stable';
+}
+
+// Parse Dealroom date format "mon/YYYY" (e.g., "jun/2021") to SQL DATE format "YYYY-MM-DD"
+function parseDealroomDate(dateStr: string | null | undefined): string | null {
+  if (!dateStr || typeof dateStr !== 'string') return null;
+  
+  // Handle standard ISO dates
+  if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+    return dateStr.split('T')[0];
+  }
+  
+  // Handle "mon/YYYY" format
+  const months: Record<string, string> = {
+    jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+    jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12'
+  };
+  const match = dateStr.toLowerCase().match(/^([a-z]{3})\/(\d{4})$/);
+  if (match) {
+    const [, month, year] = match;
+    if (months[month]) {
+      return `${year}-${months[month]}-01`; // First of the month
+    }
+  }
+  
+  return null; // Invalid format, skip
+}
+
+// Parse nested items array from Dealroom response (handles investors, lead_investors)
+function parseNestedArray(data: { items?: Array<{ name: string }> } | Array<{ name: string }> | string[] | undefined): string[] {
+  if (!data) return [];
+  
+  // Handle nested { items: [...] } structure
+  if (typeof data === 'object' && !Array.isArray(data) && 'items' in data) {
+    return parseNestedArray(data.items);
+  }
+  
+  // Handle flat array
+  if (Array.isArray(data)) {
+    return data.map(item => typeof item === 'string' ? item : item.name).filter(Boolean);
+  }
+  
+  return [];
+}
+
+// Parse news items from Dealroom (handles nested or flat structure)
+function parseNewsItems(data: { items?: Array<{ title: string; date: string; url: string }> } | Array<{ title: string; date: string; url: string }> | undefined): Array<{ title: string; date: string; url: string; source: string }> {
+  if (!data) return [];
+  
+  // Handle nested { items: [...] } structure
+  const items = (typeof data === 'object' && !Array.isArray(data) && 'items' in data)
+    ? data.items || []
+    : Array.isArray(data) ? data : [];
+  
+  return items.slice(0, 5).map(n => ({
+    title: n.title || '',
+    date: n.date || '',
+    url: n.url || '',
+    source: 'Dealroom',
+  })).filter(n => n.title && n.url);
 }
 
 interface ApiUsage {
@@ -408,20 +467,21 @@ serve(async (req) => {
           const employeesCount = parseEmployees(company.employees) || company.employee_count || 0;
           const patentsCount = company.patents_count || 0;
           
-          // Parse industries/investors which can be string[] or {name: string}[]
+          // Parse industries (can be string[] or {name: string}[])
           const industries = Array.isArray(company.industries)
             ? company.industries.map(i => typeof i === 'string' ? i : i.name)
             : [];
-          const investors = Array.isArray(company.investors)
-            ? company.investors.map(i => typeof i === 'string' ? i : i.name)
-            : [];
+          
+          // Parse investors using helper function (handles nested .items structure)
+          const investors = parseNestedArray(company.investors);
+          const leadInvestors = parseNestedArray(company.lead_investors);
+          
+          // Parse news items using helper function
+          const newsItems = parseNewsItems(company.news);
 
           // Parse new high-priority fields
           const techStack = Array.isArray(company.technologies)
             ? company.technologies.map(t => typeof t === 'string' ? t : t.name)
-            : [];
-          const leadInvestors = Array.isArray(company.lead_investors)
-            ? company.lead_investors.map(i => typeof i === 'string' ? i : i.name)
             : [];
           const fundingRounds = Array.isArray(company.funding_rounds)
             ? company.funding_rounds.map(r => ({
@@ -433,6 +493,9 @@ serve(async (req) => {
                   : [],
               }))
             : [];
+          
+          // Parse acquisition date using helper function
+          const parsedAcquiredDate = parseDealroomDate(acquiredDate);
 
           // Upsert company with all new fields
           const { data: upsertedCompany, error: upsertError } = await supabase
@@ -456,7 +519,7 @@ serve(async (req) => {
                 investors: investors,
                 industries: industries,
                 patents_count: patentsCount,
-                news_items: company.news || null,
+                news_items: newsItems.length > 0 ? newsItems : null,
                 // New high-priority fields
                 status: companyStatus,
                 employee_growth: company.employee_growth ?? null,
@@ -466,7 +529,7 @@ serve(async (req) => {
                 funding_rounds: fundingRounds,
                 // Acquisition tracking
                 acquired_by: acquiredBy,
-                acquired_date: acquiredDate,
+                acquired_date: parsedAcquiredDate,
                 acquisition_amount_eur: acquisitionAmountEur,
                 raw_data: company,
                 synced_at: new Date().toISOString(),
@@ -523,10 +586,10 @@ serve(async (req) => {
         if (mappings && mappings.length > 0) {
           const companyIds = mappings.map(m => m.company_id);
 
-          // Get aggregate stats for these companies (include all fields for scoring)
+          // Get aggregate stats for these companies (include all fields for scoring and news)
           const { data: companies } = await supabase
             .from("dealroom_companies")
-            .select("name, total_funding_eur, employees_count, patents_count, employee_growth, jobs_count")
+            .select("name, total_funding_eur, employees_count, patents_count, employee_growth, jobs_count, news_items")
             .in("id", companyIds)
             .order("total_funding_eur", { ascending: false });
 
@@ -548,8 +611,21 @@ serve(async (req) => {
               .slice(0, 5)
               .map(c => c.name)
               .filter((name): name is string => !!name);
+            
+            // Aggregate news from top companies
+            const aggregatedNews: Array<{ title: string; date: string; url: string; source: string }> = [];
+            for (const comp of companies.slice(0, 10)) {
+              const companyNews = comp.news_items as Array<{ title: string; date: string; url: string; source: string }> | null;
+              if (companyNews && Array.isArray(companyNews)) {
+                aggregatedNews.push(...companyNews);
+              }
+            }
+            // Sort by date descending and take top 5
+            const recentNews = aggregatedNews
+              .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
+              .slice(0, 5);
 
-            // Upsert technology record with key_players and trend
+            // Upsert technology record with key_players, trend, and news
             await supabase
               .from("technologies")
               .upsert(
@@ -566,6 +642,8 @@ serve(async (req) => {
                   dealroom_company_count: companies.length,
                   key_players: keyPlayers,
                   trend: trend,
+                  news_mention_count: recentNews.length,
+                  recent_news: recentNews,
                   last_updated: new Date().toISOString(),
                 },
                 { onConflict: "keyword_id" }
