@@ -183,10 +183,14 @@ serve(async (req) => {
     const { action = 'sync' } = await req.json().catch(() => ({}));
 
     if (action === 'sync') {
-      // Clear existing and insert fresh taxonomy
-      await supabase.from('dealroom_taxonomy').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-
-      const insertData = [];
+      const insertData: Array<{
+        taxonomy_type: string;
+        name: string;
+        slug: string;
+        parent_name?: string;
+        is_active: boolean;
+        last_synced_at: string;
+      }> = [];
 
       // Add industries
       for (const industry of DEALROOM_INDUSTRIES) {
@@ -222,12 +226,16 @@ serve(async (req) => {
         });
       }
 
-      const { error: insertError } = await supabase
+      // Use upsert to handle existing records
+      const { error: upsertError } = await supabase
         .from('dealroom_taxonomy')
-        .insert(insertData);
+        .upsert(insertData, { 
+          onConflict: 'taxonomy_type,name',
+          ignoreDuplicates: false
+        });
 
-      if (insertError) {
-        throw insertError;
+      if (upsertError) {
+        throw upsertError;
       }
 
       return new Response(JSON.stringify({
