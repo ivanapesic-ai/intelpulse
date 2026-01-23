@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, RefreshCw, Users, BarChart3, Database, Trash2, Edit, FileText, Upload, CheckCircle, XCircle, Clock, AlertCircle, Zap, Tag, Globe } from "lucide-react";
+import { ArrowLeft, Plus, RefreshCw, Users, BarChart3, Database, Trash2, Edit, FileText, Upload, CheckCircle, XCircle, Clock, AlertCircle, Zap, Tag, Globe, Layers } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { formatFundingEur, formatNumber } from "@/types/database";
 import { TagMappingEditor } from "@/components/admin/TagMappingEditor";
 import { WebScrapingPanel } from "@/components/admin/WebScrapingPanel";
 import { PdfQueuePanel } from "@/components/admin/PdfQueuePanel";
+import { TaxonomyBrowser } from "@/components/admin/TaxonomyBrowser";
 
 interface User {
   id: string;
@@ -168,8 +169,12 @@ export default function AdminPanel() {
         </div>
 
         <Tabs defaultValue="dealroom" className="space-y-6">
-          <TabsList>
+          <TabsList className="flex flex-wrap">
             <TabsTrigger value="dealroom">Dealroom Sync</TabsTrigger>
+            <TabsTrigger value="taxonomy" className="flex items-center gap-1.5">
+              <Layers className="h-3.5 w-3.5" />
+              Taxonomy
+            </TabsTrigger>
             <TabsTrigger value="web-scraping" className="flex items-center gap-1.5">
               <Globe className="h-3.5 w-3.5" />
               Web Scraping
@@ -183,6 +188,11 @@ export default function AdminPanel() {
             <TabsTrigger value="users">User Management</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
+
+          {/* Taxonomy Browser Tab */}
+          <TabsContent value="taxonomy">
+            <TaxonomyBrowser />
+          </TabsContent>
 
           {/* Dealroom Sync Tab */}
           <TabsContent value="dealroom" className="space-y-4">
