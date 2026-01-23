@@ -5,10 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlatformHeader } from "@/components/mockups/PlatformHeader";
+import { CompanyDeepDive } from "@/components/mockups/CompanyDeepDive";
 import { useTechnologies } from "@/hooks/useTechnologies";
 import { formatFundingEur, formatNumber, MATURITY_SCORE_CONFIG, type Technology } from "@/types/database";
-import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from "recharts";
+import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type SortOption = "composite" | "funding" | "employees" | "companies";
@@ -237,7 +239,7 @@ export default function TechnologyExplorer() {
 
       {/* Detail Dialog */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           {selectedTech && (
             <>
               <DialogHeader>
@@ -252,216 +254,235 @@ export default function TechnologyExplorer() {
                 </DialogTitle>
               </DialogHeader>
 
-              <div className="grid md:grid-cols-2 gap-6 mt-4">
-                {/* Left Column */}
-                <div className="space-y-6">
-                  <div>
-                    <p className="text-muted-foreground mb-4">
-                      {selectedTech.description || `Technology area with ${selectedTech.dealroomCompanyCount} companies tracked from Dealroom.`}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline" className="capitalize">{selectedTech.trend} trend</Badge>
-                      <Badge variant="outline">{selectedTech.dealroomCompanyCount} companies</Badge>
-                      {selectedTech.documentMentionCount > 0 && (
-                        <Badge variant="outline">{selectedTech.documentMentionCount} doc mentions</Badge>
+              <Tabs defaultValue="overview" className="mt-4">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="companies" className="flex items-center gap-1.5">
+                    <Building2 className="h-3.5 w-3.5" />
+                    Companies ({selectedTech.dealroomCompanyCount})
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="overview" className="mt-4">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* Left Column */}
+                    <div className="space-y-6">
+                      <div>
+                        <p className="text-muted-foreground mb-4">
+                          {selectedTech.description || `Technology area with ${selectedTech.dealroomCompanyCount} companies tracked from Dealroom.`}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="outline" className="capitalize">{selectedTech.trend} trend</Badge>
+                          <Badge variant="outline">{selectedTech.dealroomCompanyCount} companies</Badge>
+                          {selectedTech.documentMentionCount > 0 && (
+                            <Badge variant="outline">{selectedTech.documentMentionCount} doc mentions</Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Radar Chart */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-sm text-foreground">Score Breakdown (0-2 Scale)</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="h-48">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <RadarChart data={radarData}>
+                                <PolarGrid stroke="hsl(var(--border))" />
+                                <PolarAngleAxis dataKey="dimension" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+                                <PolarRadiusAxis domain={[0, 2]} tick={false} axisLine={false} />
+                                <Radar name="Score" dataKey="value" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
+                              </RadarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Key Players */}
+                      {selectedTech.keyPlayers && selectedTech.keyPlayers.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-sm text-foreground flex items-center gap-2">
+                              <Users className="h-4 w-4" />
+                              Key Players
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="flex flex-wrap gap-2">
+                              {selectedTech.keyPlayers.map((player) => (
+                                <Badge key={player} variant="secondary">
+                                  {player}
+                                </Badge>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
                       )}
                     </div>
-                  </div>
 
-                  {/* Radar Chart */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm text-foreground">Score Breakdown (0-2 Scale)</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-48">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <RadarChart data={radarData}>
-                            <PolarGrid stroke="hsl(var(--border))" />
-                            <PolarAngleAxis dataKey="dimension" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                            <PolarRadiusAxis domain={[0, 2]} tick={false} axisLine={false} />
-                            <Radar name="Score" dataKey="value" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
-                          </RadarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Key Players */}
-                  {selectedTech.keyPlayers && selectedTech.keyPlayers.length > 0 && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-sm text-foreground flex items-center gap-2">
-                          <Users className="h-4 w-4" />
-                          Key Players
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedTech.keyPlayers.map((player) => (
-                            <Badge key={player} variant="secondary">
-                              {player}
-                            </Badge>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-
-                {/* Right Column */}
-                <div className="space-y-6">
-                  {/* Metrics */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <Card>
-                      <CardContent className="pt-4">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">Companies</span>
-                        </div>
-                        <p className="text-2xl font-bold text-foreground">{selectedTech.dealroomCompanyCount}</p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="pt-4">
-                        <div className="flex items-center gap-2 mb-1">
-                          <DollarSign className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">Total Funding</span>
-                        </div>
-                        <p className="text-2xl font-bold text-foreground">{formatFundingEur(selectedTech.totalFundingEur)}</p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="pt-4">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">Total Employees</span>
-                        </div>
-                        <p className="text-2xl font-bold text-foreground">{formatNumber(selectedTech.totalEmployees)}</p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="pt-4">
-                        <div className="flex items-center gap-2 mb-1">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">Research</span>
-                        </div>
-                        {selectedTech.totalPatents > 0 ? (
-                          <p className="text-2xl font-bold text-foreground">{formatNumber(selectedTech.totalPatents)}</p>
-                        ) : (
-                          <>
-                            <div className="flex items-center gap-2">
-                              <Lock className="h-4 w-4 text-muted-foreground" />
-                              <p className="text-sm text-muted-foreground italic">No data</p>
+                    {/* Right Column */}
+                    <div className="space-y-6">
+                      {/* Metrics */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <Card>
+                          <CardContent className="pt-4">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Building2 className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm text-muted-foreground">Companies</span>
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1">Run sync in Admin</p>
-                          </>
-                        )}
-                        <p className="text-xs text-muted-foreground">OpenAlex publications</p>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Maturity Scores */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm text-foreground">Maturity Assessment (0-2 Scale)</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {[
-                          { label: "Investment", score: selectedTech.investmentScore, tooltip: "Dealroom funding signals" },
-                          { label: "Employees", score: selectedTech.employeesScore, tooltip: "Dealroom employee count" },
-                          { label: "TRL (Readiness)", score: selectedTech.trlScore, tooltip: selectedTech.avgTrlMentioned ? `Avg TRL ${selectedTech.avgTrlMentioned.toFixed(1)}` : "No TRL data" },
-                        ].map((item) => {
-                          const config = MATURITY_SCORE_CONFIG[item.score as 0|1|2];
-                          return (
-                            <div key={item.label} className="flex items-center justify-between" title={item.tooltip}>
-                              <span className="text-sm text-muted-foreground">{item.label}</span>
-                              <div className="flex items-center gap-2">
-                                <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                                  <div 
-                                    className={`h-full ${getScoreBgColor(item.score)}`}
-                                    style={{ width: `${(item.score / 2) * 100}%` }}
-                                  />
-                                </div>
-                                <Badge variant="outline" className={`${config?.color || ""} min-w-[80px] justify-center`}>
-                                  {config?.label || `Score ${item.score}`}
-                                </Badge>
-                              </div>
+                            <p className="text-2xl font-bold text-foreground">{selectedTech.dealroomCompanyCount}</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="pt-4">
+                            <div className="flex items-center gap-2 mb-1">
+                              <DollarSign className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm text-muted-foreground">Total Funding</span>
                             </div>
-                          );
-                        })}
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground pt-3 border-t border-border">
-                        <span>Visibility: {selectedTech.documentMentionCount} doc mentions</span>
-                        {selectedTech.newsMentionCount > 0 && (
-                          <span className="flex items-center gap-1">
-                            <Newspaper className="h-3 w-3" />
-                            {selectedTech.newsMentionCount} news
-                          </span>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Recent News */}
-                  {selectedTech.recentNews && selectedTech.recentNews.length > 0 && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-sm text-foreground flex items-center gap-2">
-                          <Newspaper className="h-4 w-4" />
-                          Recent News
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          {selectedTech.recentNews.slice(0, 3).map((news, index) => (
-                            <a
-                              key={index}
-                              href={news.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-start gap-2 p-2 rounded hover:bg-muted/50 transition-colors group"
-                            >
-                              <ExternalLink className="h-3 w-3 mt-1 text-muted-foreground group-hover:text-primary shrink-0" />
-                              <div className="min-w-0">
-                                <p className="text-sm text-foreground line-clamp-1 group-hover:text-primary">
-                                  {news.title}
-                                </p>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                  <Badge variant="outline" className="text-xs px-1 py-0">
-                                    {news.source}
-                                  </Badge>
-                                  <span>{new Date(news.date).toLocaleDateString()}</span>
+                            <p className="text-2xl font-bold text-foreground">{formatFundingEur(selectedTech.totalFundingEur)}</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="pt-4">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Users className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm text-muted-foreground">Total Employees</span>
+                            </div>
+                            <p className="text-2xl font-bold text-foreground">{formatNumber(selectedTech.totalEmployees)}</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="pt-4">
+                            <div className="flex items-center gap-2 mb-1">
+                              <FileText className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm text-muted-foreground">Research</span>
+                            </div>
+                            {selectedTech.totalPatents > 0 ? (
+                              <p className="text-2xl font-bold text-foreground">{formatNumber(selectedTech.totalPatents)}</p>
+                            ) : (
+                              <>
+                                <div className="flex items-center gap-2">
+                                  <Lock className="h-4 w-4 text-muted-foreground" />
+                                  <p className="text-sm text-muted-foreground italic">No data</p>
                                 </div>
-                              </div>
-                            </a>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
+                                <p className="text-xs text-muted-foreground mt-1">Run sync in Admin</p>
+                              </>
+                            )}
+                            <p className="text-xs text-muted-foreground">OpenAlex publications</p>
+                          </CardContent>
+                        </Card>
+                      </div>
 
-                  {/* Last Updated */}
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      Last updated: {selectedTech.lastUpdated ? new Date(selectedTech.lastUpdated).toLocaleDateString() : "N/A"}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      Trend:{" "}
-                      {selectedTech.trend === "up" ? (
-                        <TrendingUp className="h-3 w-3 text-emerald-500" />
-                      ) : selectedTech.trend === "down" ? (
-                        <TrendingDown className="h-3 w-3 text-red-500" />
-                      ) : (
-                        <Minus className="h-3 w-3" />
+                      {/* Maturity Scores */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-sm text-foreground">Maturity Assessment (0-2 Scale)</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {[
+                              { label: "Investment", score: selectedTech.investmentScore, tooltip: "Dealroom funding signals" },
+                              { label: "Employees", score: selectedTech.employeesScore, tooltip: "Dealroom employee count" },
+                              { label: "TRL (Readiness)", score: selectedTech.trlScore, tooltip: selectedTech.avgTrlMentioned ? `Avg TRL ${selectedTech.avgTrlMentioned.toFixed(1)}` : "No TRL data" },
+                            ].map((item) => {
+                              const config = MATURITY_SCORE_CONFIG[item.score as 0|1|2];
+                              return (
+                                <div key={item.label} className="flex items-center justify-between" title={item.tooltip}>
+                                  <span className="text-sm text-muted-foreground">{item.label}</span>
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+                                      <div 
+                                        className={`h-full ${getScoreBgColor(item.score)}`}
+                                        style={{ width: `${(item.score / 2) * 100}%` }}
+                                      />
+                                    </div>
+                                    <Badge variant="outline" className={`${config?.color || ""} min-w-[80px] justify-center`}>
+                                      {config?.label || `Score ${item.score}`}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-muted-foreground pt-3 border-t border-border">
+                            <span>Visibility: {selectedTech.documentMentionCount} doc mentions</span>
+                            {selectedTech.newsMentionCount > 0 && (
+                              <span className="flex items-center gap-1">
+                                <Newspaper className="h-3 w-3" />
+                                {selectedTech.newsMentionCount} news
+                              </span>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Recent News */}
+                      {selectedTech.recentNews && selectedTech.recentNews.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-sm text-foreground flex items-center gap-2">
+                              <Newspaper className="h-4 w-4" />
+                              Recent News
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-2">
+                              {selectedTech.recentNews.slice(0, 3).map((news, index) => (
+                                <a
+                                  key={index}
+                                  href={news.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-start gap-2 p-2 rounded hover:bg-muted/50 transition-colors group"
+                                >
+                                  <ExternalLink className="h-3 w-3 mt-1 text-muted-foreground group-hover:text-primary shrink-0" />
+                                  <div className="min-w-0">
+                                    <p className="text-sm text-foreground line-clamp-1 group-hover:text-primary">
+                                      {news.title}
+                                    </p>
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                      <Badge variant="outline" className="text-xs px-1 py-0">
+                                        {news.source}
+                                      </Badge>
+                                      <span>{new Date(news.date).toLocaleDateString()}</span>
+                                    </div>
+                                  </div>
+                                </a>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
                       )}
-                    </span>
+
+                      {/* Last Updated */}
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          Last updated: {selectedTech.lastUpdated ? new Date(selectedTech.lastUpdated).toLocaleDateString() : "N/A"}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          Trend:{" "}
+                          {selectedTech.trend === "up" ? (
+                            <TrendingUp className="h-3 w-3 text-emerald-500" />
+                          ) : selectedTech.trend === "down" ? (
+                            <TrendingDown className="h-3 w-3 text-red-500" />
+                          ) : (
+                            <Minus className="h-3 w-3" />
+                          )}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </TabsContent>
+
+              <TabsContent value="companies" className="mt-4">
+                <CompanyDeepDive 
+                  keywordId={selectedTech.keywordId} 
+                  technologyName={selectedTech.name} 
+                />
+              </TabsContent>
+            </Tabs>
             </>
           )}
         </DialogContent>

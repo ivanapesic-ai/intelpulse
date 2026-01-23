@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { useDealroomCompanies, useDealroomSyncLogs, useDealroomSync, useDealroomCountryStats, useDealroomApiUsage, useDealroomCompanyCount } from "@/hooks/useDealroomSync";
 import { useDocuments, useDocumentStats } from "@/hooks/useDocuments";
 import { useKeywords, useKeywordStats } from "@/hooks/useTechnologies";
+import { useFetchResearch } from "@/hooks/useCompaniesForTechnology";
 import { formatFundingEur, formatNumber } from "@/types/database";
 import { TagMappingEditor } from "@/components/admin/TagMappingEditor";
 import { WebScrapingPanel } from "@/components/admin/WebScrapingPanel";
@@ -57,9 +58,14 @@ export default function AdminPanel() {
   const { data: apiUsage } = useDealroomApiUsage();
   
   const dealroomSync = useDealroomSync();
+  const researchSync = useFetchResearch();
 
   const handleDealroomSync = () => {
     dealroomSync.mutate({});
+  };
+
+  const handleResearchSync = () => {
+    researchSync.mutate({});
   };
 
   const activeUsers = users.filter((u) => u.status === "active").length;
