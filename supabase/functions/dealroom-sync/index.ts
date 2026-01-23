@@ -68,6 +68,37 @@ interface DealroomCompany {
   industries?: Array<{ name: string }> | string[];
   patents_count?: number;
   news?: Array<{ title: string; date: string; url: string }>;
+  // New high-priority fields
+  status?: string;                    // active, closed, acquired
+  employee_growth?: number;           // % growth rate
+  jobs_count?: number;                // open positions
+  technologies?: Array<{ name: string }> | string[];  // tech stack
+  lead_investors?: Array<{ name: string }> | string[];
+  funding_rounds?: Array<{
+    date?: string;
+    amount?: number;
+    round_type?: string;
+    investors?: Array<{ name: string }> | string[];
+  }>;
+}
+
+// Calculate trend based on employee growth and hiring activity
+function calculateTrend(companies: Array<{ employee_growth: number | null; jobs_count: number | null }>): 'up' | 'down' | 'stable' {
+  const companiesWithGrowth = companies.filter(c => c.employee_growth !== null);
+  if (companiesWithGrowth.length === 0) return 'stable';
+  
+  const avgGrowth = companiesWithGrowth.reduce((sum, c) => sum + (c.employee_growth || 0), 0) / companiesWithGrowth.length;
+  const totalJobs = companies.reduce((sum, c) => sum + (c.jobs_count || 0), 0);
+  
+  // Strong growth signals
+  if (avgGrowth > 15 || totalJobs > 100) return 'up';
+  // Moderate growth
+  if (avgGrowth > 5 || totalJobs > 30) return 'up';
+  // Decline signals
+  if (avgGrowth < -10) return 'down';
+  if (avgGrowth < -5 && totalJobs < 10) return 'down';
+  
+  return 'stable';
 }
 
 interface ApiUsage {
@@ -299,6 +330,13 @@ serve(async (req) => {
         const matchingKeywords = keywords?.filter(k => matchingKeywordIds.includes(k.id)) || [];
 
         for (const company of companies) {
+          // Filter out inactive companies (closed, acquired, etc.)
+          const companyStatus = company.status?.toLowerCase() || 'active';
+          if (companyStatus !== 'active') {
+            console.log(`Skipping inactive company: ${company.name} (status: ${companyStatus})`);
+            continue;
+          }
+
           const hqLocation = company.hq_locations?.[0];
           // Dealroom returns country.name (e.g., "Italy"), not code
           const hqCountry = hqLocation?.country?.name || hqLocation?.country?.code || null;
@@ -327,7 +365,25 @@ serve(async (req) => {
             ? company.investors.map(i => typeof i === 'string' ? i : i.name)
             : [];
 
-          // Upsert company
+          // Parse new high-priority fields
+          const techStack = Array.isArray(company.technologies)
+            ? company.technologies.map(t => typeof t === 'string' ? t : t.name)
+            : [];
+          const leadInvestors = Array.isArray(company.lead_investors)
+            ? company.lead_investors.map(i => typeof i === 'string' ? i : i.name)
+            : [];
+          const fundingRounds = Array.isArray(company.funding_rounds)
+            ? company.funding_rounds.map(r => ({
+                date: r.date || null,
+                amount: r.amount ? r.amount * 1_000_000 : null,
+                round_type: r.round_type || null,
+                investors: Array.isArray(r.investors)
+                  ? r.investors.map(i => typeof i === 'string' ? i : i.name)
+                  : [],
+              }))
+            : [];
+
+          // Upsert company with all new fields
           const { data: upsertedCompany, error: upsertError } = await supabase
             .from("dealroom_companies")
             .upsert(
@@ -350,6 +406,13 @@ serve(async (req) => {
                 industries: industries,
                 patents_count: patentsCount,
                 news_items: company.news || null,
+                // New high-priority fields
+                status: companyStatus,
+                employee_growth: company.employee_growth ?? null,
+                jobs_count: company.jobs_count ?? 0,
+                tech_stack: techStack,
+                lead_investors: leadInvestors,
+                funding_rounds: fundingRounds,
                 raw_data: company,
                 synced_at: new Date().toISOString(),
               },
@@ -405,15 +468,15 @@ serve(async (req) => {
         if (mappings && mappings.length > 0) {
           const companyIds = mappings.map(m => m.company_id);
 
-          // Get aggregate stats for these companies (include name for key_players)
+          // Get aggregate stats for these companies (include all fields for scoring)
           const { data: companies } = await supabase
             .from("dealroom_companies")
-            .select("name, total_funding_eur, employees_count, patents_count")
+            .select("name, total_funding_eur, employees_count, patents_count, employee_growth, jobs_count")
             .in("id", companyIds)
             .order("total_funding_eur", { ascending: false });
 
           if (companies && companies.length > 0) {
-            const totalFunding = companies.reduce((sum, c) => sum + (c.total_funding_eur || 0), 0);
+            const totalFunding = companies.reduce((sum, c) => sum + (Number(c.total_funding_eur) || 0), 0);
             const totalEmployees = companies.reduce((sum, c) => sum + (c.employees_count || 0), 0);
             const totalPatents = companies.reduce((sum, c) => sum + (c.patents_count || 0), 0);
 
@@ -422,20 +485,23 @@ serve(async (req) => {
             const employeesScore = calculateEmployeesScore(totalEmployees / companies.length);
             const patentsScore = calculatePatentsScore(totalPatents);
 
+            // Calculate trend based on employee growth and hiring activity
+            const trend = calculateTrend(companies);
+
             // Extract top 5 companies by funding as key players
             const keyPlayers = companies
               .slice(0, 5)
               .map(c => c.name)
               .filter((name): name is string => !!name);
 
-            // Upsert technology record with key_players
+            // Upsert technology record with key_players and trend
             await supabase
               .from("technologies")
               .upsert(
                 {
                   keyword_id: kw.id,
                   name: kw.display_name,
-                  description: `Technology area with ${companies.length} companies`,
+                  description: `Technology area with ${companies.length} active companies`,
                   investment_score: investmentScore,
                   employees_score: employeesScore,
                   patents_score: patentsScore,
@@ -444,6 +510,7 @@ serve(async (req) => {
                   total_patents: totalPatents,
                   dealroom_company_count: companies.length,
                   key_players: keyPlayers,
+                  trend: trend,
                   last_updated: new Date().toISOString(),
                 },
                 { onConflict: "keyword_id" }
