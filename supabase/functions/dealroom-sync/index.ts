@@ -362,7 +362,18 @@ serve(async (req) => {
           const hqLocation = company.hq_locations?.[0];
           // Dealroom returns country.name (e.g., "Italy"), not code
           const hqCountry = hqLocation?.country?.name || hqLocation?.country?.code || null;
-          const hqCity = hqLocation?.city || null;
+          
+          // Parse hq_city - Dealroom may return city as string or as object with name property
+          let hqCity: string | null = null;
+          if (hqLocation?.city) {
+            if (typeof hqLocation.city === 'string') {
+              hqCity = hqLocation.city;
+            } else if (typeof hqLocation.city === 'object' && hqLocation.city !== null) {
+              // Handle JSON object: { id: 123, name: "CityName", ... }
+              const cityObj = hqLocation.city as { name?: string };
+              hqCity = cityObj.name || null;
+            }
+          }
 
           // Dealroom returns funding as direct number in millions EUR
           const totalFundingEur = typeof company.total_funding === 'number' 

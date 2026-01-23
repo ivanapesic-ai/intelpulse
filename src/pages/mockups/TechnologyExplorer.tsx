@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, TrendingUp, TrendingDown, Minus, FileText, DollarSign, Users, Calendar, Building2, Newspaper, ExternalLink, Lock } from "lucide-react";
+import { Search, TrendingUp, TrendingDown, Minus, FileText, DollarSign, Users, Calendar, Building2, Newspaper, ExternalLink, Lock, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlatformHeader } from "@/components/mockups/PlatformHeader";
-import { CompanyDeepDive } from "@/components/mockups/CompanyDeepDive";
+import { MarketIntelligence } from "@/components/mockups/MarketIntelligence";
 import { useTechnologies } from "@/hooks/useTechnologies";
 import { formatFundingEur, formatNumber, MATURITY_SCORE_CONFIG, type Technology } from "@/types/database";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from "recharts";
@@ -257,9 +257,9 @@ export default function TechnologyExplorer() {
               <Tabs defaultValue="overview" className="mt-4">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="companies" className="flex items-center gap-1.5">
-                    <Building2 className="h-3.5 w-3.5" />
-                    Companies ({selectedTech.dealroomCompanyCount})
+                  <TabsTrigger value="market-intel" className="flex items-center gap-1.5">
+                    <Target className="h-3.5 w-3.5" />
+                    Market Intelligence
                   </TabsTrigger>
                 </TabsList>
 
@@ -476,8 +476,8 @@ export default function TechnologyExplorer() {
                   </div>
                 </TabsContent>
 
-              <TabsContent value="companies" className="mt-4">
-                <CompanyDeepDive 
+              <TabsContent value="market-intel" className="mt-4">
+                <MarketIntelligence 
                   keywordId={selectedTech.keywordId} 
                   technologyName={selectedTech.name} 
                 />
