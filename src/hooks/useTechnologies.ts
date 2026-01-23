@@ -3,6 +3,89 @@ import { supabase } from "@/integrations/supabase/client";
 import type { TechnologyKeyword, Technology, KeywordSource } from "@/types/database";
 import { toast } from "@/hooks/use-toast";
 
+// Types for Dealroom taxonomy
+export interface DealroomTaxonomyItem {
+  id: string;
+  taxonomy_type: 'industry' | 'sub_industry' | 'technology';
+  name: string;
+  slug: string | null;
+  parent_name: string | null;
+  is_active: boolean;
+  last_synced_at: string;
+}
+
+export interface DealroomTaxonomyResponse {
+  industries: DealroomTaxonomyItem[];
+  sub_industries: DealroomTaxonomyItem[];
+  technology: DealroomTaxonomyItem[];
+}
+
+// Fetch Dealroom taxonomy from database
+export function useDealroomTaxonomy() {
+  return useQuery({
+    queryKey: ["dealroom-taxonomy"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("dealroom_taxonomy")
+        .select("*")
+        .eq("is_active", true)
+        .order("name");
+
+      if (error) throw error;
+
+      const grouped: DealroomTaxonomyResponse = {
+        industries: (data || []).filter(d => d.taxonomy_type === 'industry') as DealroomTaxonomyItem[],
+        sub_industries: (data || []).filter(d => d.taxonomy_type === 'sub_industry') as DealroomTaxonomyItem[],
+        technology: (data || []).filter(d => d.taxonomy_type === 'technology') as DealroomTaxonomyItem[],
+      };
+
+      return grouped;
+    },
+  });
+}
+
+// Sync Dealroom taxonomy from edge function
+export function useSyncDealroomTaxonomy() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/dealroom-taxonomy`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ action: "sync" }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to sync taxonomy");
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["dealroom-taxonomy"] });
+      toast({
+        title: "Taxonomy synced",
+        description: `Loaded ${data.counts.total} Dealroom categories (${data.counts.industries} industries, ${data.counts.sub_industries} sub-industries, ${data.counts.technology_tags} technology tags).`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Sync failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
 // AI-powered tag mapping
 export function useAITagMapping() {
   const queryClient = useQueryClient();

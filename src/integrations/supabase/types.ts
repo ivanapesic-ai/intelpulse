@@ -329,6 +329,48 @@ export type Database = {
         }
         Relationships: []
       }
+      dealroom_taxonomy: {
+        Row: {
+          company_count: number | null
+          created_at: string | null
+          dealroom_id: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          last_synced_at: string | null
+          name: string
+          parent_name: string | null
+          slug: string | null
+          taxonomy_type: string
+        }
+        Insert: {
+          company_count?: number | null
+          created_at?: string | null
+          dealroom_id?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_synced_at?: string | null
+          name: string
+          parent_name?: string | null
+          slug?: string | null
+          taxonomy_type: string
+        }
+        Update: {
+          company_count?: number | null
+          created_at?: string | null
+          dealroom_id?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_synced_at?: string | null
+          name?: string
+          parent_name?: string | null
+          slug?: string | null
+          taxonomy_type?: string
+        }
+        Relationships: []
+      }
       document_technology_mentions: {
         Row: {
           confidence_score: number | null
