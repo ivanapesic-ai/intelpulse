@@ -187,6 +187,9 @@ export type Database = {
       }
       dealroom_companies: {
         Row: {
+          acquired_by: string | null
+          acquired_date: string | null
+          acquisition_amount_eur: number | null
           created_at: string | null
           dealroom_id: string
           description: string | null
@@ -217,6 +220,9 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          acquired_by?: string | null
+          acquired_date?: string | null
+          acquisition_amount_eur?: number | null
           created_at?: string | null
           dealroom_id: string
           description?: string | null
@@ -247,6 +253,9 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          acquired_by?: string | null
+          acquired_date?: string | null
+          acquisition_amount_eur?: number | null
           created_at?: string | null
           dealroom_id?: string
           description?: string | null

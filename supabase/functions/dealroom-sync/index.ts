@@ -80,6 +80,10 @@ interface DealroomCompany {
     round_type?: string;
     investors?: Array<{ name: string }> | string[];
   }>;
+  // Acquisition tracking fields
+  acquired_by?: string | { name?: string; id?: string };
+  acquisition_date?: string;
+  acquisition_amount?: number;
 }
 
 // Calculate trend based on employee growth and hiring activity
@@ -330,11 +334,29 @@ serve(async (req) => {
         const matchingKeywords = keywords?.filter(k => matchingKeywordIds.includes(k.id)) || [];
 
         for (const company of companies) {
-          // Filter out inactive companies (closed, acquired, etc.)
+          // Get company status - we now keep acquired companies to track acquisitions!
           const companyStatus = company.status?.toLowerCase() || 'active';
-          if (companyStatus !== 'active') {
-            console.log(`Skipping inactive company: ${company.name} (status: ${companyStatus})`);
+          
+          // Skip only truly closed/dead companies, but KEEP acquired companies
+          if (companyStatus === 'closed' || companyStatus === 'dead') {
+            console.log(`Skipping closed company: ${company.name} (status: ${companyStatus})`);
             continue;
+          }
+          
+          // Parse acquisition data if company was acquired
+          const acquiredBy = company.acquired_by
+            ? (typeof company.acquired_by === 'string' 
+                ? company.acquired_by 
+                : company.acquired_by.name || null)
+            : null;
+          const acquiredDate = company.acquisition_date || null;
+          // Acquisition amount in millions, convert to full EUR
+          const acquisitionAmountEur = typeof company.acquisition_amount === 'number'
+            ? company.acquisition_amount * 1_000_000
+            : null;
+          
+          if (companyStatus === 'acquired' && acquiredBy) {
+            console.log(`Acquired company: ${company.name} → acquired by ${acquiredBy}`);
           }
 
           const hqLocation = company.hq_locations?.[0];
@@ -413,6 +435,10 @@ serve(async (req) => {
                 tech_stack: techStack,
                 lead_investors: leadInvestors,
                 funding_rounds: fundingRounds,
+                // Acquisition tracking
+                acquired_by: acquiredBy,
+                acquired_date: acquiredDate,
+                acquisition_amount_eur: acquisitionAmountEur,
                 raw_data: company,
                 synced_at: new Date().toISOString(),
               },
