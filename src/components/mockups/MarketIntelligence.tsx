@@ -1,10 +1,12 @@
-import { useMemo } from "react";
-import { Building2, DollarSign, Users, MapPin, TrendingUp, Briefcase, Target } from "lucide-react";
+import { Building2, DollarSign, MapPin, TrendingUp, Target, RefreshCw, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatFundingEur, formatNumber } from "@/types/database";
 import { useMarketIntelligence } from "@/hooks/useMarketIntelligence";
+import { useDealroomSyncLogs, useDealroomSync } from "@/hooks/useDealroomSync";
+import { formatDistanceToNow } from "date-fns";
 
 interface MarketIntelligenceProps {
   keywordId?: string;
@@ -12,6 +14,11 @@ interface MarketIntelligenceProps {
 }
 
 export function MarketIntelligence({ keywordId, technologyName }: MarketIntelligenceProps) {
+  const { data: syncLogs } = useDealroomSyncLogs(1);
+  const syncMutation = useDealroomSync();
+  
+  const lastSync = syncLogs?.[0];
+  const lastSyncTime = lastSync?.completedAt || lastSync?.startedAt;
   const { data, isLoading, error } = useMarketIntelligence(keywordId);
 
   if (isLoading) {
@@ -53,6 +60,31 @@ export function MarketIntelligence({ keywordId, technologyName }: MarketIntellig
 
   return (
     <div className="space-y-6">
+      {/* Sync Status Bar */}
+      <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Clock className="h-4 w-4" />
+          {lastSyncTime ? (
+            <span>Last synced {formatDistanceToNow(new Date(lastSyncTime), { addSuffix: true })}</span>
+          ) : (
+            <span>No sync data available</span>
+          )}
+          {lastSync?.status === 'running' && (
+            <Badge variant="outline" className="ml-2 text-xs animate-pulse">Syncing...</Badge>
+          )}
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => syncMutation.mutate({ limit: 100 })}
+          disabled={syncMutation.isPending}
+          className="gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
+          {syncMutation.isPending ? 'Syncing...' : 'Refresh Data'}
+        </Button>
+      </div>
+
       {/* Market Summary */}
       <Card>
         <CardHeader className="pb-3">
