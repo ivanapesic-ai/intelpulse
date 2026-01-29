@@ -403,6 +403,18 @@ serve(async (req) => {
         const companies: DealroomCompany[] = dealroomData.items || dealroomData.companies || [];
         
         console.log(`Tag "${searchTag}": found ${dealroomData.total || companies.length} companies`);
+        
+        // Log a sample company to debug which fields are actually returned
+        if (companies.length > 0) {
+          const sample = companies[0];
+          const availableFields = Object.keys(sample);
+          console.log(`Sample company fields available: ${availableFields.join(', ')}`);
+          // Check specifically for news-related fields
+          console.log(`News field present: ${sample.news !== undefined}, type: ${typeof sample.news}`);
+          if (sample.news) {
+            console.log(`News data sample:`, JSON.stringify(sample.news).substring(0, 200));
+          }
+        }
 
         recordsFetched += companies.length;
 

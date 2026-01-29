@@ -412,15 +412,15 @@ export default function TechnologyExplorer() {
                       </Card>
 
                       {/* Recent News */}
-                      {selectedTech.recentNews && selectedTech.recentNews.length > 0 && (
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="text-sm text-foreground flex items-center gap-2">
-                              <Newspaper className="h-4 w-4" />
-                              Recent News
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-sm text-foreground flex items-center gap-2">
+                            <Newspaper className="h-4 w-4" />
+                            Recent News
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          {selectedTech.recentNews && selectedTech.recentNews.length > 0 ? (
                             <div className="space-y-2">
                               {selectedTech.recentNews.slice(0, 3).map((news, index) => (
                                 <a
@@ -445,9 +445,18 @@ export default function TechnologyExplorer() {
                                 </a>
                               ))}
                             </div>
-                          </CardContent>
-                        </Card>
-                      )}
+                          ) : (
+                            <div className="text-center py-4">
+                              <p className="text-sm text-muted-foreground">
+                                No news data available
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Dealroom API tier doesn't include company news
+                              </p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
 
                       {/* Last Updated */}
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
