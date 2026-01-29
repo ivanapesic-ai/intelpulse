@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.ai-tag-mapper]
 verify_jwt = false
+
+[functions.tracxn-sync]
+verify_jwt = false
