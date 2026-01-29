@@ -6,6 +6,47 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Blacklist of generic enabling technologies that should NEVER be suggested
+// unless the CEI keyword itself is specifically that technology
+const BLACKLISTED_GENERIC_TERMS = [
+  "artificial intelligence",
+  "machine learning",
+  "ai/ml",
+  "software",
+  "cloud computing",
+  "cloud",
+  "automation",
+  "iot",
+  "internet of things",
+  "robotics",
+  "robots",
+  "sustainability",
+  "cleantech",
+  "climate tech",
+  "data analytics",
+  "big data",
+  "computer vision",
+  "deep learning",
+  "automotive",
+  "transportation",
+  "energy",
+  "technology",
+  "hardware",
+  "saas",
+];
+
+// Check if a term is in the blacklist
+function isGenericTerm(term: string): boolean {
+  return BLACKLISTED_GENERIC_TERMS.includes(term.toLowerCase().trim());
+}
+
+// Check if the keyword itself is the generic term (then it's allowed)
+function keywordMatchesGenericTerm(keyword: string, term: string): boolean {
+  const kwLower = keyword.toLowerCase().trim();
+  const termLower = term.toLowerCase().trim();
+  return kwLower.includes(termLower) || termLower.includes(kwLower);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -44,7 +85,16 @@ serve(async (req) => {
       else if (t.taxonomy_type === "technology") techTags.push(t.name);
     });
 
-    console.log(`Loaded taxonomy: ${industries.length} industries, ${subIndustries.length} sub-industries, ${techTags.length} tech tags`);
+    // Also fetch Dealroom-source keywords as verified mapping targets
+    const { data: dealroomKeywords } = await supabase
+      .from("technology_keywords")
+      .select("keyword, display_name")
+      .eq("source", "dealroom")
+      .eq("is_active", true);
+
+    const verifiedDealroomTerms = (dealroomKeywords || []).map(k => k.display_name);
+
+    console.log(`Loaded taxonomy: ${industries.length} industries, ${subIndustries.length} sub-industries, ${techTags.length} tech tags, ${verifiedDealroomTerms.length} verified Dealroom keywords`);
 
     // Fetch keywords to map
     let query = supabase
@@ -70,46 +120,79 @@ serve(async (req) => {
 
     console.log(`Processing ${keywords.length} keywords for AI tag mapping`);
 
-    // Build prompt for AI with structured taxonomy
+    // Build prompt for AI with STRICT matching rules
     const keywordList = keywords.map(k => 
       `- "${k.display_name}" (keyword: ${k.keyword}, description: ${k.description || "N/A"})`
     ).join("\n");
 
-    const systemPrompt = `You are an expert at mapping technology taxonomy terms to Dealroom's company classification system.
-Your task is to suggest the most relevant Dealroom industries, sub-industries, AND technology tags for each CEI-SPHERE keyword.
+    const systemPrompt = `You are a STRICT taxonomy mapper for Dealroom company discovery. 
+Your task is to suggest ONLY the most precisely relevant Dealroom terms for each CEI-SPHERE keyword.
+
+CRITICAL RULES - FOLLOW EXACTLY:
+
+1. ONLY suggest terms that describe the EXACT SAME technology/domain as the keyword
+   - The term must be so specific that searching it would return ONLY companies in that exact domain
+   
+2. NEVER suggest generic enabling technologies unless the CEI keyword IS that technology:
+   - FORBIDDEN: artificial intelligence, machine learning, software, cloud, IoT, robotics, automation, sustainability, cleantech
+   - WRONG: "Autonomous Driving" -> "artificial intelligence" (would match ANY AI company!)
+   - RIGHT: "Autonomous Driving" -> "autonomous driving", "autonomous vehicles", "ADAS", "LiDAR"
+   - EXCEPTION: If keyword IS "Artificial Intelligence", then "artificial intelligence" is allowed
+
+3. NEVER suggest overly broad industry terms:
+   - FORBIDDEN for most keywords: "automotive", "transportation", "energy", "technology"
+   - These match too many unrelated companies
+
+4. PREFER exact or near-exact matches from Dealroom's verified terms:
+   VERIFIED DEALROOM TERMS (prioritize these): ${verifiedDealroomTerms.slice(0, 40).join(", ")}
+
+5. QUALITY TEST: Ask yourself "Would searching this tag find ONLY companies in the ${keywords[0]?.display_name || 'target'} domain?"
+   - If NO (would match other domains), DON'T include it
+   - If YES (specific to this domain), include it
+
+6. BE CONSERVATIVE: It's better to have 1-2 precise matches than 5 vague ones
 
 AVAILABLE DEALROOM TAXONOMY:
 
-INDUSTRIES (${industries.length} total):
-${industries.slice(0, 50).join(", ")}${industries.length > 50 ? `... and ${industries.length - 50} more` : ""}
+INDUSTRIES (use sparingly - most are too broad): ${industries.slice(0, 30).join(", ")}
 
-SUB-INDUSTRIES (${subIndustries.length} total):
-${subIndustries.slice(0, 80).join(", ")}${subIndustries.length > 80 ? `... and ${subIndustries.length - 80} more` : ""}
+SUB-INDUSTRIES (more specific - good for matching): ${subIndustries.slice(0, 60).join(", ")}
 
-TECHNOLOGY TAGS (${techTags.length} total):
-${techTags.slice(0, 100).join(", ")}${techTags.length > 100 ? `... and ${techTags.length - 100} more` : ""}
+TECHNOLOGY TAGS (most specific - best for matching): ${techTags.slice(0, 80).join(", ")}
 
-RULES:
-1. For EACH keyword, suggest:
-   - 1-2 industries (broad categories like "transportation", "energy")
-   - 1-3 sub-industries (specific sectors like "electric vehicles", "energy storage")
-   - 1-4 technology tags (granular terms like "battery technology", "charging infrastructure")
-2. Prefer specific, relevant terms over generic ones
-3. Consider the keyword's domain context (automotive, energy, IoT, AI, etc.)
-4. All suggested terms must be EXACT matches from the available lists
-5. Return structured JSON only, no explanations`;
+EXAMPLES OF CORRECT MAPPINGS:
 
-    const userPrompt = `Map these CEI-SPHERE technology keywords to Dealroom taxonomy:
+"Autonomous Driving" ->
+  industries: [] (none - "automotive" too broad)
+  sub_industries: ["Autonomous vehicles"]
+  tags: ["Autonomous driving", "ADAS", "LiDAR", "AV Software"]
+
+"Battery Electric Vehicle" ->
+  industries: []
+  sub_industries: ["Electric vehicles"]
+  tags: ["EV", "Electric mobility", "EV Battery"]
+
+"Smart Grid" ->
+  industries: []
+  sub_industries: []
+  tags: ["Smart grid", "Grid balancing", "Demand response"]
+
+"Vehicle to Grid" ->
+  industries: []
+  sub_industries: []
+  tags: ["Vehicle-to-grid", "V2X", "Bidirectional charging", "EV Charging"]`;
+
+    const userPrompt = `Map these CEI-SPHERE technology keywords to Dealroom taxonomy with STRICT precision:
 
 ${keywordList}
 
-Return a JSON array with this structure:
+Return a JSON array. Be VERY selective - only include terms that precisely match the domain:
 [
   { 
     "keyword_id": "<id>", 
-    "industries": ["industry1", "industry2"],
-    "sub_industries": ["sub1", "sub2"],
-    "tags": ["tag1", "tag2", "tag3"]
+    "industries": ["only if highly specific match"],
+    "sub_industries": ["prefer these for domain matching"],
+    "tags": ["most specific terms only"]
   },
   ...
 ]`;
@@ -132,7 +215,7 @@ Return a JSON array with this structure:
             type: "function",
             function: {
               name: "map_keywords_to_taxonomy",
-              description: "Map technology keywords to Dealroom industries, sub-industries, and tags",
+              description: "Map technology keywords to Dealroom industries, sub-industries, and tags with strict precision",
               parameters: {
                 type: "object",
                 properties: {
@@ -145,17 +228,17 @@ Return a JSON array with this structure:
                         industries: { 
                           type: "array", 
                           items: { type: "string" },
-                          description: "Broad industry categories"
+                          description: "Broad industry categories - use sparingly, most are too broad"
                         },
                         sub_industries: { 
                           type: "array", 
                           items: { type: "string" },
-                          description: "Specific sub-industry sectors"
+                          description: "Specific sub-industry sectors - good for domain matching"
                         },
                         tags: { 
                           type: "array", 
                           items: { type: "string" },
-                          description: "Granular technology tags"
+                          description: "Granular technology tags - most specific, best for matching"
                         }
                       },
                       required: ["keyword_id", "industries", "sub_industries", "tags"]
@@ -190,7 +273,7 @@ Return a JSON array with this structure:
     }
 
     const aiResult = await response.json();
-    console.log("AI response:", JSON.stringify(aiResult, null, 2));
+    console.log("AI response received, processing mappings...");
 
     // Extract mappings from tool call
     interface Mapping {
@@ -212,12 +295,39 @@ Return a JSON array with this structure:
     const validSubIndustries = new Set(subIndustries.map(t => t.toLowerCase()));
     const validTags = new Set(techTags.map(t => t.toLowerCase()));
 
-    mappings = mappings.map(m => ({
-      ...m,
-      industries: m.industries.filter(t => validIndustries.has(t.toLowerCase())),
-      sub_industries: m.sub_industries.filter(t => validSubIndustries.has(t.toLowerCase())),
-      tags: m.tags.filter(t => validTags.has(t.toLowerCase()))
-    }));
+    // Apply strict validation + blacklist filtering
+    mappings = mappings.map(m => {
+      const keyword = keywords.find(k => k.id === m.keyword_id);
+      const keywordText = keyword?.keyword || "";
+      
+      // Filter function that removes blacklisted terms unless keyword matches
+      const filterBlacklisted = (term: string) => {
+        if (isGenericTerm(term)) {
+          // Only allow if the keyword itself is the generic term
+          return keywordMatchesGenericTerm(keywordText, term);
+        }
+        return true;
+      };
+
+      return {
+        ...m,
+        industries: m.industries
+          .filter(t => validIndustries.has(t.toLowerCase()))
+          .filter(filterBlacklisted),
+        sub_industries: m.sub_industries
+          .filter(t => validSubIndustries.has(t.toLowerCase()))
+          .filter(filterBlacklisted),
+        tags: m.tags
+          .filter(t => validTags.has(t.toLowerCase()))
+          .filter(filterBlacklisted)
+      };
+    });
+
+    // Log filtering results for debugging
+    mappings.forEach(m => {
+      const keyword = keywords.find(k => k.id === m.keyword_id);
+      console.log(`${keyword?.display_name}: ${m.industries.length} industries, ${m.sub_industries.length} sub-industries, ${m.tags.length} tags`);
+    });
 
     // Update database with new mappings (all three columns)
     let updated = 0;
@@ -241,7 +351,7 @@ Return a JSON array with this structure:
       }
     }
 
-    console.log(`Successfully mapped ${updated}/${keywords.length} keywords`);
+    console.log(`Successfully mapped ${updated}/${keywords.length} keywords with strict filtering`);
 
     return new Response(
       JSON.stringify({

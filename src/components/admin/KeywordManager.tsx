@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, Wand2, ChevronDown, ChevronUp, X, Plus, Check, AlertCircle, RefreshCw, Factory, Folder, Tag, Loader2 } from "lucide-react";
+import { Search, Wand2, ChevronDown, ChevronUp, X, Plus, Check, AlertCircle, RefreshCw, Factory, Folder, Tag, Loader2, BadgeCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,28 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+// Suggested mappings from Dealroom-source keywords for common CEI domains
+const SUGGESTED_DEALROOM_MAPPINGS: Record<string, string[]> = {
+  "autonomous-driving": ["AV Software", "AV Simulation", "AV Labeling", "LiDAR", "AV Camera", "AV Radar", "Teledriving", "Autonomous Mobile Robots", "Telematics"],
+  "self-driving-vehicles": ["AV Software", "AV Simulation", "AV Labeling", "LiDAR", "AV Camera", "AV Radar", "Teledriving"],
+  "autonomous-vehicle": ["AV Software", "AV Simulation", "AV Labeling", "LiDAR", "Autonomous Mobile Robots"],
+  "bev-battery-electric-vehicle": ["EV Battery", "EV Manufacturing", "EV Motor", "Electric Mobility", "EV Services"],
+  "ev-electric-vehicle": ["Electric Mobility", "EV Battery", "EV Charging", "EV Services"],
+  "e-vehicle": ["Electric Mobility", "EV Battery", "EV Charging", "EV Services"],
+  "v2g-vehicle-to-grid": ["Electric Mobility", "EV Charging"],
+  "bidirectional-charging": ["EV Charging", "Electric Mobility"],
+  "ev-charging": ["EV Charging", "Electric Mobility"],
+  "logistics": ["Logistics Tech", "Logistics Robots", "Fleet Management", "Supply Chain Management"],
+  "smart-logistics": ["Logistics Tech", "Logistics Robots", "Fleet Management"],
+  "supply-chain": ["Supply Chain Management", "Logistics Tech"],
+  "smart-city": ["Smart Cities"],
+  "maritime": ["Maritime"],
+  "sbs-storage-battery-systems": ["Battery Management Systems"],
+  "mesu-mobile-energy-storage-units": ["Battery Management Systems", "Electric Mobility"],
+  "fleet-management": ["Fleet Management", "Telematics"],
+};
 
 interface KeywordWithMappings {
   id: string;
@@ -398,6 +420,49 @@ export function KeywordManager() {
                           </div>
                         )}
                       </div>
+
+                      {/* Suggested Dealroom Mappings (verified terms) */}
+                      {SUGGESTED_DEALROOM_MAPPINGS[keyword.keyword] && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <BadgeCheck className="h-4 w-4 text-amber-400" />
+                            <p className="text-sm font-medium text-foreground">Suggested Dealroom Terms:</p>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="text-xs max-w-[200px]">These are verified Dealroom terms that closely match this CEI keyword's domain</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {SUGGESTED_DEALROOM_MAPPINGS[keyword.keyword].map((term) => {
+                              const isAdded = keyword.dealroomTags.includes(term) || 
+                                             keyword.dealroomSubIndustries.includes(term) ||
+                                             keyword.dealroomIndustries.includes(term);
+                              return (
+                                <Badge
+                                  key={term}
+                                  variant="outline"
+                                  className={`text-xs cursor-pointer transition-colors ${
+                                    isAdded 
+                                      ? "bg-amber-500/20 text-amber-400 border-amber-500/50" 
+                                      : "bg-amber-500/5 text-amber-300 border-amber-500/20 hover:bg-amber-500/15 hover:border-amber-500/40"
+                                  }`}
+                                  onClick={() => !isAdded && handleAddMapping(keyword.id, term, "tag")}
+                                >
+                                  {isAdded && <Check className="h-3 w-3 mr-1" />}
+                                  <BadgeCheck className="h-3 w-3 mr-1" />
+                                  {term}
+                                </Badge>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Add from Taxonomy */}
                       <div>
