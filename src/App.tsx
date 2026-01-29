@@ -16,6 +16,7 @@ import ArchitectureDiagrams from "./pages/mockups/ArchitectureDiagrams";
 import AnnexA from "./pages/mockups/AnnexA";
 import AnnexB from "./pages/mockups/AnnexB";
 import DealroomApiParams from "./pages/mockups/DealroomApiParams";
+import TracxnExplorer from "./pages/mockups/TracxnExplorer";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/mockups/annex-a" element={<AnnexA />} />
           <Route path="/mockups/annex-b" element={<AnnexB />} />
           <Route path="/mockups/dealroom-api" element={<DealroomApiParams />} />
+          <Route path="/mockups/tracxn" element={<TracxnExplorer />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
