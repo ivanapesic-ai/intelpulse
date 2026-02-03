@@ -14,7 +14,7 @@ const DEALROOM_INDUSTRIES = [
   "Data & analytics", "Education", "Energy", "Enterprise software",
   "Entertainment", "Fashion", "Fintech", "Gaming", "Health", "Hospitality",
   "Human resources", "Industrial & manufacturing", "Insurance", "Legal",
-  "Logistics", "Media", "Real estate", "Retail", "Robotics", "Security",
+  "Logistics", "Marketing", "Media", "Real estate", "Retail", "Robotics", "Security",
   "Semiconductors", "Space", "Sports", "Sustainability", "Telecom", "Transportation",
   "Travel", "Wellness & fitness"
 ];
@@ -100,7 +100,7 @@ const DEALROOM_SUB_INDUSTRIES = [
   { name: "Satellite", parent: "Space" }
 ];
 
-// Technology tags (granular tech keywords)
+// Technology tags (granular tech keywords) - expanded with company-derived tags
 const DEALROOM_TECHNOLOGY_TAGS = [
   // Mobility & EV
   "Electric mobility", "EV", "EV charging infrastructure", "Battery technology",
@@ -167,7 +167,12 @@ const DEALROOM_TECHNOLOGY_TAGS = [
   // Hardware
   "Power electronics", "Semiconductors", "Silicon carbide", "GaN",
   "Wide bandgap", "Battery cells", "Battery packs", "Charging hardware",
-  "Smart hardware", "Connected devices"
+  "Smart hardware", "Connected devices",
+  
+  // Additional tags found in company data
+  "3D technology", "Augmented reality", "Big data", "Connected device",
+  "Deep tech", "Hardware", "IoT InternetOfThings", "Mobile app",
+  "Recognition technology", "Virtual reality"
 ];
 
 serve(async (req) => {
@@ -296,8 +301,99 @@ serve(async (req) => {
       });
     }
 
+    // New action: sync from actual company data to fill gaps
+    if (action === 'sync-from-companies') {
+      // Get unique tech_stack values from companies
+      const { data: techStackData, error: techError } = await supabase
+        .from('dealroom_companies')
+        .select('tech_stack');
+      
+      if (techError) throw techError;
+
+      const techTags = new Set<string>();
+      techStackData?.forEach(company => {
+        (company.tech_stack as string[] | null)?.forEach(tag => techTags.add(tag));
+      });
+
+      // Get unique industries from companies
+      const { data: industriesData, error: indError } = await supabase
+        .from('dealroom_companies')
+        .select('industries');
+      
+      if (indError) throw indError;
+
+      const industries = new Set<string>();
+      industriesData?.forEach(company => {
+        (company.industries as string[] | null)?.forEach(ind => industries.add(ind));
+      });
+
+      const insertData: Array<{
+        taxonomy_type: string;
+        name: string;
+        slug: string;
+        is_active: boolean;
+        last_synced_at: string;
+        description?: string;
+      }> = [];
+
+      const seen = new Set<string>();
+
+      // Add tech tags from companies
+      for (const tag of techTags) {
+        const key = `technology:${tag}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          insertData.push({
+            taxonomy_type: 'technology',
+            name: tag,
+            slug: tag.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            is_active: true,
+            last_synced_at: new Date().toISOString(),
+            description: 'From company data'
+          });
+        }
+      }
+
+      // Add industries from companies  
+      for (const ind of industries) {
+        const key = `industry:${ind}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          insertData.push({
+            taxonomy_type: 'industry',
+            name: ind,
+            slug: ind.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            is_active: true,
+            last_synced_at: new Date().toISOString(),
+            description: 'From company data'
+          });
+        }
+      }
+
+      const { error: upsertError } = await supabase
+        .from('dealroom_taxonomy')
+        .upsert(insertData, { 
+          onConflict: 'taxonomy_type,name',
+          ignoreDuplicates: false
+        });
+
+      if (upsertError) throw upsertError;
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Synced taxonomy from company data',
+        counts: {
+          tech_tags_added: techTags.size,
+          industries_added: industries.size,
+          total: insertData.length
+        }
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     return new Response(JSON.stringify({
-      error: 'Unknown action. Use "sync" or "list".'
+      error: 'Unknown action. Use "sync", "list", or "sync-from-companies".'
     }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
