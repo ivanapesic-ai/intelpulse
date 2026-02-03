@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, RefreshCw, Users, BarChart3, Database, Trash2, Edit, FileText, Upload, CheckCircle, XCircle, Clock, AlertCircle, Zap, Globe, Settings } from "lucide-react";
+import { ArrowLeft, Plus, RefreshCw, Users, BarChart3, Database, Trash2, Edit, FileText, Upload, CheckCircle, XCircle, Clock, AlertCircle, Zap, Globe, Settings, Network } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { formatFundingEur, formatNumber } from "@/types/database";
 import { WebScrapingPanel } from "@/components/admin/WebScrapingPanel";
 import { PdfQueuePanel } from "@/components/admin/PdfQueuePanel";
 import { KeywordManager } from "@/components/admin/KeywordManager";
+import { TechnologyOntology } from "@/components/mockups/TechnologyOntology";
 
 interface User {
   id: string;
@@ -173,6 +174,10 @@ export default function AdminPanel() {
               <Settings className="h-3.5 w-3.5" />
               Keyword Management
             </TabsTrigger>
+            <TabsTrigger value="ontology" className="flex items-center gap-1.5">
+              <Network className="h-3.5 w-3.5" />
+              Technology Ontology
+            </TabsTrigger>
             <TabsTrigger value="dealroom">Dealroom Sync</TabsTrigger>
             <TabsTrigger value="web-scraping" className="flex items-center gap-1.5">
               <Globe className="h-3.5 w-3.5" />
@@ -186,6 +191,23 @@ export default function AdminPanel() {
           {/* Keyword Management Tab - Unified */}
           <TabsContent value="keywords">
             <KeywordManager />
+          </TabsContent>
+
+          {/* Technology Ontology Tab */}
+          <TabsContent value="ontology">
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-foreground">Technology Ontology</CardTitle>
+                  <CardDescription>
+                    Technology relationships derived from shared company mappings. 
+                    Connections are weighted by the number of quality companies (with funding or 10+ employees) 
+                    that operate in both technology areas.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+              <TechnologyOntology maxEdges={20} />
+            </div>
           </TabsContent>
 
           {/* Dealroom Sync Tab */}
