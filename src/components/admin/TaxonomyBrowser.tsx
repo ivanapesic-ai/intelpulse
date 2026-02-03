@@ -16,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Loader2, RefreshCw, Search, Building, Layers, Cpu, Check, X, Tag, TrendingUp, Globe, CheckCircle2 } from "lucide-react";
-import { useDealroomTaxonomy, useSyncDealroomTaxonomy, DealroomTaxonomyItem } from "@/hooks/useTechnologies";
+import { useDealroomTaxonomy, DealroomTaxonomyItem } from "@/hooks/useTechnologies";
 import { useKeywords } from "@/hooks/useTechnologies";
 
 export function TaxonomyBrowser() {
@@ -25,7 +25,6 @@ export function TaxonomyBrowser() {
   
   const { data: taxonomy, isLoading: loadingTaxonomy } = useDealroomTaxonomy();
   const { data: keywords } = useKeywords();
-  const syncTaxonomy = useSyncDealroomTaxonomy();
 
   // Get all currently mapped tags from keywords
   const mappedTags = new Set<string>();
@@ -227,32 +226,21 @@ export function TaxonomyBrowser() {
 
   return (
     <div className="space-y-4">
-      {/* Header with sync button */}
+      {/* Header */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Layers className="h-5 w-5" />
-                Full Taxonomy Browser
-              </CardTitle>
-              <CardDescription>
-                View all available taxonomy terms from Dealroom and your company data. 
-                Use this to build ontology connections and map to CEI keywords.
-              </CardDescription>
-            </div>
-            <Button
-              onClick={() => syncTaxonomy.mutate()}
-              disabled={syncTaxonomy.isPending}
-              variant="outline"
-            >
-              {syncTaxonomy.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <RefreshCw className="h-4 w-4 mr-2" />
-              )}
-              Sync Dealroom Taxonomy
-            </Button>
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Layers className="h-5 w-5" />
+              Full Taxonomy Browser
+            </CardTitle>
+            <CardDescription>
+              View all available taxonomy terms from Dealroom and your company data. 
+              Use this to build ontology connections and map to CEI keywords.
+              <span className="block mt-1 text-xs italic">
+                Sync taxonomy from the Data Sources → Dealroom tab.
+              </span>
+            </CardDescription>
           </div>
         </CardHeader>
       </Card>

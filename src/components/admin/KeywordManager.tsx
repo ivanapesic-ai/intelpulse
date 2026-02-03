@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { useKeywords, useAITagMapping, useDealroomTaxonomy, useSyncDealroomTaxonomy } from "@/hooks/useTechnologies";
+import { useKeywords, useAITagMapping, useDealroomTaxonomy } from "@/hooks/useTechnologies";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -57,7 +57,6 @@ export function KeywordManager() {
 
   const { data: keywords, isLoading: keywordsLoading, refetch: refetchKeywords } = useKeywords();
   const { data: taxonomy, isLoading: taxonomyLoading } = useDealroomTaxonomy();
-  const syncTaxonomy = useSyncDealroomTaxonomy();
   const aiMapper = useAITagMapping();
   const queryClient = useQueryClient();
 
@@ -236,15 +235,6 @@ export function KeywordManager() {
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => syncTaxonomy.mutate()}
-              disabled={syncTaxonomy.isPending}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${syncTaxonomy.isPending ? "animate-spin" : ""}`} />
-              Sync Taxonomy
-            </Button>
             <Button 
               size="sm"
               onClick={handleAutoMapAll}
