@@ -216,6 +216,80 @@ export function useDealroomSync() {
   });
 }
 
+// Discover valid Dealroom tags
+export function useDealroomTagDiscovery() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/dealroom-sync`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ action: "discover-tags" }),
+        }
+      );
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || "Tag discovery failed");
+      }
+
+      return result;
+    },
+    onSuccess: (data) => {
+      toast.success(`Tag discovery complete: ${data.validTagsFound}/${data.totalTested} valid tags found`);
+      queryClient.invalidateQueries({ queryKey: ["dealroom-taxonomy"] });
+      queryClient.invalidateQueries({ queryKey: ["dealroom-api-usage"] });
+    },
+    onError: (error) => {
+      toast.error(`Tag discovery failed: ${error.message}`);
+    },
+  });
+}
+
+// Test a single tag
+export function useDealroomTagTest() {
+  return useMutation({
+    mutationFn: async (tag: string) => {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/dealroom-sync`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ action: "test-tag", keyword: tag }),
+        }
+      );
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || "Tag test failed");
+      }
+
+      return result;
+    },
+    onSuccess: (data) => {
+      if (data.exists) {
+        toast.success(`Tag "${data.tag}" is valid: ${data.companyCount} companies found`);
+      } else {
+        toast.warning(`Tag "${data.tag}" returned ${data.companyCount} companies (likely unfiltered)`);
+      }
+    },
+    onError: (error) => {
+      toast.error(`Tag test failed: ${error.message}`);
+    },
+  });
+}
+
 // Get company stats by country
 export function useDealroomCountryStats() {
   return useQuery({

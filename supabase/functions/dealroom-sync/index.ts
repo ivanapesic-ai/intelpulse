@@ -203,7 +203,7 @@ serve(async (req) => {
 
     const { action, keyword, limit = 100, keywordsPerSync = 10 } = await req.json();
 
-    // Check API usage quota before proceeding
+    // ============= FETCH API USAGE FIRST (needed by all actions) =============
     const now = new Date();
     const { data: usageData, error: usageError } = await supabase
       .from("dealroom_api_usage")
@@ -242,7 +242,274 @@ serve(async (req) => {
       }
     }
 
-    // Check if quota exceeded
+    // ============= TAG DISCOVERY ACTION =============
+    if (action === "discover-tags") {
+      const AUTOMOTIVE_TAG_CANDIDATES = [
+        // Core SDV
+        'software-defined-vehicle', 'sdv', 'vehicle-software', 'automotive-software',
+        'vehicle-platform', 'vehicle-os', 'vehicle-operating-system',
+        // Autonomous
+        'autonomous-mobility', 'autonomous-vehicles', 'autonomous-driving',
+        'self-driving', 'adas', 'advanced-driver-assistance',
+        // Connectivity
+        'connected-cars', 'connected-vehicles', 'v2x', 'v2v', 'v2g',
+        'vehicle-to-everything', 'telematics', '5g-automotive',
+        // Software/Updates
+        'over-the-air', 'ota', 'ota-updates', 'software-updates',
+        'remote-updates', 'firmware-updates',
+        // Sensors
+        'lidar', 'radar', 'camera-systems', 'sensors', 'sensor-fusion',
+        'computer-vision', 'perception',
+        // EV
+        'electric-vehicles', 'ev', 'battery', 'battery-management',
+        'battery-technology', 'charging', 'charging-infrastructure',
+        'ev-charging',
+        // Infrastructure
+        'fleet-management', 'mobility-services', 'shared-mobility',
+        'ride-hailing', 'micromobility',
+        // Security/Computing
+        'automotive-cybersecurity', 'vehicle-security', 'cybersecurity',
+        'edge-computing', 'automotive-cloud', 'digital-twin',
+        // Chips/Hardware
+        'automotive-chips', 'automotive-semiconductors', 'hpc',
+        'automotive-ethernet', 'can-bus', 'vehicle-networks',
+        // Additional tags from taxonomy
+        'electric mobility', 'autonomous mobility', 'connected car',
+        'EV', 'electric car', 'automotive', 'mobility', 'transportation',
+        'clean energy', 'energy storage', 'smart grid'
+      ];
+
+      console.log(`Starting tag discovery for ${AUTOMOTIVE_TAG_CANDIDATES.length} candidates...`);
+
+      const results: Array<{
+        tag: string;
+        exists: boolean;
+        company_count: number;
+        sample_company: string | null;
+        sample_industries: string[];
+        tested_at: string;
+      }> = [];
+
+      let apiCallsUsed = 0;
+      const testedAt = new Date().toISOString();
+
+      for (const tag of AUTOMOTIVE_TAG_CANDIDATES) {
+        try {
+          apiCallsUsed++;
+          
+          // Test with a simple companies query
+          const testUrl = `https://api.dealroom.co/api/v1/companies?limit=5&sort=-total_funding`;
+          const testBody = {
+            form_data: {
+              tags: [tag.toLowerCase()],
+            },
+          };
+
+          console.log(`Testing tag: "${tag}"...`);
+
+          const response = await fetch(testUrl, {
+            method: "POST",
+            headers: {
+              "Authorization": authHeader,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(testBody),
+          });
+
+          if (!response.ok) {
+            console.error(`Tag "${tag}" failed with status ${response.status}`);
+            results.push({
+              tag,
+              exists: false,
+              company_count: 0,
+              sample_company: null,
+              sample_industries: [],
+              tested_at: testedAt,
+            });
+            continue;
+          }
+
+          const data = await response.json();
+          const companies = data.items || data.companies || [];
+          const total = data.total || companies.length;
+
+          // Check if we got relevant results (not the full 3.4M database)
+          const isFiltered = total < 100000; // If less than 100k, tag likely works
+          
+          const sampleCompany = companies[0];
+          const sampleIndustries = sampleCompany?.industries
+            ? (Array.isArray(sampleCompany.industries)
+                ? sampleCompany.industries.map((i: { name?: string } | string) => 
+                    typeof i === 'string' ? i : i.name).filter(Boolean)
+                : [])
+            : [];
+
+          results.push({
+            tag,
+            exists: isFiltered && total > 0,
+            company_count: total,
+            sample_company: sampleCompany?.name || null,
+            sample_industries: sampleIndustries.slice(0, 3),
+            tested_at: testedAt,
+          });
+
+          console.log(`Tag "${tag}": ${isFiltered ? 'VALID' : 'IGNORED'} (${total} companies)`);
+
+          // Small delay to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 300));
+        } catch (err) {
+          console.error(`Error testing tag "${tag}":`, err);
+          results.push({
+            tag,
+            exists: false,
+            company_count: 0,
+            sample_company: null,
+            sample_industries: [],
+            tested_at: testedAt,
+          });
+        }
+      }
+
+      // Store valid tags in dealroom_taxonomy table
+      const validTags = results.filter(r => r.exists);
+      
+      for (const validTag of validTags) {
+        await supabase
+          .from("dealroom_taxonomy")
+          .upsert(
+            {
+              taxonomy_type: "discovered_tag",
+              name: validTag.tag,
+              slug: validTag.tag.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+              company_count: validTag.company_count,
+              description: validTag.sample_company 
+                ? `Sample: ${validTag.sample_company}. Industries: ${validTag.sample_industries.join(', ')}`
+                : null,
+              is_active: true,
+              last_synced_at: testedAt,
+            },
+            { onConflict: "taxonomy_type,name" }
+          );
+      }
+
+      // Update API usage
+      if (currentUsage && apiCallsUsed > 0) {
+        await supabase
+          .from("dealroom_api_usage")
+          .update({
+            api_calls_used: currentUsage.api_calls_used + apiCallsUsed,
+            last_sync_date: new Date().toISOString(),
+          })
+          .eq("id", currentUsage.id);
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          action: "discover-tags",
+          totalTested: AUTOMOTIVE_TAG_CANDIDATES.length,
+          validTagsFound: validTags.length,
+          validTags: validTags.map(t => ({
+            tag: t.tag,
+            companyCount: t.company_count,
+            sampleCompany: t.sample_company,
+          })),
+          invalidTags: results.filter(r => !r.exists).map(t => t.tag),
+          apiCallsUsed,
+          usage: currentUsage ? {
+            used: currentUsage.api_calls_used + apiCallsUsed,
+            limit: currentUsage.api_calls_limit,
+            remaining: currentUsage.api_calls_limit - currentUsage.api_calls_used - apiCallsUsed,
+          } : undefined,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // ============= SINGLE TAG TEST ACTION =============
+    if (action === "test-tag") {
+      if (!keyword) {
+        return new Response(
+          JSON.stringify({ success: false, error: "keyword parameter required for test-tag action" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      console.log(`Testing single tag: "${keyword}"...`);
+
+      const testUrl = `https://api.dealroom.co/api/v1/companies?limit=10&sort=-total_funding`;
+      const testBody = {
+        form_data: {
+          tags: [keyword.toLowerCase()],
+        },
+      };
+
+      const response = await fetch(testUrl, {
+        method: "POST",
+        headers: {
+          "Authorization": authHeader,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(testBody),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return new Response(
+          JSON.stringify({
+            success: false,
+            tag: keyword,
+            exists: false,
+            error: `API returned ${response.status}: ${errorText.substring(0, 200)}`,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const data = await response.json();
+      const companies = data.items || data.companies || [];
+      const total = data.total || companies.length;
+      const isFiltered = total < 100000;
+
+      // Update API usage
+      if (currentUsage) {
+        await supabase
+          .from("dealroom_api_usage")
+          .update({
+            api_calls_used: currentUsage.api_calls_used + 1,
+            last_sync_date: new Date().toISOString(),
+          })
+          .eq("id", currentUsage.id);
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          tag: keyword,
+          exists: isFiltered && total > 0,
+          isFiltered,
+          companyCount: total,
+          sampleCompanies: companies.slice(0, 5).map((c: DealroomCompany) => ({
+            name: c.name,
+            funding: c.total_funding ? c.total_funding * 1_000_000 : 0,
+            country: c.hq_locations?.[0]?.country?.name,
+            industries: Array.isArray(c.industries) 
+              ? c.industries.slice(0, 3).map((i: { name?: string } | string) => 
+                  typeof i === 'string' ? i : i.name)
+              : [],
+          })),
+          usage: currentUsage ? {
+            used: currentUsage.api_calls_used + 1,
+            limit: currentUsage.api_calls_limit,
+          } : undefined,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check if quota exceeded (API usage already fetched at the top)
     if (currentUsage && currentUsage.api_calls_used >= currentUsage.api_calls_limit) {
       return new Response(
         JSON.stringify({
