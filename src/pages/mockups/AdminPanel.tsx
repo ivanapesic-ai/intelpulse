@@ -233,40 +233,49 @@ export default function AdminPanel() {
             {/* Dealroom Sub-tab */}
             {dataSubTab === "dealroom" && (
               <div className="space-y-4">
-                {/* Taxonomy Sync Section */}
+                {/* Combined Dealroom Sync */}
                 <Card>
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <BookOpen className="h-5 w-5 text-purple-500" />
-                        <CardTitle className="text-lg text-foreground">Dealroom Taxonomy</CardTitle>
+                      <div>
+                        <CardTitle className="text-foreground">Dealroom Data Sync</CardTitle>
+                        <CardDescription>Sync companies and taxonomy in one click</CardDescription>
                       </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          onClick={handleSyncFromCompanies} 
-                          disabled={syncFromCompanies.isPending}
-                          variant="outline"
-                          size="sm"
-                        >
-                          <Database className={`h-4 w-4 mr-2 ${syncFromCompanies.isPending ? "animate-spin" : ""}`} />
-                          {syncFromCompanies.isPending ? "Syncing..." : "From Companies"}
-                        </Button>
-                        <Button 
-                          onClick={handleTaxonomySync} 
-                          disabled={syncTaxonomy.isPending}
-                          size="sm"
-                        >
-                          <RefreshCw className={`h-4 w-4 mr-2 ${syncTaxonomy.isPending ? "animate-spin" : ""}`} />
-                          {syncTaxonomy.isPending ? "Syncing..." : "Sync Taxonomy"}
-                        </Button>
-                      </div>
+                      <Button 
+                        onClick={() => {
+                          handleTaxonomySync();
+                          handleDealroomSync();
+                        }} 
+                        disabled={dealroomSync.isPending || syncTaxonomy.isPending || usagePercent >= 100}
+                        size="lg"
+                      >
+                        <RefreshCw className={`h-4 w-4 mr-2 ${(dealroomSync.isPending || syncTaxonomy.isPending) ? "animate-spin" : ""}`} />
+                        {dealroomSync.isPending || syncTaxonomy.isPending 
+                          ? "Syncing..." 
+                          : usagePercent >= 100 
+                            ? "Quota Exceeded" 
+                            : "Sync All"}
+                      </Button>
                     </div>
-                    <CardDescription>
-                      Pre-defined Dealroom taxonomy - no API calls needed
-                    </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-3 gap-4">
+                  <CardContent className="space-y-6">
+                    {(dealroomSync.isPending || syncTaxonomy.isPending) && (
+                      <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                        <div className="flex items-center gap-2 text-blue-500">
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                          <span className="text-sm font-medium">
+                            {syncTaxonomy.isPending ? "Loading taxonomy..." : "Fetching companies..."}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Data Summary */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="p-4 bg-muted/50 rounded-lg text-center">
+                        <p className="text-2xl font-bold text-foreground">{companyCount || 0}</p>
+                        <p className="text-sm text-muted-foreground">Companies</p>
+                      </div>
                       <div className="p-4 bg-muted/50 rounded-lg text-center">
                         <p className="text-2xl font-bold text-foreground">{taxonomy?.counts?.industries || 0}</p>
                         <p className="text-sm text-muted-foreground">Industries</p>
@@ -277,76 +286,50 @@ export default function AdminPanel() {
                       </div>
                       <div className="p-4 bg-muted/50 rounded-lg text-center">
                         <p className="text-2xl font-bold text-foreground">{taxonomy?.counts?.technology || 0}</p>
-                        <p className="text-sm text-muted-foreground">Technology Tags</p>
+                        <p className="text-sm text-muted-foreground">Tech Tags</p>
                       </div>
+                    </div>
+
+                    {/* Sync History */}
+                    <div>
+                      <h4 className="text-sm font-medium text-foreground mb-3">Recent Syncs</h4>
+                      {syncLogsLoading ? (
+                        <p className="text-sm text-muted-foreground">Loading...</p>
+                      ) : syncLogs?.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No sync history yet</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {syncLogs?.slice(0, 3).map((log) => (
+                            <div 
+                              key={log.id} 
+                              className="flex items-center justify-between p-3 rounded-lg border border-border bg-card"
+                            >
+                              <div className="flex items-center gap-3">
+                                {log.status === "completed" && <CheckCircle className="h-4 w-4 text-success" />}
+                                {log.status === "failed" && <XCircle className="h-4 w-4 text-destructive" />}
+                                {log.status === "running" && <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />}
+                                {log.status === "pending" && <Clock className="h-4 w-4 text-muted-foreground" />}
+                                <div>
+                                  <p className="text-sm font-medium text-foreground">
+                                    {log.recordsFetched} fetched, {log.recordsCreated} created
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {new Date(log.startedAt).toLocaleString()}
+                                  </p>
+                                </div>
+                              </div>
+                              <Badge variant="outline" className={statusColors[log.status]}>
+                                {log.status}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
 
                 <div className="grid lg:grid-cols-3 gap-4">
-                  {/* Sync Controls */}
-                  <Card className="lg:col-span-2">
-                    <CardHeader className="flex flex-row items-center justify-between">
-                      <div>
-                        <CardTitle className="text-foreground">Company Sync</CardTitle>
-                        <CardDescription>Sync company data globally from Dealroom API</CardDescription>
-                      </div>
-                      <Button 
-                        onClick={handleDealroomSync} 
-                        disabled={dealroomSync.isPending || usagePercent >= 100}
-                      >
-                        <RefreshCw className={`h-4 w-4 mr-2 ${dealroomSync.isPending ? "animate-spin" : ""}`} />
-                        {dealroomSync.isPending ? "Syncing..." : usagePercent >= 100 ? "Quota Exceeded" : "Sync Now"}
-                      </Button>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {dealroomSync.isPending && (
-                        <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/30">
-                          <div className="flex items-center gap-2 text-blue-500">
-                            <RefreshCw className="h-4 w-4 animate-spin" />
-                            <span className="text-sm font-medium">Fetching companies from Dealroom API...</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Sync History */}
-                      <div>
-                        <h4 className="text-sm font-medium text-foreground mb-3">Recent Syncs</h4>
-                        {syncLogsLoading ? (
-                          <p className="text-sm text-muted-foreground">Loading...</p>
-                        ) : syncLogs?.length === 0 ? (
-                          <p className="text-sm text-muted-foreground">No sync history yet</p>
-                        ) : (
-                          <div className="space-y-2">
-                            {syncLogs?.slice(0, 3).map((log) => (
-                              <div 
-                                key={log.id} 
-                                className="flex items-center justify-between p-3 rounded-lg border border-border bg-card"
-                              >
-                                <div className="flex items-center gap-3">
-                                  {log.status === "completed" && <CheckCircle className="h-4 w-4 text-success" />}
-                                  {log.status === "failed" && <XCircle className="h-4 w-4 text-destructive" />}
-                                  {log.status === "running" && <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />}
-                                  {log.status === "pending" && <Clock className="h-4 w-4 text-muted-foreground" />}
-                                  <div>
-                                    <p className="text-sm font-medium text-foreground">
-                                      {log.recordsFetched} fetched, {log.recordsCreated} created
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                      {new Date(log.startedAt).toLocaleString()}
-                                    </p>
-                                  </div>
-                                </div>
-                                <Badge variant="outline" className={statusColors[log.status]}>
-                                  {log.status}
-                                </Badge>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
 
                   {/* Country Stats */}
                   <Card>
