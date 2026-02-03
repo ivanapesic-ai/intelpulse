@@ -192,38 +192,53 @@ serve(async (req) => {
         last_synced_at: string;
       }> = [];
 
+      // Track seen entries to prevent duplicates within the same batch
+      const seen = new Set<string>();
+
       // Add industries
       for (const industry of DEALROOM_INDUSTRIES) {
-        insertData.push({
-          taxonomy_type: 'industry',
-          name: industry,
-          slug: industry.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-          is_active: true,
-          last_synced_at: new Date().toISOString()
-        });
+        const key = `industry:${industry}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          insertData.push({
+            taxonomy_type: 'industry',
+            name: industry,
+            slug: industry.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            is_active: true,
+            last_synced_at: new Date().toISOString()
+          });
+        }
       }
 
       // Add sub-industries with parent reference
       for (const sub of DEALROOM_SUB_INDUSTRIES) {
-        insertData.push({
-          taxonomy_type: 'sub_industry',
-          name: sub.name,
-          slug: sub.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-          parent_name: sub.parent,
-          is_active: true,
-          last_synced_at: new Date().toISOString()
-        });
+        const key = `sub_industry:${sub.name}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          insertData.push({
+            taxonomy_type: 'sub_industry',
+            name: sub.name,
+            slug: sub.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            parent_name: sub.parent,
+            is_active: true,
+            last_synced_at: new Date().toISOString()
+          });
+        }
       }
 
-      // Add technology tags
+      // Add technology tags (deduplicated)
       for (const tag of DEALROOM_TECHNOLOGY_TAGS) {
-        insertData.push({
-          taxonomy_type: 'technology',
-          name: tag,
-          slug: tag.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-          is_active: true,
-          last_synced_at: new Date().toISOString()
-        });
+        const key = `technology:${tag}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          insertData.push({
+            taxonomy_type: 'technology',
+            name: tag,
+            slug: tag.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            is_active: true,
+            last_synced_at: new Date().toISOString()
+          });
+        }
       }
 
       // Use upsert to handle existing records
