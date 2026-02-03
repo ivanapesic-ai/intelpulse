@@ -203,6 +203,7 @@ export type Database = {
           id: string
           industries: string[] | null
           investors: string[] | null
+          is_quality_company: boolean | null
           jobs_count: number | null
           last_funding_amount_eur: number | null
           last_funding_date: string | null
@@ -236,6 +237,7 @@ export type Database = {
           id?: string
           industries?: string[] | null
           investors?: string[] | null
+          is_quality_company?: boolean | null
           jobs_count?: number | null
           last_funding_amount_eur?: number | null
           last_funding_date?: string | null
@@ -269,6 +271,7 @@ export type Database = {
           id?: string
           industries?: string[] | null
           investors?: string[] | null
+          is_quality_company?: boolean | null
           jobs_count?: number | null
           last_funding_amount_eur?: number | null
           last_funding_date?: string | null
@@ -938,6 +941,14 @@ export type Database = {
           companies_linked: number
           evidence_created: number
           technologies_linked: number
+        }[]
+      }
+      populate_cooccurrences_from_companies: {
+        Args: never
+        Returns: {
+          pairs_created: number
+          pairs_updated: number
+          quality_companies_used: number
         }[]
       }
       refresh_technology_intelligence: { Args: never; Returns: undefined }
