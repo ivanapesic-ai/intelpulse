@@ -428,7 +428,7 @@ serve(async (req) => {
       );
     }
 
-    // ============= SINGLE TAG TEST ACTION =============
+    // ============= SINGLE TAG TEST ACTION (with must wrapper) =============
     if (action === "test-tag") {
       if (!keyword) {
         return new Response(
@@ -437,14 +437,21 @@ serve(async (req) => {
         );
       }
 
-      console.log(`Testing single tag: "${keyword}"...`);
+      console.log(`Testing single tag with MUST wrapper: "${keyword}"...`);
 
       const testUrl = `https://api.dealroom.co/api/v1/companies?limit=10&sort=-total_funding`;
+      
+      // Use the correct Premium API structure with "must" wrapper
       const testBody = {
         form_data: {
-          tags: [keyword.toLowerCase()],
+          must: {
+            tags: [keyword.toLowerCase()],
+            funded: true,
+          },
         },
       };
+      
+      console.log(`Request body: ${JSON.stringify(testBody)}`);
 
       const response = await fetch(testUrl, {
         method: "POST",
@@ -455,14 +462,18 @@ serve(async (req) => {
         body: JSON.stringify(testBody),
       });
 
+      console.log(`Response status: ${response.status}`);
+
       if (!response.ok) {
         const errorText = await response.text();
+        console.log(`Error response: ${errorText.substring(0, 300)}`);
         return new Response(
           JSON.stringify({
             success: false,
             tag: keyword,
             exists: false,
             error: `API returned ${response.status}: ${errorText.substring(0, 200)}`,
+            requestBody: testBody,
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
@@ -472,6 +483,8 @@ serve(async (req) => {
       const companies = data.items || data.companies || [];
       const total = data.total || companies.length;
       const isFiltered = total < 100000;
+      
+      console.log(`Tag "${keyword}" result: total=${total}, isFiltered=${isFiltered}`);
 
       // Update API usage
       if (currentUsage) {
@@ -491,6 +504,7 @@ serve(async (req) => {
           exists: isFiltered && total > 0,
           isFiltered,
           companyCount: total,
+          requestBody: testBody,
           sampleCompanies: companies.slice(0, 5).map((c: DealroomCompany) => ({
             name: c.name,
             funding: c.total_funding ? c.total_funding * 1_000_000 : 0,
@@ -505,6 +519,100 @@ serve(async (req) => {
             limit: currentUsage.api_calls_limit,
           } : undefined,
         }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // ============= TEST TAGS-ONLY ACTION (no industries) =============
+    if (action === "test-tags-only") {
+      const tags = keyword ? [keyword] : ["autonomous-mobility"];
+      
+      console.log(`Testing tags ONLY (no industries) with MUST wrapper: ${tags.join(', ')}`);
+
+      const testUrl = `https://api.dealroom.co/api/v1/companies?limit=10&sort=-total_funding`;
+      
+      // Tags-only test: just tags + funded, NO industries
+      const testBody = {
+        form_data: {
+          must: {
+            tags: tags.map(t => t.toLowerCase()),
+            funded: true,
+          },
+        },
+      };
+      
+      console.log(`Request body: ${JSON.stringify(testBody)}`);
+
+      const response = await fetch(testUrl, {
+        method: "POST",
+        headers: {
+          "Authorization": authHeader,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(testBody),
+      });
+
+      console.log(`Response status: ${response.status}`);
+      const responseText = await response.text();
+      console.log(`Response (first 500 chars): ${responseText.substring(0, 500)}`);
+
+      if (!response.ok) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            tags,
+            error: `API returned ${response.status}: ${responseText.substring(0, 200)}`,
+            requestBody: testBody,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const data = JSON.parse(responseText);
+      const companies = data.items || data.companies || [];
+      const total = data.total || companies.length;
+      const isFiltered = total < 100000;
+      
+      console.log(`Tags-only result: total=${total}, isFiltered=${isFiltered}`);
+
+      // Update API usage
+      if (currentUsage) {
+        await supabase
+          .from("dealroom_api_usage")
+          .update({
+            api_calls_used: currentUsage.api_calls_used + 1,
+            last_sync_date: new Date().toISOString(),
+          })
+          .eq("id", currentUsage.id);
+      }
+
+      const result = {
+        success: true,
+        tags,
+        tagsWork: isFiltered && total > 0,
+        isFiltered,
+        companyCount: total,
+        verdict: isFiltered 
+          ? `✅ TAGS WORK! Got ${total} filtered companies`
+          : `❌ Tags ignored - got ${total} unfiltered (use industries instead)`,
+        requestBody: testBody,
+        sampleCompanies: companies.slice(0, 5).map((c: DealroomCompany) => ({
+          name: c.name,
+          funding: c.total_funding ? c.total_funding * 1_000_000 : 0,
+          country: c.hq_locations?.[0]?.country?.name,
+          industries: Array.isArray(c.industries) 
+            ? c.industries.slice(0, 3).map((i: { name?: string } | string) => 
+                typeof i === 'string' ? i : i.name)
+            : [],
+        })),
+        usage: currentUsage ? {
+          used: currentUsage.api_calls_used + 1,
+          limit: currentUsage.api_calls_limit,
+        } : undefined,
+      };
+
+      return new Response(
+        JSON.stringify(result),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -688,13 +796,15 @@ serve(async (req) => {
         // Dealroom API v1 uses POST with form_data structure
         const apiUrl = `https://api.dealroom.co/api/v1/companies?limit=${Math.min(limit, 100)}&sort=-total_funding`;
         
-        // INDUSTRY-BASED FILTERING: Use industries + sub_industries + funded (tags don't work on trial tier)
-        // This approach returns 5-10K relevant companies instead of 3.4M unfiltered
+        // PREMIUM API STRUCTURE: Use "must" wrapper for proper filtering
+        // Without the "must" wrapper, filters are ignored and returns 3.4M unfiltered results
         const requestBody = {
           form_data: {
-            industries: ["automotive"],
-            sub_industries: [searchTag.toLowerCase()],
-            funded: true,  // Prioritize companies with investor data (60-80% coverage)
+            must: {
+              industries: ["automotive"],
+              sub_industries: [searchTag.toLowerCase()],
+              funded: true,  // Prioritize companies with investor data (60-80% coverage)
+            },
           },
         };
         
