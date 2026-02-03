@@ -289,7 +289,7 @@ export default function AdminPanel() {
                     <CardHeader className="flex flex-row items-center justify-between">
                       <div>
                         <CardTitle className="text-foreground">Company Sync</CardTitle>
-                        <CardDescription>Sync EU company data from Dealroom API</CardDescription>
+                        <CardDescription>Sync company data globally from Dealroom API</CardDescription>
                       </div>
                       <Button 
                         onClick={handleDealroomSync} 
