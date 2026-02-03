@@ -351,13 +351,14 @@ serve(async (req) => {
         console.log(`Searching Dealroom for tag "${searchTag}"...`);
 
         // Dealroom API v1 uses POST with form_data structure
-        // Global search - no hq_locations filter to get worldwide companies
+        // Note: The tags filter appears to be case-sensitive and may require exact Dealroom taxonomy terms
+        // Using lowercase tags at top level of form_data (this is what returned data before)
         const apiUrl = `https://api.dealroom.co/api/v1/companies?limit=${Math.min(limit, 100)}&sort=-total_funding`;
         
-        // Simple tag-based search without geographic restrictions
+        // Simple tag search - lowercase the tag to match Dealroom's taxonomy format
         const requestBody = {
           form_data: {
-            tags: [searchTag],
+            tags: [searchTag.toLowerCase()],
           },
         };
         
