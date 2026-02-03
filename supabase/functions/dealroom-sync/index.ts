@@ -245,38 +245,38 @@ serve(async (req) => {
     // ============= TAG DISCOVERY ACTION =============
     if (action === "discover-tags") {
       const AUTOMOTIVE_TAG_CANDIDATES = [
-        // Core SDV
-        'software-defined-vehicle', 'sdv', 'vehicle-software', 'automotive-software',
-        'vehicle-platform', 'vehicle-os', 'vehicle-operating-system',
-        // Autonomous
-        'autonomous-mobility', 'autonomous-vehicles', 'autonomous-driving',
-        'self-driving', 'adas', 'advanced-driver-assistance',
-        // Connectivity
-        'connected-cars', 'connected-vehicles', 'v2x', 'v2v', 'v2g',
-        'vehicle-to-everything', 'telematics', '5g-automotive',
-        // Software/Updates
-        'over-the-air', 'ota', 'ota-updates', 'software-updates',
-        'remote-updates', 'firmware-updates',
+        // From Dealroom confirmed
+        'autonomous-mobility',
+        
+        // Variations to test
+        'autonomous-vehicles', 'self-driving', 'autonomous-driving',
+        'adas', 'advanced-driver-assistance', 'driver-assistance',
+        
+        // EV related
+        'electric-vehicles', 'ev', 'battery-technology', 'battery',
+        'charging-infrastructure', 'ev-charging', 'charging-stations',
+        
+        // Software
+        'automotive-software', 'vehicle-software', 'automotive-tech',
+        'connected-cars', 'connected-vehicles', 'vehicle-connectivity',
+        'ota-updates', 'over-the-air', 'software-updates',
+        
         // Sensors
         'lidar', 'radar', 'camera-systems', 'sensors', 'sensor-fusion',
-        'computer-vision', 'perception',
-        // EV
-        'electric-vehicles', 'ev', 'battery', 'battery-management',
-        'battery-technology', 'charging', 'charging-infrastructure',
-        'ev-charging',
+        
+        // Mobility
+        'mobility-services', 'shared-mobility', 'micromobility',
+        'fleet-management', 'ride-hailing',
+        
         // Infrastructure
-        'fleet-management', 'mobility-services', 'shared-mobility',
-        'ride-hailing', 'micromobility',
-        // Security/Computing
+        'smart-cities', 'transportation', 'logistics',
+        
+        // Security/Compute
         'automotive-cybersecurity', 'vehicle-security', 'cybersecurity',
-        'edge-computing', 'automotive-cloud', 'digital-twin',
-        // Chips/Hardware
-        'automotive-chips', 'automotive-semiconductors', 'hpc',
-        'automotive-ethernet', 'can-bus', 'vehicle-networks',
-        // Additional tags from taxonomy
-        'electric mobility', 'autonomous mobility', 'connected car',
-        'EV', 'electric car', 'automotive', 'mobility', 'transportation',
-        'clean energy', 'energy storage', 'smart grid'
+        'edge-computing', 'automotive-cloud',
+        
+        // Hardware
+        'automotive-chips', 'semiconductors', 'automotive-semiconductors',
       ];
 
       console.log(`Starting tag discovery for ${AUTOMOTIVE_TAG_CANDIDATES.length} candidates...`);
