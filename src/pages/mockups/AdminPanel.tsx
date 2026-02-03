@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, RefreshCw, Users, BarChart3, Database, Trash2, Edit, FileText, Upload, CheckCircle, XCircle, Clock, AlertCircle, Zap, Globe, Settings, Network, Layers, Search, TestTube } from "lucide-react";
+import { ArrowLeft, Plus, RefreshCw, Users, BarChart3, Database, Trash2, Edit, FileText, Upload, CheckCircle, XCircle, Clock, AlertCircle, Zap, Globe, Settings, Network, Layers, BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
-import { useDealroomCompanies, useDealroomSyncLogs, useDealroomSync, useDealroomCountryStats, useDealroomApiUsage, useDealroomCompanyCount, useDealroomTagDiscovery, useDealroomTagTest } from "@/hooks/useDealroomSync";
+import { useDealroomCompanies, useDealroomSyncLogs, useDealroomSync, useDealroomCountryStats, useDealroomApiUsage, useDealroomCompanyCount } from "@/hooks/useDealroomSync";
+import { useDealroomTaxonomy, useSyncDealroomTaxonomy, useSyncTaxonomyFromCompanies } from "@/hooks/useDealroomTaxonomy";
 import { useDocuments, useDocumentStats } from "@/hooks/useDocuments";
 import { useKeywords, useKeywordStats } from "@/hooks/useTechnologies";
 
@@ -61,42 +62,20 @@ export default function AdminPanel() {
   const { data: apiUsage } = useDealroomApiUsage();
   
   const dealroomSync = useDealroomSync();
-  const tagDiscovery = useDealroomTagDiscovery();
-  const tagTest = useDealroomTagTest();
-  
-  const [testTagInput, setTestTagInput] = useState("");
-  const [discoveryResults, setDiscoveryResults] = useState<{
-    validTags?: Array<{ tag: string; companyCount: number; sampleCompany: string | null }>;
-    invalidTags?: string[];
-    totalTested?: number;
-    validTagsFound?: number;
-  } | null>(null);
-  const [tagTestResult, setTagTestResult] = useState<{
-    tag: string;
-    exists: boolean;
-    companyCount: number;
-    sampleCompanies?: Array<{ name: string; funding: number; country?: string }>;
-  } | null>(null);
+  const { data: taxonomy } = useDealroomTaxonomy();
+  const syncTaxonomy = useSyncDealroomTaxonomy();
+  const syncFromCompanies = useSyncTaxonomyFromCompanies();
 
   const handleDealroomSync = () => {
     dealroomSync.mutate({});
   };
 
-  const handleTagDiscovery = () => {
-    tagDiscovery.mutate(undefined, {
-      onSuccess: (data) => {
-        setDiscoveryResults(data);
-      }
-    });
+  const handleTaxonomySync = () => {
+    syncTaxonomy.mutate();
   };
 
-  const handleTagTest = () => {
-    if (!testTagInput.trim()) return;
-    tagTest.mutate(testTagInput.trim(), {
-      onSuccess: (data) => {
-        setTagTestResult(data);
-      }
-    });
+  const handleSyncFromCompanies = () => {
+    syncFromCompanies.mutate();
   };
 
   const activeUsers = users.filter((u) => u.status === "active").length;
@@ -305,133 +284,55 @@ export default function AdminPanel() {
               </CardContent>
             </Card>
 
-            {/* Tag Discovery Section */}
+            {/* Taxonomy Sync Section */}
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <TestTube className="h-5 w-5 text-purple-500" />
-                    <CardTitle className="text-lg text-foreground">Tag Discovery</CardTitle>
+                    <BookOpen className="h-5 w-5 text-purple-500" />
+                    <CardTitle className="text-lg text-foreground">Dealroom Taxonomy</CardTitle>
                   </div>
-                  <Button 
-                    onClick={handleTagDiscovery} 
-                    disabled={tagDiscovery.isPending}
-                    variant="outline"
-                  >
-                    <Search className={`h-4 w-4 mr-2 ${tagDiscovery.isPending ? "animate-pulse" : ""}`} />
-                    {tagDiscovery.isPending ? "Discovering..." : "Discover Valid Tags"}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={handleSyncFromCompanies} 
+                      disabled={syncFromCompanies.isPending}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Database className={`h-4 w-4 mr-2 ${syncFromCompanies.isPending ? "animate-spin" : ""}`} />
+                      {syncFromCompanies.isPending ? "Syncing..." : "From Companies"}
+                    </Button>
+                    <Button 
+                      onClick={handleTaxonomySync} 
+                      disabled={syncTaxonomy.isPending}
+                    >
+                      <RefreshCw className={`h-4 w-4 mr-2 ${syncTaxonomy.isPending ? "animate-spin" : ""}`} />
+                      {syncTaxonomy.isPending ? "Syncing..." : "Sync Taxonomy"}
+                    </Button>
+                  </div>
                 </div>
                 <CardDescription>
-                  Test which Dealroom tags return filtered results vs. the full 3.4M database
+                  Pre-defined Dealroom taxonomy with 36 industries, 45 sub-industries, and 72+ technology tags - no API calls needed
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Single Tag Test */}
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Test a single tag (e.g., 'autonomous-driving')"
-                    value={testTagInput}
-                    onChange={(e) => setTestTagInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleTagTest()}
-                    className="flex-1"
-                  />
-                  <Button 
-                    onClick={handleTagTest}
-                    disabled={tagTest.isPending || !testTagInput.trim()}
-                    size="sm"
-                  >
-                    {tagTest.isPending ? "Testing..." : "Test Tag"}
-                  </Button>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="p-4 bg-muted/50 rounded-lg text-center">
+                    <p className="text-2xl font-bold text-foreground">{taxonomy?.counts.industries || 0}</p>
+                    <p className="text-sm text-muted-foreground">Industries</p>
+                  </div>
+                  <div className="p-4 bg-muted/50 rounded-lg text-center">
+                    <p className="text-2xl font-bold text-foreground">{taxonomy?.counts.subIndustries || 0}</p>
+                    <p className="text-sm text-muted-foreground">Sub-Industries</p>
+                  </div>
+                  <div className="p-4 bg-muted/50 rounded-lg text-center">
+                    <p className="text-2xl font-bold text-foreground">{taxonomy?.counts.technology || 0}</p>
+                    <p className="text-sm text-muted-foreground">Technology Tags</p>
+                  </div>
                 </div>
-
-                {/* Single Tag Test Result */}
-                {tagTestResult && (
-                  <div className={`p-3 rounded-lg border ${tagTestResult.exists ? "bg-success/10 border-success/30" : "bg-warning/10 border-warning/30"}`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      {tagTestResult.exists ? (
-                        <CheckCircle className="h-4 w-4 text-success" />
-                      ) : (
-                        <AlertCircle className="h-4 w-4 text-warning" />
-                      )}
-                      <span className={`font-medium ${tagTestResult.exists ? "text-success" : "text-warning"}`}>
-                        "{tagTestResult.tag}" — {tagTestResult.exists ? "Valid Tag" : "Unfiltered (returns full DB)"}
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {formatNumber(tagTestResult.companyCount)} companies found
-                    </p>
-                    {tagTestResult.sampleCompanies && tagTestResult.sampleCompanies.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {tagTestResult.sampleCompanies.slice(0, 3).map((c, i) => (
-                          <Badge key={i} variant="outline" className="text-xs">
-                            {c.name} ({c.country || "—"})
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Discovery Results */}
-                {tagDiscovery.isPending && (
-                  <div className="p-4 bg-purple-500/10 rounded-lg border border-purple-500/30">
-                    <div className="flex items-center gap-2 text-purple-500">
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                      <span className="text-sm font-medium">Testing 50+ automotive tags against Dealroom API...</span>
-                    </div>
-                  </div>
-                )}
-
-                {discoveryResults && (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-4 text-sm">
-                      <span className="text-muted-foreground">
-                        Tested: <span className="font-medium text-foreground">{discoveryResults.totalTested}</span>
-                      </span>
-                      <span className="text-success">
-                        Valid: <span className="font-medium">{discoveryResults.validTagsFound}</span>
-                      </span>
-                      <span className="text-muted-foreground">
-                        Invalid: <span className="font-medium">{discoveryResults.invalidTags?.length || 0}</span>
-                      </span>
-                    </div>
-
-                    {discoveryResults.validTags && discoveryResults.validTags.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-medium text-foreground mb-2">Valid Tags (Filtered Results)</h4>
-                        <div className="flex flex-wrap gap-1.5">
-                          {discoveryResults.validTags.map((t, i) => (
-                            <Badge 
-                              key={i} 
-                              variant="outline" 
-                              className="bg-success/10 border-success/30 text-success text-xs"
-                            >
-                              {t.tag} ({formatNumber(t.companyCount)})
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {discoveryResults.invalidTags && discoveryResults.invalidTags.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-medium text-muted-foreground mb-2">Invalid Tags (Return Full DB)</h4>
-                        <div className="flex flex-wrap gap-1.5">
-                          {discoveryResults.invalidTags.map((tag, i) => (
-                            <Badge 
-                              key={i} 
-                              variant="outline" 
-                              className="text-muted-foreground text-xs"
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+                <p className="text-xs text-muted-foreground mt-3">
+                  View all terms in the Taxonomy Browser tab. Use "From Companies" to add tags from existing company data.
+                </p>
               </CardContent>
             </Card>
 
