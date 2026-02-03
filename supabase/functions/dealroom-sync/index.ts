@@ -201,7 +201,7 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { action, keyword, limit = 100, keywordsPerSync = 10 } = await req.json();
+    const { action, keyword, limit = 100, keywordsPerSync = 10, dryRun = false } = await req.json();
 
     // ============= FETCH API USAGE FIRST (needed by all actions) =============
     const now = new Date();
@@ -527,7 +527,7 @@ serve(async (req) => {
     if (action === "test-tags-only") {
       const tags = keyword ? [keyword] : ["autonomous-mobility"];
       
-      console.log(`Testing tags ONLY (no industries) with MUST wrapper: ${tags.join(', ')}`);
+      console.log(`Testing tags ONLY (no industries) with MUST wrapper: ${tags.join(', ')} [dryRun=${dryRun}]`);
 
       const testUrl = `https://api.dealroom.co/api/v1/companies?limit=10&sort=-total_funding`;
       
@@ -542,6 +542,25 @@ serve(async (req) => {
       };
       
       console.log(`Request body: ${JSON.stringify(testBody)}`);
+
+      // DRY RUN: Return the request structure without calling API
+      if (dryRun) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            dryRun: true,
+            message: "Dry run - no API call made",
+            tags,
+            apiUrl: testUrl,
+            requestBody: testBody,
+            curlCommand: `curl -X POST "${testUrl}" \\
+  -H "Authorization: Basic <BASE64_API_KEY>" \\
+  -H "Content-Type: application/json" \\
+  -d '${JSON.stringify(testBody)}'`,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
 
       const response = await fetch(testUrl, {
         method: "POST",
@@ -613,6 +632,61 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify(result),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // ============= DRY RUN ACTION (show request structure only) =============
+    if (action === "dry-run") {
+      const tags = keyword ? [keyword] : ["autonomous-mobility"];
+      
+      const testUrl = `https://api.dealroom.co/api/v1/companies?limit=10&sort=-total_funding`;
+      
+      const requestBodies = {
+        tagsOnly: {
+          form_data: {
+            must: {
+              tags: tags.map(t => t.toLowerCase()),
+              funded: true,
+            },
+          },
+        },
+        withIndustries: {
+          form_data: {
+            must: {
+              industries: ["automotive"],
+              sub_industries: ["electric vehicles"],
+              funded: true,
+            },
+          },
+        },
+        tagsAndIndustries: {
+          form_data: {
+            must: {
+              industries: ["automotive"],
+              tags: tags.map(t => t.toLowerCase()),
+              funded: true,
+            },
+          },
+        },
+      };
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          dryRun: true,
+          message: "Dry run - showing request structures (no API calls made)",
+          apiUrl: testUrl,
+          structures: {
+            "Option 1: Tags Only (recommended test)": requestBodies.tagsOnly,
+            "Option 2: Industries + Sub-industries": requestBodies.withIndustries,
+            "Option 3: Industries + Tags": requestBodies.tagsAndIndustries,
+          },
+          curlExample: `curl -X POST "${testUrl}" \\
+  -H "Authorization: Basic <BASE64_API_KEY>" \\
+  -H "Content-Type: application/json" \\
+  -d '${JSON.stringify(requestBodies.tagsOnly)}'`,
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
