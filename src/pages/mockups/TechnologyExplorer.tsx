@@ -1,23 +1,27 @@
 import { useState, useMemo } from "react";
-import { Search, TrendingUp, TrendingDown, Minus, FileText, DollarSign, Users, Calendar, Building2, Newspaper, ExternalLink, Target } from "lucide-react";
+import { Search, TrendingUp, TrendingDown, Minus, FileText, DollarSign, Users, Calendar, Building2, Newspaper, ExternalLink, Target, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { PlatformHeader } from "@/components/mockups/PlatformHeader";
 import { MarketIntelligence } from "@/components/mockups/MarketIntelligence";
 import { useTechnologies } from "@/hooks/useTechnologies";
+import { useCompaniesForTechnology } from "@/hooks/useCompaniesForTechnology";
 import { formatFundingEur, formatNumber, MATURITY_SCORE_CONFIG, type Technology } from "@/types/database";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type SortOption = "composite" | "funding" | "employees" | "companies";
+type RegionFilter = "global" | "eu";
 
 export default function TechnologyExplorer() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("composite");
+  const [regionFilter, setRegionFilter] = useState<RegionFilter>("global");
   const [selectedTech, setSelectedTech] = useState<Technology | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
@@ -100,6 +104,23 @@ export default function TechnologyExplorer() {
                     className="pl-10"
                   />
                 </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Region:</span>
+                <ToggleGroup 
+                  type="single" 
+                  value={regionFilter} 
+                  onValueChange={(value) => value && setRegionFilter(value as RegionFilter)}
+                  size="sm"
+                >
+                  <ToggleGroupItem value="global" aria-label="Global">
+                    <Globe className="h-4 w-4 mr-1" />
+                    Global
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="eu" aria-label="EU Only">
+                    🇪🇺 EU
+                  </ToggleGroupItem>
+                </ToggleGroup>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Sort by:</span>

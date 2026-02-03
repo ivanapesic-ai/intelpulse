@@ -351,17 +351,13 @@ serve(async (req) => {
         console.log(`Searching Dealroom for tag "${searchTag}"...`);
 
         // Dealroom API v1 uses POST with form_data structure
-        // Based on testing: the simpler form_data format works (without must/should nesting for tags)
-        // Tags filter only works without must/should; hq_locations may need to be in must
+        // Global search - no hq_locations filter to get worldwide companies
         const apiUrl = `https://api.dealroom.co/api/v1/companies?limit=${Math.min(limit, 100)}&sort=-total_funding`;
         
-        // Try: tags at top level, hq_locations in must
+        // Simple tag-based search without geographic restrictions
         const requestBody = {
           form_data: {
             tags: [searchTag],
-            must: {
-              hq_locations: ["Europe"],
-            },
           },
         };
         
