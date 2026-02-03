@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { useDealroomCompanies, useDealroomSyncLogs, useDealroomSync, useDealroomCountryStats, useDealroomApiUsage, useDealroomCompanyCount, useDealroomTagDiscovery } from "@/hooks/useDealroomSync";
+import { useDealroomCompanies, useDealroomSyncLogs, useDealroomSync, useDealroomCountryStats, useDealroomApiUsage, useDealroomCompanyCount, useDealroomTagTest } from "@/hooks/useDealroomSync";
 import { useDealroomTaxonomy, useSyncDealroomTaxonomy, useSyncTaxonomyFromCompanies } from "@/hooks/useDealroomTaxonomy";
 import { useDocuments, useDocumentStats } from "@/hooks/useDocuments";
 import { useKeywordStats } from "@/hooks/useTechnologies";
@@ -43,15 +43,109 @@ export default function AdminPanel() {
   const { data: taxonomy } = useDealroomTaxonomy();
   const syncTaxonomy = useSyncDealroomTaxonomy();
   const syncFromCompanies = useSyncTaxonomyFromCompanies();
-  const tagDiscovery = useDealroomTagDiscovery();
+  const tagTest = useDealroomTagTest();
 
-  // Tag discovery results state
-  const [discoveryResults, setDiscoveryResults] = useState<{
+  // Tag discovery state with live progress
+  const [discoveryState, setDiscoveryState] = useState<{
+    isRunning: boolean;
+    currentTag: string;
+    currentIndex: number;
+    totalTags: number;
     validTags: Array<{ tag: string; companyCount: number; sampleCompany: string | null }>;
     invalidTags: string[];
-    totalTested: number;
-    apiCallsUsed: number;
-  } | null>(null);
+  }>({
+    isRunning: false,
+    currentTag: "",
+    currentIndex: 0,
+    totalTags: 0,
+    validTags: [],
+    invalidTags: [],
+  });
+
+  const AUTOMOTIVE_TAG_CANDIDATES = [
+    // From Dealroom confirmed
+    'autonomous-mobility',
+    // Variations to test
+    'autonomous-vehicles', 'self-driving', 'autonomous-driving',
+    'adas', 'advanced-driver-assistance', 'driver-assistance',
+    // EV related
+    'electric-vehicles', 'ev', 'battery-technology', 'battery',
+    'charging-infrastructure', 'ev-charging', 'charging-stations',
+    // Software
+    'automotive-software', 'vehicle-software', 'automotive-tech',
+    'connected-cars', 'connected-vehicles', 'vehicle-connectivity',
+    'ota-updates', 'over-the-air', 'software-updates',
+    // Sensors
+    'lidar', 'radar', 'camera-systems', 'sensors', 'sensor-fusion',
+    // Mobility
+    'mobility-services', 'shared-mobility', 'micromobility',
+    'fleet-management', 'ride-hailing',
+    // Infrastructure
+    'smart-cities', 'transportation', 'logistics',
+    // Security/Compute
+    'automotive-cybersecurity', 'vehicle-security', 'cybersecurity',
+    'edge-computing', 'automotive-cloud',
+    // Hardware
+    'automotive-chips', 'semiconductors', 'automotive-semiconductors',
+  ];
+
+  const handleTagDiscovery = async () => {
+    setDiscoveryState({
+      isRunning: true,
+      currentTag: "",
+      currentIndex: 0,
+      totalTags: AUTOMOTIVE_TAG_CANDIDATES.length,
+      validTags: [],
+      invalidTags: [],
+    });
+
+    for (let i = 0; i < AUTOMOTIVE_TAG_CANDIDATES.length; i++) {
+      const tag = AUTOMOTIVE_TAG_CANDIDATES[i];
+      
+      setDiscoveryState(prev => ({
+        ...prev,
+        currentTag: tag,
+        currentIndex: i + 1,
+      }));
+
+      try {
+        const result = await new Promise<{ exists: boolean; companyCount: number; sampleCompany?: string }>((resolve, reject) => {
+          tagTest.mutate(tag, {
+            onSuccess: (data) => resolve(data),
+            onError: (err) => reject(err),
+          });
+        });
+
+        setDiscoveryState(prev => {
+          if (result.exists) {
+            return {
+              ...prev,
+              validTags: [...prev.validTags, { tag, companyCount: result.companyCount, sampleCompany: result.sampleCompany || null }],
+            };
+          } else {
+            return {
+              ...prev,
+              invalidTags: [...prev.invalidTags, tag],
+            };
+          }
+        });
+      } catch (err) {
+        setDiscoveryState(prev => ({
+          ...prev,
+          invalidTags: [...prev.invalidTags, tag],
+        }));
+      }
+
+      // Small delay between requests
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    setDiscoveryState(prev => ({
+      ...prev,
+      isRunning: false,
+      currentTag: "",
+    }));
+  };
 
   const handleDealroomSync = () => {
     dealroomSync.mutate({});
@@ -63,19 +157,6 @@ export default function AdminPanel() {
 
   const handleSyncFromCompanies = () => {
     syncFromCompanies.mutate();
-  };
-
-  const handleTagDiscovery = () => {
-    tagDiscovery.mutate(undefined, {
-      onSuccess: (data) => {
-        setDiscoveryResults({
-          validTags: data.validTags || [],
-          invalidTags: data.invalidTags || [],
-          totalTested: data.totalTested || 0,
-          apiCallsUsed: data.apiCallsUsed || 0,
-        });
-      },
-    });
   };
 
   const totalCompanies = companyCount || 0;
@@ -365,51 +446,65 @@ export default function AdminPanel() {
                         </div>
                         <Button 
                           onClick={handleTagDiscovery} 
-                          disabled={tagDiscovery.isPending}
+                          disabled={discoveryState.isRunning}
                           variant="outline"
                           size="sm"
                         >
-                          <Search className={`h-4 w-4 mr-2 ${tagDiscovery.isPending ? "animate-pulse" : ""}`} />
-                          {tagDiscovery.isPending ? "Testing..." : "Test All Tags"}
+                          <Search className={`h-4 w-4 mr-2 ${discoveryState.isRunning ? "animate-pulse" : ""}`} />
+                          {discoveryState.isRunning ? "Testing..." : "Test All Tags"}
                         </Button>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      {tagDiscovery.isPending && (
-                        <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/30 mb-4">
-                          <div className="flex items-center gap-2 text-blue-500">
-                            <RefreshCw className="h-4 w-4 animate-spin" />
-                            <span className="text-sm font-medium">Testing 34 automotive tags... (uses ~34 API calls)</span>
+                      {/* Live Progress */}
+                      {discoveryState.isRunning && (
+                        <div className="space-y-3 mb-4">
+                          <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium text-blue-500">
+                                Testing {discoveryState.currentIndex}/{discoveryState.totalTags}
+                              </span>
+                              <span className="text-xs text-blue-400">
+                                {Math.round((discoveryState.currentIndex / discoveryState.totalTags) * 100)}%
+                              </span>
+                            </div>
+                            <Progress 
+                              value={(discoveryState.currentIndex / discoveryState.totalTags) * 100} 
+                              className="h-2"
+                            />
+                            <p className="text-xs text-blue-400 mt-2 font-mono">
+                              → {discoveryState.currentTag}
+                            </p>
                           </div>
                         </div>
                       )}
 
-                      {discoveryResults && (
+                      {/* Summary (show during and after) */}
+                      {(discoveryState.validTags.length > 0 || discoveryState.invalidTags.length > 0) && (
                         <div className="space-y-4">
-                          {/* Summary */}
                           <div className="grid grid-cols-3 gap-3">
                             <div className="p-3 bg-success/10 rounded-lg text-center border border-success/30">
-                              <p className="text-xl font-bold text-success">{discoveryResults.validTags.length}</p>
+                              <p className="text-xl font-bold text-success">{discoveryState.validTags.length}</p>
                               <p className="text-xs text-success">Valid</p>
                             </div>
                             <div className="p-3 bg-destructive/10 rounded-lg text-center border border-destructive/30">
-                              <p className="text-xl font-bold text-destructive">{discoveryResults.invalidTags.length}</p>
+                              <p className="text-xl font-bold text-destructive">{discoveryState.invalidTags.length}</p>
                               <p className="text-xs text-destructive">Unfiltered</p>
                             </div>
                             <div className="p-3 bg-muted rounded-lg text-center">
-                              <p className="text-xl font-bold text-foreground">{discoveryResults.apiCallsUsed}</p>
+                              <p className="text-xl font-bold text-foreground">{discoveryState.currentIndex}</p>
                               <p className="text-xs text-muted-foreground">API Calls</p>
                             </div>
                           </div>
 
                           {/* Valid Tags List */}
-                          {discoveryResults.validTags.length > 0 && (
+                          {discoveryState.validTags.length > 0 && (
                             <div>
                               <h4 className="text-xs font-medium text-success mb-2 flex items-center gap-1">
                                 <CheckCircle className="h-3 w-3" /> Valid Tags
                               </h4>
                               <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
-                                {discoveryResults.validTags.map((t) => (
+                                {discoveryState.validTags.map((t) => (
                                   <Badge key={t.tag} variant="outline" className="text-xs bg-success/10 text-success border-success/30">
                                     {t.tag} ({t.companyCount})
                                   </Badge>
@@ -419,13 +514,13 @@ export default function AdminPanel() {
                           )}
 
                           {/* Invalid Tags */}
-                          {discoveryResults.invalidTags.length > 0 && (
+                          {discoveryState.invalidTags.length > 0 && (
                             <div>
                               <h4 className="text-xs font-medium text-destructive mb-2 flex items-center gap-1">
                                 <XCircle className="h-3 w-3" /> Unfiltered/Invalid
                               </h4>
                               <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
-                                {discoveryResults.invalidTags.map((tag) => (
+                                {discoveryState.invalidTags.map((tag) => (
                                   <Badge key={tag} variant="outline" className="text-xs bg-destructive/10 text-destructive border-destructive/30">
                                     {tag}
                                   </Badge>
@@ -436,7 +531,7 @@ export default function AdminPanel() {
                         </div>
                       )}
 
-                      {!discoveryResults && !tagDiscovery.isPending && (
+                      {discoveryState.validTags.length === 0 && discoveryState.invalidTags.length === 0 && !discoveryState.isRunning && (
                         <p className="text-sm text-muted-foreground">
                           Click "Test All Tags" to discover which Dealroom tags work as filters.
                         </p>
