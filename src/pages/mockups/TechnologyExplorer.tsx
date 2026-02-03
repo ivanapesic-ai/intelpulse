@@ -10,7 +10,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { PlatformHeader } from "@/components/mockups/PlatformHeader";
 import { MarketIntelligence } from "@/components/mockups/MarketIntelligence";
 import { useTechnologies } from "@/hooks/useTechnologies";
-import { useCompaniesForTechnology } from "@/hooks/useCompaniesForTechnology";
+import { useTechnologyRegionStats, getRegionStats } from "@/hooks/useTechnologyRegionStats";
 import { formatFundingEur, formatNumber, MATURITY_SCORE_CONFIG, type Technology } from "@/types/database";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,6 +26,17 @@ export default function TechnologyExplorer() {
   const [detailOpen, setDetailOpen] = useState(false);
 
   const { data: technologies, isLoading, error } = useTechnologies();
+  const { data: regionStats } = useTechnologyRegionStats();
+
+  // Helper to get display values based on region filter
+  const getDisplayStats = (tech: Technology) => {
+    const stats = getRegionStats(regionStats, tech.keywordId, regionFilter);
+    return {
+      companyCount: stats.companyCount > 0 ? stats.companyCount : tech.dealroomCompanyCount,
+      funding: stats.funding > 0 ? stats.funding : tech.totalFundingEur,
+      employees: stats.employees > 0 ? stats.employees : tech.totalEmployees,
+    };
+  };
 
   const filteredTechnologies = useMemo(() => {
     if (!technologies) return [];
@@ -35,21 +46,31 @@ export default function TechnologyExplorer() {
         const matchesSearch =
           tech.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           tech.description.toLowerCase().includes(searchQuery.toLowerCase());
+        
+        // If EU filter is active, only show technologies with EU companies
+        if (regionFilter === "eu" && regionStats) {
+          const stats = getRegionStats(regionStats, tech.keywordId, "eu");
+          if (stats.companyCount === 0) return false;
+        }
+        
         return matchesSearch;
       })
       .sort((a, b) => {
+        const statsA = getDisplayStats(a);
+        const statsB = getDisplayStats(b);
+        
         switch (sortBy) {
           case "funding":
-            return b.totalFundingEur - a.totalFundingEur;
+            return statsB.funding - statsA.funding;
           case "employees":
-            return b.totalEmployees - a.totalEmployees;
+            return statsB.employees - statsA.employees;
           case "companies":
-            return b.dealroomCompanyCount - a.dealroomCompanyCount;
+            return statsB.companyCount - statsA.companyCount;
           default:
             return b.compositeScore - a.compositeScore;
         }
       });
-  }, [technologies, searchQuery, sortBy]);
+  }, [technologies, searchQuery, sortBy, regionFilter, regionStats]);
 
   const openDetail = (tech: Technology) => {
     setSelectedTech(tech);
@@ -164,64 +185,68 @@ export default function TechnologyExplorer() {
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredTechnologies.map((tech) => (
-              <Card 
-                key={tech.id} 
-                className="cursor-pointer hover:border-primary/50 transition-colors"
-                onClick={() => openDetail(tech)}
-              >
-                <CardContent className="pt-6">
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-semibold text-foreground">{tech.name}</h3>
-                    <Badge 
-                      variant="outline" 
-                      className={`${getScoreColor(tech.compositeScore)} border-current`}
-                    >
-                      {tech.compositeScore.toFixed(1)}/2
-                    </Badge>
-                  </div>
-                  
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                    {tech.description || "Technology area tracked via Dealroom data"}
-                  </p>
-
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <div className="p-2 rounded bg-muted/50">
-                      <Building2 className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                      <p className="text-sm font-medium text-foreground">{tech.dealroomCompanyCount}</p>
-                      <p className="text-xs text-muted-foreground">Companies</p>
-                    </div>
-                    <div className="p-2 rounded bg-muted/50">
-                      <DollarSign className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                      <p className="text-sm font-medium text-foreground">{formatFundingEur(tech.totalFundingEur)}</p>
-                      <p className="text-xs text-muted-foreground">Funding</p>
-                    </div>
-                    <div className="p-2 rounded bg-muted/50">
-                      <Users className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                      <p className="text-sm font-medium text-foreground">{formatNumber(tech.totalEmployees)}</p>
-                      <p className="text-xs text-muted-foreground">Employees</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      {tech.trend === "up" ? (
-                        <TrendingUp className="h-3 w-3 text-emerald-500" />
-                      ) : tech.trend === "down" ? (
-                        <TrendingDown className="h-3 w-3 text-red-500" />
-                      ) : (
-                        <Minus className="h-3 w-3" />
-                      )}
-                      <span className="capitalize">{tech.trend}</span>
-                    </div>
-                    <div className="flex gap-1 flex-wrap">
+            {filteredTechnologies.map((tech) => {
+              const displayStats = getDisplayStats(tech);
+              return (
+                <Card 
+                  key={tech.id} 
+                  className="cursor-pointer hover:border-primary/50 transition-colors"
+                  onClick={() => openDetail(tech)}
+                >
+                  <CardContent className="pt-6">
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="font-semibold text-foreground">{tech.name}</h3>
                       <Badge 
                         variant="outline" 
-                        className={MATURITY_SCORE_CONFIG[tech.investmentScore as 0|1|2]?.color || ""}
-                        title="Investment Score"
+                        className={`${getScoreColor(tech.compositeScore)} border-current`}
                       >
-                        Inv: {tech.investmentScore}
+                        {tech.compositeScore.toFixed(1)}/2
                       </Badge>
+                    </div>
+                    
+                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                      {tech.description || "Technology area tracked via Dealroom data"}
+                    </p>
+
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="p-2 rounded bg-muted/50">
+                        <Building2 className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                        <p className="text-sm font-medium text-foreground">{displayStats.companyCount}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {regionFilter === "eu" ? "EU Co." : "Companies"}
+                        </p>
+                      </div>
+                      <div className="p-2 rounded bg-muted/50">
+                        <DollarSign className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                        <p className="text-sm font-medium text-foreground">{formatFundingEur(displayStats.funding)}</p>
+                        <p className="text-xs text-muted-foreground">Funding</p>
+                      </div>
+                      <div className="p-2 rounded bg-muted/50">
+                        <Users className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                        <p className="text-sm font-medium text-foreground">{formatNumber(displayStats.employees)}</p>
+                        <p className="text-xs text-muted-foreground">Employees</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        {tech.trend === "up" ? (
+                          <TrendingUp className="h-3 w-3 text-emerald-500" />
+                        ) : tech.trend === "down" ? (
+                          <TrendingDown className="h-3 w-3 text-red-500" />
+                        ) : (
+                          <Minus className="h-3 w-3" />
+                        )}
+                        <span className="capitalize">{tech.trend}</span>
+                      </div>
+                      <div className="flex gap-1 flex-wrap">
+                        <Badge 
+                          variant="outline" 
+                          className={MATURITY_SCORE_CONFIG[tech.investmentScore as 0|1|2]?.color || ""}
+                          title="Investment Score"
+                        >
+                          Inv: {tech.investmentScore}
+                        </Badge>
                       <Badge 
                         variant="outline" 
                         className={MATURITY_SCORE_CONFIG[tech.employeesScore as 0|1|2]?.color || ""}
@@ -240,7 +265,8 @@ export default function TechnologyExplorer() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
 
