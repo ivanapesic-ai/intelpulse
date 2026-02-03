@@ -18,6 +18,12 @@ export interface DealroomTaxonomyResponse {
   industries: DealroomTaxonomyItem[];
   sub_industries: DealroomTaxonomyItem[];
   technology: DealroomTaxonomyItem[];
+  counts: {
+    industries: number;
+    subIndustries: number;
+    technology: number;
+    total: number;
+  };
 }
 
 // Fetch Dealroom taxonomy from database
@@ -33,10 +39,20 @@ export function useDealroomTaxonomy() {
 
       if (error) throw error;
 
+      const industries = (data || []).filter(d => d.taxonomy_type === 'industry') as DealroomTaxonomyItem[];
+      const sub_industries = (data || []).filter(d => d.taxonomy_type === 'sub_industry') as DealroomTaxonomyItem[];
+      const technology = (data || []).filter(d => d.taxonomy_type === 'technology') as DealroomTaxonomyItem[];
+
       const grouped: DealroomTaxonomyResponse = {
-        industries: (data || []).filter(d => d.taxonomy_type === 'industry') as DealroomTaxonomyItem[],
-        sub_industries: (data || []).filter(d => d.taxonomy_type === 'sub_industry') as DealroomTaxonomyItem[],
-        technology: (data || []).filter(d => d.taxonomy_type === 'technology') as DealroomTaxonomyItem[],
+        industries,
+        sub_industries,
+        technology,
+        counts: {
+          industries: industries.length,
+          subIndustries: sub_industries.length,
+          technology: technology.length,
+          total: (data || []).length,
+        },
       };
 
       return grouped;
