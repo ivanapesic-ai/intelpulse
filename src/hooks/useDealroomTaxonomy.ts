@@ -2,29 +2,37 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-interface TaxonomyItem {
+export interface TaxonomyItem {
   id: string;
   name: string;
   slug: string | null;
-  taxonomyType: string;
-  parentName: string | null;
-  companyCount: number | null;
-  isActive: boolean;
-  lastSyncedAt: string | null;
+  taxonomy_type: string;
+  parent_name: string | null;
+  company_count: number | null;
+  is_active: boolean;
+  last_synced_at: string | null;
 }
 
-interface TaxonomyCounts {
+export interface TaxonomyCounts {
   industries: number;
   subIndustries: number;
   technology: number;
   total: number;
 }
 
+export interface TaxonomyData {
+  industries: TaxonomyItem[];
+  sub_industries: TaxonomyItem[];
+  technology: TaxonomyItem[];
+  counts: TaxonomyCounts;
+}
+
 // Fetch taxonomy from database
+// Returns same shape as useTechnologies.ts version for compatibility
 export function useDealroomTaxonomy() {
   return useQuery({
     queryKey: ["dealroom-taxonomy"],
-    queryFn: async () => {
+    queryFn: async (): Promise<TaxonomyData> => {
       const { data, error } = await supabase
         .from("dealroom_taxonomy")
         .select("*")
@@ -33,31 +41,20 @@ export function useDealroomTaxonomy() {
 
       if (error) throw error;
 
-      const items = (data || []).map((row): TaxonomyItem => ({
-        id: row.id,
-        name: row.name,
-        slug: row.slug,
-        taxonomyType: row.taxonomy_type,
-        parentName: row.parent_name,
-        companyCount: row.company_count,
-        isActive: row.is_active ?? true,
-        lastSyncedAt: row.last_synced_at,
-      }));
+      const items = (data || []) as TaxonomyItem[];
 
-      const grouped = {
-        industries: items.filter(d => d.taxonomyType === 'industry'),
-        subIndustries: items.filter(d => d.taxonomyType === 'sub_industry'),
-        technology: items.filter(d => d.taxonomyType === 'technology'),
-      };
+      const industries = items.filter(d => d.taxonomy_type === 'industry');
+      const sub_industries = items.filter(d => d.taxonomy_type === 'sub_industry');
+      const technology = items.filter(d => d.taxonomy_type === 'technology');
 
       const counts: TaxonomyCounts = {
-        industries: grouped.industries.length,
-        subIndustries: grouped.subIndustries.length,
-        technology: grouped.technology.length,
+        industries: industries.length,
+        subIndustries: sub_industries.length,
+        technology: technology.length,
         total: items.length,
       };
 
-      return { items, grouped, counts };
+      return { industries, sub_industries, technology, counts };
     },
   });
 }
