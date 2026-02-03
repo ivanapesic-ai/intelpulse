@@ -246,16 +246,30 @@ serve(async (req) => {
         }
       }
 
-      // Use upsert to handle existing records
-      const { error: upsertError } = await supabase
+      // Insert in batches to avoid duplicates - delete first then insert
+      // This avoids the duplicate key constraint issue
+      const { error: deleteError } = await supabase
         .from('dealroom_taxonomy')
-        .upsert(insertData, { 
-          onConflict: 'taxonomy_type,name',
-          ignoreDuplicates: false
-        });
+        .delete()
+        .in('taxonomy_type', ['industry', 'sub_industry', 'technology']);
 
-      if (upsertError) {
-        throw upsertError;
+      if (deleteError) {
+        console.error('Delete error:', deleteError);
+        throw deleteError;
+      }
+
+      // Insert in batches of 100
+      const batchSize = 100;
+      for (let i = 0; i < insertData.length; i += batchSize) {
+        const batch = insertData.slice(i, i + batchSize);
+        const { error: insertError } = await supabase
+          .from('dealroom_taxonomy')
+          .insert(batch);
+
+        if (insertError) {
+          console.error('Insert error at batch', i, insertError);
+          throw insertError;
+        }
       }
 
       return new Response(JSON.stringify({
