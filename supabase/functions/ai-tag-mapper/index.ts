@@ -47,6 +47,19 @@ function keywordMatchesGenericTerm(keyword: string, term: string): boolean {
   return kwLower.includes(termLower) || termLower.includes(kwLower);
 }
 
+interface MappingResult {
+  dealroom_term: string;
+  term_type: "industry" | "sub_industry" | "tag";
+  relationship: "primary" | "related" | "tangential";
+  confidence: number;
+  reasoning: string;
+}
+
+interface KeywordMappingResponse {
+  keyword_id: string;
+  mappings: MappingResult[];
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -118,252 +131,283 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Processing ${keywords.length} keywords for AI tag mapping`);
+    console.log(`Processing ${keywords.length} keywords for AI tag mapping with confidence scoring`);
 
-    // Build prompt for AI with STRICT matching rules
-    const keywordList = keywords.map(k => 
-      `- "${k.display_name}" (keyword: ${k.keyword}, description: ${k.description || "N/A"})`
-    ).join("\n");
+    // Build comprehensive taxonomy list for AI
+    const allTerms = [
+      ...industries.map(t => `[industry] ${t}`),
+      ...subIndustries.map(t => `[sub_industry] ${t}`),
+      ...techTags.map(t => `[tag] ${t}`),
+    ].join("\n");
 
-    const systemPrompt = `You are a STRICT taxonomy mapper for Dealroom company discovery. 
-Your task is to suggest ONLY the most precisely relevant Dealroom terms for each CEI-SPHERE keyword.
+    // Process each keyword individually for detailed mapping
+    const allMappings: Array<{
+      keywordId: string;
+      keyword: string;
+      mappings: MappingResult[];
+    }> = [];
 
-CRITICAL RULES - FOLLOW EXACTLY:
+    for (const keyword of keywords) {
+      const systemPrompt = `You are an expert technology taxonomy mapper specializing in automotive and energy technology domains.
 
-1. ONLY suggest terms that describe the EXACT SAME technology/domain as the keyword
-   - The term must be so specific that searching it would return ONLY companies in that exact domain
-   
-2. NEVER suggest generic enabling technologies unless the CEI keyword IS that technology:
-   - FORBIDDEN: artificial intelligence, machine learning, software, cloud, IoT, robotics, automation, sustainability, cleantech
-   - WRONG: "Autonomous Driving" -> "artificial intelligence" (would match ANY AI company!)
-   - RIGHT: "Autonomous Driving" -> "autonomous driving", "autonomous vehicles", "ADAS", "LiDAR"
-   - EXCEPTION: If keyword IS "Artificial Intelligence", then "artificial intelligence" is allowed
+Your task is to map CEI-SPHERE technology keywords to Dealroom taxonomy terms with:
+1. Relationship strength (primary/related/tangential)
+2. Confidence score (0-100)
+3. Clear reasoning for each mapping
 
-3. NEVER suggest overly broad industry terms:
-   - FORBIDDEN for most keywords: "automotive", "transportation", "energy", "technology"
-   - These match too many unrelated companies
+RELATIONSHIP DEFINITIONS:
+- primary: The Dealroom term is a DIRECT synonym or describes the EXACT same technology
+- related: The Dealroom term is in the same domain and companies with this tag would likely work on the keyword's technology
+- tangential: The Dealroom term has some connection but is not a primary focus area
 
-4. PREFER exact or near-exact matches from Dealroom's verified terms:
-   VERIFIED DEALROOM TERMS (prioritize these): ${verifiedDealroomTerms.slice(0, 40).join(", ")}
+CONFIDENCE SCORING:
+- 90-100: Exact match or near-synonym (e.g., "EV Charging" → "EV charging infrastructure")
+- 70-89: Strong domain match (e.g., "Autonomous Driving" → "ADAS")
+- 50-69: Related domain (e.g., "Battery Electric Vehicle" → "Electric mobility")
+- 30-49: Tangential connection (use sparingly)
+- 0-29: Do not include these
 
-5. QUALITY TEST: Ask yourself "Would searching this tag find ONLY companies in the ${keywords[0]?.display_name || 'target'} domain?"
-   - If NO (would match other domains), DON'T include it
-   - If YES (specific to this domain), include it
+STRICT RULES:
+1. NEVER map to generic enabling technologies unless keyword IS that technology
+   - FORBIDDEN unless keyword matches: artificial intelligence, machine learning, IoT, robotics, automation, sustainability
+2. NEVER map to overly broad industry terms: automotive, transportation, energy, technology
+3. BE CONSERVATIVE: 3-8 high-confidence mappings are better than 15 weak ones
+4. Each mapping MUST have clear reasoning explaining WHY it's relevant
 
-6. BE CONSERVATIVE: It's better to have 1-2 precise matches than 5 vague ones
+VERIFIED DEALROOM TERMS (prioritize these):
+${verifiedDealroomTerms.slice(0, 40).join(", ")}`;
 
-AVAILABLE DEALROOM TAXONOMY:
+      const userPrompt = `Map this CEI-SPHERE keyword to Dealroom taxonomy:
 
-INDUSTRIES (use sparingly - most are too broad): ${industries.slice(0, 30).join(", ")}
+KEYWORD: "${keyword.display_name}"
+Description: ${keyword.description || "N/A"}
 
-SUB-INDUSTRIES (more specific - good for matching): ${subIndustries.slice(0, 60).join(", ")}
+AVAILABLE DEALROOM TERMS:
+${allTerms}
 
-TECHNOLOGY TAGS (most specific - best for matching): ${techTags.slice(0, 80).join(", ")}
+For each semantically related term, provide:
+1. The exact term name (must match the list above)
+2. Term type (industry/sub_industry/tag)
+3. Relationship strength (primary/related/tangential)
+4. Confidence score (0-100)
+5. Brief reasoning (1 sentence)
 
-EXAMPLES OF CORRECT MAPPINGS:
+Only include mappings with confidence >= 40.`;
 
-"Autonomous Driving" ->
-  industries: [] (none - "automotive" too broad)
-  sub_industries: ["Autonomous vehicles"]
-  tags: ["Autonomous driving", "ADAS", "LiDAR", "AV Software"]
-
-"Battery Electric Vehicle" ->
-  industries: []
-  sub_industries: ["Electric vehicles"]
-  tags: ["EV", "Electric mobility", "EV Battery"]
-
-"Smart Grid" ->
-  industries: []
-  sub_industries: []
-  tags: ["Smart grid", "Grid balancing", "Demand response"]
-
-"Vehicle to Grid" ->
-  industries: []
-  sub_industries: []
-  tags: ["Vehicle-to-grid", "V2X", "Bidirectional charging", "EV Charging"]`;
-
-    const userPrompt = `Map these CEI-SPHERE technology keywords to Dealroom taxonomy with STRICT precision:
-
-${keywordList}
-
-Return a JSON array. Be VERY selective - only include terms that precisely match the domain:
-[
-  { 
-    "keyword_id": "<id>", 
-    "industries": ["only if highly specific match"],
-    "sub_industries": ["prefer these for domain matching"],
-    "tags": ["most specific terms only"]
-  },
-  ...
-]`;
-
-    // Call Lovable AI with structured tool
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "map_keywords_to_taxonomy",
-              description: "Map technology keywords to Dealroom industries, sub-industries, and tags with strict precision",
-              parameters: {
-                type: "object",
-                properties: {
-                  mappings: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        keyword_id: { type: "string" },
-                        industries: { 
-                          type: "array", 
-                          items: { type: "string" },
-                          description: "Broad industry categories - use sparingly, most are too broad"
+      // Call Lovable AI with structured tool for this keyword
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+          tools: [
+            {
+              type: "function",
+              function: {
+                name: "map_keyword_to_dealroom",
+                description: "Map a CEI keyword to Dealroom taxonomy terms with confidence and reasoning",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    keyword_id: { type: "string" },
+                    mappings: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          dealroom_term: { 
+                            type: "string",
+                            description: "Exact Dealroom taxonomy term name"
+                          },
+                          term_type: { 
+                            type: "string", 
+                            enum: ["industry", "sub_industry", "tag"],
+                            description: "Type of Dealroom term"
+                          },
+                          relationship: { 
+                            type: "string", 
+                            enum: ["primary", "related", "tangential"],
+                            description: "How closely related the term is to the keyword"
+                          },
+                          confidence: { 
+                            type: "number",
+                            minimum: 0,
+                            maximum: 100,
+                            description: "Confidence score 0-100"
+                          },
+                          reasoning: { 
+                            type: "string",
+                            description: "Brief explanation of why this mapping is relevant"
+                          }
                         },
-                        sub_industries: { 
-                          type: "array", 
-                          items: { type: "string" },
-                          description: "Specific sub-industry sectors - good for domain matching"
-                        },
-                        tags: { 
-                          type: "array", 
-                          items: { type: "string" },
-                          description: "Granular technology tags - most specific, best for matching"
-                        }
-                      },
-                      required: ["keyword_id", "industries", "sub_industries", "tags"]
+                        required: ["dealroom_term", "term_type", "relationship", "confidence", "reasoning"]
+                      }
                     }
-                  }
-                },
-                required: ["mappings"]
+                  },
+                  required: ["keyword_id", "mappings"]
+                }
               }
             }
-          }
-        ],
-        tool_choice: { type: "function", function: { name: "map_keywords_to_taxonomy" } }
-      }),
-    });
+          ],
+          tool_choice: { type: "function", function: { name: "map_keyword_to_dealroom" } }
+        }),
+      });
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+      if (!response.ok) {
+        if (response.status === 429) {
+          console.error("Rate limit hit for keyword:", keyword.display_name);
+          continue; // Skip this keyword, try next
+        }
+        if (response.status === 402) {
+          return new Response(
+            JSON.stringify({ error: "AI credits exhausted. Please add funds." }),
+            { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        const errorText = await response.text();
+        console.error("AI gateway error:", response.status, errorText);
+        continue; // Skip this keyword
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Please add funds." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error(`AI gateway error: ${response.status}`);
-    }
 
-    const aiResult = await response.json();
-    console.log("AI response received, processing mappings...");
-
-    // Extract mappings from tool call
-    interface Mapping {
-      keyword_id: string;
-      industries: string[];
-      sub_industries: string[];
-      tags: string[];
-    }
-    let mappings: Mapping[] = [];
-    
-    const toolCall = aiResult.choices?.[0]?.message?.tool_calls?.[0];
-    if (toolCall?.function?.arguments) {
-      const parsed = JSON.parse(toolCall.function.arguments);
-      mappings = parsed.mappings || [];
-    }
-
-    // Validate against our loaded taxonomy (case-insensitive)
-    const validIndustries = new Set(industries.map(t => t.toLowerCase()));
-    const validSubIndustries = new Set(subIndustries.map(t => t.toLowerCase()));
-    const validTags = new Set(techTags.map(t => t.toLowerCase()));
-
-    // Apply strict validation + blacklist filtering
-    mappings = mappings.map(m => {
-      const keyword = keywords.find(k => k.id === m.keyword_id);
-      const keywordText = keyword?.keyword || "";
+      const aiResult = await response.json();
       
-      // Filter function that removes blacklisted terms unless keyword matches
-      const filterBlacklisted = (term: string) => {
-        if (isGenericTerm(term)) {
-          // Only allow if the keyword itself is the generic term
-          return keywordMatchesGenericTerm(keywordText, term);
+      // Extract mappings from tool call
+      const toolCall = aiResult.choices?.[0]?.message?.tool_calls?.[0];
+      if (toolCall?.function?.arguments) {
+        try {
+          const parsed: KeywordMappingResponse = JSON.parse(toolCall.function.arguments);
+          
+          // Validate against our loaded taxonomy (case-insensitive)
+          const validIndustries = new Set(industries.map(t => t.toLowerCase()));
+          const validSubIndustries = new Set(subIndustries.map(t => t.toLowerCase()));
+          const validTags = new Set(techTags.map(t => t.toLowerCase()));
+
+          // Filter and validate mappings
+          const validatedMappings = (parsed.mappings || []).filter(m => {
+            const termLower = m.dealroom_term.toLowerCase();
+            
+            // Check if term exists in correct category
+            let isValid = false;
+            if (m.term_type === "industry") isValid = validIndustries.has(termLower);
+            else if (m.term_type === "sub_industry") isValid = validSubIndustries.has(termLower);
+            else if (m.term_type === "tag") isValid = validTags.has(termLower);
+            
+            // Apply blacklist filter
+            if (isGenericTerm(m.dealroom_term)) {
+              if (!keywordMatchesGenericTerm(keyword.keyword, m.dealroom_term)) {
+                console.log(`Filtered blacklisted term: ${m.dealroom_term} for ${keyword.display_name}`);
+                return false;
+              }
+            }
+            
+            // Minimum confidence threshold
+            if (m.confidence < 40) return false;
+            
+            return isValid;
+          });
+
+          allMappings.push({
+            keywordId: keyword.id,
+            keyword: keyword.display_name,
+            mappings: validatedMappings
+          });
+
+          console.log(`${keyword.display_name}: ${validatedMappings.length} validated mappings`);
+        } catch (parseError) {
+          console.error(`Failed to parse AI response for ${keyword.display_name}:`, parseError);
         }
-        return true;
-      };
+      }
 
-      return {
-        ...m,
-        industries: m.industries
-          .filter(t => validIndustries.has(t.toLowerCase()))
-          .filter(filterBlacklisted),
-        sub_industries: m.sub_industries
-          .filter(t => validSubIndustries.has(t.toLowerCase()))
-          .filter(filterBlacklisted),
-        tags: m.tags
-          .filter(t => validTags.has(t.toLowerCase()))
-          .filter(filterBlacklisted)
-      };
-    });
+      // Small delay between requests to avoid rate limits
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
 
-    // Log filtering results for debugging
-    mappings.forEach(m => {
-      const keyword = keywords.find(k => k.id === m.keyword_id);
-      console.log(`${keyword?.display_name}: ${m.industries.length} industries, ${m.sub_industries.length} sub-industries, ${m.tags.length} tags`);
-    });
+    // Store mappings in cei_dealroom_mappings table
+    let storedCount = 0;
+    for (const keywordMapping of allMappings) {
+      for (const mapping of keywordMapping.mappings) {
+        const { error: insertError } = await supabase
+          .from("cei_dealroom_mappings")
+          .upsert({
+            keyword_id: keywordMapping.keywordId,
+            dealroom_term: mapping.dealroom_term,
+            term_type: mapping.term_type,
+            relationship_type: mapping.relationship,
+            confidence_score: Math.round(mapping.confidence),
+            reasoning: mapping.reasoning,
+            mapped_by: "gemini-ai",
+            verified: false
+          }, {
+            onConflict: "keyword_id,dealroom_term,term_type"
+          });
 
-    // Update database with new mappings (all three columns)
-    let updated = 0;
-    for (const mapping of mappings) {
-      const hasContent = mapping.industries.length > 0 || mapping.sub_industries.length > 0 || mapping.tags.length > 0;
-      if (hasContent) {
-        const { error: updateError } = await supabase
-          .from("technology_keywords")
-          .update({ 
-            dealroom_industries: mapping.industries,
-            dealroom_sub_industries: mapping.sub_industries,
-            dealroom_tags: mapping.tags 
-          })
-          .eq("id", mapping.keyword_id);
-
-        if (updateError) {
-          console.error(`Failed to update ${mapping.keyword_id}:`, updateError);
+        if (insertError) {
+          console.error(`Failed to store mapping:`, insertError);
         } else {
-          updated++;
+          storedCount++;
         }
+      }
+
+      // Also update the legacy dealroom_tags column for backward compatibility
+      const primaryTags = keywordMapping.mappings
+        .filter(m => m.term_type === "tag" && m.relationship === "primary")
+        .map(m => m.dealroom_term);
+      const relatedTags = keywordMapping.mappings
+        .filter(m => m.term_type === "tag" && m.relationship === "related")
+        .map(m => m.dealroom_term);
+      const allTags = [...primaryTags, ...relatedTags];
+
+      const primarySubIndustries = keywordMapping.mappings
+        .filter(m => m.term_type === "sub_industry" && m.confidence >= 60)
+        .map(m => m.dealroom_term);
+
+      const primaryIndustries = keywordMapping.mappings
+        .filter(m => m.term_type === "industry" && m.confidence >= 70)
+        .map(m => m.dealroom_term);
+
+      if (allTags.length > 0 || primarySubIndustries.length > 0 || primaryIndustries.length > 0) {
+        await supabase
+          .from("technology_keywords")
+          .update({
+            dealroom_tags: allTags,
+            dealroom_sub_industries: primarySubIndustries,
+            dealroom_industries: primaryIndustries
+          })
+          .eq("id", keywordMapping.keywordId);
       }
     }
 
-    console.log(`Successfully mapped ${updated}/${keywords.length} keywords with strict filtering`);
+    console.log(`Successfully stored ${storedCount} mappings for ${allMappings.length} keywords`);
 
     return new Response(
       JSON.stringify({
         success: true,
         processed: keywords.length,
-        updated,
-        mappings: mappings.map(m => ({
-          keywordId: m.keyword_id,
-          keyword: keywords.find(k => k.id === m.keyword_id)?.display_name,
-          industries: m.industries,
-          subIndustries: m.sub_industries,
-          tags: m.tags
+        keywordsMapped: allMappings.length,
+        totalMappingsStored: storedCount,
+        mappings: allMappings.map(m => ({
+          keywordId: m.keywordId,
+          keyword: m.keyword,
+          mappingCount: m.mappings.length,
+          primaryMappings: m.mappings.filter(x => x.relationship === "primary").length,
+          relatedMappings: m.mappings.filter(x => x.relationship === "related").length,
+          avgConfidence: m.mappings.length > 0 
+            ? Math.round(m.mappings.reduce((sum, x) => sum + x.confidence, 0) / m.mappings.length)
+            : 0,
+          topMappings: m.mappings.slice(0, 5).map(x => ({
+            term: x.dealroom_term,
+            type: x.term_type,
+            relationship: x.relationship,
+            confidence: x.confidence,
+            reasoning: x.reasoning
+          }))
         }))
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
