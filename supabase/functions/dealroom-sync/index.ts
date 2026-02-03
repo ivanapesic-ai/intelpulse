@@ -604,6 +604,35 @@ serve(async (req) => {
       ? currentUsage.api_calls_limit - currentUsage.api_calls_used 
       : 50000;
 
+    // Helper function for API calls with exponential backoff retry
+    async function fetchWithRetry(
+      url: string, 
+      options: RequestInit, 
+      maxRetries = 3
+    ): Promise<{ ok: boolean; status: number; text: string }> {
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        const response = await fetch(url, options);
+        const text = await response.text();
+        
+        if (response.ok) {
+          return { ok: true, status: response.status, text };
+        }
+        
+        // If rate limited (429), wait and retry with exponential backoff
+        if (response.status === 429 && attempt < maxRetries) {
+          const waitTime = Math.pow(2, attempt + 1) * 1000; // 2s, 4s, 8s
+          console.log(`Rate limited, waiting ${waitTime}ms before retry ${attempt + 1}/${maxRetries}...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue;
+        }
+        
+        // Non-retryable error
+        return { ok: false, status: response.status, text };
+      }
+      
+      return { ok: false, status: 429, text: "Max retries exceeded" };
+    }
+
     for (const searchTag of searchTerms) {
       // Check if we'd exceed quota
       if (apiCallsMade >= remainingCalls) {
@@ -618,8 +647,6 @@ serve(async (req) => {
         console.log(`Searching Dealroom for tag "${searchTag}"...`);
 
         // Dealroom API v1 uses POST with form_data structure
-        // Note: The tags filter appears to be case-sensitive and may require exact Dealroom taxonomy terms
-        // Using lowercase tags at top level of form_data (this is what returned data before)
         const apiUrl = `https://api.dealroom.co/api/v1/companies?limit=${Math.min(limit, 100)}&sort=-total_funding`;
         
         // Simple tag search - lowercase the tag to match Dealroom's taxonomy format
@@ -632,7 +659,8 @@ serve(async (req) => {
         console.log(`API URL: ${apiUrl}`);
         console.log(`Request body: ${JSON.stringify(requestBody)}`);
         
-        const dealroomResponse = await fetch(
+        // Use retry-enabled fetch with exponential backoff
+        const { ok, status, text: responseText } = await fetchWithRetry(
           apiUrl,
           {
             method: "POST",
@@ -644,16 +672,23 @@ serve(async (req) => {
           }
         );
 
-        // Log raw response for debugging
-        const responseText = await dealroomResponse.text();
-        console.log(`Dealroom API response status: ${dealroomResponse.status}`);
+        console.log(`Dealroom API response status: ${status}`);
         console.log(`Dealroom API raw response (first 500 chars): ${responseText.substring(0, 500)}`);
         
-        if (!dealroomResponse.ok) {
-          console.error(`Dealroom API error for tag "${searchTag}":`, dealroomResponse.status, responseText);
-          errors.push(`${searchTag}: ${dealroomResponse.status} - ${responseText.substring(0, 100)}`);
+        if (!ok) {
+          console.error(`Dealroom API error for tag "${searchTag}":`, status, responseText);
+          errors.push(`${searchTag}: ${status} - ${responseText.substring(0, 100)}`);
+          
+          // If still rate limited after retries, wait longer before next tag
+          if (status === 429) {
+            console.log("Still rate limited, waiting 10s before next tag...");
+            await new Promise(resolve => setTimeout(resolve, 10000));
+          }
           continue;
         }
+        
+        // Add delay between successful requests to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         const dealroomData = JSON.parse(responseText);
         const companies: DealroomCompany[] = dealroomData.items || dealroomData.companies || [];
