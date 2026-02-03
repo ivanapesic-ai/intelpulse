@@ -350,59 +350,51 @@ serve(async (req) => {
 
         console.log(`Searching Dealroom for tag "${searchTag}"...`);
 
-        // Call Dealroom API v1 with POST and form_data filters
-        // Using tags filter with Dealroom's actual taxonomy terms
+        // Dealroom API v1 uses POST with form_data structure
+        // Based on testing: the simpler form_data format works (without must/should nesting for tags)
+        // Tags filter only works without must/should; hq_locations may need to be in must
+        const apiUrl = `https://api.dealroom.co/api/v1/companies?limit=${Math.min(limit, 100)}&sort=-total_funding`;
+        
+        // Try: tags at top level, hq_locations in must
+        const requestBody = {
+          form_data: {
+            tags: [searchTag],
+            must: {
+              hq_locations: ["Europe"],
+            },
+          },
+        };
+        
+        console.log(`API URL: ${apiUrl}`);
+        console.log(`Request body: ${JSON.stringify(requestBody)}`);
+        
         const dealroomResponse = await fetch(
-          `https://api.dealroom.co/api/v1/companies?limit=${Math.min(limit, 100)}&sort=-total_funding`,
+          apiUrl,
           {
             method: "POST",
             headers: {
               "Authorization": authHeader,
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              form_data: {
-                must: {
-                  hq_locations: ["Europe"],
-                },
-                should: {
-                  tags: [searchTag],
-                  sub_industries: [searchTag],
-                },
-              },
-              // Explicitly request extended fields for market intelligence
-              fields: [
-                // Core company info
-                "id", "name", "tagline", "description", "website",
-                "hq_locations", "employees", "total_funding", "valuation",
-                "growth_stage", "founded_year", "status",
-                // Strategic intelligence - investors & funding
-                "investors", "lead_investors", "funding_rounds",
-                "last_funding_date", "last_funding",
-                // Acquisition tracking
-                "acquired_by", "acquisition_date", "acquisition_amount",
-                // Growth & hiring signals
-                "employee_growth", "jobs_count",
-                // Technology & industry
-                "industries", "technologies", "patents_count",
-                // News
-                "news"
-              ],
-            }),
+            body: JSON.stringify(requestBody),
           }
         );
 
+        // Log raw response for debugging
+        const responseText = await dealroomResponse.text();
+        console.log(`Dealroom API response status: ${dealroomResponse.status}`);
+        console.log(`Dealroom API raw response (first 500 chars): ${responseText.substring(0, 500)}`);
+        
         if (!dealroomResponse.ok) {
-          const errorText = await dealroomResponse.text();
-          console.error(`Dealroom API error for tag "${searchTag}":`, dealroomResponse.status, errorText);
-          errors.push(`${searchTag}: ${dealroomResponse.status} - ${errorText.substring(0, 100)}`);
+          console.error(`Dealroom API error for tag "${searchTag}":`, dealroomResponse.status, responseText);
+          errors.push(`${searchTag}: ${dealroomResponse.status} - ${responseText.substring(0, 100)}`);
           continue;
         }
 
-        const dealroomData = await dealroomResponse.json();
+        const dealroomData = JSON.parse(responseText);
         const companies: DealroomCompany[] = dealroomData.items || dealroomData.companies || [];
         
-        console.log(`Tag "${searchTag}": found ${dealroomData.total || companies.length} companies`);
+        console.log(`Tag "${searchTag}": total=${dealroomData.total}, items=${companies.length}, keys=${Object.keys(dealroomData).join(',')}`);
         
         // Log a sample company to debug which fields are actually returned
         if (companies.length > 0) {
