@@ -559,31 +559,65 @@ serve(async (req) => {
 
     const activeKeywords = keywords || [];
 
-    // Build search terms from dealroom_tags (Dealroom's actual taxonomy)
-    // If a specific keyword is provided, use it directly; otherwise aggregate dealroom_tags
+    // INDUSTRY-BASED SEARCH: Use sub_industries that work on the Dealroom API tier
+    // These sub-industries filter under "automotive" industry and return ~5-10K relevant companies
+    const SUB_INDUSTRIES_FOR_SDV = [
+      "electric vehicles",
+      "autonomous vehicles",
+      "automotive software",
+      "connected cars",
+      "battery technology",
+      "charging infrastructure",
+      "sensors",
+      "fleet management",
+    ];
+
+    // Build search terms - if specific keyword provided, use it; otherwise use sub-industries list
     let searchTerms: string[] = [];
-    let keywordTagMapping: Map<string, string[]> = new Map(); // tag -> keyword_ids that use this tag
+    let keywordTagMapping: Map<string, string[]> = new Map(); // sub-industry -> keyword_ids
 
     if (keyword) {
-      // Direct search with provided term
+      // Direct search with provided term (single sub-industry)
       searchTerms = [keyword];
     } else {
-      // Collect all unique dealroom_tags from keywords that have them
-      const tagSet = new Set<string>();
+      // Use all sub-industries, one API call per sub-industry
+      searchTerms = SUB_INDUSTRIES_FOR_SDV.slice(0, keywordsPerSync);
+      
+      // Map sub-industries to keywords based on semantic relevance
+      // This allows linking companies back to CEI keywords
       for (const kw of activeKeywords) {
-        const tags = kw.dealroom_tags || [];
-        for (const tag of tags) {
-          tagSet.add(tag.toLowerCase());
-          // Track which keywords map to this tag
-          const existing = keywordTagMapping.get(tag.toLowerCase()) || [];
-          existing.push(kw.id);
-          keywordTagMapping.set(tag.toLowerCase(), existing);
+        const kwLower = kw.keyword.toLowerCase();
+        for (const subIndustry of SUB_INDUSTRIES_FOR_SDV) {
+          // Simple keyword matching for now
+          if (kwLower.includes('electric') && subIndustry.includes('electric')) {
+            keywordTagMapping.set(subIndustry, [...(keywordTagMapping.get(subIndustry) || []), kw.id]);
+          }
+          if (kwLower.includes('autonomous') && subIndustry.includes('autonomous')) {
+            keywordTagMapping.set(subIndustry, [...(keywordTagMapping.get(subIndustry) || []), kw.id]);
+          }
+          if (kwLower.includes('battery') && subIndustry.includes('battery')) {
+            keywordTagMapping.set(subIndustry, [...(keywordTagMapping.get(subIndustry) || []), kw.id]);
+          }
+          if (kwLower.includes('charging') && subIndustry.includes('charging')) {
+            keywordTagMapping.set(subIndustry, [...(keywordTagMapping.get(subIndustry) || []), kw.id]);
+          }
+          if (kwLower.includes('fleet') && subIndustry.includes('fleet')) {
+            keywordTagMapping.set(subIndustry, [...(keywordTagMapping.get(subIndustry) || []), kw.id]);
+          }
+          if ((kwLower.includes('sensor') || kwLower.includes('lidar')) && subIndustry.includes('sensors')) {
+            keywordTagMapping.set(subIndustry, [...(keywordTagMapping.get(subIndustry) || []), kw.id]);
+          }
+          if ((kwLower.includes('connected') || kwLower.includes('v2x')) && subIndustry.includes('connected')) {
+            keywordTagMapping.set(subIndustry, [...(keywordTagMapping.get(subIndustry) || []), kw.id]);
+          }
+          if ((kwLower.includes('sdv') || kwLower.includes('software')) && subIndustry.includes('software')) {
+            keywordTagMapping.set(subIndustry, [...(keywordTagMapping.get(subIndustry) || []), kw.id]);
+          }
         }
       }
-      searchTerms = Array.from(tagSet).slice(0, keywordsPerSync);
     }
 
-    console.log(`Will search for ${searchTerms.length} Dealroom tags:`, searchTerms);
+    console.log(`Will search for ${searchTerms.length} sub-industries:`, searchTerms);
 
     // Update sync log with the actual tags we are about to query
     if (logId) {
@@ -649,15 +683,18 @@ serve(async (req) => {
         // Count this API call
         apiCallsMade++;
 
-        console.log(`Searching Dealroom for tag "${searchTag}"...`);
+        console.log(`Searching Dealroom for sub-industry "${searchTag}"...`);
 
         // Dealroom API v1 uses POST with form_data structure
         const apiUrl = `https://api.dealroom.co/api/v1/companies?limit=${Math.min(limit, 100)}&sort=-total_funding`;
         
-        // Simple tag search - lowercase the tag to match Dealroom's taxonomy format
+        // INDUSTRY-BASED FILTERING: Use industries + sub_industries + funded (tags don't work on trial tier)
+        // This approach returns 5-10K relevant companies instead of 3.4M unfiltered
         const requestBody = {
           form_data: {
-            tags: [searchTag.toLowerCase()],
+            industries: ["automotive"],
+            sub_industries: [searchTag.toLowerCase()],
+            funded: true,  // Prioritize companies with investor data (60-80% coverage)
           },
         };
         
@@ -681,7 +718,7 @@ serve(async (req) => {
         console.log(`Dealroom API raw response (first 500 chars): ${responseText.substring(0, 500)}`);
         
         if (!ok) {
-          console.error(`Dealroom API error for tag "${searchTag}":`, status, responseText);
+          console.error(`Dealroom API error for sub-industry "${searchTag}":`, status, responseText);
           errors.push(`${searchTag}: ${status} - ${responseText.substring(0, 100)}`);
           
           // If rate limited, check if we should abort entirely
@@ -698,8 +735,8 @@ serve(async (req) => {
           continue;
         }
         
-        // Add delay between successful requests to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Add 2-second delay between requests to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
         const dealroomData = JSON.parse(responseText);
         const companies: DealroomCompany[] = dealroomData.items || dealroomData.companies || [];
