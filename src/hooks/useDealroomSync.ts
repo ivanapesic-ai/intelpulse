@@ -290,6 +290,43 @@ export function useDealroomTagTest() {
   });
 }
 
+// Test tags-only (no industries) - verifies if tags work with must wrapper
+export function useDealroomTestTagsOnly() {
+  return useMutation({
+    mutationFn: async (tag?: string) => {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/dealroom-sync`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ action: "test-tags-only", keyword: tag }),
+        }
+      );
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || "Tags-only test failed");
+      }
+
+      return result;
+    },
+    onSuccess: (data) => {
+      if (data.tagsWork) {
+        toast.success(data.verdict);
+      } else {
+        toast.warning(data.verdict);
+      }
+    },
+    onError: (error) => {
+      toast.error(`Tags-only test failed: ${error.message}`);
+    },
+  });
+}
+
 // Get company stats by country
 export function useDealroomCountryStats() {
   return useQuery({
