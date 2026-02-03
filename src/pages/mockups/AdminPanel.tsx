@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, RefreshCw, Users, BarChart3, Database, Trash2, Edit, FileText, Upload, CheckCircle, XCircle, Clock, AlertCircle, Zap, Globe, Settings, Network } from "lucide-react";
+import { ArrowLeft, Plus, RefreshCw, Users, BarChart3, Database, Trash2, Edit, FileText, Upload, CheckCircle, XCircle, Clock, AlertCircle, Zap, Globe, Settings, Network, Layers } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import { WebScrapingPanel } from "@/components/admin/WebScrapingPanel";
 import { PdfQueuePanel } from "@/components/admin/PdfQueuePanel";
 import { KeywordManager } from "@/components/admin/KeywordManager";
 import { TechnologyOntology } from "@/components/mockups/TechnologyOntology";
+import { TaxonomyBrowser } from "@/components/admin/TaxonomyBrowser";
 
 interface User {
   id: string;
@@ -174,6 +175,10 @@ export default function AdminPanel() {
               <Settings className="h-3.5 w-3.5" />
               Keyword Management
             </TabsTrigger>
+            <TabsTrigger value="taxonomy" className="flex items-center gap-1.5">
+              <Layers className="h-3.5 w-3.5" />
+              Taxonomy Browser
+            </TabsTrigger>
             <TabsTrigger value="ontology" className="flex items-center gap-1.5">
               <Network className="h-3.5 w-3.5" />
               Technology Ontology
@@ -191,6 +196,11 @@ export default function AdminPanel() {
           {/* Keyword Management Tab - Unified */}
           <TabsContent value="keywords">
             <KeywordManager />
+          </TabsContent>
+
+          {/* Taxonomy Browser Tab */}
+          <TabsContent value="taxonomy">
+            <TaxonomyBrowser />
           </TabsContent>
 
           {/* Technology Ontology Tab */}
