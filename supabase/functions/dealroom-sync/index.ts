@@ -604,33 +604,38 @@ serve(async (req) => {
       ? currentUsage.api_calls_limit - currentUsage.api_calls_used 
       : 50000;
 
+    // Track consecutive rate limit failures to fail fast
+    let consecutiveRateLimits = 0;
+    const MAX_CONSECUTIVE_RATE_LIMITS = 2; // Fail after 2 consecutive 429s
+
     // Helper function for API calls with exponential backoff retry
     async function fetchWithRetry(
       url: string, 
       options: RequestInit, 
-      maxRetries = 3
-    ): Promise<{ ok: boolean; status: number; text: string }> {
+      maxRetries = 2  // Reduced from 3 to fail faster
+    ): Promise<{ ok: boolean; status: number; text: string; rateLimited: boolean }> {
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         const response = await fetch(url, options);
         const text = await response.text();
         
         if (response.ok) {
-          return { ok: true, status: response.status, text };
+          consecutiveRateLimits = 0; // Reset on success
+          return { ok: true, status: response.status, text, rateLimited: false };
         }
         
         // If rate limited (429), wait and retry with exponential backoff
         if (response.status === 429 && attempt < maxRetries) {
-          const waitTime = Math.pow(2, attempt + 1) * 1000; // 2s, 4s, 8s
+          const waitTime = Math.pow(2, attempt + 1) * 1000; // 2s, 4s
           console.log(`Rate limited, waiting ${waitTime}ms before retry ${attempt + 1}/${maxRetries}...`);
           await new Promise(resolve => setTimeout(resolve, waitTime));
           continue;
         }
         
-        // Non-retryable error
-        return { ok: false, status: response.status, text };
+        // Non-retryable error or final 429
+        return { ok: false, status: response.status, text, rateLimited: response.status === 429 };
       }
       
-      return { ok: false, status: 429, text: "Max retries exceeded" };
+      return { ok: false, status: 429, text: "Max retries exceeded", rateLimited: true };
     }
 
     for (const searchTag of searchTerms) {
@@ -660,7 +665,7 @@ serve(async (req) => {
         console.log(`Request body: ${JSON.stringify(requestBody)}`);
         
         // Use retry-enabled fetch with exponential backoff
-        const { ok, status, text: responseText } = await fetchWithRetry(
+        const { ok, status, text: responseText, rateLimited } = await fetchWithRetry(
           apiUrl,
           {
             method: "POST",
@@ -679,10 +684,16 @@ serve(async (req) => {
           console.error(`Dealroom API error for tag "${searchTag}":`, status, responseText);
           errors.push(`${searchTag}: ${status} - ${responseText.substring(0, 100)}`);
           
-          // If still rate limited after retries, wait longer before next tag
-          if (status === 429) {
-            console.log("Still rate limited, waiting 10s before next tag...");
-            await new Promise(resolve => setTimeout(resolve, 10000));
+          // If rate limited, check if we should abort entirely
+          if (rateLimited) {
+            consecutiveRateLimits++;
+            console.log(`Rate limit failure ${consecutiveRateLimits}/${MAX_CONSECUTIVE_RATE_LIMITS}`);
+            
+            if (consecutiveRateLimits >= MAX_CONSECUTIVE_RATE_LIMITS) {
+              console.log("Too many consecutive rate limits, aborting sync early");
+              errors.push("RATE_LIMITED: Dealroom API rate limit exceeded. Please wait 15-30 minutes and try again.");
+              break; // Exit the loop entirely
+            }
           }
           continue;
         }
