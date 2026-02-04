@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, RefreshCw, Database, FileText, Zap, Globe, Network, Layers, BookOpen, Upload, CheckCircle, XCircle, Clock, Search, AlertTriangle } from "lucide-react";
+import { ArrowLeft, RefreshCw, Database, FileText, Zap, Globe, Network, Layers, BookOpen, Upload, CheckCircle, XCircle, Clock, Search, AlertTriangle, FileSpreadsheet } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +17,7 @@ import { KeywordManager } from "@/components/admin/KeywordManager";
 import { TechnologyOntology } from "@/components/mockups/TechnologyOntology";
 import { TaxonomyBrowser } from "@/components/admin/TaxonomyBrowser";
 import { CrunchbaseImportPanel } from "@/components/admin/CrunchbaseImportPanel";
+import { EpoPatentPanel } from "@/components/admin/EpoPatentPanel";
 
 const statusColors = {
   completed: "bg-success/20 text-success border-success/30",
@@ -28,7 +29,7 @@ const statusColors = {
 
 export default function AdminPanel() {
   const [taxonomySubTab, setTaxonomySubTab] = useState<"keywords" | "browser">("keywords");
-  const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "dealroom" | "scraping" | "documents">("crunchbase");
+  const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "dealroom" | "scraping" | "documents">("crunchbase");
 
   // Data hooks
   const { data: companies, isLoading: companiesLoading } = useDealroomCompanies({ limit: 10 });
@@ -308,7 +309,7 @@ export default function AdminPanel() {
           {/* ===== DATA SOURCES TAB ===== */}
           <TabsContent value="data-sources" className="space-y-4">
             {/* Sub-navigation */}
-            <div className="flex gap-2 border-b border-border pb-3">
+            <div className="flex gap-2 border-b border-border pb-3 flex-wrap">
               <Button
                 variant={dataSubTab === "crunchbase" ? "secondary" : "ghost"}
                 size="sm"
@@ -316,6 +317,14 @@ export default function AdminPanel() {
               >
                 <Upload className="h-4 w-4 mr-1.5" />
                 Crunchbase
+              </Button>
+              <Button
+                variant={dataSubTab === "patents" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setDataSubTab("patents")}
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-1.5" />
+                EPO Patents
               </Button>
               <Button
                 variant={dataSubTab === "dealroom" ? "secondary" : "ghost"}
@@ -345,6 +354,11 @@ export default function AdminPanel() {
             {/* Crunchbase Sub-tab */}
             {dataSubTab === "crunchbase" && (
               <CrunchbaseImportPanel />
+            )}
+
+            {/* EPO Patents Sub-tab */}
+            {dataSubTab === "patents" && (
+              <EpoPatentPanel />
             )}
 
             {/* Dealroom Sub-tab */}
