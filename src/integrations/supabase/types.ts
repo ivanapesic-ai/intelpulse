@@ -186,6 +186,193 @@ export type Database = {
           },
         ]
       }
+      crunchbase_companies: {
+        Row: {
+          created_at: string | null
+          crunchbase_url: string | null
+          data_quality_score: number | null
+          description: string | null
+          founded_date: string | null
+          full_description: string | null
+          funding_rounds_count: number | null
+          hq_country: string | null
+          hq_location: string | null
+          id: string
+          industries: string[] | null
+          industry_groups: string[] | null
+          investor_count: number | null
+          last_funding_date: string | null
+          last_funding_type: string | null
+          lead_investors: string[] | null
+          number_of_articles: number | null
+          number_of_employees: string | null
+          operating_status: string | null
+          organization_name: string
+          patents_count: number | null
+          source_export: string | null
+          technology_keywords: string[] | null
+          top_5_investors: string[] | null
+          total_funding_usd: number | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          crunchbase_url?: string | null
+          data_quality_score?: number | null
+          description?: string | null
+          founded_date?: string | null
+          full_description?: string | null
+          funding_rounds_count?: number | null
+          hq_country?: string | null
+          hq_location?: string | null
+          id?: string
+          industries?: string[] | null
+          industry_groups?: string[] | null
+          investor_count?: number | null
+          last_funding_date?: string | null
+          last_funding_type?: string | null
+          lead_investors?: string[] | null
+          number_of_articles?: number | null
+          number_of_employees?: string | null
+          operating_status?: string | null
+          organization_name: string
+          patents_count?: number | null
+          source_export?: string | null
+          technology_keywords?: string[] | null
+          top_5_investors?: string[] | null
+          total_funding_usd?: number | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          crunchbase_url?: string | null
+          data_quality_score?: number | null
+          description?: string | null
+          founded_date?: string | null
+          full_description?: string | null
+          funding_rounds_count?: number | null
+          hq_country?: string | null
+          hq_location?: string | null
+          id?: string
+          industries?: string[] | null
+          industry_groups?: string[] | null
+          investor_count?: number | null
+          last_funding_date?: string | null
+          last_funding_type?: string | null
+          lead_investors?: string[] | null
+          number_of_articles?: number | null
+          number_of_employees?: string | null
+          operating_status?: string | null
+          organization_name?: string
+          patents_count?: number | null
+          source_export?: string | null
+          technology_keywords?: string[] | null
+          top_5_investors?: string[] | null
+          total_funding_usd?: number | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      crunchbase_import_logs: {
+        Row: {
+          companies_with_keywords: number | null
+          completed_at: string | null
+          data_quality_summary: Json | null
+          error_rows: number | null
+          errors: Json | null
+          filename: string
+          id: string
+          imported_rows: number | null
+          keyword_distribution: Json | null
+          skipped_rows: number | null
+          started_at: string | null
+          status: string | null
+          total_rows: number | null
+        }
+        Insert: {
+          companies_with_keywords?: number | null
+          completed_at?: string | null
+          data_quality_summary?: Json | null
+          error_rows?: number | null
+          errors?: Json | null
+          filename: string
+          id?: string
+          imported_rows?: number | null
+          keyword_distribution?: Json | null
+          skipped_rows?: number | null
+          started_at?: string | null
+          status?: string | null
+          total_rows?: number | null
+        }
+        Update: {
+          companies_with_keywords?: number | null
+          completed_at?: string | null
+          data_quality_summary?: Json | null
+          error_rows?: number | null
+          errors?: Json | null
+          filename?: string
+          id?: string
+          imported_rows?: number | null
+          keyword_distribution?: Json | null
+          skipped_rows?: number | null
+          started_at?: string | null
+          status?: string | null
+          total_rows?: number | null
+        }
+        Relationships: []
+      }
+      crunchbase_keyword_mapping: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          id: string
+          keyword_id: string | null
+          match_confidence: number | null
+          match_source: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          keyword_id?: string | null
+          match_confidence?: number | null
+          match_source?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          keyword_id?: string | null
+          match_confidence?: number | null
+          match_source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crunchbase_keyword_mapping_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "crunchbase_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crunchbase_keyword_mapping_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_mapping_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "crunchbase_keyword_mapping_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dealroom_api_usage: {
         Row: {
           api_calls_limit: number | null
