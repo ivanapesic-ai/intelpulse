@@ -161,3 +161,59 @@ export function useEnrichWithPatents() {
     },
   });
 }
+
+// Aggregate patent counts from companies to technology keywords
+export function useAggregatePatentScores() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (): Promise<{
+      keywords_updated: number;
+      total_patents_aggregated: number;
+    }> => {
+      const { data, error } = await supabase.rpc("aggregate_patent_scores");
+
+      if (error) throw error;
+      
+      // RPC returns array, get first row
+      const result = Array.isArray(data) ? data[0] : data;
+      return {
+        keywords_updated: result?.keywords_updated || 0,
+        total_patents_aggregated: result?.total_patents_aggregated || 0,
+      };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["technologies"] });
+    },
+  });
+}
+
+// Aggregate all Crunchbase signals (funding, patents, employees) to keywords
+export function useAggregateCrunchbaseSignals() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (): Promise<{
+      keywords_processed: number;
+      total_funding_aggregated: number;
+      total_patents_aggregated: number;
+      companies_with_data: number;
+    }> => {
+      const { data, error } = await supabase.rpc("aggregate_crunchbase_signals");
+
+      if (error) throw error;
+      
+      const result = Array.isArray(data) ? data[0] : data;
+      return {
+        keywords_processed: result?.keywords_processed || 0,
+        total_funding_aggregated: result?.total_funding_aggregated || 0,
+        total_patents_aggregated: result?.total_patents_aggregated || 0,
+        companies_with_data: result?.companies_with_data || 0,
+      };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["technologies"] });
+      queryClient.invalidateQueries({ queryKey: ["technology-intelligence"] });
+    },
+  });
+}

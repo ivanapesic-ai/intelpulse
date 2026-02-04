@@ -1252,6 +1252,22 @@ export type Database = {
       }
     }
     Functions: {
+      aggregate_crunchbase_signals: {
+        Args: never
+        Returns: {
+          companies_with_data: number
+          keywords_processed: number
+          total_funding_aggregated: number
+          total_patents_aggregated: number
+        }[]
+      }
+      aggregate_patent_scores: {
+        Args: never
+        Returns: {
+          keywords_updated: number
+          total_patents_aggregated: number
+        }[]
+      }
       calculate_eu_alignment_score: {
         Args: { policy_count: number }
         Returns: number

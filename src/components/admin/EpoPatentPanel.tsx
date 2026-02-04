@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   useEpoCompanySearch,
   useEnrichWithPatents,
+  useAggregateCrunchbaseSignals,
   AUTOMOTIVE_IPC_CODES,
   type CompanyPatentSummary,
 } from "@/hooks/useEpoPatents";
@@ -29,9 +30,11 @@ export function EpoPatentPanel() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResult, setSearchResult] = useState<CompanyPatentSummary | null>(null);
   const [enrichmentResults, setEnrichmentResults] = useState<Array<{ name: string; patentCount: number }>>([]);
+  const [aggregationResult, setAggregationResult] = useState<{ keywords: number; patents: number } | null>(null);
 
   const companySearch = useEpoCompanySearch();
   const enrichWithPatents = useEnrichWithPatents();
+  const aggregateSignals = useAggregateCrunchbaseSignals();
   const { data: crunchbaseStats } = useCrunchbaseStats();
 
   const handleSearch = async () => {
@@ -64,6 +67,26 @@ export function EpoPatentPanel() {
     } catch (error) {
       toast({
         title: "Enrichment failed",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAggregation = async () => {
+    try {
+      const result = await aggregateSignals.mutateAsync();
+      setAggregationResult({
+        keywords: result.keywords_processed,
+        patents: Number(result.total_patents_aggregated),
+      });
+      toast({
+        title: "Aggregation complete",
+        description: `Updated ${result.keywords_processed} keywords with ${result.total_patents_aggregated} total patents`,
+      });
+    } catch (error) {
+      toast({
+        title: "Aggregation failed",
         description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive",
       });
@@ -289,7 +312,7 @@ export function EpoPatentPanel() {
               {enrichmentResults.length > 0 && (
                 <div className="pt-4 border-t">
                   <h4 className="text-sm font-medium mb-3">Enrichment Results</h4>
-                  <ScrollArea className="h-[300px]">
+                  <ScrollArea className="h-[200px]">
                     <div className="space-y-2">
                       {enrichmentResults.map((result) => (
                         <div
@@ -309,6 +332,43 @@ export function EpoPatentPanel() {
                   </ScrollArea>
                 </div>
               )}
+
+              {/* Aggregation Section */}
+              <Card className="bg-muted/30">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Aggregate to Keywords</CardTitle>
+                  <CardDescription>
+                    Push patent counts from companies to technology keywords for heatmap scoring
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-4">
+                    <Button
+                      onClick={handleAggregation}
+                      disabled={aggregateSignals.isPending}
+                      variant="outline"
+                      className="gap-2"
+                    >
+                      {aggregateSignals.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Aggregating...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="h-4 w-4" />
+                          Aggregate Signals
+                        </>
+                      )}
+                    </Button>
+                    {aggregationResult && (
+                      <p className="text-sm text-muted-foreground">
+                        Updated {aggregationResult.keywords} keywords • {aggregationResult.patents} total patents
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             </CardContent>
           </Card>
         </TabsContent>
