@@ -16,6 +16,7 @@ import { PdfQueuePanel } from "@/components/admin/PdfQueuePanel";
 import { KeywordManager } from "@/components/admin/KeywordManager";
 import { TechnologyOntology } from "@/components/mockups/TechnologyOntology";
 import { TaxonomyBrowser } from "@/components/admin/TaxonomyBrowser";
+import { CrunchbaseImportPanel } from "@/components/admin/CrunchbaseImportPanel";
 
 const statusColors = {
   completed: "bg-success/20 text-success border-success/30",
@@ -27,7 +28,7 @@ const statusColors = {
 
 export default function AdminPanel() {
   const [taxonomySubTab, setTaxonomySubTab] = useState<"keywords" | "browser">("keywords");
-  const [dataSubTab, setDataSubTab] = useState<"dealroom" | "scraping" | "documents">("dealroom");
+  const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "dealroom" | "scraping" | "documents">("crunchbase");
 
   // Data hooks
   const { data: companies, isLoading: companiesLoading } = useDealroomCompanies({ limit: 10 });
@@ -309,6 +310,14 @@ export default function AdminPanel() {
             {/* Sub-navigation */}
             <div className="flex gap-2 border-b border-border pb-3">
               <Button
+                variant={dataSubTab === "crunchbase" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setDataSubTab("crunchbase")}
+              >
+                <Upload className="h-4 w-4 mr-1.5" />
+                Crunchbase
+              </Button>
+              <Button
                 variant={dataSubTab === "dealroom" ? "secondary" : "ghost"}
                 size="sm"
                 onClick={() => setDataSubTab("dealroom")}
@@ -332,6 +341,11 @@ export default function AdminPanel() {
                 Documents
               </Button>
             </div>
+
+            {/* Crunchbase Sub-tab */}
+            {dataSubTab === "crunchbase" && (
+              <CrunchbaseImportPanel />
+            )}
 
             {/* Dealroom Sub-tab */}
             {dataSubTab === "dealroom" && (
