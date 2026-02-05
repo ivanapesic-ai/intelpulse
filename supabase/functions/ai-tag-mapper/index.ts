@@ -329,12 +329,12 @@ Only include mappings with confidence >= 40.`;
       await new Promise(resolve => setTimeout(resolve, 200));
     }
 
-    // Store mappings in cei_dealroom_mappings table
+    // Store mappings in keyword_industry_mappings table
     let storedCount = 0;
     for (const keywordMapping of allMappings) {
       for (const mapping of keywordMapping.mappings) {
         const { error: insertError } = await supabase
-          .from("cei_dealroom_mappings")
+          .from("keyword_industry_mappings")
           .upsert({
             keyword_id: keywordMapping.keywordId,
             dealroom_term: mapping.dealroom_term,

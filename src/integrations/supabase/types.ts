@@ -14,69 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      cei_dealroom_mappings: {
-        Row: {
-          confidence_score: number
-          created_at: string
-          dealroom_term: string
-          id: string
-          keyword_id: string
-          mapped_by: string
-          reasoning: string | null
-          relationship_type: string
-          term_type: string
-          updated_at: string
-          verified: boolean
-          verified_at: string | null
-          verified_by: string | null
-        }
-        Insert: {
-          confidence_score: number
-          created_at?: string
-          dealroom_term: string
-          id?: string
-          keyword_id: string
-          mapped_by?: string
-          reasoning?: string | null
-          relationship_type: string
-          term_type: string
-          updated_at?: string
-          verified?: boolean
-          verified_at?: string | null
-          verified_by?: string | null
-        }
-        Update: {
-          confidence_score?: number
-          created_at?: string
-          dealroom_term?: string
-          id?: string
-          keyword_id?: string
-          mapped_by?: string
-          reasoning?: string | null
-          relationship_type?: string
-          term_type?: string
-          updated_at?: string
-          verified?: boolean
-          verified_at?: string | null
-          verified_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cei_dealroom_mappings_keyword_id_fkey"
-            columns: ["keyword_id"]
-            isOneToOne: false
-            referencedRelation: "keyword_mapping_summary"
-            referencedColumns: ["keyword_id"]
-          },
-          {
-            foreignKeyName: "cei_dealroom_mappings_keyword_id_fkey"
-            columns: ["keyword_id"]
-            isOneToOne: false
-            referencedRelation: "technology_keywords"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       cei_documents: {
         Row: {
           created_at: string | null
@@ -737,6 +674,69 @@ export type Database = {
           },
           {
             foreignKeyName: "keyword_company_mapping_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      keyword_industry_mappings: {
+        Row: {
+          confidence_score: number
+          created_at: string
+          dealroom_term: string
+          id: string
+          keyword_id: string
+          mapped_by: string
+          reasoning: string | null
+          relationship_type: string
+          term_type: string
+          updated_at: string
+          verified: boolean
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          confidence_score: number
+          created_at?: string
+          dealroom_term: string
+          id?: string
+          keyword_id: string
+          mapped_by?: string
+          reasoning?: string | null
+          relationship_type: string
+          term_type: string
+          updated_at?: string
+          verified?: boolean
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          confidence_score?: number
+          created_at?: string
+          dealroom_term?: string
+          id?: string
+          keyword_id?: string
+          mapped_by?: string
+          reasoning?: string | null
+          relationship_type?: string
+          term_type?: string
+          updated_at?: string
+          verified?: boolean
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "keyword_industry_mappings_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_mapping_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "keyword_industry_mappings_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
             referencedRelation: "technology_keywords"
