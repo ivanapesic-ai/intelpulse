@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Radar, Grid3X3, Compass, Settings, LayoutDashboard, Users, FileText, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const navItems = [
   { path: "/mockups/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -91,6 +92,7 @@ export function PlatformHeader({ showBadge = true }: PlatformHeaderProps) {
                 Preview
               </Badge>
             )}
+            <ThemeToggle />
           </div>
         </div>
       </div>
