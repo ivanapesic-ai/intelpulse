@@ -243,48 +243,63 @@ export function useKnowledgeGraph() {
         });
       }
 
-      // Build edges
+      // Build a set of all valid node IDs for edge validation
+      const nodeIdSet = new Set(nodes.map(n => n.id));
+
+      // Build edges with validation
       const edges: GraphEdge[] = [];
       const maxCooccurrence = cooccurrences?.[0]?.cooccurrence_count || 1;
 
       // Domain → Concept edges (has_keyword relationship)
       for (const concept of concepts || []) {
         if (concept.domain_id) {
-          edges.push({
-            id: `domain-concept-${concept.domain_id}-${concept.id}`,
-            source: `domain-${concept.domain_id}`,
-            target: `concept-${concept.id}`,
-            type: "has_keyword",
-            value: 10,
-            normalizedValue: 500,
-          });
+          const sourceId = `domain-${concept.domain_id}`;
+          const targetId = `concept-${concept.id}`;
+          
+          // Only add edge if both nodes exist
+          if (nodeIdSet.has(sourceId) && nodeIdSet.has(targetId)) {
+            edges.push({
+              id: `domain-concept-${concept.domain_id}-${concept.id}`,
+              source: sourceId,
+              target: targetId,
+              type: "has_keyword",
+              value: 10,
+              normalizedValue: 500,
+            });
+          }
         }
       }
 
       // Concept → Keyword edges
       for (const kw of keywords || []) {
         if (kw.ontology_concept_id && techMap.has(kw.id)) {
-          edges.push({
-            id: `concept-keyword-${kw.ontology_concept_id}-${kw.id}`,
-            source: `concept-${kw.ontology_concept_id}`,
-            target: `keyword-${kw.id}`,
-            type: "has_keyword",
-            value: 5,
-            normalizedValue: 300,
-          });
+          const sourceId = `concept-${kw.ontology_concept_id}`;
+          const targetId = `keyword-${kw.id}`;
+          
+          // Only add edge if both nodes exist
+          if (nodeIdSet.has(sourceId) && nodeIdSet.has(targetId)) {
+            edges.push({
+              id: `concept-keyword-${kw.ontology_concept_id}-${kw.id}`,
+              source: sourceId,
+              target: targetId,
+              type: "has_keyword",
+              value: 5,
+              normalizedValue: 300,
+            });
+          }
         }
       }
 
       // Ontology relationships (requires, enables, part_of)
       for (const rel of relationships || []) {
-        const fromExists = nodes.some(n => n.id === `concept-${rel.concept_from_id}`);
-        const toExists = nodes.some(n => n.id === `concept-${rel.concept_to_id}`);
+        const sourceId = `concept-${rel.concept_from_id}`;
+        const targetId = `concept-${rel.concept_to_id}`;
         
-        if (fromExists && toExists) {
+        if (nodeIdSet.has(sourceId) && nodeIdSet.has(targetId)) {
           edges.push({
             id: `rel-${rel.id}`,
-            source: `concept-${rel.concept_from_id}`,
-            target: `concept-${rel.concept_to_id}`,
+            source: sourceId,
+            target: targetId,
             type: rel.relationship_type as EdgeType,
             value: rel.strength || 5,
             normalizedValue: ((rel.strength || 5) / 10) * 1000,
@@ -294,14 +309,14 @@ export function useKnowledgeGraph() {
 
       // Co-occurrence edges between keywords
       for (const co of cooccurrences || []) {
-        const fromExists = nodes.some(n => n.id === `keyword-${co.keyword_id_a}`);
-        const toExists = nodes.some(n => n.id === `keyword-${co.keyword_id_b}`);
+        const sourceId = `keyword-${co.keyword_id_a}`;
+        const targetId = `keyword-${co.keyword_id_b}`;
         
-        if (fromExists && toExists) {
+        if (nodeIdSet.has(sourceId) && nodeIdSet.has(targetId)) {
           edges.push({
             id: `cooccur-${co.id}`,
-            source: `keyword-${co.keyword_id_a}`,
-            target: `keyword-${co.keyword_id_b}`,
+            source: sourceId,
+            target: targetId,
             type: "cooccurs",
             value: co.cooccurrence_count || 1,
             normalizedValue: ((co.cooccurrence_count || 1) / maxCooccurrence) * 1000,
