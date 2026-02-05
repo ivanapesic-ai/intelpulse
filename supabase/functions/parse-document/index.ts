@@ -51,6 +51,67 @@ const EU_POLICIES = [
   "NIS2", "eIDAS", "Gaia-X", "SIMPL", "European Cloud Federation"
 ];
 
+// CEI Domain Knowledge - Empowering the AI with context
+const CEI_DOMAIN_KNOWLEDGE = `
+## CEI-Sphere Project Context
+CEI-Sphere is a CEI CSA (Coordination and Support Action) focused on Cloud-Edge-IoT technologies for the European market.
+The project aims to provide market intelligence on technology readiness and investment opportunities.
+
+## Key Technology Domains
+1. CLOUD: Hyperscale cloud, sovereign cloud, multi-cloud, cloud-native, serverless, containers, Kubernetes
+2. EDGE: Edge computing, MEC (Multi-access Edge Computing), fog computing, near-edge, far-edge
+3. IoT: Industrial IoT, consumer IoT, smart sensors, connected devices, LPWAN, 5G IoT
+
+## Vertical Sectors
+- MOBILITY: Autonomous vehicles, MaaS, logistics, fleet management, traffic systems, V2X
+- ENERGY: Smart grid, renewable integration, energy management, EV charging, demand response
+- MANUFACTURING: Industry 4.0, predictive maintenance, digital twins, OT/IT convergence, robotics
+
+## Market Maturity Indicators
+- EMERGING (TRL 1-4): R&D phase, academic papers, early prototypes, no commercial products
+- EARLY ADOPTION (TRL 5-7): Pilots underway, initial commercial deployments, growing startup ecosystem
+- MAINSTREAM (TRL 8-9): Wide market adoption, established vendors, mature supply chain
+
+## Challenge Assessment Criteria (TENDER SPECIFIC)
+- 2 = NO MAJOR CHALLENGE: Technology is proven, regulations exist, supply chains established
+- 1 = MANAGEABLE CHALLENGE: Some barriers but clear path forward (e.g., skills gap, interoperability)
+- 0 = SEVERE CHALLENGE: Major blockers like missing regulations, high CAPEX, fragmented standards
+
+## Opportunity Assessment Criteria (TENDER SPECIFIC)  
+- 2 = HIGH OPPORTUNITY: Large TAM, EU policy alignment, strong investor interest, clear use cases
+- 1 = PROMISING OPPORTUNITY: Growing market, some strategic fit, moderate investment activity
+- 0 = LIMITED OPPORTUNITY: Niche market, weak EU relevance, limited commercial interest
+`;
+
+// Few-shot examples for better extraction quality
+const FEW_SHOT_EXAMPLES = `
+## Example Technology Assessments
+
+### Example 1: Edge Computing for Manufacturing
+- Challenge Score: 1 (Manageable)
+- Challenge Reasoning: "OT/IT integration requires brownfield retrofitting, but standards like OPC-UA provide clear path"
+- Opportunity Score: 2 (High)
+- Opportunity Reasoning: "€45B European market by 2027, 67% of manufacturers planning edge deployments, strong Horizon Europe funding"
+- Maturity: early_adoption
+- Market Signals: { adoption_rate: "67% planning", market_size: "EUR 45B by 2027", growth_rate: "23% CAGR" }
+
+### Example 2: Federated Learning for Healthcare
+- Challenge Score: 0 (Severe)
+- Challenge Reasoning: "GDPR compliance for cross-border health data unresolved, lack of interoperability standards"
+- Opportunity Score: 1 (Promising)
+- Opportunity Reasoning: "Growing interest from hospitals but regulatory uncertainty limits investment"
+- Maturity: emerging
+- Market Signals: { adoption_rate: "12% piloting", market_size: "EUR 2.1B", growth_rate: "35% CAGR" }
+
+### Example 3: Real-time Logistics Visibility
+- Challenge Score: 2 (No Major Challenge)
+- Challenge Reasoning: "Mature API standards, established vendors, proven ROI cases"
+- Opportunity Score: 2 (High)  
+- Opportunity Reasoning: "€12B market, 53% already deployed, regulatory push for supply chain transparency"
+- Maturity: mainstream
+- Market Signals: { adoption_rate: "53% deployed, 16% extending", market_size: "EUR 12B", competitors: ["Project44", "FourKites", "Transporeon"] }
+`;
+
 // H11: Detect document section for position weighting
 function detectSection(context: string, pageNumber: number | null): string {
   const lowerContext = context.toLowerCase();
@@ -270,82 +331,104 @@ Return the complete extracted text in a structured format, preserving the docume
 
     // Build H11-enhanced prompt for AI extraction
      const systemPrompt = `You are an expert at extracting technology intelligence from CEI-Sphere (Cloud-Edge-IoT) documents for the European Commission.
- 
- ## YOUR TASK: CHALLENGE-OPPORTUNITY MATRIX EXTRACTION
- 
- For each technology in the document, assess it according to the OFFICIAL TENDER CRITERIA:
- 
- ### CHALLENGE SCORE (0-2) - Barriers to Market Entry
- 2 = No Major Challenge: No significant barriers. All foreseeable problems are solved or negligible, standard processes apply.
- 1 = Manageable Challenge: Some challenges exist but are understood with clear actionable steps to overcome. Moderate effort required, doesn't threaten success.
- 0 = Severe Challenge: Major obstacles that could seriously impede or block market success. Requires new regulations, substantial investment, or industry-wide shifts.
- 
- ### OPPORTUNITY SCORE (0-2) - Value and Achievability
- 2 = High Opportunity: Significant value, readily achievable, closely aligned with EU strategic goals. Strong market position and readiness.
- 1 = Promising Opportunity: Reasonable value, achievable with moderate effort. Practical path forward with adequate strategic fit.
- 0 = Limited Opportunity: Low potential value, difficult to realize, weak strategic fit. Little benefit or readiness.
- 
- ### MATURITY LEVEL - Market Adoption Stage
- - "emerging": New technology, early R&D, limited pilots (TRL 1-4)
- - "early_adoption": Pilots underway, some commercial deployments (TRL 5-7)
- - "mainstream": Widely adopted, proven market presence (TRL 8-9)
- 
- ### MARKET SIGNALS TO EXTRACT
- - Market size and growth rate (enterprise value)
- - Customer adoption rates (% deployed, % planning to adopt)
- - Presence of competitors or substitutes
- - Key players and investors
- - Funding/investment amounts
- 
- ### EU POLICY ALIGNMENT
- Detect references to: ${EU_POLICIES.slice(0, 20).join(', ')}
- 
- ## TECHNOLOGY KEYWORDS TO MATCH
- Only extract technologies from this provided list.
- 
- ## RESPONSE FORMAT
- Return JSON with technology assessments and overall document analysis:
- {
-   "mentions": [
-     {
-       "keyword_id": "uuid-from-list",
-       "mention_context": "Quote from document showing technology relevance (max 300 chars)",
-       "trl_mentioned": 7,
-       "policy_reference": "Specific EU policy if mentioned",
-       "confidence_score": 0.95,
-       "challenge_score": 1,
-       "challenge_reasoning": "Brief explanation of challenge assessment",
-       "opportunity_score": 2,
-       "opportunity_reasoning": "Brief explanation of opportunity assessment",
-       "maturity_level": "early_adoption",
-       "market_signals": {
-         "adoption_rate": "53% deployed",
-         "market_size": "EUR 46B by 2030",
-         "competitors": ["Company A", "Company B"],
-         "growth_rate": "15% CAGR"
-       },
-       "sector_tags": ["mobility", "energy"],
-       "page_number": null
-     }
-   ],
-   "document_analysis": {
-     "title": "Document title if identifiable",
-     "summary": "2-3 sentence summary of document focus",
-     "primary_sectors": ["mobility"],
-     "key_policies": ["Green Deal", "Digital Decade"],
-     "overall_market_signals": {
-       "total_market_value": "EUR X billion",
-       "adoption_trends": ["trend 1", "trend 2"],
-       "key_players": ["Company A", "Company B"],
-       "investment_activity": "Description of funding trends"
-     },
-     "maturity_distribution": {
-       "emerging_count": 3,
-       "early_adoption_count": 5,
-       "mainstream_count": 2
-     }
-   }
- }`;
+
+${CEI_DOMAIN_KNOWLEDGE}
+
+## YOUR TASK: CHALLENGE-OPPORTUNITY MATRIX EXTRACTION
+
+For each technology in the document, assess it according to the OFFICIAL TENDER CRITERIA:
+
+### CHALLENGE SCORE (0-2) - Barriers to Market Entry
+2 = No Major Challenge: No significant barriers. All foreseeable problems are solved or negligible, standard processes apply.
+1 = Manageable Challenge: Some challenges exist but are understood with clear actionable steps to overcome. Moderate effort required, doesn't threaten success.
+0 = Severe Challenge: Major obstacles that could seriously impede or block market success. Requires new regulations, substantial investment, or industry-wide shifts.
+
+### OPPORTUNITY SCORE (0-2) - Value and Achievability
+2 = High Opportunity: Significant value, readily achievable, closely aligned with EU strategic goals. Strong market position and readiness.
+1 = Promising Opportunity: Reasonable value, achievable with moderate effort. Practical path forward with adequate strategic fit.
+0 = Limited Opportunity: Low potential value, difficult to realize, weak strategic fit. Little benefit or readiness.
+
+### MATURITY LEVEL - Market Adoption Stage
+- "emerging": New technology, early R&D, limited pilots (TRL 1-4)
+- "early_adoption": Pilots underway, some commercial deployments (TRL 5-7)
+- "mainstream": Widely adopted, proven market presence (TRL 8-9)
+
+### MARKET SIGNALS TO EXTRACT
+- Market size and growth rate (enterprise value)
+- Customer adoption rates (% deployed, % planning to adopt)
+- Presence of competitors or substitutes
+- Key players and investors
+- Funding/investment amounts
+
+### EU POLICY ALIGNMENT
+Detect references to: ${EU_POLICIES.join(', ')}
+
+${FEW_SHOT_EXAMPLES}
+
+## TECHNOLOGY KEYWORDS TO MATCH
+Match technologies from the provided keyword list. Also identify NEW technologies not in the list that are relevant to CEI domains.
+
+## CRITICAL INSTRUCTIONS
+1. Extract EVERY technology mentioned, even if briefly discussed
+2. Look for technologies in tables, charts, diagrams, and figure captions
+3. Pay special attention to market statistics, adoption percentages, and funding amounts
+4. If a technology's challenge/opportunity is not explicitly stated, INFER it from context clues
+5. Always provide reasoning for your scores
+
+## RESPONSE FORMAT
+Return JSON with technology assessments and overall document analysis:
+{
+  "mentions": [
+    {
+      "keyword_id": "uuid-from-list-or-null-for-new-tech",
+      "keyword_name": "Technology name if new",
+      "mention_context": "Quote from document showing technology relevance (max 300 chars)",
+      "trl_mentioned": 7,
+      "policy_reference": "Specific EU policy if mentioned",
+      "confidence_score": 0.95,
+      "challenge_score": 1,
+      "challenge_reasoning": "Brief explanation of challenge assessment",
+      "opportunity_score": 2,
+      "opportunity_reasoning": "Brief explanation of opportunity assessment",
+      "maturity_level": "early_adoption",
+      "market_signals": {
+        "adoption_rate": "53% deployed",
+        "market_size": "EUR 46B by 2030",
+        "competitors": ["Company A", "Company B"],
+        "growth_rate": "15% CAGR"
+      },
+      "sector_tags": ["mobility", "energy"],
+      "page_number": null
+    }
+  ],
+  "document_analysis": {
+    "title": "Document title if identifiable",
+    "summary": "2-3 sentence summary of document focus",
+    "primary_sectors": ["mobility"],
+    "key_policies": ["Green Deal", "Digital Decade"],
+    "overall_market_signals": {
+      "total_market_value": "EUR X billion",
+      "adoption_trends": ["trend 1", "trend 2"],
+      "key_players": ["Company A", "Company B"],
+      "investment_activity": "Description of funding trends"
+    },
+    "maturity_distribution": {
+      "emerging_count": 3,
+      "early_adoption_count": 5,
+      "mainstream_count": 2
+    }
+  },
+  "new_technologies": [
+    {
+      "name": "Technology not in keyword list",
+      "description": "What it does",
+      "suggested_sector": "mobility|energy|manufacturing",
+      "challenge_score": 1,
+      "opportunity_score": 2,
+      "maturity_level": "emerging"
+    }
+  ]
+}`;
 
     const userPrompt = `## DOCUMENT PRE-ANALYSIS (H11 Algorithm)
 
