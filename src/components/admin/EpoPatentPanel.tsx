@@ -18,21 +18,27 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   useEpoCompanySearch,
+  useEpoKeywordSearch,
   useEnrichWithPatents,
   useAggregateCrunchbaseSignals,
   AUTOMOTIVE_IPC_CODES,
+  KEYWORD_TO_IPC_MAP,
   type CompanyPatentSummary,
+  type TechnologyPatentResult,
 } from "@/hooks/useEpoPatents";
 import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
 
 export function EpoPatentPanel() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
+  const [techSearchQuery, setTechSearchQuery] = useState("");
   const [searchResult, setSearchResult] = useState<CompanyPatentSummary | null>(null);
+  const [techSearchResult, setTechSearchResult] = useState<TechnologyPatentResult | null>(null);
   const [enrichmentResults, setEnrichmentResults] = useState<Array<{ name: string; patentCount: number }>>([]);
   const [aggregationResult, setAggregationResult] = useState<{ keywords: number; patents: number } | null>(null);
 
   const companySearch = useEpoCompanySearch();
+  const keywordSearch = useEpoKeywordSearch();
   const enrichWithPatents = useEnrichWithPatents();
   const aggregateSignals = useAggregateCrunchbaseSignals();
   const { data: crunchbaseStats } = useCrunchbaseStats();
@@ -47,6 +53,33 @@ export function EpoPatentPanel() {
         title: "Search complete",
         description: `Found ${result.patentCount} patents for ${searchQuery}`,
       });
+    } catch (error) {
+      toast({
+        title: "Search failed",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleTechSearch = async () => {
+    if (!techSearchQuery.trim()) return;
+
+    try {
+      const result = await keywordSearch.mutateAsync(techSearchQuery);
+      setTechSearchResult(result);
+      if (result.ipcCodes.length === 0) {
+        toast({
+          title: "No IPC mapping found",
+          description: `Try keywords like: LiDAR, Battery, V2X, ADAS, Autonomous Driving`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Technology search complete",
+          description: `Found ${result.totalPatents} patents from ${result.topApplicants.length} companies`,
+        });
+      }
     } catch (error) {
       toast({
         title: "Search failed",
@@ -147,10 +180,14 @@ export function EpoPatentPanel() {
         </Card>
       </div>
 
-      <Tabs defaultValue="search" className="space-y-4">
+      <Tabs defaultValue="technology" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="search">
-            <Search className="h-4 w-4 mr-2" />
+          <TabsTrigger value="technology">
+            <FileText className="h-4 w-4 mr-2" />
+            Technology Search
+          </TabsTrigger>
+          <TabsTrigger value="company">
+            <Building2 className="h-4 w-4 mr-2" />
             Company Search
           </TabsTrigger>
           <TabsTrigger value="enrich">
@@ -158,13 +195,122 @@ export function EpoPatentPanel() {
             Batch Enrich
           </TabsTrigger>
           <TabsTrigger value="ipc">
-            <FileText className="h-4 w-4 mr-2" />
+            <Search className="h-4 w-4 mr-2" />
             IPC Codes
           </TabsTrigger>
         </TabsList>
 
+        {/* Technology Search Tab - Keyword First! */}
+        <TabsContent value="technology" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Search by Technology Keyword</CardTitle>
+              <CardDescription>
+                Enter a technology keyword to find patents and discover which companies are innovating in this space
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Technology keyword: LiDAR, Battery, V2X, ADAS, Autonomous..."
+                  value={techSearchQuery}
+                  onChange={(e) => setTechSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleTechSearch()}
+                />
+                <Button
+                  onClick={handleTechSearch}
+                  disabled={keywordSearch.isPending || !techSearchQuery.trim()}
+                >
+                  {keywordSearch.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Search className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+
+              {/* Keyword hints */}
+              <div className="flex flex-wrap gap-1">
+                <span className="text-xs text-muted-foreground">Try:</span>
+                {["LiDAR", "Battery", "V2X", "ADAS", "EV Charging", "Computer Vision"].map((kw) => (
+                  <Badge 
+                    key={kw} 
+                    variant="outline" 
+                    className="text-xs cursor-pointer hover:bg-accent"
+                    onClick={() => setTechSearchQuery(kw)}
+                  >
+                    {kw}
+                  </Badge>
+                ))}
+              </div>
+
+              {techSearchResult && (
+                <div className="space-y-4 pt-4 border-t">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-lg">{techSearchResult.keyword}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {techSearchResult.totalPatents} patents found • IPC: {techSearchResult.ipcCodes.join(", ")}
+                      </p>
+                    </div>
+                    <Badge variant={techSearchResult.totalPatents > 20 ? "default" : "secondary"}>
+                      {techSearchResult.topApplicants.length} Companies
+                    </Badge>
+                  </div>
+
+                  {techSearchResult.topApplicants.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">Top Companies with Patents</h4>
+                      <ScrollArea className="h-[200px]">
+                        <div className="space-y-2">
+                          {techSearchResult.topApplicants.map((applicant, idx) => (
+                            <div
+                              key={applicant.name}
+                              className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="text-muted-foreground text-sm w-6">#{idx + 1}</span>
+                                <Building2 className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium">{applicant.name}</span>
+                              </div>
+                              <Badge variant="default">
+                                {applicant.count} patents
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  )}
+
+                  {techSearchResult.recentPatents.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">Sample Patents</h4>
+                      <ScrollArea className="h-[150px]">
+                        <div className="space-y-2">
+                          {techSearchResult.recentPatents.slice(0, 5).map((patent) => (
+                            <div
+                              key={patent.publicationNumber}
+                              className="p-2 rounded-lg border bg-muted/20 text-sm"
+                            >
+                              <p className="font-medium truncate">{patent.title || patent.publicationNumber}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {patent.applicant} • {patent.publicationNumber}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Company Search Tab */}
-        <TabsContent value="search" className="space-y-4">
+        <TabsContent value="company" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Search Company Patents</CardTitle>
