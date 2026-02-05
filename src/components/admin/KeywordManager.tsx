@@ -241,7 +241,7 @@ export function KeywordManager() {
                 onOpenChange={(open) => {
                   setExpandedId(open ? keyword.id : null);
                   setAddingTagsFor(null);
-                  setTaxonomySearch("");
+                   setAliasSearch("");
                 }}
               >
                 <div className="border border-border rounded-lg bg-card">
@@ -249,7 +249,7 @@ export function KeywordManager() {
                   <CollapsibleTrigger asChild>
                     <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
-                        {hasMappings(keyword) ? (
+                         {hasAliases(keyword) ? (
                           <Check className="h-5 w-5 text-success" />
                         ) : (
                           <AlertCircle className="h-5 w-5 text-warning" />
@@ -280,26 +280,14 @@ export function KeywordManager() {
                     </div>
                   </CollapsibleTrigger>
 
-                  {/* Current Mappings Summary (visible when collapsed) */}
-                  {expandedId !== keyword.id && hasMappings(keyword) && (
+                   {/* Current Aliases Summary (visible when collapsed) */}
+                   {expandedId !== keyword.id && hasAliases(keyword) && (
                     <div className="px-4 pb-3 -mt-1">
                       <div className="flex flex-wrap gap-1.5">
-                        {keyword.dealroomIndustries.map((ind) => (
-                          <Badge key={`ind-${ind}`} variant="outline" className="text-xs bg-purple-500/10 text-purple-400 border-purple-500/30">
-                            <Factory className="h-3 w-3 mr-1" />
-                            {ind}
-                          </Badge>
-                        ))}
-                        {keyword.dealroomSubIndustries.map((sub) => (
-                          <Badge key={`sub-${sub}`} variant="outline" className="text-xs bg-blue-500/10 text-blue-400 border-blue-500/30">
-                            <Folder className="h-3 w-3 mr-1" />
-                            {sub}
-                          </Badge>
-                        ))}
-                        {keyword.dealroomTags.map((tag) => (
-                          <Badge key={`tag-${tag}`} variant="outline" className="text-xs bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+                         {keyword.aliases.map((alias) => (
+                           <Badge key={alias} variant="outline" className="text-xs bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
                             <Tag className="h-3 w-3 mr-1" />
-                            {tag}
+                             {alias}
                           </Badge>
                         ))}
                       </div>
@@ -309,44 +297,20 @@ export function KeywordManager() {
                   {/* Expanded Content */}
                   <CollapsibleContent>
                     <div className="border-t border-border p-4 space-y-4">
-                      {/* Current Mappings */}
+                       {/* Current Aliases */}
                       <div>
-                        <p className="text-sm font-medium text-foreground mb-2">Current Mappings:</p>
-                        {!hasMappings(keyword) ? (
-                          <p className="text-sm text-muted-foreground italic">No mappings yet. Click AI Map or add manually below.</p>
+                         <p className="text-sm font-medium text-foreground mb-2">Current Aliases:</p>
+                         {!hasAliases(keyword) ? (
+                           <p className="text-sm text-muted-foreground italic">No aliases yet. Click AI Map or add manually below.</p>
                         ) : (
                           <div className="flex flex-wrap gap-1.5">
-                            {keyword.dealroomIndustries.map((ind) => (
-                              <Badge key={`ind-${ind}`} variant="outline" className="text-xs bg-purple-500/10 text-purple-400 border-purple-500/30 pr-1">
-                                <Factory className="h-3 w-3 mr-1" />
-                                {ind}
-                                <button 
-                                  className="ml-1.5 hover:text-destructive"
-                                  onClick={() => handleRemoveMapping(keyword.id, ind, "industry")}
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </Badge>
-                            ))}
-                            {keyword.dealroomSubIndustries.map((sub) => (
-                              <Badge key={`sub-${sub}`} variant="outline" className="text-xs bg-blue-500/10 text-blue-400 border-blue-500/30 pr-1">
-                                <Folder className="h-3 w-3 mr-1" />
-                                {sub}
-                                <button 
-                                  className="ml-1.5 hover:text-destructive"
-                                  onClick={() => handleRemoveMapping(keyword.id, sub, "sub_industry")}
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </Badge>
-                            ))}
-                            {keyword.dealroomTags.map((tag) => (
-                              <Badge key={`tag-${tag}`} variant="outline" className="text-xs bg-emerald-500/10 text-emerald-400 border-emerald-500/30 pr-1">
+                             {keyword.aliases.map((alias) => (
+                               <Badge key={alias} variant="outline" className="text-xs bg-emerald-500/10 text-emerald-400 border-emerald-500/30 pr-1">
                                 <Tag className="h-3 w-3 mr-1" />
-                                {tag}
+                                 {alias}
                                 <button 
                                   className="ml-1.5 hover:text-destructive"
-                                  onClick={() => handleRemoveMapping(keyword.id, tag, "tag")}
+                                   onClick={() => handleRemoveAlias(keyword.id, alias)}
                                 >
                                   <X className="h-3 w-3" />
                                 </button>
@@ -356,28 +320,26 @@ export function KeywordManager() {
                         )}
                       </div>
 
-                      {/* Suggested Dealroom Mappings (verified terms) */}
-                      {SUGGESTED_DEALROOM_MAPPINGS[keyword.keyword] && (
+                       {/* Suggested Aliases (verified terms) */}
+                       {SUGGESTED_ALIAS_MAPPINGS[keyword.keyword] && (
                         <div>
                           <div className="flex items-center gap-2 mb-2">
                             <BadgeCheck className="h-4 w-4 text-amber-400" />
-                            <p className="text-sm font-medium text-foreground">Suggested Dealroom Terms:</p>
+                             <p className="text-sm font-medium text-foreground">Suggested Aliases:</p>
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger>
                                   <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p className="text-xs max-w-[200px]">These are verified Dealroom terms that closely match this CEI keyword's domain</p>
+                                   <p className="text-xs max-w-[200px]">These are verified terms that closely match this keyword's domain</p>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
                           </div>
                           <div className="flex flex-wrap gap-1.5">
-                            {SUGGESTED_DEALROOM_MAPPINGS[keyword.keyword].map((term) => {
-                              const isAdded = keyword.dealroomTags.includes(term) || 
-                                             keyword.dealroomSubIndustries.includes(term) ||
-                                             keyword.dealroomIndustries.includes(term);
+                             {SUGGESTED_ALIAS_MAPPINGS[keyword.keyword].map((term) => {
+                               const isAdded = keyword.aliases.includes(term);
                               return (
                                 <Badge
                                   key={term}
@@ -387,7 +349,7 @@ export function KeywordManager() {
                                       ? "bg-amber-500/20 text-amber-400 border-amber-500/50" 
                                       : "bg-amber-500/5 text-amber-300 border-amber-500/20 hover:bg-amber-500/15 hover:border-amber-500/40"
                                   }`}
-                                  onClick={() => !isAdded && handleAddMapping(keyword.id, term, "tag")}
+                                   onClick={() => !isAdded && handleAddAlias(keyword.id, term)}
                                 >
                                   {isAdded && <Check className="h-3 w-3 mr-1" />}
                                   <BadgeCheck className="h-3 w-3 mr-1" />
@@ -399,10 +361,10 @@ export function KeywordManager() {
                         </div>
                       )}
 
-                      {/* Add from Taxonomy */}
+                       {/* Add Alias Manually */}
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <p className="text-sm font-medium text-foreground">Add from Dealroom Taxonomy:</p>
+                           <p className="text-sm font-medium text-foreground">Add Alias:</p>
                           {addingTagsFor === keyword.id ? (
                             <Button 
                               variant="ghost" 
@@ -418,98 +380,40 @@ export function KeywordManager() {
                               onClick={() => setAddingTagsFor(keyword.id)}
                             >
                               <Plus className="h-3.5 w-3.5 mr-1" />
-                              Browse Taxonomy
+                               Add Alias
                             </Button>
                           )}
                         </div>
 
                         {addingTagsFor === keyword.id && (
                           <div className="border border-border rounded-lg p-3 bg-muted/30">
-                            <div className="relative mb-3">
-                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                             <div className="flex gap-2">
                               <Input
-                                placeholder="Search taxonomy..."
-                                value={taxonomySearch}
-                                onChange={(e) => setTaxonomySearch(e.target.value)}
-                                className="pl-9 h-8 text-sm"
+                                 placeholder="Enter alias..."
+                                 value={aliasSearch}
+                                 onChange={(e) => setAliasSearch(e.target.value)}
+                                 className="h-8 text-sm"
+                                 onKeyDown={(e) => {
+                                   if (e.key === "Enter" && aliasSearch.trim()) {
+                                     handleAddAlias(keyword.id, aliasSearch.trim());
+                                     setAliasSearch("");
+                                   }
+                                 }}
                               />
+                               <Button
+                                 size="sm"
+                                 className="h-8"
+                                 disabled={!aliasSearch.trim()}
+                                 onClick={() => {
+                                   if (aliasSearch.trim()) {
+                                     handleAddAlias(keyword.id, aliasSearch.trim());
+                                     setAliasSearch("");
+                                   }
+                                 }}
+                               >
+                                 <Plus className="h-3.5 w-3.5" />
+                               </Button>
                             </div>
-
-                            <Tabs value={selectedTaxonomyTab} onValueChange={setSelectedTaxonomyTab}>
-                              <TabsList className="h-8 mb-2">
-                                <TabsTrigger value="technology" className="text-xs px-2 py-1">
-                                  <Tag className="h-3 w-3 mr-1" />
-                                  Tags ({filteredTaxonomy.technology.length})
-                                </TabsTrigger>
-                                <TabsTrigger value="sub_industries" className="text-xs px-2 py-1">
-                                  <Folder className="h-3 w-3 mr-1" />
-                                  Sub-Industries ({filteredTaxonomy.subIndustries.length})
-                                </TabsTrigger>
-                                <TabsTrigger value="industries" className="text-xs px-2 py-1">
-                                  <Factory className="h-3 w-3 mr-1" />
-                                  Industries ({filteredTaxonomy.industries.length})
-                                </TabsTrigger>
-                              </TabsList>
-
-                              <ScrollArea className="h-[150px]">
-                                <div className="flex flex-wrap gap-1.5">
-                                  {selectedTaxonomyTab === "technology" && filteredTaxonomy.technology.map((item) => {
-                                    const isAdded = keyword.dealroomTags.includes(item.name);
-                                    return (
-                                      <Badge
-                                        key={item.id}
-                                        variant="outline"
-                                        className={`text-xs cursor-pointer transition-colors ${
-                                          isAdded 
-                                            ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/50" 
-                                            : "hover:bg-emerald-500/10 hover:border-emerald-500/30"
-                                        }`}
-                                        onClick={() => !isAdded && handleAddMapping(keyword.id, item.name, "tag")}
-                                      >
-                                        {isAdded && <Check className="h-3 w-3 mr-1" />}
-                                        {item.name}
-                                      </Badge>
-                                    );
-                                  })}
-                                  {selectedTaxonomyTab === "sub_industries" && filteredTaxonomy.subIndustries.map((item) => {
-                                    const isAdded = keyword.dealroomSubIndustries.includes(item.name);
-                                    return (
-                                      <Badge
-                                        key={item.id}
-                                        variant="outline"
-                                        className={`text-xs cursor-pointer transition-colors ${
-                                          isAdded 
-                                            ? "bg-blue-500/20 text-blue-400 border-blue-500/50" 
-                                            : "hover:bg-blue-500/10 hover:border-blue-500/30"
-                                        }`}
-                                        onClick={() => !isAdded && handleAddMapping(keyword.id, item.name, "sub_industry")}
-                                      >
-                                        {isAdded && <Check className="h-3 w-3 mr-1" />}
-                                        {item.name}
-                                      </Badge>
-                                    );
-                                  })}
-                                  {selectedTaxonomyTab === "industries" && filteredTaxonomy.industries.map((item) => {
-                                    const isAdded = keyword.dealroomIndustries.includes(item.name);
-                                    return (
-                                      <Badge
-                                        key={item.id}
-                                        variant="outline"
-                                        className={`text-xs cursor-pointer transition-colors ${
-                                          isAdded 
-                                            ? "bg-purple-500/20 text-purple-400 border-purple-500/50" 
-                                            : "hover:bg-purple-500/10 hover:border-purple-500/30"
-                                        }`}
-                                        onClick={() => !isAdded && handleAddMapping(keyword.id, item.name, "industry")}
-                                      >
-                                        {isAdded && <Check className="h-3 w-3 mr-1" />}
-                                        {item.name}
-                                      </Badge>
-                                    );
-                                  })}
-                                </div>
-                              </ScrollArea>
-                            </Tabs>
                           </div>
                         )}
                       </div>
