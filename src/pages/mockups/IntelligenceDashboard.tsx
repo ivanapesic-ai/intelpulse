@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, RefreshCw, LayoutGrid, List, Network } from "lucide-react";
+import { Search, RefreshCw, LayoutGrid, List, Boxes } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import { COQuadrantMatrix } from "@/components/intelligence/COQuadrantMatrix";
 import { TechnologyDetailPanel } from "@/components/intelligence/TechnologyDetailPanel";
 import { DomainHierarchyView } from "@/components/intelligence/DomainHierarchyView";
 import { HierarchyKPICards } from "@/components/intelligence/HierarchyKPICards";
-import { KnowledgeGraph } from "@/components/intelligence/KnowledgeGraph";
+import { ClusterCardView } from "@/components/intelligence/ClusterCardView";
 import { 
   useDomainOverview, 
   useKeywordOverview,
@@ -26,11 +26,11 @@ import { GraphNode } from "@/hooks/useKnowledgeGraph";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-type ViewMode = "hierarchy" | "matrix" | "graph";
+type ViewMode = "hierarchy" | "matrix" | "clusters";
 
 export default function IntelligenceDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("graph");
+  const [viewMode, setViewMode] = useState<ViewMode>("clusters");
   const [selectedTech, setSelectedTech] = useState<TechnologyIntelligence | null>(null);
   const [selectedKeyword, setSelectedKeyword] = useState<KeywordOverview | null>(null);
   const [selectedGraphNode, setSelectedGraphNode] = useState<GraphNode | null>(null);
@@ -140,8 +140,8 @@ export default function IntelligenceDashboard() {
                 </span>
                 <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
                   <TabsList className="grid grid-cols-3 w-48">
-                    <TabsTrigger value="graph" className="px-2">
-                      <Network className="h-4 w-4" />
+                    <TabsTrigger value="clusters" className="px-2">
+                      <Boxes className="h-4 w-4" />
                     </TabsTrigger>
                     <TabsTrigger value="hierarchy" className="px-2">
                       <List className="h-4 w-4" />
@@ -164,20 +164,24 @@ export default function IntelligenceDashboard() {
               <p className="text-muted-foreground">Loading intelligence data...</p>
             </div>
           </div>
-        ) : viewMode === "graph" ? (
+        ) : viewMode === "clusters" ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <KnowledgeGraph
+            <ClusterCardView
               onSelectNode={(node) => {
                 setSelectedGraphNode(node);
                 // Try to find matching technology for detail panel
-                if (node && node.group === "keyword") {
-                  const keywordId = node.id.replace("keyword-", "");
-                  const tech = technologies?.find(t => t.keywordId === keywordId);
-                  if (tech) setSelectedTech(tech);
+                if (node && node.group === "concept") {
+                  const conceptId = node.id.replace("concept-", "");
+                  // Find keyword linked to this concept
+                  const kw = keywords?.find(k => String(k.domainId) === conceptId);
+                  if (kw) {
+                    const tech = technologies?.find(t => t.keywordId === kw.keywordId);
+                    if (tech) setSelectedTech(tech);
+                  }
                 } else {
                   setSelectedTech(null);
                 }
