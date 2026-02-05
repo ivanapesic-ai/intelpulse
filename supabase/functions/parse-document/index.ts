@@ -621,6 +621,19 @@ ${processedContent}`;
       throw new Error("Failed to parse AI extraction results");
     }
 
+     // Delete existing mentions for this document before inserting new ones
+     // This prevents duplicates when re-parsing
+     const { error: deleteError } = await supabase
+       .from("document_technology_mentions")
+       .delete()
+       .eq("document_id", documentId);
+     
+     if (deleteError) {
+       console.warn(`Failed to delete old mentions: ${deleteError.message}`);
+     } else {
+       console.log(`Cleared old mentions for document ${documentId}`);
+     }
+
      // Insert technology mentions with C-O assessments
      const mentions = extractedData.mentions || [];
      let mentionsCreated = 0;
