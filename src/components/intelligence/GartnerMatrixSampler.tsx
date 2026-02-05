@@ -81,20 +81,21 @@ function Classic2x2Quadrant({
     return filtered.map(tech => {
       const { challenge, opportunity } = getScores(tech);
       
-      // Map 0-2 to position (0-100%)
+      // Map 0-2 to position within safe zones (avoiding title corners)
       // Challenge: 0 = left (low), 2 = right (high)
       // Opportunity: 0 = bottom (low), 2 = top (high)
-      const baseX = (challenge / 2) * 100;
-      const baseY = (opportunity / 2) * 100;
+      // Safe zone: 15-85% to avoid overlapping quadrant titles
+      const baseX = 15 + (challenge / 2) * 70;
+      const baseY = 15 + (opportunity / 2) * 70;
       
       // Add jitter for overlap prevention
-      const jitterX = (Math.random() - 0.5) * 15;
-      const jitterY = (Math.random() - 0.5) * 15;
+      const jitterX = (Math.random() - 0.5) * 12;
+      const jitterY = (Math.random() - 0.5) * 12;
       
       return {
         tech,
-        x: Math.max(5, Math.min(95, baseX + jitterX)),
-        y: Math.max(5, Math.min(95, baseY + jitterY)),
+        x: Math.max(12, Math.min(88, baseX + jitterX)),
+        y: Math.max(12, Math.min(88, baseY + jitterY)),
         challenge,
         opportunity,
       };
