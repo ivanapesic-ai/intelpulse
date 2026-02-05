@@ -94,7 +94,7 @@ export default function Dashboard() {
   }, [technologies]);
 
   const recentActivity = [
-    { action: "Dealroom sync completed", source: "Dealroom API", time: "2 hours ago", type: "data" },
+    { action: "Crunchbase import completed", source: "Crunchbase", time: "2 hours ago", type: "data" },
     { action: "Document processing completed", source: "PDF Parser", time: "5 hours ago", type: "score" },
     { action: "Technology scores recalculated", source: "System", time: "1 day ago", type: "data" },
     { action: "New keywords mapped", source: "Admin", time: "3 days ago", type: "report" },
@@ -138,7 +138,7 @@ export default function Dashboard() {
             </h1>
             
             <p className="text-base text-muted-foreground mb-6 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-              Real-time maturity tracking powered by Dealroom market signals, document analysis, and H11 hybrid scoring model.
+              Real-time maturity tracking powered by Crunchbase market signals, document analysis, and H11 hybrid scoring model.
             </p>
             
             <div className="flex flex-wrap gap-3 animate-fade-in-up" style={{ animationDelay: '150ms' }}>
@@ -186,14 +186,14 @@ export default function Dashboard() {
               <StatCard
                 title="Total Patents"
                 value={formatNumber(stats.totalPatents)}
-                subtitle="Aggregated from Dealroom"
+                subtitle="Aggregated from EPO & Crunchbase"
                 icon={FileText}
                 trend={{ value: 8, label: "YoY growth" }}
               />
               <StatCard
                 title="Total Funding"
                 value={formatFundingEur(stats.totalFunding)}
-                subtitle="Dealroom company data"
+                subtitle="Crunchbase company data"
                 icon={TrendingUp}
                 trend={{ value: 15, label: "vs 2024" }}
               />
@@ -384,10 +384,10 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {[
-                  { name: "Dealroom API", status: "healthy" },
+                  { name: "Crunchbase", status: "healthy" },
                   { name: "CEI Documents", status: "healthy" },
                   { name: "Web Scraping", status: "healthy" },
-                  { name: "PATSTAT/EPO", status: "pending" },
+                  { name: "EPO Patents", status: "healthy" },
                 ].map((source) => (
                   <div key={source.name} className="flex items-center justify-between text-sm">
                     <span className="text-foreground">{source.name}</span>
