@@ -81,12 +81,13 @@ function Classic2x2Quadrant({
     return filtered.map(tech => {
       const { challenge, opportunity } = getScores(tech);
       
-      // Map 0-2 to position within safe zones (avoiding title corners)
-      // Challenge: 0 = left (low), 2 = right (high)
-      // Opportunity: 0 = bottom (low), 2 = top (high)
-      // Safe zone: 15-85% to avoid overlapping quadrant titles
-      const baseX = 15 + (challenge / 2) * 70;
-      const baseY = 15 + (opportunity / 2) * 70;
+      // Map scores to position within safe zones (avoiding title corners)
+      // IMPORTANT: Tender defines Challenge 0=Severe (HARD), 2=No Major (EASY)
+      // But quadrant "High Challenge" means HARD, so we INVERT the X axis
+      // X-axis: Challenge 0 (Severe) → RIGHT (High Challenge), Challenge 2 (Easy) → LEFT (Low Challenge)
+      // Y-axis: Opportunity 0 → BOTTOM (Low), Opportunity 2 → TOP (High)
+      const baseX = 15 + ((2 - challenge) / 2) * 70;  // Inverted: 0→right, 2→left
+      const baseY = 15 + (opportunity / 2) * 70;       // Normal: 0→bottom, 2→top
       
       // Add jitter for overlap prevention
       const jitterX = (Math.random() - 0.5) * 12;
@@ -208,10 +209,10 @@ function HybridRadarQuadrant({
       const maturityRing = getMaturityRing(tech.trlScore);
       
       // Calculate angle based on quadrant (C-O position)
-      // Map to quadrant: challenge determines left/right, opportunity determines top/bottom
+      // INVERT challenge: 0 (Severe) = right side, 2 (Easy) = left side
       const quadrantAngle = Math.atan2(
-        opportunity - 1, // -1 to 1 for Y
-        challenge - 1    // -1 to 1 for X
+        opportunity - 1,        // -1 to 1 for Y (normal)
+        (2 - challenge) - 1     // Inverted: 0→+1 (right), 2→-1 (left)
       );
       
       // Distance based on ACTUAL maturity (from TRL data in documents)
