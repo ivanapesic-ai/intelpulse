@@ -66,7 +66,7 @@
    };
  
    return (
-     <div className="relative min-h-screen w-full overflow-hidden theme-transition">
+      <div className="relative min-h-screen w-full overflow-hidden theme-transition flex flex-col">
        {/* Background */}
        <div className="absolute inset-0 -z-10">
          <div className={cn(
@@ -95,8 +95,9 @@
        </nav>
  
        {/* Login Card */}
-       <motion.div
-         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-full max-w-md px-4"
+        <div className="flex-1 flex items-center justify-center z-10 px-4">
+          <motion.div
+          className="w-full max-w-md"
          initial={{ opacity: 0, y: 20 }}
          animate={{ opacity: 1, y: 0 }}
          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
@@ -231,9 +232,10 @@
            </form>
          </div>
        </motion.div>
+        </div>
  
        {/* Footer */}
-       <footer className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10">
+        <footer className="py-6 z-10">
          <p className="text-xs text-foreground-tertiary">
            Powered by CEI-Sphere Intelligence
          </p>
