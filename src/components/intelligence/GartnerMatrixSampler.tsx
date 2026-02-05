@@ -214,29 +214,22 @@ function HybridRadarQuadrant({
   }, [technologies]);
 
   const rings = [
-    { r: 12, label: "High" },
-    { r: 28, label: "Medium" },
-    { r: 44, label: "Low" },
+    { r: 15, label: "Mature" },
+    { r: 30, label: "Scaling" },
+    { r: 45, label: "Emerging" },
   ];
 
   return (
-    <div className="relative w-full aspect-square max-w-xl mx-auto bg-slate-50 dark:bg-slate-900/30 rounded-full">
-      {/* Gartner-style quadrant backgrounds */}
+    <div className="relative w-full aspect-square max-w-xl mx-auto">
+      {/* Quadrant backgrounds */}
       <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
-        {/* Outer circle border */}
-        <circle cx="50" cy="50" r="46" fill="none" stroke="hsl(180 25% 35%)" strokeWidth="0.3" />
+        {/* Quadrant fills */}
+        <path d="M50,50 L50,5 A45,45 0 0,1 95,50 Z" fill="hsl(var(--emerald-500) / 0.15)" />
+        <path d="M50,50 L95,50 A45,45 0 0,1 50,95 Z" fill="hsl(142 76% 36% / 0.1)" />
+        <path d="M50,50 L50,95 A45,45 0 0,1 5,50 Z" fill="hsl(var(--slate-500) / 0.1)" />
+        <path d="M50,50 L5,50 A45,45 0 0,1 50,5 Z" fill="hsl(var(--blue-500) / 0.1)" />
         
-        {/* Quadrant fills - Teal/Cyan Gartner palette */}
-        {/* Top-right: Leaders - Darkest teal */}
-        <path d="M50,50 L50,4 A46,46 0 0,1 96,50 Z" fill="hsl(175 50% 35%)" />
-        {/* Bottom-right: Visionaries - Medium teal */}
-        <path d="M50,50 L96,50 A46,46 0 0,1 50,96 Z" fill="hsl(175 45% 50%)" />
-        {/* Bottom-left: Niche - Light teal */}
-        <path d="M50,50 L50,96 A46,46 0 0,1 4,50 Z" fill="hsl(175 40% 60%)" />
-        {/* Top-left: Challengers - Lightest teal */}
-        <path d="M50,50 L4,50 A46,46 0 0,1 50,4 Z" fill="hsl(175 35% 70%)" />
-        
-        {/* Concentric rings */}
+        {/* Rings */}
         {rings.map(({ r }, i) => (
           <circle
             key={i}
@@ -244,50 +237,42 @@ function HybridRadarQuadrant({
             cy="50"
             r={r}
             fill="none"
-            stroke="hsl(180 20% 25% / 0.4)"
-            strokeWidth="0.4"
-            strokeDasharray="1.5,1.5"
+            stroke="hsl(var(--border))"
+            strokeWidth="0.5"
+            strokeDasharray="2,2"
           />
         ))}
         
-        {/* Cross axes */}
-        <line x1="50" y1="4" x2="50" y2="96" stroke="hsl(180 20% 25% / 0.5)" strokeWidth="0.5" />
-        <line x1="4" y1="50" x2="96" y2="50" stroke="hsl(180 20% 25% / 0.5)" strokeWidth="0.5" />
+        {/* Cross lines */}
+        <line x1="50" y1="5" x2="50" y2="95" stroke="hsl(var(--border))" strokeWidth="0.5" />
+        <line x1="5" y1="50" x2="95" y2="50" stroke="hsl(var(--border))" strokeWidth="0.5" />
       </svg>
 
-      {/* Quadrant labels - Navy blue like Gartner */}
-      <div className="absolute top-[8%] left-1/2 -translate-x-1/2 text-xs font-bold text-slate-800 dark:text-slate-200">
-        External Customer-Facing
-      </div>
-      <div className="absolute bottom-[8%] left-1/2 -translate-x-1/2 text-xs font-bold text-slate-800 dark:text-slate-200">
-        Internal Operations
-      </div>
-      <div className="absolute left-[6%] top-1/2 -translate-y-1/2 text-xs font-bold text-slate-700 dark:text-slate-300 writing-mode-vertical">
-        Low Barriers
-      </div>
-      <div className="absolute right-[6%] top-1/2 -translate-y-1/2 text-xs font-bold text-slate-700 dark:text-slate-300">
-        High Opportunity
-      </div>
+      {/* Quadrant labels */}
+      <div className="absolute top-2 right-4 text-xs font-semibold text-emerald-400">Leaders</div>
+      <div className="absolute bottom-4 right-4 text-xs font-semibold text-emerald-300/70">Visionaries</div>
+      <div className="absolute bottom-4 left-4 text-xs font-semibold text-slate-400">Niche</div>
+      <div className="absolute top-2 left-4 text-xs font-semibold text-blue-400">Challengers</div>
 
-      {/* Ring labels (priority legend) */}
-      <div className="absolute right-[-15%] top-1/2 -translate-y-1/2 flex flex-col gap-1 text-[10px]">
-        {rings.map(({ label }, i) => (
-          <div key={i} className="flex items-center gap-1">
-            <div 
-              className="w-3 h-3 rounded-full border border-slate-400"
-              style={{ 
-                background: i === 0 ? 'hsl(175 50% 35%)' : i === 1 ? 'hsl(175 45% 50%)' : 'hsl(175 40% 60%)'
-              }}
-            />
-            <span className="text-muted-foreground">{label}</span>
-          </div>
-        ))}
-      </div>
+      {/* Ring labels */}
+      {rings.map(({ r, label }, i) => (
+        <div 
+          key={i}
+          className="absolute text-[10px] text-muted-foreground/60"
+          style={{ 
+            left: `${50 + r}%`, 
+            top: "48%",
+            transform: "translateX(-50%)"
+          }}
+        >
+          {label}
+        </div>
+      ))}
 
-      {/* Tech bubbles - Navy blue like Gartner */}
+      {/* Tech bubbles */}
       <TooltipProvider>
         {positioned.map(({ tech, x, y }, i) => {
-          const size = 22 + Math.min(tech.totalFundingEur / 50_000_000, 1) * 12;
+          const size = 24 + Math.min(tech.totalFundingEur / 50_000_000, 1) * 16;
           const isSelected = selectedId === tech.id;
           
           return (
@@ -298,7 +283,7 @@ function HybridRadarQuadrant({
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: i * 0.03 }}
                   className={cn(
-                    "absolute cursor-pointer rounded-full flex items-center justify-center text-[7px] font-bold shadow-md hover:scale-110 transition-transform",
+                    "absolute cursor-pointer rounded-full bg-primary flex items-center justify-center text-[8px] font-bold text-primary-foreground shadow-md hover:scale-110 transition-transform",
                     isSelected && "ring-2 ring-white scale-125 z-20"
                   )}
                   style={{
@@ -307,17 +292,15 @@ function HybridRadarQuadrant({
                     width: size,
                     height: size,
                     transform: "translate(-50%, -50%)",
-                    backgroundColor: "hsl(220 60% 20%)",
-                    color: "hsl(0 0% 100%)",
                   }}
                   onClick={() => onSelectTechnology?.(tech)}
                 >
                   {tech.name.slice(0, 2).toUpperCase()}
                 </motion.div>
               </TooltipTrigger>
-              <TooltipContent className="bg-slate-800 text-white border-slate-700">
+              <TooltipContent>
                 <p className="font-semibold">{tech.name}</p>
-                <p className="text-xs text-slate-300">{formatFundingEur(tech.totalFundingEur)}</p>
+                <p className="text-xs">{formatFundingEur(tech.totalFundingEur)}</p>
               </TooltipContent>
             </Tooltip>
           );
