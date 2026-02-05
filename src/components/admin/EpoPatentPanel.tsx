@@ -169,13 +169,23 @@ export function EpoPatentPanel() {
             <CardHeader>
               <CardTitle>Search Company Patents</CardTitle>
               <CardDescription>
-                Look up patents filed by a specific company via EPO
+                Look up patents filed by a specific <strong>company name</strong> via EPO. 
+                Search for actual companies like "Tesla", "Waymo", or "Bosch" — not technology terms.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="p-3 rounded-lg border border-accent bg-accent/20 mb-2">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-accent-foreground mt-0.5 shrink-0" />
+                  <p className="text-sm text-accent-foreground">
+                    <strong>Tip:</strong> EPO searches by patent applicant/assignee name. 
+                    Enter company names (e.g., "Continental", "Mobileye", "Aptiv"), not technologies like "LiDAR".
+                  </p>
+                </div>
+              </div>
               <div className="flex gap-2">
                 <Input
-                  placeholder="Enter company name (e.g., Tesla, Waymo, Bosch)"
+                  placeholder="Company name: Tesla, Waymo, Continental, Aptiv..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
