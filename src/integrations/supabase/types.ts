@@ -130,6 +130,88 @@ export type Database = {
           },
         ]
       }
+      concept_scoring_factors: {
+        Row: {
+          concept_id: number | null
+          created_at: string | null
+          data_source: string | null
+          evidence: string | null
+          factor_name: string
+          factor_type: string
+          factor_value: string
+          id: string
+          keyword_id: string | null
+          score_contribution: number
+        }
+        Insert: {
+          concept_id?: number | null
+          created_at?: string | null
+          data_source?: string | null
+          evidence?: string | null
+          factor_name: string
+          factor_type: string
+          factor_value: string
+          id?: string
+          keyword_id?: string | null
+          score_contribution: number
+        }
+        Update: {
+          concept_id?: number | null
+          created_at?: string | null
+          data_source?: string | null
+          evidence?: string | null
+          factor_name?: string
+          factor_type?: string
+          factor_value?: string
+          id?: string
+          keyword_id?: string | null
+          score_contribution?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "concept_scoring_factors_concept_id_fkey"
+            columns: ["concept_id"]
+            isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["concept_id"]
+          },
+          {
+            foreignKeyName: "concept_scoring_factors_concept_id_fkey"
+            columns: ["concept_id"]
+            isOneToOne: false
+            referencedRelation: "ontology_concepts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "concept_scoring_factors_concept_id_fkey"
+            columns: ["concept_id"]
+            isOneToOne: false
+            referencedRelation: "sdv_ecosystem_companies"
+            referencedColumns: ["concept_id"]
+          },
+          {
+            foreignKeyName: "concept_scoring_factors_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "concept_scoring_factors_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_mapping_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "concept_scoring_factors_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crunchbase_companies: {
         Row: {
           created_at: string | null
@@ -789,32 +871,44 @@ export type Database = {
       ontology_concepts: {
         Row: {
           acronym: string | null
+          challenge_score: number | null
           created_at: string | null
           description: string | null
           domain_id: number | null
           id: number
           is_core: boolean | null
+          last_scored_at: string | null
+          maturity_stage: string | null
           name: string
+          opportunity_score: number | null
           synonyms: string[] | null
         }
         Insert: {
           acronym?: string | null
+          challenge_score?: number | null
           created_at?: string | null
           description?: string | null
           domain_id?: number | null
           id?: number
           is_core?: boolean | null
+          last_scored_at?: string | null
+          maturity_stage?: string | null
           name: string
+          opportunity_score?: number | null
           synonyms?: string[] | null
         }
         Update: {
           acronym?: string | null
+          challenge_score?: number | null
           created_at?: string | null
           description?: string | null
           domain_id?: number | null
           id?: number
           is_core?: boolean | null
+          last_scored_at?: string | null
+          maturity_stage?: string | null
           name?: string
+          opportunity_score?: number | null
           synonyms?: string[] | null
         }
         Relationships: [
@@ -1606,6 +1700,14 @@ export type Database = {
           total_patents_aggregated: number
         }[]
       }
+      apply_co_scores_to_technologies: {
+        Args: never
+        Returns: {
+          avg_challenge: number
+          avg_opportunity: number
+          keywords_updated: number
+        }[]
+      }
       calculate_challenge_opportunity_scores: {
         Args: { tech_keyword_id: string }
         Returns: undefined
@@ -1619,6 +1721,27 @@ export type Database = {
         Returns: number
       }
       calculate_network_centrality: { Args: never; Returns: undefined }
+      calculate_technology_challenge_score: {
+        Args: {
+          p_additional_impact?: number
+          p_integration?: string
+          p_maturity?: string
+          p_regulatory?: string
+          p_roi_clarity?: string
+          p_skills_gap?: string
+        }
+        Returns: number
+      }
+      calculate_technology_opportunity_score: {
+        Args: {
+          p_additional_impact?: number
+          p_company_count?: number
+          p_growth_rate_yoy?: number
+          p_market_size_eur?: number
+          p_strategic_alignment_count?: number
+        }
+        Returns: number
+      }
       calculate_tfidf_scores: { Args: never; Returns: undefined }
       calculate_trl_score: { Args: { avg_trl: number }; Returns: number }
       calculate_visibility_score: {
@@ -1626,6 +1749,10 @@ export type Database = {
         Returns: number
       }
       can_manage_users: { Args: { _user_id: string }; Returns: boolean }
+      get_strategic_quadrant: {
+        Args: { p_challenge_score: number; p_opportunity_score: number }
+        Returns: string
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -1659,6 +1786,18 @@ export type Database = {
       refresh_technology_scores: {
         Args: { tech_keyword_id: string }
         Returns: undefined
+      }
+      score_all_technologies: {
+        Args: never
+        Returns: {
+          challenge_score: number
+          company_count: number
+          keyword_id: string
+          keyword_name: string
+          opportunity_score: number
+          quadrant: string
+          total_funding: number
+        }[]
       }
       upsert_cooccurrence: {
         Args: { kw_a: string; kw_b: string; relevance_score?: number }
