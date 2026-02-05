@@ -221,11 +221,15 @@ function HybridRadarQuadrant({
     <div className="relative w-full aspect-square max-w-xl mx-auto">
       {/* Quadrant backgrounds - matching Client C-O colors */}
       <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
-        {/* Quadrant fills - Top-left: Quick Wins (yellow), Top-right: Big Bets (pink), Bottom-left: When Time Permits (blue), Bottom-right: Rethink (orange) */}
-        <path d="M50,50 L5,50 A45,45 0 0,0 50,5 Z" fill="rgba(250, 204, 21, 0.2)" /> {/* Quick Wins - yellow */}
-        <path d="M50,50 L50,5 A45,45 0 0,1 95,50 Z" fill="rgba(236, 72, 153, 0.15)" /> {/* Big Bets - pink */}
-        <path d="M50,50 L50,95 A45,45 0 0,1 5,50 Z" fill="rgba(96, 165, 250, 0.15)" /> {/* When Time Permits - blue */}
-        <path d="M50,50 L95,50 A45,45 0 0,1 50,95 Z" fill="rgba(251, 146, 60, 0.15)" /> {/* Rethink - orange */}
+        {/* Quadrant fills - complete circle divided into 4 equal parts */}
+        {/* Top-left: Quick Wins (yellow) - from top to left */}
+        <path d="M50,50 L50,5 A45,45 0 0,0 5,50 Z" fill="rgba(250, 204, 21, 0.2)" />
+        {/* Top-right: Big Bets (pink) - from right to top */}
+        <path d="M50,50 L95,50 A45,45 0 0,0 50,5 Z" fill="rgba(236, 72, 153, 0.15)" />
+        {/* Bottom-left: When Time Permits (blue) - from left to bottom */}
+        <path d="M50,50 L5,50 A45,45 0 0,0 50,95 Z" fill="rgba(96, 165, 250, 0.15)" />
+        {/* Bottom-right: Rethink (orange) - from bottom to right */}
+        <path d="M50,50 L50,95 A45,45 0 0,0 95,50 Z" fill="rgba(251, 146, 60, 0.15)" />
         
         {/* Rings */}
         {rings.map(({ r }, i) => (
