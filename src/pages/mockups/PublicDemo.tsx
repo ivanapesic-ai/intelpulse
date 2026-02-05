@@ -324,7 +324,7 @@ export default function PublicDemo() {
               <CardContent className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-success" />
-                  <span className="text-foreground">Dealroom (Funding & Companies)</span>
+                  <span className="text-foreground">Crunchbase (Funding & Companies)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-success" />

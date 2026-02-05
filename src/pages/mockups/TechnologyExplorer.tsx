@@ -107,7 +107,7 @@ export default function TechnologyExplorer() {
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-foreground mb-2">Technology Explorer</h1>
           <p className="text-muted-foreground">
-            Browse and analyze {technologies?.length || 0} technologies powered by Dealroom data
+            Browse and analyze {technologies?.length || 0} technologies powered by Crunchbase data
           </p>
         </div>
 
@@ -205,7 +205,7 @@ export default function TechnologyExplorer() {
                     </div>
                     
                     <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                      {tech.description || "Technology area tracked via Dealroom data"}
+                      {tech.description || "Technology area tracked via Crunchbase market data"}
                     </p>
 
                     <div className="grid grid-cols-3 gap-2 text-center">
@@ -315,9 +315,9 @@ export default function TechnologyExplorer() {
                     {/* Left Column */}
                     <div className="space-y-6">
                       <div>
-                        <p className="text-muted-foreground mb-4">
-                          {selectedTech.description || `Technology area with ${selectedTech.dealroomCompanyCount} companies tracked from Dealroom.`}
-                        </p>
+                      <p className="text-muted-foreground mb-4">
+                        {selectedTech.description || `Technology area with ${selectedTech.dealroomCompanyCount} companies tracked from Crunchbase.`}
+                      </p>
                         <div className="flex flex-wrap gap-2">
                           <Badge variant="outline" className="capitalize">{selectedTech.trend} trend</Badge>
                           <Badge variant="outline">{selectedTech.dealroomCompanyCount} companies</Badge>
@@ -410,7 +410,7 @@ export default function TechnologyExplorer() {
                             ) : (
                               <p className="text-sm text-muted-foreground italic">No data</p>
                             )}
-                            <p className="text-xs text-muted-foreground">Dealroom patents count</p>
+                            <p className="text-xs text-muted-foreground">Patent count</p>
                           </CardContent>
                         </Card>
                       </div>
@@ -423,8 +423,8 @@ export default function TechnologyExplorer() {
                         <CardContent>
                           <div className="space-y-3">
                             {[
-                              { label: "Investment", score: selectedTech.investmentScore, tooltip: "Dealroom funding signals" },
-                              { label: "Employees", score: selectedTech.employeesScore, tooltip: "Dealroom employee count" },
+                              { label: "Investment", score: selectedTech.investmentScore, tooltip: "Crunchbase funding signals" },
+                              { label: "Employees", score: selectedTech.employeesScore, tooltip: "Crunchbase employee data" },
                               { label: "TRL (Readiness)", score: selectedTech.trlScore, tooltip: selectedTech.avgTrlMentioned ? `Avg TRL ${selectedTech.avgTrlMentioned.toFixed(1)}` : "No TRL data" },
                             ].map((item) => {
                               const config = MATURITY_SCORE_CONFIG[item.score as 0|1|2];
@@ -498,7 +498,7 @@ export default function TechnologyExplorer() {
                                 No news data available
                               </p>
                               <p className="text-xs text-muted-foreground mt-1">
-                                Dealroom API tier doesn't include company news
+                                News data from web scraping
                               </p>
                             </div>
                           )}
