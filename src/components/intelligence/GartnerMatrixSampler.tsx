@@ -182,6 +182,15 @@ function Classic2x2Quadrant({
 // ============================================================================
 // STYLE 3: Radar-Style with Quadrant Overlay
 // ============================================================================
+// Tender-aligned maturity stages (calculated from TRL data)
+// TRL 7-9 = Mainstream (center), TRL 4-6 = Early Adoption (middle), TRL 1-3 = Emerging (outer)
+function getMaturityRing(trlScore: number | null): number {
+  if (trlScore === null || trlScore === undefined) return 2; // No data = outer ring
+  if (trlScore >= 1.5) return 0; // Mainstream (TRL 7-9) = center
+  if (trlScore >= 0.5) return 1; // Early Adoption (TRL 4-6) = middle
+  return 2; // Emerging (TRL 1-3) = outer
+}
+
 function HybridRadarQuadrant({ 
   technologies, 
   onSelectTechnology, 
@@ -195,27 +204,39 @@ function HybridRadarQuadrant({
     return filtered.map((tech, i) => {
       const { challenge, opportunity } = getScores(tech);
       
-      // Convert to polar-ish coordinates
-      // Angle based on opportunity (0 = left, 2 = right, wrapping around)
-      const angle = (opportunity / 2) * Math.PI - Math.PI / 2;
-      // Distance based on challenge (2 = center/mature, 0 = outer/emerging)
-      const distance = 15 + (2 - challenge) * 15;
+      // Maturity ring from ACTUAL TRL data (not assumed)
+      const maturityRing = getMaturityRing(tech.trlScore);
       
-      // Add some spread based on index
-      const spreadAngle = angle + ((i % 5) - 2) * 0.15;
-      const spreadDist = distance + ((i % 3) - 1) * 5;
+      // Calculate angle based on quadrant (C-O position)
+      // Map to quadrant: challenge determines left/right, opportunity determines top/bottom
+      const quadrantAngle = Math.atan2(
+        opportunity - 1, // -1 to 1 for Y
+        challenge - 1    // -1 to 1 for X
+      );
       
-      const x = centerX + Math.cos(spreadAngle) * spreadDist;
-      const y = centerY + Math.sin(spreadAngle) * spreadDist;
+      // Distance based on ACTUAL maturity (from TRL data in documents)
+      // Ring 0 = center (15), Ring 1 = middle (30), Ring 2 = outer (45)
+      const baseDistance = 15 + maturityRing * 15;
       
-      return { tech, x, y, challenge, opportunity };
+      // Add jitter within ring band
+      const jitterAngle = ((i % 7) - 3) * 0.12;
+      const jitterDist = ((i % 5) - 2) * 3;
+      
+      const finalAngle = quadrantAngle + jitterAngle;
+      const finalDist = Math.max(10, Math.min(44, baseDistance + jitterDist));
+      
+      const x = centerX + Math.cos(finalAngle) * finalDist;
+      const y = centerY - Math.sin(finalAngle) * finalDist; // Invert Y for SVG
+      
+      return { tech, x, y, challenge, opportunity, maturityRing };
     });
   }, [technologies]);
 
+  // Tender-aligned terminology
   const rings = [
-    { r: 15, label: "Mature" },
-    { r: 30, label: "Scaling" },
-    { r: 45, label: "Emerging" },
+    { r: 15, label: "Mainstream" },      // TRL 7-9
+    { r: 30, label: "Early Adoption" },  // TRL 4-6
+    { r: 45, label: "Emerging" },        // TRL 1-3
   ];
 
   return (
