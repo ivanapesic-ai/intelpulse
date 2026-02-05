@@ -269,96 +269,83 @@ Return the complete extracted text in a structured format, preserving the docume
     })) || [];
 
     // Build H11-enhanced prompt for AI extraction
-    const systemPrompt = `You are an expert at extracting technology intelligence from CEI-Sphere (Cloud-Edge-IoT) documents in the European context.
-
-## H11 EXTRACTION ALGORITHM
-
-Apply precise scoring using the H11 methodology:
-
-### 1. TECHNOLOGY DETECTION
-Identify technologies from the provided keyword list. For each match:
-- Extract the specific context where the technology appears
-- Note if it appears in title, executive summary, introduction, body, or conclusions
-- Higher weight for mentions in titles/summaries (position_weight: title=3.0, summary=2.5, body=1.0)
-
-### 2. TRL ASSESSMENT (Technology Readiness Level)
-CRITICAL: Extract TRL with evidence. Look for:
-- Explicit: "TRL 6", "TRL 7-9", "technology readiness level 5"
-- Implicit indicators:
-  * TRL 1-3: "basic research", "concept", "experimental proof", "laboratory"
-  * TRL 4-5: "lab validation", "relevant environment", "prototype development"
-  * TRL 6: "pilot", "demonstration", "prototype in operational environment"
-  * TRL 7-8: "system prototype", "actual system proven", "pre-commercial"
-  * TRL 9: "commercial deployment", "market ready", "production", "widely adopted"
-- Market context: "X% adoption rate" suggests TRL 8-9
-
-### 3. EU POLICY ALIGNMENT
-Detect references to EU policies and initiatives:
-${EU_POLICIES.map(p => `- ${p}`).join('\n')}
-
-### 4. SECTOR CLASSIFICATION
-Tag each mention with relevant sectors:
-- MOBILITY: transport, vehicles, logistics, MaaS, SDV, EV charging
-- ENERGY: grids, renewables, smart energy, sustainability
-- MANUFACTURING: Industry 4.0, factories, OT, automation, supply chain
-
-### 5. MARKET SIGNALS (Challenge-Opportunity Matrix)
-Extract quantitative signals:
-- Funding/investment amounts (e.g., "EUR 46.4 billion")
-- Adoption rates (e.g., "53.8% have adopted")
-- Market size indicators
-- Key players mentioned
-
-TRL Level Mapping (if not explicitly stated, infer from context):
-- TRL 1-3: Basic research, concept, experimental proof
-- TRL 4-5: Lab validation, relevant environment validation
-- TRL 6: Prototype demonstration, pilot testing
-- TRL 7-8: System prototype, actual system proven
-- TRL 9: Commercial deployment, market ready
-
-For each technology mention, provide:
-- keyword_id: The ID of the matched keyword
-- mention_context: A brief quote showing how the technology is mentioned (max 300 chars, include surrounding context)
-- trl_mentioned: The TRL level if mentioned or inferable (1-9), or null if completely unknown
-- policy_reference: Related EU policy/regulation (be specific), or null
-- confidence_score: Match confidence (0.0-1.0) - higher for explicit matches with context
-- position_weight: Document position (title=3.0, executive_summary=2.5, introduction=2.0, body=1.0, reference=0.3)
-- sector_tags: Array of sectors ["mobility", "energy", "manufacturing"]
-- market_signal: Any quantitative market data near this mention (funding, adoption %, etc.)
-- page_number: The page number if available, or null
-
-Respond with a JSON object in this exact format:
-{
-  "mentions": [
-    {
-      "keyword_id": "uuid-here",
-      "mention_context": "quote with surrounding context showing technology relevance",
-      "trl_mentioned": 7,
-      "policy_reference": "Horizon Europe",
-      "confidence_score": 0.95,
-      "position_weight": 2.5,
-      "sector_tags": ["mobility", "energy"],
-      "market_signal": "EUR 46.4 billion investment",
-      "page_number": 1,
-      "relevance_score": 0.85
-    }
-  ],
-  "document_analysis": {
-    "summary": "Brief summary of document's technology focus",
-    "primary_sectors": ["mobility"],
-    "key_policies": ["Horizon Europe", "Digital Decade"],
-    "market_signals": {
-      "total_funding_mentioned": "EUR 46.4 billion",
-      "adoption_rates": ["53.8% IoT adoption"],
-      "key_players": ["ABB", "Siemens", "AWS"]
-    },
-    "trl_distribution": {
-      "emerging": 3,
-      "developing": 5,
-      "mature": 2
-    }
-  }
-}`;
+     const systemPrompt = `You are an expert at extracting technology intelligence from CEI-Sphere (Cloud-Edge-IoT) documents for the European Commission.
+ 
+ ## YOUR TASK: CHALLENGE-OPPORTUNITY MATRIX EXTRACTION
+ 
+ For each technology in the document, assess it according to the OFFICIAL TENDER CRITERIA:
+ 
+ ### CHALLENGE SCORE (0-2) - Barriers to Market Entry
+ 2 = No Major Challenge: No significant barriers. All foreseeable problems are solved or negligible, standard processes apply.
+ 1 = Manageable Challenge: Some challenges exist but are understood with clear actionable steps to overcome. Moderate effort required, doesn't threaten success.
+ 0 = Severe Challenge: Major obstacles that could seriously impede or block market success. Requires new regulations, substantial investment, or industry-wide shifts.
+ 
+ ### OPPORTUNITY SCORE (0-2) - Value and Achievability
+ 2 = High Opportunity: Significant value, readily achievable, closely aligned with EU strategic goals. Strong market position and readiness.
+ 1 = Promising Opportunity: Reasonable value, achievable with moderate effort. Practical path forward with adequate strategic fit.
+ 0 = Limited Opportunity: Low potential value, difficult to realize, weak strategic fit. Little benefit or readiness.
+ 
+ ### MATURITY LEVEL - Market Adoption Stage
+ - "emerging": New technology, early R&D, limited pilots (TRL 1-4)
+ - "early_adoption": Pilots underway, some commercial deployments (TRL 5-7)
+ - "mainstream": Widely adopted, proven market presence (TRL 8-9)
+ 
+ ### MARKET SIGNALS TO EXTRACT
+ - Market size and growth rate (enterprise value)
+ - Customer adoption rates (% deployed, % planning to adopt)
+ - Presence of competitors or substitutes
+ - Key players and investors
+ - Funding/investment amounts
+ 
+ ### EU POLICY ALIGNMENT
+ Detect references to: ${EU_POLICIES.slice(0, 20).join(', ')}
+ 
+ ## TECHNOLOGY KEYWORDS TO MATCH
+ Only extract technologies from this provided list.
+ 
+ ## RESPONSE FORMAT
+ Return JSON with technology assessments and overall document analysis:
+ {
+   "mentions": [
+     {
+       "keyword_id": "uuid-from-list",
+       "mention_context": "Quote from document showing technology relevance (max 300 chars)",
+       "trl_mentioned": 7,
+       "policy_reference": "Specific EU policy if mentioned",
+       "confidence_score": 0.95,
+       "challenge_score": 1,
+       "challenge_reasoning": "Brief explanation of challenge assessment",
+       "opportunity_score": 2,
+       "opportunity_reasoning": "Brief explanation of opportunity assessment",
+       "maturity_level": "early_adoption",
+       "market_signals": {
+         "adoption_rate": "53% deployed",
+         "market_size": "EUR 46B by 2030",
+         "competitors": ["Company A", "Company B"],
+         "growth_rate": "15% CAGR"
+       },
+       "sector_tags": ["mobility", "energy"],
+       "page_number": null
+     }
+   ],
+   "document_analysis": {
+     "title": "Document title if identifiable",
+     "summary": "2-3 sentence summary of document focus",
+     "primary_sectors": ["mobility"],
+     "key_policies": ["Green Deal", "Digital Decade"],
+     "overall_market_signals": {
+       "total_market_value": "EUR X billion",
+       "adoption_trends": ["trend 1", "trend 2"],
+       "key_players": ["Company A", "Company B"],
+       "investment_activity": "Description of funding trends"
+     },
+     "maturity_distribution": {
+       "emerging_count": 3,
+       "early_adoption_count": 5,
+       "mainstream_count": 2
+     }
+   }
+ }`;
 
     const userPrompt = `## DOCUMENT PRE-ANALYSIS (H11 Algorithm)
 
@@ -411,33 +398,47 @@ ${documentContent}`;
       throw new Error("No response from AI");
     }
 
-    // Parse AI response
-    let extractedData: { mentions: Array<{
-      keyword_id: string;
-      mention_context: string;
-      trl_mentioned: number | null;
-      policy_reference: string | null;
-      confidence_score: number;
-      position_weight?: number;
-      sector_tags?: string[];
-      market_signal?: string;
-      relevance_score?: number;
-      page_number: number | null;
-    }>; document_analysis?: {
-      summary: string;
-      primary_sectors?: string[];
-      key_policies?: string[];
-      market_signals?: {
-        total_funding_mentioned?: string;
-        adoption_rates?: string[];
-        key_players?: string[];
-      };
-      trl_distribution?: {
-        emerging?: number;
-        developing?: number;
-        mature?: number;
-      };
-    }; summary?: string };
+     // Parse AI response - C-O Matrix aligned type
+     let extractedData: { 
+       mentions: Array<{
+         keyword_id: string;
+         mention_context: string;
+         trl_mentioned: number | null;
+         policy_reference: string | null;
+         confidence_score: number;
+         challenge_score?: number;
+         challenge_reasoning?: string;
+         opportunity_score?: number;
+         opportunity_reasoning?: string;
+         maturity_level?: string;
+         market_signals?: {
+           adoption_rate?: string;
+           market_size?: string;
+           competitors?: string[];
+           growth_rate?: string;
+         };
+         sector_tags?: string[];
+         page_number: number | null;
+       }>; 
+       document_analysis?: {
+         title?: string;
+         summary: string;
+         primary_sectors?: string[];
+         key_policies?: string[];
+         overall_market_signals?: {
+           total_market_value?: string;
+           adoption_trends?: string[];
+           key_players?: string[];
+           investment_activity?: string;
+         };
+         maturity_distribution?: {
+           emerging_count?: number;
+           early_adoption_count?: number;
+           mainstream_count?: number;
+         };
+       }; 
+       summary?: string 
+     };
 
     try {
       extractedData = JSON.parse(responseContent);
@@ -446,68 +447,116 @@ ${documentContent}`;
       throw new Error("Failed to parse AI extraction results");
     }
 
-    // Insert technology mentions
-    const mentions = extractedData.mentions || [];
-    let mentionsCreated = 0;
+     // Insert technology mentions with C-O assessments
+     const mentions = extractedData.mentions || [];
+     let mentionsCreated = 0;
+     
+     // Track C-O scores per keyword for aggregation
+     const keywordCOScores: Record<string, { 
+       challenges: number[]; 
+       opportunities: number[];
+       maturity: string[];
+       marketSignals: any[];
+     }> = {};
+ 
+     for (const mention of mentions) {
+       // Validate keyword_id exists
+       const validKeyword = keywords?.find(k => k.id === mention.keyword_id);
+       if (!validKeyword) {
+         console.warn(`Invalid keyword_id: ${mention.keyword_id}`);
+         continue;
+       }
+ 
+       const baseConfidence = Math.min(1, Math.max(0, mention.confidence_score || 0.5));
+       
+       // Build context with C-O reasoning
+       const enrichedContext = [
+         mention.mention_context,
+         mention.challenge_reasoning ? `[Challenge: ${mention.challenge_reasoning}]` : null,
+         mention.opportunity_reasoning ? `[Opportunity: ${mention.opportunity_reasoning}]` : null,
+       ].filter(Boolean).join(" ");
+ 
+       const { error: mentionError } = await supabase
+         .from("document_technology_mentions")
+         .insert({
+           document_id: documentId,
+           keyword_id: mention.keyword_id,
+           mention_context: enrichedContext?.slice(0, 500) || null,
+           trl_mentioned: mention.trl_mentioned || null,
+           policy_reference: mention.policy_reference || null,
+           confidence_score: baseConfidence,
+           position_weight: 1.0,
+           relevance_score: baseConfidence,
+           page_number: mention.page_number || null,
+         });
+ 
+       if (mentionError) {
+         console.error("Error inserting mention:", mentionError);
+       } else {
+         mentionsCreated++;
+         
+         // Track C-O scores for aggregation
+         if (!keywordCOScores[mention.keyword_id]) {
+           keywordCOScores[mention.keyword_id] = { 
+             challenges: [], 
+             opportunities: [], 
+             maturity: [],
+             marketSignals: []
+           };
+         }
+         if (mention.challenge_score !== undefined) {
+           keywordCOScores[mention.keyword_id].challenges.push(mention.challenge_score);
+         }
+         if (mention.opportunity_score !== undefined) {
+           keywordCOScores[mention.keyword_id].opportunities.push(mention.opportunity_score);
+         }
+         if (mention.maturity_level) {
+           keywordCOScores[mention.keyword_id].maturity.push(mention.maturity_level);
+         }
+         if (mention.market_signals) {
+           keywordCOScores[mention.keyword_id].marketSignals.push(mention.market_signals);
+         }
+       }
+     }
 
-    for (const mention of mentions) {
-      // Validate keyword_id exists
-      const validKeyword = keywords?.find(k => k.id === mention.keyword_id);
-      if (!validKeyword) {
-        console.warn(`Invalid keyword_id: ${mention.keyword_id}`);
-        continue;
-      }
-
-      // H11: Calculate composite relevance score
-      const positionWeight = mention.position_weight || 1.0;
-      const baseConfidence = Math.min(1, Math.max(0, mention.confidence_score || 0.5));
-      const relevanceScore = mention.relevance_score || (baseConfidence * positionWeight);
-      
-      // Normalize to 0-1 range
-      const normalizedRelevance = Math.min(1, relevanceScore / 3.0);
-
-      const { error: mentionError } = await supabase
-        .from("document_technology_mentions")
-        .insert({
-          document_id: documentId,
-          keyword_id: mention.keyword_id,
-          mention_context: mention.mention_context?.slice(0, 500) || null,
-          trl_mentioned: mention.trl_mentioned || null,
-          policy_reference: mention.policy_reference || null,
-          confidence_score: baseConfidence,
-          position_weight: positionWeight,
-          relevance_score: normalizedRelevance,
-          page_number: mention.page_number || null,
-        });
-
-      if (mentionError) {
-        console.error("Error inserting mention:", mentionError);
-      } else {
-        mentionsCreated++;
-      }
-    }
-
-    // Build enriched parsed content with H11 analysis
-    const docAnalysis = extractedData.document_analysis || { summary: extractedData.summary || "" };
-    
-    // Update document with parsed content and status
-    await supabase
-      .from("cei_documents")
-      .update({
-        parse_status: "completed",
-        parsed_content: {
-          summary: docAnalysis.summary || extractedData.summary,
-          mentions_count: mentionsCreated,
-          extracted_at: new Date().toISOString(),
-          h11_analysis: {
-            sectors: docAnalysis.primary_sectors || detectedSectors,
-            key_policies: docAnalysis.key_policies || [],
-            market_signals: docAnalysis.market_signals || marketSignals,
-            trl_distribution: docAnalysis.trl_distribution || null,
-          },
-        },
-      })
-      .eq("id", documentId);
+     // Build enriched parsed content with C-O Matrix analysis
+     const docAnalysis = extractedData.document_analysis || { summary: extractedData.summary || "" };
+     
+     // Update document with parsed content and C-O insights
+     await supabase
+       .from("cei_documents")
+       .update({
+         parse_status: "completed",
+         parsed_content: {
+           title: docAnalysis.title || document.filename,
+           summary: docAnalysis.summary || extractedData.summary,
+           mentions_count: mentionsCreated,
+           extracted_at: new Date().toISOString(),
+           co_analysis: {
+             sectors: docAnalysis.primary_sectors || detectedSectors,
+             key_policies: docAnalysis.key_policies || [],
+             market_signals: docAnalysis.overall_market_signals || marketSignals,
+             maturity_distribution: docAnalysis.maturity_distribution || null,
+             // Aggregate C-O scores from mentions
+             keyword_assessments: Object.entries(keywordCOScores).map(([kwId, scores]) => ({
+               keyword_id: kwId,
+               avg_challenge: scores.challenges.length > 0 
+                 ? Math.round(scores.challenges.reduce((a, b) => a + b, 0) / scores.challenges.length) 
+                 : null,
+               avg_opportunity: scores.opportunities.length > 0 
+                 ? Math.round(scores.opportunities.reduce((a, b) => a + b, 0) / scores.opportunities.length) 
+                 : null,
+               maturity_mode: scores.maturity.length > 0 
+                 ? scores.maturity.sort((a, b) => 
+                     scores.maturity.filter(v => v === a).length - scores.maturity.filter(v => v === b).length
+                   ).pop() 
+                 : null,
+               market_signals: scores.marketSignals,
+             })),
+           },
+         },
+       })
+       .eq("id", documentId);
 
     // Update technology document_mention_count for affected keywords
     const affectedKeywordIds = [...new Set(mentions.map(m => m.keyword_id).filter(Boolean))];
@@ -533,21 +582,22 @@ ${documentContent}`;
       }
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        mentionsCreated,
-        summary: docAnalysis.summary || extractedData.summary,
-        h11_analysis: {
-          sectors: docAnalysis.primary_sectors || detectedSectors,
-          policies_detected: docAnalysis.key_policies?.length || 0,
-          market_signals: Object.keys(docAnalysis.market_signals || {}).length,
-        },
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+     return new Response(
+       JSON.stringify({
+         success: true,
+         mentionsCreated,
+         summary: docAnalysis.summary || extractedData.summary,
+         co_analysis: {
+           sectors: docAnalysis.primary_sectors || detectedSectors,
+           policies_detected: docAnalysis.key_policies?.length || 0,
+           keywords_assessed: Object.keys(keywordCOScores).length,
+           market_signals: docAnalysis.overall_market_signals || null,
+         },
+       }),
+       {
+         headers: { ...corsHeaders, "Content-Type": "application/json" },
+       }
+     );
   } catch (error) {
     console.error("Document parsing error:", error);
 
