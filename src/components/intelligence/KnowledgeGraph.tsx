@@ -73,6 +73,7 @@ export function KnowledgeGraph({ onSelectNode, selectedNodeId }: KnowledgeGraphP
   const { data, isLoading, error } = useKnowledgeGraph();
   
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
+  const [graphInitError, setGraphInitError] = useState<string | null>(null);
   const [egoNetwork, setEgoNetwork] = useState<{ nodes: Set<string>; edges: Set<string> } | null>(null);
   const [transform, setTransform] = useState<d3.ZoomTransform>(d3.zoomIdentity);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
@@ -95,145 +96,180 @@ export function KnowledgeGraph({ onSelectNode, selectedNodeId }: KnowledgeGraphP
   useEffect(() => {
     if (!data || !svgRef.current) return;
 
+    // Stop any previous simulation
+    simulationRef.current?.stop();
+    simulationRef.current = null;
+
+    setGraphInitError(null);
+
     const svg = d3.select(svgRef.current);
     const { width, height } = dimensions;
 
     // Clear previous
     svg.selectAll("*").remove();
 
-    // Create container groups
-    const g = svg.append("g").attr("class", "graph-container");
-    const linksG = g.append("g").attr("class", "links");
-    const nodesG = g.append("g").attr("class", "nodes");
-    const labelsG = g.append("g").attr("class", "labels");
+    let simulation: d3.Simulation<SimNode, SimLink> | null = null;
 
-    // Prepare simulation data
-    const simNodes: SimNode[] = data.nodes.map(n => ({ ...n }));
-    const simLinks: SimLink[] = data.edges.map(e => ({
-      id: e.id,
-      source: e.source,
-      target: e.target,
-      type: e.type,
-      value: e.value,
-      normalizedValue: e.normalizedValue,
-    }));
+    try {
+      // Create container groups
+      const g = svg.append("g").attr("class", "graph-container");
+      const linksG = g.append("g").attr("class", "links");
+      const nodesG = g.append("g").attr("class", "nodes");
+      const labelsG = g.append("g").attr("class", "labels");
 
-    // Create force simulation
-    const simulation = d3.forceSimulation<SimNode>(simNodes)
-      .force("link", d3.forceLink<SimNode, SimLink>(simLinks)
-        .id(d => d.id)
-        .distance(d => {
-          // Shorter distance for hierarchical links
-          if (d.type === "has_keyword") return 80;
-          if (d.type === "part_of") return 100;
-          return 120;
-        })
-        .strength(d => {
-          if (d.type === "has_keyword") return 0.8;
-          return 0.3 + (d.normalizedValue / 1000) * 0.5;
-        })
-      )
-      .force("charge", d3.forceManyBody<SimNode>()
-        .strength(d => {
-          if (d.group === "domain") return -400;
-          if (d.group === "concept") return -200;
-          return -80;
-        })
-      )
-      .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide<SimNode>()
-        .radius(d => getNodeSize(d) + 5)
-      )
-      .force("x", d3.forceX(width / 2).strength(0.05))
-      .force("y", d3.forceY(height / 2).strength(0.05));
+      // Prepare simulation data
+      const simNodes: SimNode[] = data.nodes.map((n) => ({ ...n }));
+      const rawLinks: SimLink[] = data.edges.map((e) => ({
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        type: e.type,
+        value: e.value,
+        normalizedValue: e.normalizedValue,
+      }));
 
-    simulationRef.current = simulation;
+      // Defensive: drop any links referencing missing nodes (prevents D3 "node not found")
+      const nodeIdSet = new Set(simNodes.map((n) => n.id));
+      const simLinks: SimLink[] = rawLinks.filter((l) =>
+        nodeIdSet.has(String(l.source)) && nodeIdSet.has(String(l.target))
+      );
 
-    // Draw links
-    const link = linksG.selectAll<SVGLineElement, SimLink>("line")
-      .data(simLinks)
-      .join("line")
-      .attr("class", "graph-link")
-      .attr("stroke", d => EDGE_TYPE_STYLES[d.type]?.stroke || "hsl(220, 13%, 50%)")
-      .attr("stroke-dasharray", d => EDGE_TYPE_STYLES[d.type]?.dasharray || "none")
-      .attr("stroke-width", d => Math.max(1, d.normalizedValue / 300))
-      .attr("stroke-opacity", 0.4);
+      // Create force simulation
+      simulation = d3
+        .forceSimulation<SimNode>(simNodes)
+        .force(
+          "link",
+          d3
+            .forceLink<SimNode, SimLink>(simLinks)
+            .id((d) => d.id)
+            .distance((d) => {
+              // Shorter distance for hierarchical links
+              if (d.type === "has_keyword") return 80;
+              if (d.type === "part_of") return 100;
+              return 120;
+            })
+            .strength((d) => {
+              if (d.type === "has_keyword") return 0.8;
+              return 0.3 + (d.normalizedValue / 1000) * 0.5;
+            })
+        )
+        .force(
+          "charge",
+          d3
+            .forceManyBody<SimNode>()
+            .strength((d) => {
+              if (d.group === "domain") return -400;
+              if (d.group === "concept") return -200;
+              return -80;
+            })
+        )
+        .force("center", d3.forceCenter(width / 2, height / 2))
+        .force(
+          "collision",
+          d3.forceCollide<SimNode>().radius((d) => getNodeSize(d) + 5)
+        )
+        .force("x", d3.forceX(width / 2).strength(0.05))
+        .force("y", d3.forceY(height / 2).strength(0.05));
 
-    // Draw nodes
-    const node = nodesG.selectAll<SVGCircleElement, SimNode>("circle")
-      .data(simNodes)
-      .join("circle")
-      .attr("class", "graph-node")
-      .attr("r", d => getNodeSize(d))
-      .attr("fill", d => DOMAIN_COLORS[d.domainCode || "default"])
-      .attr("stroke", "hsl(var(--background))")
-      .attr("stroke-width", 2)
-      .attr("cursor", "pointer")
-      .call(drag(simulation) as any);
+      simulationRef.current = simulation;
 
-    // Draw labels (only for domains and concepts)
-    const label = labelsG.selectAll<SVGTextElement, SimNode>("text")
-      .data(simNodes.filter(n => n.group === "domain" || n.group === "concept"))
-      .join("text")
-      .attr("class", "graph-label")
-      .attr("text-anchor", "middle")
-      .attr("dy", d => getNodeSize(d) + 14)
-      .attr("font-size", d => d.group === "domain" ? 12 : 10)
-      .attr("font-weight", d => d.group === "domain" ? 600 : 400)
-      .attr("fill", "hsl(var(--foreground))")
-      .attr("pointer-events", "none")
-      .text(d => d.label.length > 20 ? d.label.slice(0, 18) + "…" : d.label);
+      // Draw links
+      const link = linksG
+        .selectAll<SVGLineElement, SimLink>("line")
+        .data(simLinks)
+        .join("line")
+        .attr("class", "graph-link")
+        .attr(
+          "stroke",
+          (d) => EDGE_TYPE_STYLES[d.type]?.stroke || "hsl(220, 13%, 50%)"
+        )
+        .attr(
+          "stroke-dasharray",
+          (d) => EDGE_TYPE_STYLES[d.type]?.dasharray || "none"
+        )
+        .attr("stroke-width", (d) => Math.max(1, d.normalizedValue / 300))
+        .attr("stroke-opacity", 0.4);
 
-    // Node interactions
-    node
-      .on("mouseover", function(event, d) {
-        setHoveredNode(d);
-        const ego = getEgoNetwork(d.id, data.nodes, data.edges);
-        setEgoNetwork(ego);
-        highlightEgoNetwork(ego, node, link, label);
-      })
-      .on("mouseout", function() {
-        setHoveredNode(null);
-        setEgoNetwork(null);
-        resetHighlight(node, link, label);
-      })
-      .on("click", function(event, d) {
-        event.stopPropagation();
-        onSelectNode?.(d);
-      });
+      // Draw nodes
+      const node = nodesG
+        .selectAll<SVGCircleElement, SimNode>("circle")
+        .data(simNodes)
+        .join("circle")
+        .attr("class", "graph-node")
+        .attr("r", (d) => getNodeSize(d))
+        .attr("fill", (d) => DOMAIN_COLORS[d.domainCode || "default"])
+        .attr("stroke", "hsl(var(--background))")
+        .attr("stroke-width", 2)
+        .attr("cursor", "pointer")
+        .call(drag(simulation) as any);
 
-    // Zoom behavior
-    const zoom = d3.zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.3, 4])
-      .on("zoom", (event) => {
-        g.attr("transform", event.transform.toString());
-        setTransform(event.transform);
-      });
+      // Draw labels (only for domains and concepts)
+      const label = labelsG
+        .selectAll<SVGTextElement, SimNode>("text")
+        .data(simNodes.filter((n) => n.group === "domain" || n.group === "concept"))
+        .join("text")
+        .attr("class", "graph-label")
+        .attr("text-anchor", "middle")
+        .attr("dy", (d) => getNodeSize(d) + 14)
+        .attr("font-size", (d) => (d.group === "domain" ? 12 : 10))
+        .attr("font-weight", (d) => (d.group === "domain" ? 600 : 400))
+        .attr("fill", "hsl(var(--foreground))")
+        .attr("pointer-events", "none")
+        .text((d) => (d.label.length > 20 ? d.label.slice(0, 18) + "…" : d.label));
 
-    svg.call(zoom);
-
-    // Update positions on tick
-    simulation.on("tick", () => {
-      link
-        .attr("x1", d => (d.source as SimNode).x || 0)
-        .attr("y1", d => (d.source as SimNode).y || 0)
-        .attr("x2", d => (d.target as SimNode).x || 0)
-        .attr("y2", d => (d.target as SimNode).y || 0);
-
+      // Node interactions
       node
-        .attr("cx", d => d.x || 0)
-        .attr("cy", d => d.y || 0);
+        .on("mouseover", function (event, d) {
+          setHoveredNode(d);
+          const ego = getEgoNetwork(d.id, data.nodes, data.edges);
+          setEgoNetwork(ego);
+          highlightEgoNetwork(ego, node, link, label);
+        })
+        .on("mouseout", function () {
+          setHoveredNode(null);
+          setEgoNetwork(null);
+          resetHighlight(node, link, label);
+        })
+        .on("click", function (event, d) {
+          event.stopPropagation();
+          onSelectNode?.(d);
+        });
 
-      label
-        .attr("x", d => d.x || 0)
-        .attr("y", d => d.y || 0);
-    });
+      // Zoom behavior
+      const zoom = d3
+        .zoom<SVGSVGElement, unknown>()
+        .scaleExtent([0.3, 4])
+        .on("zoom", (event) => {
+          g.attr("transform", event.transform.toString());
+          setTransform(event.transform);
+        });
 
-    // Cleanup
+      svg.call(zoom);
+
+      // Update positions on tick
+      simulation.on("tick", () => {
+        link
+          .attr("x1", (d) => (d.source as SimNode).x || 0)
+          .attr("y1", (d) => (d.source as SimNode).y || 0)
+          .attr("x2", (d) => (d.target as SimNode).x || 0)
+          .attr("y2", (d) => (d.target as SimNode).y || 0);
+
+        node.attr("cx", (d) => d.x || 0).attr("cy", (d) => d.y || 0);
+
+        label.attr("x", (d) => d.x || 0).attr("y", (d) => d.y || 0);
+      });
+    } catch (err) {
+      console.error("Graph init failed:", err);
+      setGraphInitError(err instanceof Error ? err.message : "Graph initialization failed");
+      simulation?.stop();
+      simulationRef.current = null;
+    }
+
     return () => {
-      simulation.stop();
+      simulation?.stop();
     };
   }, [data, dimensions, onSelectNode]);
+
 
   // Highlight selected node's ego network
   useEffect(() => {

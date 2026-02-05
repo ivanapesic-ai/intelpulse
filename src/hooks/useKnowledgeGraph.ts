@@ -48,7 +48,7 @@ export const DOMAIN_COLORS: Record<string, string> = {
 
 export function useKnowledgeGraph() {
   return useQuery({
-    queryKey: ["knowledge-graph"],
+    queryKey: ["knowledge-graph", "v2"],
     queryFn: async (): Promise<KnowledgeGraphData> => {
       // Fetch domains
       const { data: domains, error: domainError } = await supabase
