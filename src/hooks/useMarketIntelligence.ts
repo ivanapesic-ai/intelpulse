@@ -1,209 +1,187 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-
-interface Acquisition {
-  acquirer: string;
-  targetName: string;
-  targetTagline?: string;
-  amount?: number;
-  date?: string;
-}
-
-interface AcquirerSummary {
-  acquirer: string;
-  count: number;
-}
-
-interface InvestorCount {
-  name: string;
-  count: number;
-}
-
-interface CountryDistribution {
-  country: string;
-  count: number;
-  percentage: number;
-}
-
-interface StageDistribution {
-  stage: string;
-  count: number;
-  percentage: number;
-}
-
-interface MarketIntelligenceData {
-  totalCompanies: number;
-  totalFunding: number;
-  totalEmployees: number;
-  euCompanies: number;
-  euPercentage: number;
-  acquisitions: Acquisition[];
-  acquirerSummary: AcquirerSummary[];
-  topInvestors: InvestorCount[];
-  countryDistribution: CountryDistribution[];
-  stageDistribution: StageDistribution[];
-}
-
-const EU_COUNTRIES = [
-  "Germany", "France", "Netherlands", "Belgium", "Italy", "Spain", "Sweden", "Finland",
-  "Denmark", "Ireland", "Austria", "Poland", "Portugal", "Czech Republic", "Czechia",
-  "Hungary", "Romania", "Bulgaria", "Greece", "Slovakia", "Croatia", "Slovenia",
-  "Lithuania", "Latvia", "Estonia", "Luxembourg", "Malta", "Cyprus"
-];
-
-export function useMarketIntelligence(keywordId?: string) {
-  return useQuery({
-    queryKey: ["market-intelligence", keywordId],
-    queryFn: async (): Promise<MarketIntelligenceData> => {
-      if (!keywordId) {
-        return {
-          totalCompanies: 0,
-          totalFunding: 0,
-          totalEmployees: 0,
-          euCompanies: 0,
-          euPercentage: 0,
-          acquisitions: [],
-          acquirerSummary: [],
-          topInvestors: [],
-          countryDistribution: [],
-          stageDistribution: [],
-        };
-      }
-
-      // First get company IDs from the mapping
-      const { data: mappings, error: mappingError } = await supabase
-        .from("keyword_company_mapping")
-        .select("company_id")
-        .eq("keyword_id", keywordId);
-
-      if (mappingError) throw mappingError;
-      if (!mappings || mappings.length === 0) {
-        return {
-          totalCompanies: 0,
-          totalFunding: 0,
-          totalEmployees: 0,
-          euCompanies: 0,
-          euPercentage: 0,
-          acquisitions: [],
-          acquirerSummary: [],
-          topInvestors: [],
-          countryDistribution: [],
-          stageDistribution: [],
-        };
-      }
-
-      const companyIds = mappings.map(m => m.company_id).filter(Boolean) as string[];
-
-      // Fetch company details
-      const { data: companies, error: companyError } = await supabase
-        .from("dealroom_companies")
-        .select("name, tagline, hq_country, total_funding_eur, employees_count, investors, growth_stage, status, acquired_by, acquired_date, acquisition_amount_eur")
-        .in("id", companyIds);
-
-      if (companyError) throw companyError;
-      if (!companies || companies.length === 0) {
-        return {
-          totalCompanies: 0,
-          totalFunding: 0,
-          totalEmployees: 0,
-          euCompanies: 0,
-          euPercentage: 0,
-          acquisitions: [],
-          acquirerSummary: [],
-          topInvestors: [],
-          countryDistribution: [],
-          stageDistribution: [],
-        };
-      }
-
-      // Calculate totals
-      const totalCompanies = companies.length;
-      const totalFunding = companies.reduce((sum, c) => sum + (Number(c.total_funding_eur) || 0), 0);
-      const totalEmployees = companies.reduce((sum, c) => sum + (c.employees_count || 0), 0);
-      const euCompanies = companies.filter(c => EU_COUNTRIES.includes(c.hq_country || "")).length;
-      const euPercentage = totalCompanies > 0 ? Math.round((euCompanies / totalCompanies) * 100) : 0;
-
-      // Extract acquisitions
-      const acquisitions: Acquisition[] = companies
-        .filter(c => c.acquired_by)
-        .map(c => ({
-          acquirer: c.acquired_by as string,
-          targetName: c.name,
-          targetTagline: c.tagline || undefined,
-          amount: c.acquisition_amount_eur ? Number(c.acquisition_amount_eur) : undefined,
-          date: c.acquired_date || undefined,
-        }))
-        .sort((a, b) => (b.amount || 0) - (a.amount || 0));
-
-      // Summarize by acquirer
-      const acquirerMap = new Map<string, number>();
-      acquisitions.forEach(acq => {
-        acquirerMap.set(acq.acquirer, (acquirerMap.get(acq.acquirer) || 0) + 1);
-      });
-      const acquirerSummary: AcquirerSummary[] = Array.from(acquirerMap.entries())
-        .map(([acquirer, count]) => ({ acquirer, count }))
-        .sort((a, b) => b.count - a.count);
-
-      // Aggregate investors across all companies
-      const investorMap = new Map<string, number>();
-      companies.forEach(c => {
-        const investors = c.investors as string[] | null;
-        if (investors && Array.isArray(investors)) {
-          investors.forEach(investor => {
-            if (investor && investor.trim()) {
-              investorMap.set(investor, (investorMap.get(investor) || 0) + 1);
-            }
-          });
-        }
-      });
-      const topInvestors: InvestorCount[] = Array.from(investorMap.entries())
-        .map(([name, count]) => ({ name, count }))
-        .filter(inv => inv.count >= 1) // Only investors with at least 1 investment
-        .sort((a, b) => b.count - a.count);
-
-      // Country distribution
-      const countryMap = new Map<string, number>();
-      companies.forEach(c => {
-        if (c.hq_country) {
-          countryMap.set(c.hq_country, (countryMap.get(c.hq_country) || 0) + 1);
-        }
-      });
-      const countryDistribution: CountryDistribution[] = Array.from(countryMap.entries())
-        .map(([country, count]) => ({
-          country,
-          count,
-          percentage: Math.round((count / totalCompanies) * 100),
-        }))
-        .sort((a, b) => b.count - a.count);
-
-      // Growth stage distribution
-      const stageMap = new Map<string, number>();
-      companies.forEach(c => {
-        const stage = c.growth_stage || "Unknown";
-        stageMap.set(stage, (stageMap.get(stage) || 0) + 1);
-      });
-      const stageDistribution: StageDistribution[] = Array.from(stageMap.entries())
-        .map(([stage, count]) => ({
-          stage,
-          count,
-          percentage: Math.round((count / totalCompanies) * 100),
-        }))
-        .filter(s => s.stage !== "Unknown")
-        .sort((a, b) => b.count - a.count);
-
-      return {
-        totalCompanies,
-        totalFunding,
-        totalEmployees,
-        euCompanies,
-        euPercentage,
-        acquisitions,
-        acquirerSummary,
-        topInvestors,
-        countryDistribution,
-        stageDistribution,
-      };
-    },
-    enabled: !!keywordId,
-  });
-}
+ import { useQuery } from "@tanstack/react-query";
+ import { supabase } from "@/integrations/supabase/client";
+ 
+ interface InvestorCount {
+   name: string;
+   count: number;
+ }
+ 
+ interface CountryDistribution {
+   country: string;
+   count: number;
+   percentage: number;
+ }
+ 
+ interface StageDistribution {
+   stage: string;
+   count: number;
+   percentage: number;
+ }
+ 
+ interface MarketIntelligenceData {
+   totalCompanies: number;
+   totalFunding: number;
+   totalEmployees: number;
+   euCompanies: number;
+   euPercentage: number;
+   topInvestors: InvestorCount[];
+   countryDistribution: CountryDistribution[];
+   stageDistribution: StageDistribution[];
+ }
+ 
+ const EU_COUNTRIES = [
+   "Germany", "France", "Netherlands", "Belgium", "Italy", "Spain", "Sweden", "Finland",
+   "Denmark", "Ireland", "Austria", "Poland", "Portugal", "Czech Republic", "Czechia",
+   "Hungary", "Romania", "Bulgaria", "Greece", "Slovakia", "Croatia", "Slovenia",
+   "Lithuania", "Latvia", "Estonia", "Luxembourg", "Malta", "Cyprus"
+ ];
+ 
+ // Parse employee count string to number (e.g., "51-100" -> 75)
+ function parseEmployeeCount(employeeStr: string | null): number {
+   if (!employeeStr) return 0;
+   const ranges: Record<string, number> = {
+     "1-10": 5,
+     "11-50": 30,
+     "51-100": 75,
+     "101-250": 175,
+     "251-500": 375,
+     "501-1000": 750,
+     "1001-5000": 3000,
+     "5001-10000": 7500,
+     "10001+": 15000,
+   };
+   return ranges[employeeStr] || 0;
+ }
+ 
+ export function useMarketIntelligence(keywordId?: string) {
+   return useQuery({
+     queryKey: ["market-intelligence", keywordId],
+     queryFn: async (): Promise<MarketIntelligenceData> => {
+       if (!keywordId) {
+         return {
+           totalCompanies: 0,
+           totalFunding: 0,
+           totalEmployees: 0,
+           euCompanies: 0,
+           euPercentage: 0,
+           topInvestors: [],
+           countryDistribution: [],
+           stageDistribution: [],
+         };
+       }
+ 
+       // Get company IDs from Crunchbase keyword mapping
+       const { data: mappings, error: mappingError } = await supabase
+         .from("crunchbase_keyword_mapping")
+         .select("company_id")
+         .eq("keyword_id", keywordId);
+ 
+       if (mappingError) throw mappingError;
+       if (!mappings || mappings.length === 0) {
+         return {
+           totalCompanies: 0,
+           totalFunding: 0,
+           totalEmployees: 0,
+           euCompanies: 0,
+           euPercentage: 0,
+           topInvestors: [],
+           countryDistribution: [],
+           stageDistribution: [],
+         };
+       }
+ 
+       const companyIds = mappings.map(m => m.company_id).filter(Boolean) as string[];
+ 
+       // Fetch Crunchbase company details
+       const { data: companies, error: companyError } = await supabase
+         .from("crunchbase_companies")
+         .select("organization_name, description, hq_country, total_funding_usd, number_of_employees, top_5_investors, lead_investors, last_funding_type, operating_status")
+         .in("id", companyIds);
+ 
+       if (companyError) throw companyError;
+       if (!companies || companies.length === 0) {
+         return {
+           totalCompanies: 0,
+           totalFunding: 0,
+           totalEmployees: 0,
+           euCompanies: 0,
+           euPercentage: 0,
+           topInvestors: [],
+           countryDistribution: [],
+           stageDistribution: [],
+         };
+       }
+ 
+       // Calculate totals
+       const totalCompanies = companies.length;
+       // Convert USD to EUR (approximate rate 0.92)
+       const totalFundingUsd = companies.reduce((sum, c) => sum + (Number(c.total_funding_usd) || 0), 0);
+       const totalFunding = Math.round(totalFundingUsd * 0.92);
+       const totalEmployees = companies.reduce((sum, c) => sum + parseEmployeeCount(c.number_of_employees), 0);
+       const euCompanies = companies.filter(c => EU_COUNTRIES.includes(c.hq_country || "")).length;
+       const euPercentage = totalCompanies > 0 ? Math.round((euCompanies / totalCompanies) * 100) : 0;
+ 
+       // Aggregate investors across all companies (combine top_5 and lead investors)
+       const investorMap = new Map<string, number>();
+       companies.forEach(c => {
+         const allInvestors = [
+           ...(c.top_5_investors || []),
+           ...(c.lead_investors || []),
+         ];
+         // Dedupe per company
+         const uniqueInvestors = [...new Set(allInvestors)];
+         uniqueInvestors.forEach(investor => {
+           if (investor && investor.trim()) {
+             investorMap.set(investor, (investorMap.get(investor) || 0) + 1);
+           }
+         });
+       });
+       const topInvestors: InvestorCount[] = Array.from(investorMap.entries())
+         .map(([name, count]) => ({ name, count }))
+         .filter(inv => inv.count >= 1)
+         .sort((a, b) => b.count - a.count);
+ 
+       // Country distribution
+       const countryMap = new Map<string, number>();
+       companies.forEach(c => {
+         if (c.hq_country) {
+           countryMap.set(c.hq_country, (countryMap.get(c.hq_country) || 0) + 1);
+         }
+       });
+       const countryDistribution: CountryDistribution[] = Array.from(countryMap.entries())
+         .map(([country, count]) => ({
+           country,
+           count,
+           percentage: Math.round((count / totalCompanies) * 100),
+         }))
+         .sort((a, b) => b.count - a.count);
+ 
+       // Funding stage distribution (using last_funding_type)
+       const stageMap = new Map<string, number>();
+       companies.forEach(c => {
+         const stage = c.last_funding_type || "Unknown";
+         stageMap.set(stage, (stageMap.get(stage) || 0) + 1);
+       });
+       const stageDistribution: StageDistribution[] = Array.from(stageMap.entries())
+         .map(([stage, count]) => ({
+           stage,
+           count,
+           percentage: Math.round((count / totalCompanies) * 100),
+         }))
+         .filter(s => s.stage !== "Unknown")
+         .sort((a, b) => b.count - a.count);
+ 
+       return {
+         totalCompanies,
+         totalFunding,
+         totalEmployees,
+         euCompanies,
+         euPercentage,
+         topInvestors,
+         countryDistribution,
+         stageDistribution,
+       };
+     },
+     enabled: !!keywordId,
+   });
+ }
