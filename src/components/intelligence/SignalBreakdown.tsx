@@ -7,6 +7,20 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { TechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
 
+// Format large numbers compactly (e.g., 88839900000 -> €88.8B)
+function formatCompactNumber(value: number, prefix = ""): string {
+  if (value >= 1_000_000_000) {
+    return `${prefix}${(value / 1_000_000_000).toFixed(1)}B`;
+  }
+  if (value >= 1_000_000) {
+    return `${prefix}${(value / 1_000_000).toFixed(1)}M`;
+  }
+  if (value >= 1_000) {
+    return `${prefix}${(value / 1_000).toFixed(1)}K`;
+  }
+  return `${prefix}${value}`;
+}
+
 interface SignalBreakdownProps {
   technology: TechnologyIntelligence;
 }
@@ -45,9 +59,8 @@ export function SignalBreakdown({ technology }: SignalBreakdownProps) {
       color: "bg-emerald-500",
       lightColor: "bg-emerald-500/20",
       textColor: "text-emerald-500",
-      // Raw value display
       rawValue: technology.totalFundingEur > 0 
-        ? `€${(technology.totalFundingEur / 1_000_000).toFixed(1)}M`
+        ? formatCompactNumber(technology.totalFundingEur, "€")
         : "—",
       rawLabel: "Total Raised",
       secondaryValue: technology.dealroomCompanyCount > 0 ? `${technology.dealroomCompanyCount} companies` : null,
