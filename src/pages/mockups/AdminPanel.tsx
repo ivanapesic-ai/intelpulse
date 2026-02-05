@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
-import { useDocuments, useDocumentStats } from "@/hooks/useDocuments";
+import { useDocumentStats } from "@/hooks/useDocuments";
 import { useKeywordStats } from "@/hooks/useTechnologies";
  import { formatFundingEur } from "@/types/database";
 import { WebScrapingPanel } from "@/components/admin/WebScrapingPanel";
@@ -15,22 +14,14 @@ import { KeywordManager } from "@/components/admin/KeywordManager";
 import { TechnologyOntology } from "@/components/mockups/TechnologyOntology";
 import { CrunchbaseImportPanel } from "@/components/admin/CrunchbaseImportPanel";
 import { EpoPatentPanel } from "@/components/admin/EpoPatentPanel";
+import { DocumentUploadPanel } from "@/components/admin/DocumentUploadPanel";
  import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
-
-const statusColors = {
-  completed: "bg-success/20 text-success border-success/30",
-  failed: "bg-destructive/20 text-destructive border-destructive/30",
-  running: "bg-blue-500/20 text-blue-500 border-blue-500/30",
-  pending: "bg-muted text-muted-foreground border-border",
-  parsing: "bg-blue-500/20 text-blue-500 border-blue-500/30",
-};
 
 export default function AdminPanel() {
    const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "scraping" | "documents">("crunchbase");
  
    // Data hooks
    const { data: crunchbaseStats } = useCrunchbaseStats();
-  const { data: documents, isLoading: documentsLoading } = useDocuments();
   const { data: documentStats } = useDocumentStats();
   const { data: keywordStats } = useKeywordStats();
 
@@ -209,81 +200,7 @@ export default function AdminPanel() {
 
             {/* Documents Sub-tab */}
             {dataSubTab === "documents" && (
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="text-foreground">CEI Documents</CardTitle>
-                    <CardDescription>Upload and parse CEI-SPHERE documents for technology mentions</CardDescription>
-                  </div>
-                  <Button size="sm">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload Document
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  {/* Stats */}
-                  <div className="grid sm:grid-cols-4 gap-4 mb-6">
-                    <div className="p-3 rounded-lg bg-muted/50">
-                      <p className="text-xs text-muted-foreground">Total</p>
-                      <p className="text-xl font-bold text-foreground">{documentStats?.totalDocuments || 0}</p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-success/10">
-                      <p className="text-xs text-success">Completed</p>
-                      <p className="text-xl font-bold text-success">{documentStats?.completedCount || 0}</p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-blue-500/10">
-                      <p className="text-xs text-blue-500">Parsing</p>
-                      <p className="text-xl font-bold text-blue-500">{documentStats?.parsingCount || 0}</p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-destructive/10">
-                      <p className="text-xs text-destructive">Failed</p>
-                      <p className="text-xl font-bold text-destructive">{documentStats?.failedCount || 0}</p>
-                    </div>
-                  </div>
-
-                  {documentsLoading ? (
-                    <p className="text-sm text-muted-foreground">Loading...</p>
-                  ) : documents?.length === 0 ? (
-                    <div className="text-center py-8">
-                      <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                      <p className="text-muted-foreground">No documents uploaded yet</p>
-                      <p className="text-sm text-muted-foreground">Upload CEI PDFs, PPTs, or DOCs to extract technology mentions</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {documents?.map((doc) => (
-                        <div 
-                          key={doc.id}
-                          className="flex items-center justify-between p-4 rounded-lg border border-border bg-card"
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className="p-2 rounded-lg bg-muted">
-                              <FileText className="h-5 w-5 text-muted-foreground" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-foreground">{doc.filename}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {doc.fileType.toUpperCase()} • {doc.source}
-                                {doc.parsedContent?.mentionsCount !== undefined && (
-                                  <> • {doc.parsedContent.mentionsCount} mentions</>
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <Badge variant="outline" className={statusColors[doc.parseStatus] || statusColors.pending}>
-                              {doc.parseStatus}
-                            </Badge>
-                            <Button variant="ghost" size="sm">
-                              View
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <DocumentUploadPanel />
             )}
           </TabsContent>
 
