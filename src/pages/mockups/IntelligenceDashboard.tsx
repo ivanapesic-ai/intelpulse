@@ -9,6 +9,7 @@ import { PlatformHeader } from "@/components/mockups/PlatformHeader";
 import { TechnologyDetailPanel } from "@/components/intelligence/TechnologyDetailPanel";
 import { HierarchyKPICards } from "@/components/intelligence/HierarchyKPICards";
 import { ClusterCardView } from "@/components/intelligence/ClusterCardView";
+import { COMatrixSampler } from "@/components/intelligence/COMatrixSampler";
 import { 
   useDomainOverview, 
   useKeywordOverview,
@@ -172,7 +173,7 @@ export default function IntelligenceDashboard() {
           </CardContent>
         </Card>
 
-        {/* Cluster Card View (single view mode) */}
+        {/* Matrix Visualization Options */}
         {isLoading ? (
           <div className="flex items-center justify-center h-96">
             <div className="text-center">
@@ -185,11 +186,27 @@ export default function IntelligenceDashboard() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
+            className="space-y-8"
           >
-            <ClusterCardView
-              onSelectNode={handleSelectNode}
-              selectedNodeId={selectedGraphNode?.id}
+            {/* Show the 3 visualization options as samples */}
+            <COMatrixSampler
+              technologies={technologies || []}
+              onSelectTechnology={setSelectedTech}
+              selectedId={selectedTech?.id}
             />
+            
+            {/* Keep cluster view below for context */}
+            <Card>
+              <CardContent className="pt-6">
+                <h3 className="text-sm font-semibold text-muted-foreground mb-4">
+                  Cluster Ecosystem View (for reference)
+                </h3>
+                <ClusterCardView
+                  onSelectNode={handleSelectNode}
+                  selectedNodeId={selectedGraphNode?.id}
+                />
+              </CardContent>
+            </Card>
           </motion.div>
         )}
       </div>
