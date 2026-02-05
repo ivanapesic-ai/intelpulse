@@ -960,12 +960,14 @@ export type Database = {
           avg_relevance_score: number | null
           avg_semantic_score: number | null
           avg_trl_mentioned: number | null
+          challenge_score: number | null
           composite_score: number | null
           corpus_rarity_score: number | null
           created_at: string | null
           dealroom_company_count: number | null
           description: string | null
           document_diversity: number | null
+          document_insights: Json | null
           document_mention_count: number | null
           employees_score: number | null
           eu_alignment_score: number | null
@@ -974,12 +976,15 @@ export type Database = {
           key_players: string[] | null
           keyword_id: string | null
           last_updated: string | null
+          market_signals: Json | null
           name: string
           network_centrality: number | null
           news_mention_count: number | null
+          opportunity_score: number | null
           patents_score: number | null
           policy_mention_count: number | null
           recent_news: Json | null
+          sector_tags: string[] | null
           total_employees: number | null
           total_funding_eur: number | null
           total_patents: number | null
@@ -992,12 +997,14 @@ export type Database = {
           avg_relevance_score?: number | null
           avg_semantic_score?: number | null
           avg_trl_mentioned?: number | null
+          challenge_score?: number | null
           composite_score?: number | null
           corpus_rarity_score?: number | null
           created_at?: string | null
           dealroom_company_count?: number | null
           description?: string | null
           document_diversity?: number | null
+          document_insights?: Json | null
           document_mention_count?: number | null
           employees_score?: number | null
           eu_alignment_score?: number | null
@@ -1006,12 +1013,15 @@ export type Database = {
           key_players?: string[] | null
           keyword_id?: string | null
           last_updated?: string | null
+          market_signals?: Json | null
           name: string
           network_centrality?: number | null
           news_mention_count?: number | null
+          opportunity_score?: number | null
           patents_score?: number | null
           policy_mention_count?: number | null
           recent_news?: Json | null
+          sector_tags?: string[] | null
           total_employees?: number | null
           total_funding_eur?: number | null
           total_patents?: number | null
@@ -1024,12 +1034,14 @@ export type Database = {
           avg_relevance_score?: number | null
           avg_semantic_score?: number | null
           avg_trl_mentioned?: number | null
+          challenge_score?: number | null
           composite_score?: number | null
           corpus_rarity_score?: number | null
           created_at?: string | null
           dealroom_company_count?: number | null
           description?: string | null
           document_diversity?: number | null
+          document_insights?: Json | null
           document_mention_count?: number | null
           employees_score?: number | null
           eu_alignment_score?: number | null
@@ -1038,12 +1050,15 @@ export type Database = {
           key_players?: string[] | null
           keyword_id?: string | null
           last_updated?: string | null
+          market_signals?: Json | null
           name?: string
           network_centrality?: number | null
           news_mention_count?: number | null
+          opportunity_score?: number | null
           patents_score?: number | null
           policy_mention_count?: number | null
           recent_news?: Json | null
+          sector_tags?: string[] | null
           total_employees?: number | null
           total_funding_eur?: number | null
           total_patents?: number | null
@@ -1411,12 +1426,20 @@ export type Database = {
           total_patents_aggregated: number
         }[]
       }
+      aggregate_document_insights: {
+        Args: { tech_keyword_id: string }
+        Returns: undefined
+      }
       aggregate_patent_scores: {
         Args: never
         Returns: {
           keywords_updated: number
           total_patents_aggregated: number
         }[]
+      }
+      calculate_challenge_opportunity_scores: {
+        Args: { tech_keyword_id: string }
+        Returns: undefined
       }
       calculate_eu_alignment_score: {
         Args: { policy_count: number }
