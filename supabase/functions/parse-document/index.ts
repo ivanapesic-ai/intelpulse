@@ -176,6 +176,55 @@ function extractMarketSignals(content: string): {
   };
 }
 
+// Robust JSON extraction from LLM responses
+function extractJsonFromResponse(response: string): any {
+  // Step 1: Remove markdown code blocks
+  let cleaned = response
+    .replace(/```json\s*/gi, "")
+    .replace(/```\s*/g, "")
+    .trim();
+
+  // Step 2: Find JSON boundaries
+  const jsonStart = cleaned.indexOf("{");
+  const jsonEnd = cleaned.lastIndexOf("}");
+
+  if (jsonStart === -1 || jsonEnd === -1) {
+    throw new Error("No JSON object found in response");
+  }
+
+  cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+
+  // Step 3: Attempt parse with error handling
+  try {
+    return JSON.parse(cleaned);
+  } catch (e) {
+    // Step 4: Try to fix common issues
+    let repaired = cleaned
+      .replace(/,\s*}/g, "}") // Remove trailing commas before }
+      .replace(/,\s*]/g, "]") // Remove trailing commas before ]
+      .replace(/[\x00-\x1F\x7F]/g, " "); // Replace control characters with space
+
+    try {
+      return JSON.parse(repaired);
+    } catch (e2) {
+      // Step 5: Try to repair truncated JSON by balancing braces
+      let braces = 0, brackets = 0;
+      for (const char of repaired) {
+        if (char === '{') braces++;
+        if (char === '}') braces--;
+        if (char === '[') brackets++;
+        if (char === ']') brackets--;
+      }
+      
+      // Add missing closing brackets/braces
+      while (brackets > 0) { repaired += ']'; brackets--; }
+      while (braces > 0) { repaired += '}'; braces--; }
+      
+      return JSON.parse(repaired);
+    }
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -557,9 +606,9 @@ ${processedContent}`;
      };
 
     try {
-      extractedData = JSON.parse(responseContent);
+      extractedData = extractJsonFromResponse(responseContent);
     } catch (parseError) {
-      console.error("Failed to parse AI response:", responseContent);
+      console.error("Failed to parse AI response:", responseContent.slice(0, 2000) + "...[truncated]");
       throw new Error("Failed to parse AI extraction results");
     }
 
