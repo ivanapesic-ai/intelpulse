@@ -1,15 +1,12 @@
-import { useState, useMemo } from "react";
-import { Search, RefreshCw, LayoutGrid, List, Boxes } from "lucide-react";
+import { useState } from "react";
+import { Search, RefreshCw } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlatformHeader } from "@/components/mockups/PlatformHeader";
-import { COQuadrantMatrix } from "@/components/intelligence/COQuadrantMatrix";
 import { TechnologyDetailPanel } from "@/components/intelligence/TechnologyDetailPanel";
-import { DomainHierarchyView } from "@/components/intelligence/DomainHierarchyView";
 import { HierarchyKPICards } from "@/components/intelligence/HierarchyKPICards";
 import { ClusterCardView } from "@/components/intelligence/ClusterCardView";
 import { 
@@ -26,11 +23,8 @@ import { GraphNode } from "@/hooks/useKnowledgeGraph";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-type ViewMode = "hierarchy" | "matrix" | "clusters";
-
 export default function IntelligenceDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("clusters");
   const [selectedTech, setSelectedTech] = useState<TechnologyIntelligence | null>(null);
   const [selectedKeyword, setSelectedKeyword] = useState<KeywordOverview | null>(null);
   const [selectedGraphNode, setSelectedGraphNode] = useState<GraphNode | null>(null);
@@ -43,17 +37,6 @@ export default function IntelligenceDashboard() {
 
   const isLoading = domainsLoading || keywordsLoading || techLoading;
 
-  // Filter technologies for matrix view
-  const filteredTechnologies = useMemo(() => {
-    if (!technologies) return [];
-    
-    return technologies.filter((tech) => {
-      const matchesSearch = tech.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tech.description.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesSearch;
-    });
-  }, [technologies, searchQuery]);
-
   const handleRecalculate = async () => {
     try {
       const result = await calculateScores.mutateAsync();
@@ -63,46 +46,61 @@ export default function IntelligenceDashboard() {
     }
   };
 
-  // Handle keyword selection - find matching technology
-  const handleKeywordSelect = (keyword: KeywordOverview) => {
-    setSelectedKeyword(keyword);
-    const tech = technologies?.find(t => t.keywordId === keyword.keywordId);
-    if (tech) {
-      setSelectedTech(tech);
-    } else {
-      // Create a minimal tech object from keyword data for display
-      setSelectedTech({
-        id: keyword.keywordId,
-        keywordId: keyword.keywordId,
-        name: keyword.displayName,
-        description: `Technology tracked under ${keyword.domainName}`,
-        challengeScore: keyword.domainChallenge,
-        opportunityScore: keyword.domainOpportunity,
-        compositeScore: (keyword.domainChallenge + keyword.domainOpportunity) / 2,
-        trlScore: null,
-        visibilityScore: null,
-        euAlignmentScore: null,
-        investmentScore: null,
-        employeesScore: null,
-        dealroomCompanyCount: keyword.companyCount,
-        totalFundingEur: keyword.totalFundingUsd,
-        totalPatents: keyword.totalPatents,
-        totalEmployees: 0,
-        documentMentionCount: 0,
-        policyMentionCount: 0,
-        avgTrlMentioned: null,
-        newsMentionCount: 0,
-        trend: "stable",
-        keyPlayers: [],
-        recentNews: [],
-        marketSignals: {},
-        documentInsights: {},
-        sectorTags: [],
-        aliases: keyword.aliases || [],
-        lastUpdated: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-      });
+  // Handle selecting a cluster node - find matching technology
+  const handleSelectNode = (node: GraphNode | null) => {
+    setSelectedGraphNode(node);
+    
+    if (!node) {
+      setSelectedTech(null);
+      return;
     }
+
+    // Try to find matching technology for detail panel
+    if (node.group === "concept") {
+      const conceptId = node.id.replace("concept-", "");
+      // Find keyword linked to this concept
+      const kw = keywords?.find(k => String(k.domainId) === conceptId);
+      if (kw) {
+        const tech = technologies?.find(t => t.keywordId === kw.keywordId);
+        if (tech) {
+          setSelectedTech(tech);
+          return;
+        }
+      }
+    }
+    
+    // If no tech found, create minimal object from node data
+    setSelectedTech({
+      id: node.id,
+      keywordId: node.id,
+      name: node.label,
+      description: `Technology tracked in the SDV ecosystem`,
+      challengeScore: node.metadata.challengeScore ?? null,
+      opportunityScore: node.metadata.opportunityScore ?? null,
+      compositeScore: ((node.metadata.challengeScore ?? 0) + (node.metadata.opportunityScore ?? 0)) / 2,
+      trlScore: null,
+      visibilityScore: null,
+      euAlignmentScore: null,
+      investmentScore: null,
+      employeesScore: null,
+      dealroomCompanyCount: node.metadata.companyCount ?? 0,
+      totalFundingEur: node.metadata.totalFunding ?? 0,
+      totalPatents: node.metadata.patentCount ?? 0,
+      totalEmployees: 0,
+      documentMentionCount: 0,
+      policyMentionCount: 0,
+      avgTrlMentioned: null,
+      newsMentionCount: 0,
+      trend: "stable",
+      keyPlayers: [],
+      recentNews: [],
+      marketSignals: {},
+      documentInsights: {},
+      sectorTags: [],
+      aliases: [],
+      lastUpdated: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    });
   };
 
   return (
@@ -122,8 +120,8 @@ export default function IntelligenceDashboard() {
                 Technology Intelligence
               </h1>
               <p className="text-muted-foreground max-w-xl">
-                Hierarchical view of SDV domains and technologies. Expand domains to explore 
-                keywords and their market intelligence signals.
+                SDV ecosystem overview with Challenge-Opportunity scoring based on the 
+                tender's 3-signal model (Investment, Patents, Market Response).
               </p>
             </div>
             <Button 
@@ -151,45 +149,30 @@ export default function IntelligenceDashboard() {
           )}
         </motion.div>
 
-        {/* Filters & View Toggle */}
+        {/* Search */}
         <Card className="mb-6">
           <CardContent className="pt-6">
             <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-              <div className="flex flex-1 gap-4 w-full lg:w-auto">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search domains and keywords..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+              <div className="flex-1 relative w-full lg:max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search technologies..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
               </div>
               
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">
-                  {domains?.length || 0} domains • {keywords?.length || 0} keywords
-                </span>
-                <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
-                  <TabsList className="grid grid-cols-3 w-48">
-                    <TabsTrigger value="clusters" className="px-2">
-                      <Boxes className="h-4 w-4" />
-                    </TabsTrigger>
-                    <TabsTrigger value="hierarchy" className="px-2">
-                      <List className="h-4 w-4" />
-                    </TabsTrigger>
-                    <TabsTrigger value="matrix" className="px-2">
-                      <LayoutGrid className="h-4 w-4" />
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>{domains?.length || 0} domains</span>
+                <span>•</span>
+                <span>{keywords?.length || 0} keywords</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Main Content */}
+        {/* Cluster Card View (single view mode) */}
         {isLoading ? (
           <div className="flex items-center justify-center h-96">
             <div className="text-center">
@@ -197,59 +180,16 @@ export default function IntelligenceDashboard() {
               <p className="text-muted-foreground">Loading intelligence data...</p>
             </div>
           </div>
-        ) : viewMode === "clusters" ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            <ClusterCardView
-              onSelectNode={(node) => {
-                setSelectedGraphNode(node);
-                // Try to find matching technology for detail panel
-                if (node && node.group === "concept") {
-                  const conceptId = node.id.replace("concept-", "");
-                  // Find keyword linked to this concept
-                  const kw = keywords?.find(k => String(k.domainId) === conceptId);
-                  if (kw) {
-                    const tech = technologies?.find(t => t.keywordId === kw.keywordId);
-                    if (tech) setSelectedTech(tech);
-                  }
-                } else {
-                  setSelectedTech(null);
-                }
-              }}
-              selectedNodeId={selectedGraphNode?.id}
-            />
-          </motion.div>
-        ) : viewMode === "hierarchy" ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            <DomainHierarchyView
-              searchQuery={searchQuery}
-              onSelectKeyword={handleKeywordSelect}
-              selectedKeywordId={selectedKeyword?.keywordId}
-            />
-          </motion.div>
         ) : (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <Card className="p-6">
-              <h2 className="text-lg font-semibold text-foreground mb-4">
-                Challenge-Opportunity Matrix
-              </h2>
-              <COQuadrantMatrix 
-                technologies={filteredTechnologies}
-                onSelectTechnology={setSelectedTech}
-                selectedId={selectedTech?.id}
-              />
-            </Card>
+            <ClusterCardView
+              onSelectNode={handleSelectNode}
+              selectedNodeId={selectedGraphNode?.id}
+            />
           </motion.div>
         )}
       </div>
