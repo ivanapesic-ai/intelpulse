@@ -2,7 +2,7 @@
  import { supabase } from "@/integrations/supabase/client";
 import type { MaturityScore, TrendDirection, NewsItem } from "@/types/database";
  
- // Extended intelligence data with C-O matrix
+// Extended intelligence data with C-O matrix
 export interface TechnologyIntelligence {
   id: string;
   name: string;
@@ -27,6 +27,8 @@ export interface TechnologyIntelligence {
   keyPlayers: string[];
   lastUpdated: string;
   createdAt: string;
+  // Aliases/synonyms from taxonomy
+  aliases?: string[];
   // H11 scores
   avgSemanticScore?: number;
   networkCentrality?: number;
@@ -52,7 +54,7 @@ export interface TechnologyIntelligence {
      policy_references?: string[];
      source_count?: number;
    };
- }
+}
  
  // Challenge-Opportunity score descriptions
  export const CHALLENGE_LABELS: Record<number, { label: string; description: string; color: string }> = {
@@ -149,13 +151,15 @@ export interface TechnologyIntelligence {
         weightedFrequencyScore: row.weighted_frequency_score ? Number(row.weighted_frequency_score) : undefined,
         avgRelevanceScore: row.avg_relevance_score ? Number(row.avg_relevance_score) : undefined,
         documentDiversity: row.document_diversity ?? undefined,
-         // New C-O Matrix fields
-         challengeScore: row.challenge_score,
-         opportunityScore: row.opportunity_score,
-         sectorTags: row.sector_tags || [],
-         marketSignals: (row.market_signals as TechnologyIntelligence["marketSignals"]) || {},
-         documentInsights: (row.document_insights as TechnologyIntelligence["documentInsights"]) || {},
-       }));
+          // Aliases from taxonomy
+          aliases: row.technology_keywords?.aliases || [],
+          // New C-O Matrix fields
+          challengeScore: row.challenge_score,
+          opportunityScore: row.opportunity_score,
+          sectorTags: row.sector_tags || [],
+          marketSignals: (row.market_signals as TechnologyIntelligence["marketSignals"]) || {},
+          documentInsights: (row.document_insights as TechnologyIntelligence["documentInsights"]) || {},
+        }));
      },
    });
  }
@@ -214,14 +218,15 @@ export interface TechnologyIntelligence {
         corpusRarityScore: row.corpus_rarity_score ? Number(row.corpus_rarity_score) : undefined,
         weightedFrequencyScore: row.weighted_frequency_score ? Number(row.weighted_frequency_score) : undefined,
         avgRelevanceScore: row.avg_relevance_score ? Number(row.avg_relevance_score) : undefined,
-        documentDiversity: row.document_diversity ?? undefined,
-         challengeScore: row.challenge_score,
-         opportunityScore: row.opportunity_score,
-         sectorTags: row.sector_tags || [],
-         marketSignals: (row.market_signals as TechnologyIntelligence["marketSignals"]) || {},
-         documentInsights: (row.document_insights as TechnologyIntelligence["documentInsights"]) || {},
-      };
-      return result;
+         documentDiversity: row.document_diversity ?? undefined,
+          aliases: row.technology_keywords?.aliases || [],
+          challengeScore: row.challenge_score,
+          opportunityScore: row.opportunity_score,
+          sectorTags: row.sector_tags || [],
+          marketSignals: (row.market_signals as TechnologyIntelligence["marketSignals"]) || {},
+          documentInsights: (row.document_insights as TechnologyIntelligence["documentInsights"]) || {},
+       };
+       return result;
      },
      enabled: !!keywordId,
    });
