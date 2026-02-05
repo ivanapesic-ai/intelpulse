@@ -69,6 +69,38 @@ export default function IntelligenceDashboard() {
     const tech = technologies?.find(t => t.keywordId === keyword.keywordId);
     if (tech) {
       setSelectedTech(tech);
+    } else {
+      // Create a minimal tech object from keyword data for display
+      setSelectedTech({
+        id: keyword.keywordId,
+        keywordId: keyword.keywordId,
+        name: keyword.displayName,
+        description: `Technology tracked under ${keyword.domainName}`,
+        challengeScore: keyword.domainChallenge,
+        opportunityScore: keyword.domainOpportunity,
+        compositeScore: (keyword.domainChallenge + keyword.domainOpportunity) / 2,
+        trlScore: null,
+        visibilityScore: null,
+        euAlignmentScore: null,
+        investmentScore: null,
+        employeesScore: null,
+        dealroomCompanyCount: keyword.companyCount,
+        totalFundingEur: keyword.totalFundingUsd,
+        totalPatents: keyword.totalPatents,
+        totalEmployees: 0,
+        documentMentionCount: 0,
+        policyMentionCount: 0,
+        avgTrlMentioned: null,
+        newsMentionCount: 0,
+        trend: "stable",
+        keyPlayers: [],
+        recentNews: [],
+        marketSignals: {},
+        documentInsights: {},
+        sectorTags: [],
+        lastUpdated: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      });
     }
   };
 
