@@ -1,23 +1,21 @@
 import { useState } from "react";
-import { ArrowLeft, RefreshCw, Database, FileText, Zap, Globe, Network, Layers, BookOpen, Upload, CheckCircle, XCircle, Clock, Search, AlertTriangle, FileSpreadsheet } from "lucide-react";
+ import { ArrowLeft, Database, FileText, Globe, Network, Layers, Upload, CheckCircle, FileSpreadsheet, BarChart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { useDealroomCompanies, useDealroomSyncLogs, useDealroomSync, useDealroomCountryStats, useDealroomApiUsage, useDealroomCompanyCount, useDealroomTagTest } from "@/hooks/useDealroomSync";
-import { useDealroomTaxonomy, useSyncDealroomTaxonomy, useSyncTaxonomyFromCompanies } from "@/hooks/useDealroomTaxonomy";
 import { useDocuments, useDocumentStats } from "@/hooks/useDocuments";
 import { useKeywordStats } from "@/hooks/useTechnologies";
-import { formatFundingEur, formatNumber } from "@/types/database";
+ import { formatFundingEur } from "@/types/database";
 import { WebScrapingPanel } from "@/components/admin/WebScrapingPanel";
 import { PdfQueuePanel } from "@/components/admin/PdfQueuePanel";
 import { KeywordManager } from "@/components/admin/KeywordManager";
 import { TechnologyOntology } from "@/components/mockups/TechnologyOntology";
-import { TaxonomyBrowser } from "@/components/admin/TaxonomyBrowser";
 import { CrunchbaseImportPanel } from "@/components/admin/CrunchbaseImportPanel";
 import { EpoPatentPanel } from "@/components/admin/EpoPatentPanel";
+ import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
 
 const statusColors = {
   completed: "bg-success/20 text-success border-success/30",
@@ -28,147 +26,16 @@ const statusColors = {
 };
 
 export default function AdminPanel() {
-  const [taxonomySubTab, setTaxonomySubTab] = useState<"keywords" | "browser">("keywords");
-  const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "dealroom" | "scraping" | "documents">("crunchbase");
-
-  // Data hooks
-  const { data: companies, isLoading: companiesLoading } = useDealroomCompanies({ limit: 10 });
-  const { data: companyCount } = useDealroomCompanyCount();
-  const { data: syncLogs, isLoading: syncLogsLoading } = useDealroomSyncLogs(5);
-  const { data: countryStats } = useDealroomCountryStats();
+   const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "scraping" | "documents">("crunchbase");
+ 
+   // Data hooks
+   const { data: crunchbaseStats } = useCrunchbaseStats();
   const { data: documents, isLoading: documentsLoading } = useDocuments();
   const { data: documentStats } = useDocumentStats();
   const { data: keywordStats } = useKeywordStats();
-  const { data: apiUsage } = useDealroomApiUsage();
-  
-  const dealroomSync = useDealroomSync();
-  const { data: taxonomy } = useDealroomTaxonomy();
-  const syncTaxonomy = useSyncDealroomTaxonomy();
-  const syncFromCompanies = useSyncTaxonomyFromCompanies();
-  const tagTest = useDealroomTagTest();
 
-  // Tag discovery state with live progress
-  const [discoveryState, setDiscoveryState] = useState<{
-    isRunning: boolean;
-    currentTag: string;
-    currentIndex: number;
-    totalTags: number;
-    validTags: Array<{ tag: string; companyCount: number; sampleCompany: string | null }>;
-    invalidTags: string[];
-  }>({
-    isRunning: false,
-    currentTag: "",
-    currentIndex: 0,
-    totalTags: 0,
-    validTags: [],
-    invalidTags: [],
-  });
-
-  const AUTOMOTIVE_TAG_CANDIDATES = [
-    // From Dealroom confirmed
-    'autonomous-mobility',
-    // Variations to test
-    'autonomous-vehicles', 'self-driving', 'autonomous-driving',
-    'adas', 'advanced-driver-assistance', 'driver-assistance',
-    // EV related
-    'electric-vehicles', 'ev', 'battery-technology', 'battery',
-    'charging-infrastructure', 'ev-charging', 'charging-stations',
-    // Software
-    'automotive-software', 'vehicle-software', 'automotive-tech',
-    'connected-cars', 'connected-vehicles', 'vehicle-connectivity',
-    'ota-updates', 'over-the-air', 'software-updates',
-    // Sensors
-    'lidar', 'radar', 'camera-systems', 'sensors', 'sensor-fusion',
-    // Mobility
-    'mobility-services', 'shared-mobility', 'micromobility',
-    'fleet-management', 'ride-hailing',
-    // Infrastructure
-    'smart-cities', 'transportation', 'logistics',
-    // Security/Compute
-    'automotive-cybersecurity', 'vehicle-security', 'cybersecurity',
-    'edge-computing', 'automotive-cloud',
-    // Hardware
-    'automotive-chips', 'semiconductors', 'automotive-semiconductors',
-  ];
-
-  const handleTagDiscovery = async () => {
-    setDiscoveryState({
-      isRunning: true,
-      currentTag: "",
-      currentIndex: 0,
-      totalTags: AUTOMOTIVE_TAG_CANDIDATES.length,
-      validTags: [],
-      invalidTags: [],
-    });
-
-    for (let i = 0; i < AUTOMOTIVE_TAG_CANDIDATES.length; i++) {
-      const tag = AUTOMOTIVE_TAG_CANDIDATES[i];
-      
-      setDiscoveryState(prev => ({
-        ...prev,
-        currentTag: tag,
-        currentIndex: i + 1,
-      }));
-
-      try {
-        const result = await new Promise<{ exists: boolean; companyCount: number; sampleCompany?: string }>((resolve, reject) => {
-          tagTest.mutate(tag, {
-            onSuccess: (data) => resolve(data),
-            onError: (err) => reject(err),
-          });
-        });
-
-        setDiscoveryState(prev => {
-          if (result.exists) {
-            return {
-              ...prev,
-              validTags: [...prev.validTags, { tag, companyCount: result.companyCount, sampleCompany: result.sampleCompany || null }],
-            };
-          } else {
-            return {
-              ...prev,
-              invalidTags: [...prev.invalidTags, tag],
-            };
-          }
-        });
-      } catch (err) {
-        setDiscoveryState(prev => ({
-          ...prev,
-          invalidTags: [...prev.invalidTags, tag],
-        }));
-      }
-
-      // Small delay between requests
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
-
-    setDiscoveryState(prev => ({
-      ...prev,
-      isRunning: false,
-      currentTag: "",
-    }));
-  };
-
-  const handleDealroomSync = () => {
-    dealroomSync.mutate({});
-  };
-
-  const handleTaxonomySync = () => {
-    syncTaxonomy.mutate();
-  };
-
-  const handleSyncFromCompanies = () => {
-    syncFromCompanies.mutate();
-  };
-
-  const totalCompanies = companyCount || 0;
+   const totalCompanies = crunchbaseStats?.totalCompanies || 0;
   const totalKeywords = keywordStats?.totalKeywords || 0;
-  const lastSyncLog = syncLogs?.[0];
-
-  // API Usage calculations
-  const usagePercent = apiUsage ? (apiUsage.apiCallsUsed / apiUsage.apiCallsLimit) * 100 : 0;
-  const usageStatus = usagePercent >= 90 ? "critical" : usagePercent >= 70 ? "warning" : "normal";
-  const usageColor = usageStatus === "critical" ? "bg-destructive" : usageStatus === "warning" ? "bg-warning" : "bg-primary";
 
   return (
     <div className="min-h-screen bg-background">
@@ -201,7 +68,7 @@ export default function AdminPanel() {
                   <p className="text-sm text-muted-foreground">Keywords</p>
                   <p className="text-3xl font-bold text-foreground">{totalKeywords}</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    CEI: {keywordStats?.ceiSphereCount || 0} | DR: {keywordStats?.dealroomCount || 0}
+                     CEI: {keywordStats?.ceiSphereCount || 0} | Manual: {keywordStats?.manualCount || 0}
                   </p>
                 </div>
                 <div className="p-3 rounded-full bg-primary/10">
@@ -216,7 +83,7 @@ export default function AdminPanel() {
                 <div>
                   <p className="text-sm text-muted-foreground">Companies</p>
                   <p className="text-3xl font-bold text-foreground">{totalCompanies}</p>
-                  <p className="text-xs text-muted-foreground mt-1">from Dealroom</p>
+                   <p className="text-xs text-muted-foreground mt-1">from Crunchbase</p>
                 </div>
                 <div className="p-3 rounded-full bg-purple-500/10">
                   <Database className="h-6 w-6 text-purple-500" />
@@ -244,14 +111,14 @@ export default function AdminPanel() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">API Usage</p>
-                  <p className="text-xl font-bold text-foreground">
-                    {formatNumber(apiUsage?.apiCallsUsed || 0)} / {formatNumber(apiUsage?.apiCallsLimit || 50000)}
-                  </p>
-                  <Progress value={usagePercent} className={`h-1.5 mt-2 ${usageColor}`} />
+                   <p className="text-sm text-muted-foreground">Total Funding</p>
+                   <p className="text-xl font-bold text-foreground">
+                     {formatFundingEur(crunchbaseStats?.totalFunding || 0)}
+                   </p>
+                   <p className="text-xs text-muted-foreground mt-1">tracked investment</p>
                 </div>
-                <div className="p-3 rounded-full bg-primary/10">
-                  <Zap className="h-6 w-6 text-primary" />
+                 <div className="p-3 rounded-full bg-success/10">
+                   <Database className="h-6 w-6 text-success" />
                 </div>
               </div>
             </CardContent>
@@ -274,36 +141,14 @@ export default function AdminPanel() {
               <span className="hidden sm:inline">Ontology</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Zap className="h-4 w-4" />
+               <BarChart className="h-4 w-4" />
               <span className="hidden sm:inline">Status</span>
             </TabsTrigger>
           </TabsList>
 
           {/* ===== TAXONOMY TAB ===== */}
           <TabsContent value="taxonomy" className="space-y-4">
-            {/* Sub-navigation */}
-            <div className="flex gap-2 border-b border-border pb-3">
-              <Button
-                variant={taxonomySubTab === "keywords" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setTaxonomySubTab("keywords")}
-              >
-                Keyword Management
-              </Button>
-              <Button
-                variant={taxonomySubTab === "browser" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setTaxonomySubTab("browser")}
-              >
-                Taxonomy Browser
-              </Button>
-            </div>
-
-            {taxonomySubTab === "keywords" ? (
-              <KeywordManager />
-            ) : (
-              <TaxonomyBrowser />
-            )}
+             <KeywordManager />
           </TabsContent>
 
           {/* ===== DATA SOURCES TAB ===== */}
@@ -325,13 +170,6 @@ export default function AdminPanel() {
               >
                 <FileSpreadsheet className="h-4 w-4 mr-1.5" />
                 EPO Patents
-              </Button>
-              <Button
-                variant={dataSubTab === "dealroom" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setDataSubTab("dealroom")}
-              >
-                Dealroom API
               </Button>
               <Button
                 variant={dataSubTab === "scraping" ? "secondary" : "ghost"}
@@ -359,296 +197,6 @@ export default function AdminPanel() {
             {/* EPO Patents Sub-tab */}
             {dataSubTab === "patents" && (
               <EpoPatentPanel />
-            )}
-
-            {/* Dealroom Sub-tab */}
-            {dataSubTab === "dealroom" && (
-              <div className="space-y-4">
-                {/* Combined Dealroom Sync */}
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-foreground">Dealroom Data Sync</CardTitle>
-                        <CardDescription>Sync companies and taxonomy in one click</CardDescription>
-                      </div>
-                      <Button 
-                        onClick={() => {
-                          handleTaxonomySync();
-                          handleDealroomSync();
-                        }} 
-                        disabled={dealroomSync.isPending || syncTaxonomy.isPending || usagePercent >= 100}
-                        size="lg"
-                      >
-                        <RefreshCw className={`h-4 w-4 mr-2 ${(dealroomSync.isPending || syncTaxonomy.isPending) ? "animate-spin" : ""}`} />
-                        {dealroomSync.isPending || syncTaxonomy.isPending 
-                          ? "Syncing..." 
-                          : usagePercent >= 100 
-                            ? "Quota Exceeded" 
-                            : "Sync All"}
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {(dealroomSync.isPending || syncTaxonomy.isPending) && (
-                      <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/30">
-                        <div className="flex items-center gap-2 text-blue-500">
-                          <RefreshCw className="h-4 w-4 animate-spin" />
-                          <span className="text-sm font-medium">
-                            {syncTaxonomy.isPending ? "Loading taxonomy..." : "Fetching companies..."}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Data Summary */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="p-4 bg-muted/50 rounded-lg text-center">
-                        <p className="text-2xl font-bold text-foreground">{companyCount || 0}</p>
-                        <p className="text-sm text-muted-foreground">Companies</p>
-                      </div>
-                      <div className="p-4 bg-muted/50 rounded-lg text-center">
-                        <p className="text-2xl font-bold text-foreground">{taxonomy?.counts?.industries || 0}</p>
-                        <p className="text-sm text-muted-foreground">Industries</p>
-                      </div>
-                      <div className="p-4 bg-muted/50 rounded-lg text-center">
-                        <p className="text-2xl font-bold text-foreground">{taxonomy?.counts?.subIndustries || 0}</p>
-                        <p className="text-sm text-muted-foreground">Sub-Industries</p>
-                      </div>
-                      <div className="p-4 bg-muted/50 rounded-lg text-center">
-                        <p className="text-2xl font-bold text-foreground">{taxonomy?.counts?.technology || 0}</p>
-                        <p className="text-sm text-muted-foreground">Tech Tags</p>
-                      </div>
-                    </div>
-
-                    {/* Sync History */}
-                    <div>
-                      <h4 className="text-sm font-medium text-foreground mb-3">Recent Syncs</h4>
-                      {syncLogsLoading ? (
-                        <p className="text-sm text-muted-foreground">Loading...</p>
-                      ) : syncLogs?.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">No sync history yet</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {syncLogs?.slice(0, 3).map((log) => (
-                            <div 
-                              key={log.id} 
-                              className="flex items-center justify-between p-3 rounded-lg border border-border bg-card"
-                            >
-                              <div className="flex items-center gap-3">
-                                {log.status === "completed" && <CheckCircle className="h-4 w-4 text-success" />}
-                                {log.status === "failed" && <XCircle className="h-4 w-4 text-destructive" />}
-                                {log.status === "running" && <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />}
-                                {log.status === "pending" && <Clock className="h-4 w-4 text-muted-foreground" />}
-                                <div>
-                                  <p className="text-sm font-medium text-foreground">
-                                    {log.recordsFetched} fetched, {log.recordsCreated} created
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {new Date(log.startedAt).toLocaleString()}
-                                  </p>
-                                </div>
-                              </div>
-                              <Badge variant="outline" className={statusColors[log.status]}>
-                                {log.status}
-                              </Badge>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <div className="grid lg:grid-cols-2 gap-4">
-                  {/* Tag Discovery */}
-                  <Card>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <CardTitle className="text-foreground text-sm flex items-center gap-2">
-                            <Search className="h-4 w-4" />
-                            Tag Discovery
-                          </CardTitle>
-                          <CardDescription>Test automotive tags against Dealroom API</CardDescription>
-                        </div>
-                        <Button 
-                          onClick={handleTagDiscovery} 
-                          disabled={discoveryState.isRunning}
-                          variant="outline"
-                          size="sm"
-                        >
-                          <Search className={`h-4 w-4 mr-2 ${discoveryState.isRunning ? "animate-pulse" : ""}`} />
-                          {discoveryState.isRunning ? "Testing..." : "Test All Tags"}
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {/* Live Progress */}
-                      {discoveryState.isRunning && (
-                        <div className="space-y-3 mb-4">
-                          <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-medium text-blue-500">
-                                Testing {discoveryState.currentIndex}/{discoveryState.totalTags}
-                              </span>
-                              <span className="text-xs text-blue-400">
-                                {Math.round((discoveryState.currentIndex / discoveryState.totalTags) * 100)}%
-                              </span>
-                            </div>
-                            <Progress 
-                              value={(discoveryState.currentIndex / discoveryState.totalTags) * 100} 
-                              className="h-2"
-                            />
-                            <p className="text-xs text-blue-400 mt-2 font-mono">
-                              → {discoveryState.currentTag}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Summary (show during and after) */}
-                      {(discoveryState.validTags.length > 0 || discoveryState.invalidTags.length > 0) && (
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-3 gap-3">
-                            <div className="p-3 bg-success/10 rounded-lg text-center border border-success/30">
-                              <p className="text-xl font-bold text-success">{discoveryState.validTags.length}</p>
-                              <p className="text-xs text-success">Valid</p>
-                            </div>
-                            <div className="p-3 bg-destructive/10 rounded-lg text-center border border-destructive/30">
-                              <p className="text-xl font-bold text-destructive">{discoveryState.invalidTags.length}</p>
-                              <p className="text-xs text-destructive">Unfiltered</p>
-                            </div>
-                            <div className="p-3 bg-muted rounded-lg text-center">
-                              <p className="text-xl font-bold text-foreground">{discoveryState.currentIndex}</p>
-                              <p className="text-xs text-muted-foreground">API Calls</p>
-                            </div>
-                          </div>
-
-                          {/* Valid Tags List */}
-                          {discoveryState.validTags.length > 0 && (
-                            <div>
-                              <h4 className="text-xs font-medium text-success mb-2 flex items-center gap-1">
-                                <CheckCircle className="h-3 w-3" /> Valid Tags
-                              </h4>
-                              <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
-                                {discoveryState.validTags.map((t) => (
-                                  <Badge key={t.tag} variant="outline" className="text-xs bg-success/10 text-success border-success/30">
-                                    {t.tag} ({t.companyCount})
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Invalid Tags */}
-                          {discoveryState.invalidTags.length > 0 && (
-                            <div>
-                              <h4 className="text-xs font-medium text-destructive mb-2 flex items-center gap-1">
-                                <XCircle className="h-3 w-3" /> Unfiltered/Invalid
-                              </h4>
-                              <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
-                                {discoveryState.invalidTags.map((tag) => (
-                                  <Badge key={tag} variant="outline" className="text-xs bg-destructive/10 text-destructive border-destructive/30">
-                                    {tag}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {discoveryState.validTags.length === 0 && discoveryState.invalidTags.length === 0 && !discoveryState.isRunning && (
-                        <p className="text-sm text-muted-foreground">
-                          Click "Test All Tags" to discover which Dealroom tags work as filters.
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  {/* Country Stats */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-foreground text-sm">Companies by Country</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {countryStats?.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">No data yet. Run a sync first.</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {countryStats?.slice(0, 6).map((stat) => (
-                            <div key={stat.country} className="flex items-center justify-between text-sm">
-                              <span className="text-muted-foreground">{stat.country}</span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-foreground font-medium">{stat.companyCount}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  {formatFundingEur(stat.totalFunding)}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Recent Companies */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-foreground">Recent Companies</CardTitle>
-                    <CardDescription>Latest companies synced from Dealroom</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {companiesLoading ? (
-                      <p className="text-sm text-muted-foreground">Loading...</p>
-                    ) : companies?.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No companies synced yet. Click "Sync Now" to fetch data.</p>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="border-b border-border">
-                              <th className="text-left p-3 text-sm font-medium text-muted-foreground">Company</th>
-                              <th className="text-left p-3 text-sm font-medium text-muted-foreground">Country</th>
-                              <th className="text-left p-3 text-sm font-medium text-muted-foreground">Funding</th>
-                              <th className="text-left p-3 text-sm font-medium text-muted-foreground">Industries</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {companies?.slice(0, 5).map((company) => (
-                              <tr key={company.id} className="border-b border-border/50 hover:bg-muted/50">
-                                <td className="p-3">
-                                  <div>
-                                    <p className="text-sm font-medium text-foreground">{company.name}</p>
-                                    {company.tagline && (
-                                      <p className="text-xs text-muted-foreground truncate max-w-xs">{company.tagline}</p>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="p-3 text-sm text-muted-foreground">{company.hqCountry || "—"}</td>
-                                <td className="p-3 text-sm font-medium text-foreground">
-                                  {formatFundingEur(company.totalFundingEur)}
-                                </td>
-                                <td className="p-3">
-                                  <div className="flex flex-wrap gap-1">
-                                    {company.industries.slice(0, 2).map((ind) => (
-                                      <Badge key={ind} variant="outline" className="text-xs">
-                                        {ind}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
             )}
 
             {/* Web Scraping Sub-tab */}
@@ -757,55 +305,6 @@ export default function AdminPanel() {
 
           {/* ===== STATUS/SETTINGS TAB ===== */}
           <TabsContent value="settings" className="space-y-4">
-            {/* API Usage Card */}
-            <Card className={`border-2 ${usageStatus === "critical" ? "border-destructive/50" : usageStatus === "warning" ? "border-warning/50" : "border-border"}`}>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Zap className={`h-5 w-5 ${usageStatus === "critical" ? "text-destructive" : usageStatus === "warning" ? "text-warning" : "text-primary"}`} />
-                    <CardTitle className="text-lg text-foreground">Dealroom API Usage</CardTitle>
-                  </div>
-                  {usageStatus !== "normal" && (
-                    <Badge variant="outline" className={usageStatus === "critical" ? "bg-destructive/10 text-destructive border-destructive/30" : "bg-warning/10 text-warning border-warning/30"}>
-                      {usageStatus === "critical" ? "Near Limit" : "Approaching Limit"}
-                    </Badge>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-baseline justify-between">
-                  <div>
-                    <span className="text-3xl font-bold text-foreground">{formatNumber(apiUsage?.apiCallsUsed || 0)}</span>
-                    <span className="text-muted-foreground ml-1">/ {formatNumber(apiUsage?.apiCallsLimit || 50000)} calls</span>
-                  </div>
-                  <span className={`text-lg font-semibold ${usageStatus === "critical" ? "text-destructive" : usageStatus === "warning" ? "text-warning" : "text-primary"}`}>
-                    {usagePercent.toFixed(1)}%
-                  </span>
-                </div>
-                <Progress value={usagePercent} className={`h-3 ${usageColor}`} />
-                <div className="grid grid-cols-3 gap-4 pt-2">
-                  <div className="text-center">
-                    <p className="text-xs text-muted-foreground">Period</p>
-                    <p className="text-sm font-medium text-foreground">
-                      {apiUsage?.periodStart ? new Date(apiUsage.periodStart).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"} - {apiUsage?.periodEnd ? new Date(apiUsage.periodEnd).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
-                    </p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs text-muted-foreground">Last Sync</p>
-                    <p className="text-sm font-medium text-foreground">
-                      {apiUsage?.lastSyncDate ? new Date(apiUsage.lastSyncDate).toLocaleDateString() : "Never"}
-                    </p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs text-muted-foreground">Remaining</p>
-                    <p className="text-sm font-medium text-foreground">
-                      {formatNumber((apiUsage?.apiCallsLimit || 50000) - (apiUsage?.apiCallsUsed || 0))} calls
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Data Overview */}
             <div className="grid md:grid-cols-2 gap-4">
               <Card>
@@ -823,7 +322,7 @@ export default function AdminPanel() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Total Companies</span>
-                    <span className="font-semibold text-foreground">{formatNumber(totalCompanies)}</span>
+                     <span className="font-semibold text-foreground">{totalCompanies}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Total Funding</span>
@@ -834,27 +333,20 @@ export default function AdminPanel() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-foreground">Last Sync Status</CardTitle>
+                   <CardTitle className="text-foreground">Crunchbase Status</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {lastSyncLog ? (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        {lastSyncLog.status === "completed" && <CheckCircle className="h-5 w-5 text-success" />}
-                        {lastSyncLog.status === "failed" && <XCircle className="h-5 w-5 text-destructive" />}
-                        {lastSyncLog.status === "running" && <RefreshCw className="h-5 w-5 text-blue-500 animate-spin" />}
-                        <span className="font-medium text-foreground capitalize">{lastSyncLog.status}</span>
-                      </div>
-                      <div className="text-sm text-muted-foreground space-y-1">
-                        <p>Records fetched: {lastSyncLog.recordsFetched}</p>
-                        <p>Records created: {lastSyncLog.recordsCreated}</p>
-                        <p>API calls: {lastSyncLog.apiCallsMade}</p>
-                        <p>Time: {new Date(lastSyncLog.startedAt).toLocaleString()}</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No syncs yet</p>
-                  )}
+                   <div className="space-y-3">
+                     <div className="flex items-center gap-2">
+                       <CheckCircle className="h-5 w-5 text-success" />
+                       <span className="font-medium text-foreground">Data Loaded</span>
+                     </div>
+                     <div className="text-sm text-muted-foreground space-y-1">
+                       <p>Companies: {crunchbaseStats?.totalCompanies || 0}</p>
+                       <p>With Keywords: {crunchbaseStats?.companiesWithKeywords || 0}</p>
+                       <p>Total Funding: {formatFundingEur(crunchbaseStats?.totalFunding || 0)}</p>
+                     </div>
+                   </div>
                 </CardContent>
               </Card>
             </div>

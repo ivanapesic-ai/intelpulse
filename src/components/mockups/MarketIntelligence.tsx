@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatFundingEur, formatNumber } from "@/types/database";
 import { useMarketIntelligence } from "@/hooks/useMarketIntelligence";
-import { useDealroomSyncLogs } from "@/hooks/useDealroomSync";
 import { formatDistanceToNow } from "date-fns";
 
 interface MarketIntelligenceProps {
@@ -13,9 +12,6 @@ interface MarketIntelligenceProps {
 }
 
 export function MarketIntelligence({ keywordId, technologyName }: MarketIntelligenceProps) {
-  const { data: syncLogs } = useDealroomSyncLogs(1);
-  const lastSync = syncLogs?.[0];
-  const lastSyncTime = lastSync?.completedAt || lastSync?.startedAt;
   const { data, isLoading, error } = useMarketIntelligence(keywordId);
 
   if (isLoading) {
@@ -61,11 +57,7 @@ export function MarketIntelligence({ keywordId, technologyName }: MarketIntellig
       <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Clock className="h-4 w-4" />
-          {lastSyncTime ? (
-            <span>Data last synced {formatDistanceToNow(new Date(lastSyncTime), { addSuffix: true })}</span>
-          ) : (
-            <span>No sync data available</span>
-          )}
+           <span>Market data from Crunchbase</span>
         </div>
         <span className="text-xs text-muted-foreground">
           Refresh data from Admin Panel

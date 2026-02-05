@@ -3,10 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import type { TechnologyKeyword, Technology, KeywordSource } from "@/types/database";
 import { toast } from "@/hooks/use-toast";
 
-// Re-export taxonomy types and hooks from dedicated file to avoid duplication
-export type { TaxonomyItem as DealroomTaxonomyItem, TaxonomyData as DealroomTaxonomyResponse } from "./useDealroomTaxonomy";
-export { useDealroomTaxonomy, useSyncDealroomTaxonomy, useSyncTaxonomyFromCompanies } from "./useDealroomTaxonomy";
-
 // AI-powered tag mapping
 export function useAITagMapping() {
   const queryClient = useQueryClient();
@@ -45,7 +41,7 @@ export function useAITagMapping() {
       queryClient.invalidateQueries({ queryKey: ["keywords"] });
       toast({
         title: "AI mapping complete",
-        description: `Successfully mapped ${data.updated}/${data.processed} keywords to Dealroom tags.`,
+         description: `Successfully mapped ${data.updated}/${data.processed} keywords.`,
       });
     },
     onError: (error) => {
@@ -109,7 +105,7 @@ export function useUpdateKeywordTags() {
       const { data, error } = await supabase
         .from("technology_keywords")
         .update({ 
-          dealroom_tags: tags,
+           aliases: tags,
           updated_at: new Date().toISOString()
         })
         .eq("id", keywordId)
@@ -123,7 +119,7 @@ export function useUpdateKeywordTags() {
       queryClient.invalidateQueries({ queryKey: ["keywords"] });
       toast({
         title: "Tags updated",
-        description: "Dealroom tags have been saved successfully.",
+         description: "Keyword aliases have been saved successfully.",
       });
     },
     onError: (error) => {
