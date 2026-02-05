@@ -516,7 +516,8 @@ ${processedContent}`;
      // Parse AI response - C-O Matrix aligned type
      let extractedData: { 
        mentions: Array<{
-         keyword_id: string;
+         keyword_id: string | null;
+         keyword_name?: string;
          mention_context: string;
          trl_mentioned: number | null;
          policy_reference: string | null;
@@ -565,6 +566,7 @@ ${processedContent}`;
      // Insert technology mentions with C-O assessments
      const mentions = extractedData.mentions || [];
      let mentionsCreated = 0;
+     let mentionsSkipped = 0;
      
      // Track C-O scores per keyword for aggregation
      const keywordCOScores: Record<string, { 
@@ -575,12 +577,41 @@ ${processedContent}`;
      }> = {};
  
      for (const mention of mentions) {
-       // Validate keyword_id exists
-       const validKeyword = keywords?.find(k => k.id === mention.keyword_id);
+       // Try to find keyword - first by ID, then by name fuzzy match
+       let validKeyword = keywords?.find(k => k.id === mention.keyword_id);
+       
+       // If no ID match, try fuzzy matching by name
+       if (!validKeyword && mention.keyword_name) {
+         const mentionName = mention.keyword_name.toLowerCase().trim();
+         validKeyword = keywords?.find(k => {
+           const kw = k.keyword.toLowerCase();
+           const display = k.display_name.toLowerCase();
+           const aliases = (k.aliases || []).map((a: string) => a.toLowerCase());
+           
+           // Exact match
+           if (kw === mentionName || display === mentionName) return true;
+           // Alias match
+           if (aliases.some((a: string) => a === mentionName)) return true;
+           // Partial match (one contains the other)
+           if (kw.includes(mentionName) || mentionName.includes(kw)) return true;
+           if (display.includes(mentionName) || mentionName.includes(display)) return true;
+           
+           return false;
+         });
+         
+         if (validKeyword) {
+           console.log(`Fuzzy matched "${mention.keyword_name}" -> ${validKeyword.display_name}`);
+         }
+       }
+       
        if (!validKeyword) {
-         console.warn(`Invalid keyword_id: ${mention.keyword_id}`);
+         console.warn(`No keyword match for: ${mention.keyword_name || mention.keyword_id}`);
+         mentionsSkipped++;
          continue;
        }
+       
+       // Use the matched keyword's ID
+       const keywordId = validKeyword.id;
  
        const baseConfidence = Math.min(1, Math.max(0, mention.confidence_score || 0.5));
        
@@ -595,7 +626,7 @@ ${processedContent}`;
          .from("document_technology_mentions")
          .insert({
            document_id: documentId,
-           keyword_id: mention.keyword_id,
+           keyword_id: keywordId,
            mention_context: enrichedContext?.slice(0, 500) || null,
            trl_mentioned: mention.trl_mentioned || null,
            policy_reference: mention.policy_reference || null,
@@ -610,9 +641,9 @@ ${processedContent}`;
        } else {
          mentionsCreated++;
          
-         // Track C-O scores for aggregation
-         if (!keywordCOScores[mention.keyword_id]) {
-           keywordCOScores[mention.keyword_id] = { 
+         // Track C-O scores per keyword for aggregation
+         if (!keywordCOScores[keywordId]) {
+           keywordCOScores[keywordId] = { 
              challenges: [], 
              opportunities: [], 
              maturity: [],
@@ -620,19 +651,21 @@ ${processedContent}`;
            };
          }
          if (mention.challenge_score !== undefined) {
-           keywordCOScores[mention.keyword_id].challenges.push(mention.challenge_score);
+           keywordCOScores[keywordId].challenges.push(mention.challenge_score);
          }
          if (mention.opportunity_score !== undefined) {
-           keywordCOScores[mention.keyword_id].opportunities.push(mention.opportunity_score);
+           keywordCOScores[keywordId].opportunities.push(mention.opportunity_score);
          }
          if (mention.maturity_level) {
-           keywordCOScores[mention.keyword_id].maturity.push(mention.maturity_level);
+           keywordCOScores[keywordId].maturity.push(mention.maturity_level);
          }
          if (mention.market_signals) {
-           keywordCOScores[mention.keyword_id].marketSignals.push(mention.market_signals);
+           keywordCOScores[keywordId].marketSignals.push(mention.market_signals);
          }
        }
      }
+     
+     console.log(`Mentions: ${mentionsCreated} created, ${mentionsSkipped} skipped (no keyword match)`);
 
      // Build enriched parsed content with C-O Matrix analysis
      const docAnalysis = extractedData.document_analysis || { summary: extractedData.summary || "" };
