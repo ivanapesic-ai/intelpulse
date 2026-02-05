@@ -20,6 +20,7 @@
  import ArchitectureDiagrams from "./pages/mockups/ArchitectureDiagrams";
  import AnnexA from "./pages/mockups/AnnexA";
  import AnnexB from "./pages/mockups/AnnexB";
+import IntelligenceDashboard from "./pages/mockups/IntelligenceDashboard";
  
  const queryClient = new QueryClient();
  
@@ -41,6 +42,7 @@
              <Route path="/heatmap" element={<HeatmapMatrix />} />
              <Route path="/explorer" element={<TechnologyExplorer />} />
              <Route path="/admin" element={<AdminPanel />} />
+              <Route path="/intelligence" element={<IntelligenceDashboard />} />
              
              {/* ===== LEGACY MOCKUPS (Temporary) ===== */}
              <Route path="/mockups" element={<MockupsIndex />} />
@@ -53,6 +55,7 @@
              <Route path="/mockups/architecture" element={<ArchitectureDiagrams />} />
              <Route path="/mockups/annex-a" element={<AnnexA />} />
              <Route path="/mockups/annex-b" element={<AnnexB />} />
+              <Route path="/mockups/intelligence" element={<IntelligenceDashboard />} />
              
              {/* Catch-all */}
              <Route path="*" element={<NotFound />} />

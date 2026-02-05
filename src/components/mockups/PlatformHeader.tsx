@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Radar, Grid3X3, Compass, LayoutDashboard, LogOut } from "lucide-react";
+import { Radar, Grid3X3, Compass, LayoutDashboard, LogOut, Brain } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import logo from "@/assets/logo.svg";
@@ -10,6 +10,7 @@ const navItems = [
   { path: "/mockups/radar", label: "Radar", icon: Radar },
   { path: "/mockups/heatmap", label: "Heatmap", icon: Grid3X3 },
   { path: "/mockups/explorer", label: "Explorer", icon: Compass },
+  { path: "/mockups/intelligence", label: "Intelligence", icon: Brain },
 ];
 
 export function PlatformHeader() {
