@@ -66,12 +66,9 @@ function getScores(tech: TechnologyIntelligence): { challenge: number; opportuni
 // ============================================================================
 // STYLE 1: Classic 2×2 Gartner Magic Quadrant
 // ============================================================================
-const QUADRANTS_2X2 = {
-  leaders: { label: "Leaders", description: "High opportunity, low barriers", x: "right", y: "top" },
-  challengers: { label: "Challengers", description: "Low opportunity, low barriers", x: "left", y: "top" },
-  visionaries: { label: "Visionaries", description: "High opportunity, high barriers", x: "right", y: "bottom" },
-  niche: { label: "Niche Players", description: "Low opportunity, high barriers", x: "left", y: "bottom" },
-};
+// Client's C-O Matrix naming convention
+// X-axis: Challenge (left=low, right=high)
+// Y-axis: Opportunity (bottom=low, top=high)
 
 function Classic2x2Quadrant({ 
   technologies, 
@@ -85,10 +82,10 @@ function Classic2x2Quadrant({
       const { challenge, opportunity } = getScores(tech);
       
       // Map 0-2 to position (0-100%)
-      // Challenge: 0 = bottom (high barrier), 2 = top (low barrier)
-      // Opportunity: 0 = left (low), 2 = right (high)
-      const baseX = (opportunity / 2) * 100;
-      const baseY = (challenge / 2) * 100;
+      // Challenge: 0 = left (low), 2 = right (high)
+      // Opportunity: 0 = bottom (low), 2 = top (high)
+      const baseX = (challenge / 2) * 100;
+      const baseY = (opportunity / 2) * 100;
       
       // Add jitter for overlap prevention
       const jitterX = (Math.random() - 0.5) * 15;
@@ -106,36 +103,36 @@ function Classic2x2Quadrant({
 
   return (
     <div className="relative w-full aspect-square max-w-2xl mx-auto">
-      {/* Background gradient quadrants */}
+      {/* Background gradient quadrants - Client naming convention */}
       <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 rounded-xl overflow-hidden">
-        {/* Top-left: Challengers */}
-        <div className="bg-gradient-to-br from-amber-500/20 to-amber-600/10 border-r border-b border-border/30 p-4">
-          <span className="text-sm font-semibold text-amber-400">Challengers</span>
-          <p className="text-xs text-muted-foreground">Low barriers, limited opportunity</p>
+        {/* Top-left: Quick Wins (Low Challenge, High Opportunity) - Yellow */}
+        <div className="bg-gradient-to-br from-yellow-400/25 to-yellow-500/15 border-r border-b border-border/30 p-4">
+          <span className="text-sm font-semibold text-yellow-500">Quick Wins</span>
+          <p className="text-xs text-muted-foreground">Low challenge, high opportunity</p>
         </div>
-        {/* Top-right: Leaders */}
-        <div className="bg-gradient-to-br from-emerald-500/25 to-emerald-600/15 border-b border-border/30 p-4">
-          <span className="text-sm font-semibold text-emerald-400">Leaders</span>
-          <p className="text-xs text-muted-foreground">Low barriers, high opportunity</p>
+        {/* Top-right: Big Bets (High Challenge, High Opportunity) - Pink */}
+        <div className="bg-gradient-to-br from-pink-400/25 to-pink-500/15 border-b border-border/30 p-4">
+          <span className="text-sm font-semibold text-pink-400">Big Bets</span>
+          <p className="text-xs text-muted-foreground">High challenge, high opportunity</p>
         </div>
-        {/* Bottom-left: Niche Players */}
-        <div className="bg-gradient-to-br from-slate-500/15 to-slate-600/10 border-r border-border/30 p-4">
-          <span className="text-sm font-semibold text-slate-400">Niche Players</span>
-          <p className="text-xs text-muted-foreground">High barriers, limited opportunity</p>
+        {/* Bottom-left: Do it if/when there is time (Low Challenge, Low Opportunity) - Blue */}
+        <div className="bg-gradient-to-br from-blue-400/20 to-blue-500/10 border-r border-border/30 p-4">
+          <span className="text-sm font-semibold text-blue-400">When Time Permits</span>
+          <p className="text-xs text-muted-foreground">Low challenge, low opportunity</p>
         </div>
-        {/* Bottom-right: Visionaries */}
-        <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 p-4">
-          <span className="text-sm font-semibold text-blue-400">Visionaries</span>
-          <p className="text-xs text-muted-foreground">High barriers, high opportunity</p>
+        {/* Bottom-right: Rethink (High Challenge, Low Opportunity) - Orange */}
+        <div className="bg-gradient-to-br from-orange-400/20 to-orange-500/10 p-4">
+          <span className="text-sm font-semibold text-orange-400">Rethink</span>
+          <p className="text-xs text-muted-foreground">High challenge, low opportunity</p>
         </div>
       </div>
 
-      {/* Axis labels */}
+      {/* Axis labels - Client convention */}
       <div className="absolute -left-12 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-medium text-muted-foreground whitespace-nowrap">
-        Ability to Execute →
+        Low Opportunity ← → High Opportunity
       </div>
       <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs font-medium text-muted-foreground">
-        Completeness of Vision →
+        Low Challenge ← → High Challenge
       </div>
 
       {/* Tech bubbles */}
@@ -222,13 +219,13 @@ function HybridRadarQuadrant({
 
   return (
     <div className="relative w-full aspect-square max-w-xl mx-auto">
-      {/* Quadrant backgrounds - matching Classic 2×2 colors */}
+      {/* Quadrant backgrounds - matching Client C-O colors */}
       <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
-        {/* Quadrant fills - Top-right: Leaders (emerald), Bottom-right: Visionaries (blue), Bottom-left: Niche (slate), Top-left: Challengers (amber) */}
-        <path d="M50,50 L50,5 A45,45 0 0,1 95,50 Z" fill="rgba(16, 185, 129, 0.2)" /> {/* Leaders - emerald */}
-        <path d="M50,50 L95,50 A45,45 0 0,1 50,95 Z" fill="rgba(59, 130, 246, 0.15)" /> {/* Visionaries - blue */}
-        <path d="M50,50 L50,95 A45,45 0 0,1 5,50 Z" fill="rgba(100, 116, 139, 0.12)" /> {/* Niche - slate */}
-        <path d="M50,50 L5,50 A45,45 0 0,1 50,5 Z" fill="rgba(245, 158, 11, 0.15)" /> {/* Challengers - amber */}
+        {/* Quadrant fills - Top-left: Quick Wins (yellow), Top-right: Big Bets (pink), Bottom-left: When Time Permits (blue), Bottom-right: Rethink (orange) */}
+        <path d="M50,50 L5,50 A45,45 0 0,0 50,5 Z" fill="rgba(250, 204, 21, 0.2)" /> {/* Quick Wins - yellow */}
+        <path d="M50,50 L50,5 A45,45 0 0,1 95,50 Z" fill="rgba(236, 72, 153, 0.15)" /> {/* Big Bets - pink */}
+        <path d="M50,50 L50,95 A45,45 0 0,1 5,50 Z" fill="rgba(96, 165, 250, 0.15)" /> {/* When Time Permits - blue */}
+        <path d="M50,50 L95,50 A45,45 0 0,1 50,95 Z" fill="rgba(251, 146, 60, 0.15)" /> {/* Rethink - orange */}
         
         {/* Rings */}
         {rings.map(({ r }, i) => (
@@ -249,11 +246,11 @@ function HybridRadarQuadrant({
         <line x1="5" y1="50" x2="95" y2="50" stroke="hsl(var(--border))" strokeWidth="0.5" />
       </svg>
 
-      {/* Quadrant labels - matching Classic 2×2 colors */}
-      <div className="absolute top-2 right-4 text-xs font-semibold text-emerald-400">Leaders</div>
-      <div className="absolute bottom-4 right-4 text-xs font-semibold text-blue-400">Visionaries</div>
-      <div className="absolute bottom-4 left-4 text-xs font-semibold text-slate-400">Niche</div>
-      <div className="absolute top-2 left-4 text-xs font-semibold text-amber-400">Challengers</div>
+      {/* Quadrant labels - matching Client naming */}
+      <div className="absolute top-2 left-4 text-xs font-semibold text-yellow-500">Quick Wins</div>
+      <div className="absolute top-2 right-4 text-xs font-semibold text-pink-400">Big Bets</div>
+      <div className="absolute bottom-4 left-4 text-xs font-semibold text-blue-400">When Time Permits</div>
+      <div className="absolute bottom-4 right-4 text-xs font-semibold text-orange-400">Rethink</div>
 
       {/* Ring labels */}
       {rings.map(({ r, label }, i) => (
