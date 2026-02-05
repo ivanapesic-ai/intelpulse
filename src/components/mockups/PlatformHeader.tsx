@@ -1,7 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Radar, Grid3X3, Compass, Settings, LayoutDashboard, Users, FileText } from "lucide-react";
+import { Radar, Grid3X3, Compass, LayoutDashboard, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import logo from "@/assets/logo.svg";
@@ -13,18 +12,7 @@ const navItems = [
   { path: "/mockups/explorer", label: "Explorer", icon: Compass },
 ];
 
-const secondaryItems = [
-  { path: "/mockups/annex-a", label: "Annex A", icon: FileText },
-  { path: "/mockups/annex-b", label: "Annex B", icon: FileText },
-  { path: "/mockups/public", label: "Public Demo", icon: Users },
-  { path: "/mockups/admin", label: "Admin", icon: Settings },
-];
-
-interface PlatformHeaderProps {
-  showBadge?: boolean;
-}
-
-export function PlatformHeader({ showBadge = true }: PlatformHeaderProps) {
+export function PlatformHeader() {
   const location = useLocation();
 
   return (
@@ -65,33 +53,19 @@ export function PlatformHeader({ showBadge = true }: PlatformHeaderProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="hidden lg:flex items-center gap-1">
-              {secondaryItems.map((item) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <Link key={item.path} to={item.path}>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={cn(
-                        "text-xs",
-                        isActive 
-                          ? "text-primary" 
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      {item.label}
-                    </Button>
-                  </Link>
-                );
-              })}
-            </div>
-            {showBadge && (
-              <Badge variant="outline" className="text-xs font-normal">
-                Preview
-              </Badge>
-            )}
             <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground gap-2"
+              onClick={() => {
+                // TODO: Implement actual logout
+                window.location.href = '/login';
+              }}
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
           </div>
         </div>
       </div>
