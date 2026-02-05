@@ -130,10 +130,10 @@ function Classic2x2Quadrant({
       </div>
 
       {/* Axis labels */}
-      <div className="absolute -left-8 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-medium text-muted-foreground whitespace-nowrap">
+      <div className="absolute -left-12 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-medium text-muted-foreground whitespace-nowrap">
         Ability to Execute →
       </div>
-      <div className="absolute bottom-[-2rem] left-1/2 -translate-x-1/2 text-xs font-medium text-muted-foreground">
+      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs font-medium text-muted-foreground">
         Completeness of Vision →
       </div>
 
