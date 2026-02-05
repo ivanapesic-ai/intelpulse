@@ -1960,7 +1960,7 @@ export type Database = {
       }
       aggregate_document_insights: {
         Args: { tech_keyword_id: string }
-        Returns: undefined
+        Returns: Json
       }
       aggregate_patent_scores: {
         Args: never
