@@ -425,6 +425,15 @@ ${content}`;
         .from("technologies")
         .update({ document_mention_count: count || 0 })
         .eq("keyword_id", keywordId);
+      
+      // Trigger C-O score aggregation for this keyword
+      try {
+        await supabase.rpc("aggregate_document_insights", { 
+          tech_keyword_id: keywordId 
+        });
+      } catch (aggError) {
+        console.warn(`Failed to aggregate insights for ${keywordId}:`, aggError);
+      }
     }
 
     return new Response(

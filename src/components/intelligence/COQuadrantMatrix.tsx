@@ -6,6 +6,58 @@
  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
  import { formatFundingEur } from "@/types/database";
  
+// Derive C-O scores from existing signals when database scores are null
+function deriveScoresFromSignals(tech: TechnologyIntelligence): {
+  challenge: number;
+  opportunity: number;
+} {
+  // OPPORTUNITY SCORE (0-2): Higher is better opportunity
+  // Based on: funding, company count, market signals, EU alignment
+  let opportunityPoints = 0;
+  
+  // Strong funding signals = high opportunity
+  if (tech.totalFundingEur > 50_000_000) opportunityPoints += 2;
+  else if (tech.totalFundingEur > 10_000_000) opportunityPoints += 1;
+  
+  // Many companies = validated market
+  if (tech.dealroomCompanyCount > 50) opportunityPoints += 2;
+  else if (tech.dealroomCompanyCount > 10) opportunityPoints += 1;
+  
+  // EU policy alignment = strategic opportunity
+  if (tech.euAlignmentScore === 2) opportunityPoints += 2;
+  else if (tech.euAlignmentScore === 1) opportunityPoints += 1;
+  
+  // Document mentions = visibility
+  if (tech.documentMentionCount > 5) opportunityPoints += 1;
+  
+  // Map to 0-2: 0-2 pts = 0, 3-4 pts = 1, 5+ pts = 2
+  const opportunity = opportunityPoints >= 5 ? 2 : opportunityPoints >= 3 ? 1 : 0;
+  
+  // CHALLENGE SCORE (0-2): Higher = easier (less challenge)
+  // Based on: TRL maturity, visibility, patent protection
+  let challengePoints = 0;
+  
+  // High TRL = lower challenge (more mature)
+  if (tech.trlScore === 2) challengePoints += 3;
+  else if (tech.trlScore === 1) challengePoints += 1;
+  
+  // Good visibility = lower challenge (known market)
+  if (tech.visibilityScore === 2) challengePoints += 2;
+  else if (tech.visibilityScore === 1) challengePoints += 1;
+  
+  // Patents = potential IP barriers (fewer = easier)
+  if (tech.totalPatents > 100) challengePoints -= 1;
+  else if (tech.totalPatents < 10) challengePoints += 1;
+  
+  // Workforce exists = easier to scale
+  if (tech.totalEmployees > 10000) challengePoints += 1;
+  
+  // Map: 0-1 pts = 0 (severe), 2-3 pts = 1 (manageable), 4+ pts = 2 (no major)
+  const challenge = challengePoints >= 4 ? 2 : challengePoints >= 2 ? 1 : 0;
+  
+  return { challenge, opportunity };
+}
+
  interface COQuadrantMatrixProps {
    technologies: TechnologyIntelligence[];
    onSelectTechnology?: (tech: TechnologyIntelligence) => void;
@@ -51,16 +103,27 @@
  type QuadrantKey = keyof typeof QUADRANTS;
  
  function getQuadrant(tech: TechnologyIntelligence): QuadrantKey {
-   const challenge = tech.challengeScore ?? 1;
-   const opportunity = tech.opportunityScore ?? 1;
+  // Use database scores if available, otherwise derive from signals
+  let challenge: number;
+  let opportunity: number;
+  
+  if (tech.challengeScore !== null && tech.opportunityScore !== null) {
+    challenge = tech.challengeScore;
+    opportunity = tech.opportunityScore;
+  } else {
+    const derived = deriveScoresFromSignals(tech);
+    challenge = derived.challenge;
+    opportunity = derived.opportunity;
+  }
    
-   // High opportunity (2) + Low challenge (2) = Quick Wins
-   // High opportunity (2) + High challenge (0) = Big Bets
-   // Low opportunity (0,1) + Low challenge (2) = Fill-in
-   // Low opportunity (0,1) + High challenge (0) = Rethink
+  // Quadrant logic:
+  // High opportunity (>=1) + Low challenge (>=1) = Quick Wins
+  // High opportunity (>=1) + High challenge (0) = Big Bets  
+  // Low opportunity (0) + Low challenge (>=1) = Fill-in
+  // Low opportunity (0) + High challenge (0) = Rethink
    
-   const isHighOpportunity = opportunity === 2;
-   const isLowChallenge = challenge >= 1; // 1 or 2 = manageable/no challenge
+  const isHighOpportunity = opportunity >= 1;
+  const isLowChallenge = challenge >= 1;
    
    if (isHighOpportunity && isLowChallenge) return "quickWins";
    if (isHighOpportunity && !isLowChallenge) return "bigBets";
