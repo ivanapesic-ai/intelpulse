@@ -13,7 +13,8 @@ import {
   Zap, 
   AlertCircle,
   CheckCircle2,
-  Loader2
+  Loader2,
+  Tag
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -26,6 +27,11 @@ import {
   type CompanyPatentSummary,
   type TechnologyPatentResult,
 } from "@/hooks/useEpoPatents";
+import {
+  useEpoBatchEnrichTechnologies,
+  useEpoEnrichmentStatus,
+  TECHNOLOGY_IPC_MAP,
+} from "@/hooks/useEpoTechnologyEnrichment";
 import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
 
 export function EpoPatentPanel() {
@@ -35,11 +41,15 @@ export function EpoPatentPanel() {
   const [searchResult, setSearchResult] = useState<CompanyPatentSummary | null>(null);
   const [techSearchResult, setTechSearchResult] = useState<TechnologyPatentResult | null>(null);
   const [enrichmentResults, setEnrichmentResults] = useState<Array<{ name: string; patentCount: number }>>([]);
+  const [techEnrichmentResults, setTechEnrichmentResults] = useState<Array<{ keywordName: string; patentCount: number }>>([]);
   const [aggregationResult, setAggregationResult] = useState<{ keywords: number; patents: number } | null>(null);
+  const [enrichmentStatus, setEnrichmentStatus] = useState<{ needsEnrichment: number; alreadyEnriched: number; unmapped: number } | null>(null);
 
   const companySearch = useEpoCompanySearch();
   const keywordSearch = useEpoKeywordSearch();
   const enrichWithPatents = useEnrichWithPatents();
+  const enrichTechnologies = useEpoBatchEnrichTechnologies();
+  const checkEnrichmentStatus = useEpoEnrichmentStatus();
   const aggregateSignals = useAggregateCrunchbaseSignals();
   const { data: crunchbaseStats } = useCrunchbaseStats();
 
@@ -120,6 +130,43 @@ export function EpoPatentPanel() {
     } catch (error) {
       toast({
         title: "Aggregation failed",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleTechEnrichment = async () => {
+    try {
+      const result = await enrichTechnologies.mutateAsync({ limit: 15 });
+      setTechEnrichmentResults(result.results.map(r => ({ 
+        keywordName: r.keywordName, 
+        patentCount: r.patentCount 
+      })));
+      toast({
+        title: "Technology enrichment complete",
+        description: `Enriched ${result.technologiesEnriched} technologies with ${result.totalPatentsFound} total patents via IPC search`,
+      });
+    } catch (error) {
+      toast({
+        title: "Technology enrichment failed",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCheckStatus = async () => {
+    try {
+      const result = await checkEnrichmentStatus.mutateAsync();
+      setEnrichmentStatus(result);
+      toast({
+        title: "Status check complete",
+        description: `${result.needsEnrichment} technologies need enrichment, ${result.alreadyEnriched} already done, ${result.unmapped} without IPC mapping`,
+      });
+    } catch (error) {
+      toast({
+        title: "Status check failed",
         description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive",
       });
@@ -424,11 +471,145 @@ export function EpoPatentPanel() {
 
         {/* Batch Enrichment Tab */}
         <TabsContent value="enrich" className="space-y-4">
+          {/* Status Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Needs Enrichment
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-accent-foreground">
+                  {enrichmentStatus?.needsEnrichment ?? "—"}
+                </div>
+                <p className="text-xs text-muted-foreground">Technologies with 0 patents</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Already Enriched
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-primary">
+                  {enrichmentStatus?.alreadyEnriched ?? "—"}
+                </div>
+                <p className="text-xs text-muted-foreground">Technologies with EPO data</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  No IPC Mapping
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-muted-foreground">
+                  {enrichmentStatus?.unmapped ?? "—"}
+                </div>
+                <p className="text-xs text-muted-foreground">Need manual IPC codes</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Button
+            onClick={handleCheckStatus}
+            disabled={checkEnrichmentStatus.isPending}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            {checkEnrichmentStatus.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Search className="h-4 w-4" />
+            )}
+            Check Enrichment Status
+          </Button>
+
+          {/* Technology-Level Enrichment (Primary Path) */}
+          <Card className="border-primary/50">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Tag className="h-5 w-5 text-primary" />
+                <CardTitle>Technology Enrichment (IPC Search)</CardTitle>
+              </div>
+              <CardDescription>
+                Enrich technology keywords directly via IPC code searches. This is the <strong>primary path</strong> for accurate patent counts.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Button
+                  onClick={handleTechEnrichment}
+                  disabled={enrichTechnologies.isPending}
+                  className="gap-2"
+                >
+                  {enrichTechnologies.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Enriching Technologies...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-4 w-4" />
+                      Enrich Technologies via IPC
+                    </>
+                  )}
+                </Button>
+                <p className="text-sm text-muted-foreground">
+                  Searches EPO by IPC codes mapped to each technology keyword
+                </p>
+              </div>
+
+              {enrichTechnologies.isPending && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Searching EPO by IPC codes...</span>
+                    <span className="text-muted-foreground">This may take 1-2 minutes</span>
+                  </div>
+                  <Progress value={50} className="h-2" />
+                </div>
+              )}
+
+              {techEnrichmentResults.length > 0 && (
+                <div className="pt-4 border-t">
+                  <h4 className="text-sm font-medium mb-3">Technology Enrichment Results</h4>
+                  <ScrollArea className="h-[180px]">
+                    <div className="space-y-2">
+                      {techEnrichmentResults.map((result) => (
+                        <div
+                          key={result.keywordName}
+                          className="flex items-center justify-between p-3 rounded-lg border"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Tag className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{result.keywordName}</span>
+                          </div>
+                          <Badge variant={result.patentCount > 0 ? "default" : "secondary"}>
+                            {result.patentCount} patents
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Company-Level Enrichment (Secondary Path) */}
           <Card>
             <CardHeader>
-              <CardTitle>Batch Patent Enrichment</CardTitle>
+              <div className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-muted-foreground" />
+                <CardTitle className="text-base">Company Enrichment (Applicant Search)</CardTitle>
+              </div>
               <CardDescription>
-                Enrich Crunchbase companies with patent counts from EPO (processes top 20 by funding)
+                Enrich Crunchbase companies with patent counts via applicant name search. 
+                Requires aggregation to roll up to keywords.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -436,22 +617,23 @@ export function EpoPatentPanel() {
                 <Button
                   onClick={handleEnrichment}
                   disabled={enrichWithPatents.isPending}
+                  variant="outline"
                   className="gap-2"
                 >
                   {enrichWithPatents.isPending ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Enriching...
+                      Enriching Companies...
                     </>
                   ) : (
                     <>
-                      <Zap className="h-4 w-4" />
-                      Run Batch Enrichment
+                      <Building2 className="h-4 w-4" />
+                      Enrich Companies
                     </>
                   )}
                 </Button>
                 <p className="text-sm text-muted-foreground">
-                  Fetches patent counts for companies missing patent data
+                  Top 20 by funding, missing patent data
                 </p>
               </div>
 
@@ -467,8 +649,8 @@ export function EpoPatentPanel() {
 
               {enrichmentResults.length > 0 && (
                 <div className="pt-4 border-t">
-                  <h4 className="text-sm font-medium mb-3">Enrichment Results</h4>
-                  <ScrollArea className="h-[200px]">
+                  <h4 className="text-sm font-medium mb-3">Company Enrichment Results</h4>
+                  <ScrollArea className="h-[150px]">
                     <div className="space-y-2">
                       {enrichmentResults.map((result) => (
                         <div
