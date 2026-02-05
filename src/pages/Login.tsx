@@ -237,9 +237,9 @@ import logo from '@/assets/logo.svg';
         </div>
  
        {/* Footer */}
-        <footer className="py-6 z-10">
+        <footer className="py-6 z-10 text-center">
          <p className="text-xs text-foreground-tertiary">
-           Powered by CEI-Sphere Intelligence
+            Powered by House11
          </p>
        </footer>
      </div>
