@@ -1,63 +1,75 @@
- import { motion } from "framer-motion";
- import { X, ExternalLink, AlertTriangle, Lightbulb, FileText, Building2, TrendingUp, Users, Zap } from "lucide-react";
- import { Button } from "@/components/ui/button";
- import { Badge } from "@/components/ui/badge";
- import { ScrollArea } from "@/components/ui/scroll-area";
- import { Separator } from "@/components/ui/separator";
- import { cn } from "@/lib/utils";
- import { 
-   TechnologyIntelligence, 
-   CHALLENGE_LABELS, 
-   OPPORTUNITY_LABELS,
-   SECTOR_COLORS 
- } from "@/hooks/useTechnologyIntelligence";
- import { formatFundingEur, formatNumber } from "@/types/database";
- import { SignalBreakdown } from "./SignalBreakdown";
- 
- interface TechnologyDetailPanelProps {
-   technology: TechnologyIntelligence | null;
-   onClose: () => void;
- }
- 
- export function TechnologyDetailPanel({ technology, onClose }: TechnologyDetailPanelProps) {
-   if (!technology) return null;
- 
-   const challengeConfig = CHALLENGE_LABELS[technology.challengeScore ?? 0];
-   const opportunityConfig = OPPORTUNITY_LABELS[technology.opportunityScore ?? 0];
- 
-   return (
-     <motion.div
-       initial={{ x: "100%", opacity: 0 }}
-       animate={{ x: 0, opacity: 1 }}
-       exit={{ x: "100%", opacity: 0 }}
-       transition={{ type: "spring", damping: 25, stiffness: 200 }}
-       className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-card border-l border-border shadow-2xl z-50"
-     >
-       <div className="flex flex-col h-full">
-         {/* Header */}
-         <div className="flex items-start justify-between p-6 border-b border-border">
-           <div>
-             <h2 className="text-xl font-bold text-foreground mb-2">{technology.name}</h2>
-             <div className="flex flex-wrap gap-1.5">
-               {technology.sectorTags.length > 0 ? technology.sectorTags.map(sector => (
-                 <Badge 
-                   key={sector} 
-                   variant="outline" 
-                   className={cn("text-xs capitalize", SECTOR_COLORS[sector] || SECTOR_COLORS.general)}
-                 >
-                   {sector}
-                 </Badge>
-               )) : (
-                 <Badge variant="outline" className="text-xs text-muted-foreground">
-                   No sector assigned
-                 </Badge>
-               )}
-             </div>
-           </div>
-           <Button variant="ghost" size="icon" onClick={onClose}>
-             <X className="h-5 w-5" />
-           </Button>
-         </div>
+import { motion } from "framer-motion";
+import { X, ExternalLink, AlertTriangle, Lightbulb, FileText, Building2, TrendingUp, Users, Zap, Tag } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
+import { 
+  TechnologyIntelligence, 
+  CHALLENGE_LABELS, 
+  OPPORTUNITY_LABELS,
+  SECTOR_COLORS 
+} from "@/hooks/useTechnologyIntelligence";
+import { formatFundingEur, formatNumber } from "@/types/database";
+import { SignalBreakdown } from "./SignalBreakdown";
+
+interface TechnologyDetailPanelProps {
+  technology: TechnologyIntelligence | null;
+  onClose: () => void;
+}
+
+export function TechnologyDetailPanel({ technology, onClose }: TechnologyDetailPanelProps) {
+  if (!technology) return null;
+
+  const challengeConfig = CHALLENGE_LABELS[technology.challengeScore ?? 0];
+  const opportunityConfig = OPPORTUNITY_LABELS[technology.opportunityScore ?? 0];
+
+  return (
+    <motion.div
+      initial={{ x: "100%", opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      exit={{ x: "100%", opacity: 0 }}
+      transition={{ type: "spring", damping: 25, stiffness: 200 }}
+      className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-card border-l border-border shadow-2xl z-50"
+    >
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="flex items-start justify-between p-6 border-b border-border">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-bold text-foreground mb-2">{technology.name}</h2>
+            
+            {/* Aliases/Synonyms */}
+            {technology.aliases && technology.aliases.length > 0 && (
+              <div className="flex items-center gap-1.5 mb-2 text-sm text-muted-foreground">
+                <Tag className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="truncate">
+                  Also: {technology.aliases.slice(0, 3).join(", ")}
+                  {technology.aliases.length > 3 && ` +${technology.aliases.length - 3}`}
+                </span>
+              </div>
+            )}
+            
+            <div className="flex flex-wrap gap-1.5">
+              {technology.sectorTags.length > 0 ? technology.sectorTags.map(sector => (
+                <Badge 
+                  key={sector} 
+                  variant="outline" 
+                  className={cn("text-xs capitalize", SECTOR_COLORS[sector] || SECTOR_COLORS.general)}
+                >
+                  {sector}
+                </Badge>
+              )) : (
+                <Badge variant="outline" className="text-xs text-muted-foreground">
+                  No sector assigned
+                </Badge>
+              )}
+            </div>
+          </div>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
  
          <ScrollArea className="flex-1 p-6">
            <div className="space-y-6">

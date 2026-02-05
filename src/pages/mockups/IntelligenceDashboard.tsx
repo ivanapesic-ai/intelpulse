@@ -98,6 +98,7 @@ export default function IntelligenceDashboard() {
         marketSignals: {},
         documentInsights: {},
         sectorTags: [],
+        aliases: keyword.aliases || [],
         lastUpdated: new Date().toISOString(),
         createdAt: new Date().toISOString(),
       });
