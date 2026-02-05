@@ -1,5 +1,5 @@
 import { useState } from "react";
- import { ArrowLeft, Database, FileText, Globe, Network, Layers, Upload, CheckCircle, FileSpreadsheet, BarChart } from "lucide-react";
+import { ArrowLeft, Database, FileText, Globe, Network, Layers, Upload, CheckCircle, FileSpreadsheet, BarChart, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDocumentStats } from "@/hooks/useDocuments";
 import { useKeywordStats } from "@/hooks/useTechnologies";
- import { formatFundingUsd, formatFundingEur } from "@/types/database";
+import { formatFundingUsd, formatFundingEur } from "@/types/database";
 import { WebScrapingPanel } from "@/components/admin/WebScrapingPanel";
 import { PdfQueuePanel } from "@/components/admin/PdfQueuePanel";
 import { KeywordManager } from "@/components/admin/KeywordManager";
@@ -15,18 +15,35 @@ import { TechnologyOntology } from "@/components/mockups/TechnologyOntology";
 import { CrunchbaseImportPanel } from "@/components/admin/CrunchbaseImportPanel";
 import { EpoPatentPanel } from "@/components/admin/EpoPatentPanel";
 import { DocumentUploadPanel } from "@/components/admin/DocumentUploadPanel";
- import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
+import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export default function AdminPanel() {
-   const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "scraping" | "documents">("crunchbase");
- 
-   // Data hooks
-   const { data: crunchbaseStats } = useCrunchbaseStats();
+  const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "scraping" | "documents">("crunchbase");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Data hooks
+  const { data: crunchbaseStats } = useCrunchbaseStats();
   const { data: documentStats } = useDocumentStats();
   const { data: keywordStats } = useKeywordStats();
 
-   const totalCompanies = crunchbaseStats?.totalCompanies || 0;
+  const totalCompanies = crunchbaseStats?.totalCompanies || 0;
   const totalKeywords = keywordStats?.totalKeywords || 0;
+
+  const handleRefreshScores = async () => {
+    setIsRefreshing(true);
+    try {
+      const { error } = await supabase.rpc('refresh_log_composite_scores');
+      if (error) throw error;
+      toast.success("Composite scores refreshed successfully!");
+    } catch (err) {
+      console.error("Error refreshing scores:", err);
+      toast.error("Failed to refresh scores");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -222,6 +239,26 @@ export default function AdminPanel() {
 
           {/* ===== STATUS/SETTINGS TAB ===== */}
           <TabsContent value="settings" className="space-y-4">
+            {/* Refresh Scores Action */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-foreground">Score Recalculation</CardTitle>
+                <CardDescription>
+                  Recalculate the weighted composite scores for all technologies based on the latest data.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={handleRefreshScores} 
+                  disabled={isRefreshing}
+                  className="gap-2"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  {isRefreshing ? "Refreshing..." : "Refresh Composite Scores"}
+                </Button>
+              </CardContent>
+            </Card>
+
             {/* Data Overview */}
             <div className="grid md:grid-cols-2 gap-4">
               <Card>
@@ -239,7 +276,7 @@ export default function AdminPanel() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Total Companies</span>
-                     <span className="font-semibold text-foreground">{totalCompanies}</span>
+                    <span className="font-semibold text-foreground">{totalCompanies}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Total Funding</span>
@@ -250,20 +287,20 @@ export default function AdminPanel() {
 
               <Card>
                 <CardHeader>
-                   <CardTitle className="text-foreground">Crunchbase Status</CardTitle>
+                  <CardTitle className="text-foreground">Crunchbase Status</CardTitle>
                 </CardHeader>
                 <CardContent>
-                   <div className="space-y-3">
-                     <div className="flex items-center gap-2">
-                       <CheckCircle className="h-5 w-5 text-success" />
-                       <span className="font-medium text-foreground">Data Loaded</span>
-                     </div>
-                     <div className="text-sm text-muted-foreground space-y-1">
-                       <p>Companies: {crunchbaseStats?.totalCompanies || 0}</p>
-                       <p>With Keywords: {crunchbaseStats?.companiesWithKeywords || 0}</p>
-                       <p>Total Funding: {formatFundingUsd(crunchbaseStats?.totalFunding || 0)}</p>
-                     </div>
-                   </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-5 w-5 text-success" />
+                      <span className="font-medium text-foreground">Data Loaded</span>
+                    </div>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      <p>Companies: {crunchbaseStats?.totalCompanies || 0}</p>
+                      <p>With Keywords: {crunchbaseStats?.companiesWithKeywords || 0}</p>
+                      <p>Total Funding: {formatFundingUsd(crunchbaseStats?.totalFunding || 0)}</p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
