@@ -1084,6 +1084,36 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          approved: boolean | null
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          approved?: boolean | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          approved?: boolean | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       web_technology_mentions: {
         Row: {
           confidence_score: number | null
@@ -1279,6 +1309,19 @@ export type Database = {
         Args: { mention_count: number }
         Returns: number
       }
+      can_manage_users: { Args: { _user_id: string }; Returns: boolean }
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_superadmin: { Args: { _user_id: string }; Returns: boolean }
       populate_company_evidence: {
         Args: never
         Returns: {
@@ -1306,6 +1349,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "superadmin" | "admin" | "viewer"
       document_source:
         | "teams"
         | "cei_sphere_website"
@@ -1445,6 +1489,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["superadmin", "admin", "viewer"],
       document_source: [
         "teams",
         "cei_sphere_website",
