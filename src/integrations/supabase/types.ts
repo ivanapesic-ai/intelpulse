@@ -1155,6 +1155,7 @@ export type Database = {
           dealroom_tags: string[] | null
           description: string | null
           display_name: string
+          excluded_from_sdv: boolean | null
           id: string
           is_active: boolean | null
           keyword: string
@@ -1171,6 +1172,7 @@ export type Database = {
           dealroom_tags?: string[] | null
           description?: string | null
           display_name: string
+          excluded_from_sdv?: boolean | null
           id?: string
           is_active?: boolean | null
           keyword: string
@@ -1187,6 +1189,7 @@ export type Database = {
           dealroom_tags?: string[] | null
           description?: string | null
           display_name?: string
+          excluded_from_sdv?: boolean | null
           id?: string
           is_active?: boolean | null
           keyword?: string
@@ -1441,6 +1444,10 @@ export type Database = {
         Args: { tech_keyword_id: string }
         Returns: undefined
       }
+      calculate_co_scores: {
+        Args: { tech_keyword_id: string }
+        Returns: undefined
+      }
       calculate_eu_alignment_score: {
         Args: { policy_count: number }
         Returns: number
@@ -1464,6 +1471,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_sdv_company: { Args: { company_id: string }; Returns: boolean }
       is_superadmin: { Args: { _user_id: string }; Returns: boolean }
       populate_company_evidence: {
         Args: never
