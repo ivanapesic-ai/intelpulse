@@ -392,6 +392,28 @@ serve(async (req) => {
         break;
       }
 
+      case "search_ipc_detailed": {
+        if (!ipcCode) {
+          throw new Error("ipcCode required for search_ipc_detailed action");
+        }
+        const { maxResults = 30 } = await req.json().catch(() => ({}));
+        const basicPatents = await searchByIPC(token, ipcCode, maxResults);
+        
+        // Get details for patents to extract applicant names
+        const detailedPatents: PatentResult[] = [];
+        for (const p of basicPatents.slice(0, 20)) {
+          const details = await getPatentDetails(token, p.publicationNumber);
+          if (details) {
+            detailedPatents.push(details);
+          }
+          // Rate limiting
+          await new Promise((r) => setTimeout(r, 250));
+        }
+        
+        result = { ipcCode, patentCount: basicPatents.length, patents: detailedPatents };
+        break;
+      }
+
       case "get_details": {
         if (!publicationNumber) {
           throw new Error("publicationNumber required for get_details action");
