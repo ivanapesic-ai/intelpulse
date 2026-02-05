@@ -221,13 +221,13 @@ function HybridRadarQuadrant({
 
   return (
     <div className="relative w-full aspect-square max-w-xl mx-auto">
-      {/* Quadrant backgrounds */}
+      {/* Quadrant backgrounds - matching Classic 2×2 colors */}
       <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
-        {/* Quadrant fills */}
-        <path d="M50,50 L50,5 A45,45 0 0,1 95,50 Z" fill="hsl(var(--emerald-500) / 0.15)" />
-        <path d="M50,50 L95,50 A45,45 0 0,1 50,95 Z" fill="hsl(142 76% 36% / 0.1)" />
-        <path d="M50,50 L50,95 A45,45 0 0,1 5,50 Z" fill="hsl(var(--slate-500) / 0.1)" />
-        <path d="M50,50 L5,50 A45,45 0 0,1 50,5 Z" fill="hsl(var(--blue-500) / 0.1)" />
+        {/* Quadrant fills - Top-right: Leaders (emerald), Bottom-right: Visionaries (blue), Bottom-left: Niche (slate), Top-left: Challengers (amber) */}
+        <path d="M50,50 L50,5 A45,45 0 0,1 95,50 Z" fill="rgba(16, 185, 129, 0.2)" /> {/* Leaders - emerald */}
+        <path d="M50,50 L95,50 A45,45 0 0,1 50,95 Z" fill="rgba(59, 130, 246, 0.15)" /> {/* Visionaries - blue */}
+        <path d="M50,50 L50,95 A45,45 0 0,1 5,50 Z" fill="rgba(100, 116, 139, 0.12)" /> {/* Niche - slate */}
+        <path d="M50,50 L5,50 A45,45 0 0,1 50,5 Z" fill="rgba(245, 158, 11, 0.15)" /> {/* Challengers - amber */}
         
         {/* Rings */}
         {rings.map(({ r }, i) => (
@@ -248,11 +248,11 @@ function HybridRadarQuadrant({
         <line x1="5" y1="50" x2="95" y2="50" stroke="hsl(var(--border))" strokeWidth="0.5" />
       </svg>
 
-      {/* Quadrant labels */}
+      {/* Quadrant labels - matching Classic 2×2 colors */}
       <div className="absolute top-2 right-4 text-xs font-semibold text-emerald-400">Leaders</div>
-      <div className="absolute bottom-4 right-4 text-xs font-semibold text-emerald-300/70">Visionaries</div>
+      <div className="absolute bottom-4 right-4 text-xs font-semibold text-blue-400">Visionaries</div>
       <div className="absolute bottom-4 left-4 text-xs font-semibold text-slate-400">Niche</div>
-      <div className="absolute top-2 left-4 text-xs font-semibold text-blue-400">Challengers</div>
+      <div className="absolute top-2 left-4 text-xs font-semibold text-amber-400">Challengers</div>
 
       {/* Ring labels */}
       {rings.map(({ r, label }, i) => (
