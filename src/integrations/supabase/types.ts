@@ -744,6 +744,116 @@ export type Database = {
           },
         ]
       }
+      ontology_concepts: {
+        Row: {
+          acronym: string | null
+          created_at: string | null
+          description: string | null
+          domain_id: number | null
+          id: number
+          is_core: boolean | null
+          name: string
+          synonyms: string[] | null
+        }
+        Insert: {
+          acronym?: string | null
+          created_at?: string | null
+          description?: string | null
+          domain_id?: number | null
+          id?: number
+          is_core?: boolean | null
+          name: string
+          synonyms?: string[] | null
+        }
+        Update: {
+          acronym?: string | null
+          created_at?: string | null
+          description?: string | null
+          domain_id?: number | null
+          id?: number
+          is_core?: boolean | null
+          name?: string
+          synonyms?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ontology_concepts_domain_id_fkey"
+            columns: ["domain_id"]
+            isOneToOne: false
+            referencedRelation: "ontology_domains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ontology_domains: {
+        Row: {
+          code: string
+          created_at: string | null
+          description: string | null
+          id: number
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      ontology_relationships: {
+        Row: {
+          concept_from_id: number | null
+          concept_to_id: number | null
+          created_at: string | null
+          description: string | null
+          id: number
+          relationship_type: string
+          strength: number | null
+        }
+        Insert: {
+          concept_from_id?: number | null
+          concept_to_id?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          relationship_type: string
+          strength?: number | null
+        }
+        Update: {
+          concept_from_id?: number | null
+          concept_to_id?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          relationship_type?: string
+          strength?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ontology_relationships_concept_from_id_fkey"
+            columns: ["concept_from_id"]
+            isOneToOne: false
+            referencedRelation: "ontology_concepts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ontology_relationships_concept_to_id_fkey"
+            columns: ["concept_to_id"]
+            isOneToOne: false
+            referencedRelation: "ontology_concepts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pdf_processing_queue: {
         Row: {
           created_at: string
@@ -1033,6 +1143,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           keyword: string
+          ontology_concept_id: number | null
           parent_keyword_id: string | null
           source: Database["public"]["Enums"]["keyword_source"]
           updated_at: string | null
@@ -1048,6 +1159,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           keyword: string
+          ontology_concept_id?: number | null
           parent_keyword_id?: string | null
           source: Database["public"]["Enums"]["keyword_source"]
           updated_at?: string | null
@@ -1063,11 +1175,19 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           keyword?: string
+          ontology_concept_id?: number | null
           parent_keyword_id?: string | null
           source?: Database["public"]["Enums"]["keyword_source"]
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "technology_keywords_ontology_concept_id_fkey"
+            columns: ["ontology_concept_id"]
+            isOneToOne: false
+            referencedRelation: "ontology_concepts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "technology_keywords_parent_keyword_id_fkey"
             columns: ["parent_keyword_id"]
