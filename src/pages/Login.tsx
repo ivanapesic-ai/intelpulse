@@ -1,11 +1,12 @@
  import { useState, useEffect } from 'react';
  import { useNavigate } from 'react-router-dom';
  import { motion } from 'framer-motion';
- import { Sun, Moon, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
  import { supabase } from '@/integrations/supabase/client';
  import { useTheme } from '@/components/ThemeProvider';
  import { ThemeToggle } from '@/components/ThemeToggle';
  import { cn } from '@/lib/utils';
+import logo from '@/assets/logo.svg';
  
  export default function LoginPage() {
    const navigate = useNavigate();
@@ -79,9 +80,7 @@
        {/* Navigation */}
        <nav className="relative z-10 flex items-center justify-between px-6 py-6 md:px-12">
          <div className="flex items-center gap-3">
-           <span className="text-2xl font-bold tracking-tight text-foreground">
-             Pulse 11
-           </span>
+            <img src={logo} alt="Pulse 11" className="h-8 w-auto" />
          </div>
          <div className="flex items-center gap-6">
            <ThemeToggle />
@@ -110,9 +109,12 @@
          )}>
            {/* Header */}
            <div className="mb-8 text-center">
-             <h1 className="text-2xl font-semibold text-foreground tracking-tight">
-               Welcome to Pulse 11
-             </h1>
+              <div className="flex justify-center mb-4">
+                <img src={logo} alt="Pulse 11" className="h-10 w-auto" />
+              </div>
+              <h1 className="text-2xl font-semibold text-foreground tracking-tight">
+                Welcome
+              </h1>
              <p className="mt-2 text-sm text-foreground-secondary">
                ML-SDV Competitive Intelligence
              </p>
