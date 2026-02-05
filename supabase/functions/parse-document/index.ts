@@ -6,6 +6,114 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// H11 Algorithm: Position weight scoring based on document structure
+const POSITION_WEIGHTS = {
+  title: 3.0,
+  executive_summary: 2.5,
+  abstract: 2.5,
+  introduction: 2.0,
+  conclusion: 2.0,
+  heading: 1.8,
+  body: 1.0,
+  footnote: 0.5,
+  reference: 0.3,
+};
+
+// CEI Sector classification keywords
+const SECTOR_PATTERNS = {
+  mobility: [
+    "mobility", "transport", "vehicle", "automotive", "logistics", "fleet",
+    "MaaS", "traffic", "autonomous", "SDV", "software-defined vehicle",
+    "EV", "electric vehicle", "charging", "rail", "maritime", "aviation"
+  ],
+  energy: [
+    "energy", "grid", "power", "renewable", "solar", "wind", "battery",
+    "smart grid", "electricity", "decarbonization", "green deal",
+    "sustainability", "carbon", "emissions", "hydrogen"
+  ],
+  manufacturing: [
+    "manufacturing", "factory", "industrial", "production", "automation",
+    "Industry 4.0", "OT", "operational technology", "supply chain",
+    "predictive maintenance", "digital twin", "MES", "robotics"
+  ],
+};
+
+// Expanded EU Policy references for CEI domain
+const EU_POLICIES = [
+  "Horizon Europe", "Horizon 2020", "EU AI Act", "Data Act", "GDPR",
+  "Digital Services Act", "Digital Markets Act", "IPCEI", "EU Chips Act",
+  "Cyber Resilience Act", "European Data Strategy", "Digital Decade",
+  "CEI-Sphere", "EUCloudEdgeIoT", "O-CEI", "COP-PILOT",
+  "Competitiveness Compass", "Draghi report", "AI Factories Initiative",
+  "Data Union Strategy", "Digital Networks Act", "Green Deal",
+  "Sustainable and Smart Mobility Strategy", "EuroHPC", "ENISA",
+  "NIS2", "eIDAS", "Gaia-X", "SIMPL", "European Cloud Federation"
+];
+
+// H11: Detect document section for position weighting
+function detectSection(context: string, pageNumber: number | null): string {
+  const lowerContext = context.toLowerCase();
+  
+  if (pageNumber === 1 || lowerContext.includes("executive summary")) {
+    return "executive_summary";
+  }
+  if (lowerContext.includes("abstract") || lowerContext.includes("overview")) {
+    return "abstract";
+  }
+  if (lowerContext.includes("introduction") || lowerContext.includes("background")) {
+    return "introduction";
+  }
+  if (lowerContext.includes("conclusion") || lowerContext.includes("summary") || 
+      lowerContext.includes("key takeaway")) {
+    return "conclusion";
+  }
+  if (context.match(/^#+\s/) || context.match(/^[A-Z][A-Z\s]+:/)) {
+    return "heading";
+  }
+  if (lowerContext.includes("reference") || lowerContext.includes("bibliography")) {
+    return "reference";
+  }
+  
+  return "body";
+}
+
+// H11: Calculate position weight score
+function getPositionWeight(section: string): number {
+  return POSITION_WEIGHTS[section as keyof typeof POSITION_WEIGHTS] || 1.0;
+}
+
+// Detect sectors from content
+function detectSectors(content: string): string[] {
+  const lowerContent = content.toLowerCase();
+  const sectors: string[] = [];
+  
+  for (const [sector, patterns] of Object.entries(SECTOR_PATTERNS)) {
+    const matchCount = patterns.filter(p => lowerContent.includes(p.toLowerCase())).length;
+    if (matchCount >= 2) {
+      sectors.push(sector);
+    }
+  }
+  
+  return sectors.length > 0 ? sectors : ["general"];
+}
+
+// Extract market signals (funding, adoption rates, etc.)
+function extractMarketSignals(content: string): {
+  fundingMentions: string[];
+  adoptionRates: string[];
+  marketSize: string[];
+} {
+  const fundingPattern = /(?:EUR|€|\$|USD)\s*[\d,.]+\s*(?:billion|million|B|M)/gi;
+  const adoptionPattern = /(\d+(?:\.\d+)?%)\s*(?:of|adoption|usage|have adopted|intend)/gi;
+  const marketSizePattern = /market\s+(?:size|value|worth|estimated at)\s*(?:of\s*)?(?:EUR|€|\$|USD)?\s*[\d,.]+\s*(?:billion|million)?/gi;
+  
+  return {
+    fundingMentions: content.match(fundingPattern) || [],
+    adoptionRates: content.match(adoptionPattern) || [],
+    marketSize: content.match(marketSizePattern) || [],
+  };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -38,6 +146,16 @@ serve(async (req) => {
       .update({ parse_status: "parsing" })
       .eq("id", documentId);
 
+    // Pre-analyze document for H11 enrichment
+    const detectedSectors = detectSectors(content);
+    const marketSignals = extractMarketSignals(content);
+    
+    console.log("H11 Pre-analysis:", { 
+      sectors: detectedSectors, 
+      fundingMentions: marketSignals.fundingMentions.length,
+      adoptionRates: marketSignals.adoptionRates.length 
+    });
+
     // Get all active keywords for matching
     const { data: keywords, error: keywordsError } = await supabase
       .from("technology_keywords")
@@ -53,20 +171,46 @@ serve(async (req) => {
       terms: [k.keyword, k.display_name, ...(k.aliases || [])],
     })) || [];
 
-    // Build prompt for AI extraction with enhanced TRL and policy detection
-    const systemPrompt = `You are an expert at extracting technology information from documents about Cloud, Edge, IoT, and AI/ML technologies in the European context.
+    // Build H11-enhanced prompt for AI extraction
+    const systemPrompt = `You are an expert at extracting technology intelligence from CEI-Sphere (Cloud-Edge-IoT) documents in the European context.
 
-Your task is to analyze the document content and extract:
-1. Technology mentions - identify which technologies from the provided list are mentioned
-2. TRL (Technology Readiness Level) - IMPORTANT: Look for explicit TRL mentions like "TRL 6", "TRL 7-9", "technology readiness level 5", or implicit indicators like "prototype", "pilot", "commercial deployment"
-3. Policy references - IMPORTANT: Look for EU policies, regulations, and initiatives including:
-   - Horizon Europe, Horizon 2020
-   - EU AI Act, Data Act, GDPR, Digital Services Act
-   - IPCEI (Important Projects of Common European Interest)
-   - EU Chips Act, Cyber Resilience Act
-   - European Data Strategy, Digital Decade
-   - CEI-SPHERE, EUCloudEdgeIoT
-   - Any mentions of EU funding, grants, or regulatory frameworks
+## H11 EXTRACTION ALGORITHM
+
+Apply precise scoring using the H11 methodology:
+
+### 1. TECHNOLOGY DETECTION
+Identify technologies from the provided keyword list. For each match:
+- Extract the specific context where the technology appears
+- Note if it appears in title, executive summary, introduction, body, or conclusions
+- Higher weight for mentions in titles/summaries (position_weight: title=3.0, summary=2.5, body=1.0)
+
+### 2. TRL ASSESSMENT (Technology Readiness Level)
+CRITICAL: Extract TRL with evidence. Look for:
+- Explicit: "TRL 6", "TRL 7-9", "technology readiness level 5"
+- Implicit indicators:
+  * TRL 1-3: "basic research", "concept", "experimental proof", "laboratory"
+  * TRL 4-5: "lab validation", "relevant environment", "prototype development"
+  * TRL 6: "pilot", "demonstration", "prototype in operational environment"
+  * TRL 7-8: "system prototype", "actual system proven", "pre-commercial"
+  * TRL 9: "commercial deployment", "market ready", "production", "widely adopted"
+- Market context: "X% adoption rate" suggests TRL 8-9
+
+### 3. EU POLICY ALIGNMENT
+Detect references to EU policies and initiatives:
+${EU_POLICIES.map(p => `- ${p}`).join('\n')}
+
+### 4. SECTOR CLASSIFICATION
+Tag each mention with relevant sectors:
+- MOBILITY: transport, vehicles, logistics, MaaS, SDV, EV charging
+- ENERGY: grids, renewables, smart energy, sustainability
+- MANUFACTURING: Industry 4.0, factories, OT, automation, supply chain
+
+### 5. MARKET SIGNALS (Challenge-Opportunity Matrix)
+Extract quantitative signals:
+- Funding/investment amounts (e.g., "EUR 46.4 billion")
+- Adoption rates (e.g., "53.8% have adopted")
+- Market size indicators
+- Key players mentioned
 
 TRL Level Mapping (if not explicitly stated, infer from context):
 - TRL 1-3: Basic research, concept, experimental proof
@@ -77,10 +221,13 @@ TRL Level Mapping (if not explicitly stated, infer from context):
 
 For each technology mention, provide:
 - keyword_id: The ID of the matched keyword
-- mention_context: A brief quote or summary of how the technology is mentioned (max 200 chars)
+- mention_context: A brief quote showing how the technology is mentioned (max 300 chars, include surrounding context)
 - trl_mentioned: The TRL level if mentioned or inferable (1-9), or null if completely unknown
-- policy_reference: Any related EU policy/regulation mentioned (be specific, e.g., "Horizon Europe", "EU AI Act"), or null
-- confidence_score: How confident you are in this match (0.0-1.0)
+- policy_reference: Related EU policy/regulation (be specific), or null
+- confidence_score: Match confidence (0.0-1.0) - higher for explicit matches with context
+- position_weight: Document position (title=3.0, executive_summary=2.5, introduction=2.0, body=1.0, reference=0.3)
+- sector_tags: Array of sectors ["mobility", "energy", "manufacturing"]
+- market_signal: Any quantitative market data near this mention (funding, adoption %, etc.)
 - page_number: The page number if available, or null
 
 Respond with a JSON object in this exact format:
@@ -88,20 +235,45 @@ Respond with a JSON object in this exact format:
   "mentions": [
     {
       "keyword_id": "uuid-here",
-      "mention_context": "brief quote or summary",
+      "mention_context": "quote with surrounding context showing technology relevance",
       "trl_mentioned": 7,
       "policy_reference": "Horizon Europe",
       "confidence_score": 0.95,
-      "page_number": 1
+      "position_weight": 2.5,
+      "sector_tags": ["mobility", "energy"],
+      "market_signal": "EUR 46.4 billion investment",
+      "page_number": 1,
+      "relevance_score": 0.85
     }
   ],
-  "summary": "Brief overall summary of the document's technology focus"
+  "document_analysis": {
+    "summary": "Brief summary of document's technology focus",
+    "primary_sectors": ["mobility"],
+    "key_policies": ["Horizon Europe", "Digital Decade"],
+    "market_signals": {
+      "total_funding_mentioned": "EUR 46.4 billion",
+      "adoption_rates": ["53.8% IoT adoption"],
+      "key_players": ["ABB", "Siemens", "AWS"]
+    },
+    "trl_distribution": {
+      "emerging": 3,
+      "developing": 5,
+      "mature": 2
+    }
+  }
 }`;
 
-    const userPrompt = `Here are the technology keywords to look for:
+    const userPrompt = `## DOCUMENT PRE-ANALYSIS (H11 Algorithm)
+
+Detected sectors: ${detectedSectors.join(", ")}
+Funding mentions found: ${marketSignals.fundingMentions.slice(0, 5).join(", ") || "none"}
+Adoption rates found: ${marketSignals.adoptionRates.slice(0, 5).join(", ") || "none"}
+
+## TECHNOLOGY KEYWORDS TO MATCH
 ${JSON.stringify(keywordList, null, 2)}
 
-Please analyze this document content and extract technology mentions:
+## DOCUMENT CONTENT
+Analyze this document and extract technology mentions with H11 precision scoring:
 
 ${content}`;
 
@@ -149,8 +321,26 @@ ${content}`;
       trl_mentioned: number | null;
       policy_reference: string | null;
       confidence_score: number;
+      position_weight?: number;
+      sector_tags?: string[];
+      market_signal?: string;
+      relevance_score?: number;
       page_number: number | null;
-    }>; summary: string };
+    }>; document_analysis?: {
+      summary: string;
+      primary_sectors?: string[];
+      key_policies?: string[];
+      market_signals?: {
+        total_funding_mentioned?: string;
+        adoption_rates?: string[];
+        key_players?: string[];
+      };
+      trl_distribution?: {
+        emerging?: number;
+        developing?: number;
+        mature?: number;
+      };
+    }; summary?: string };
 
     try {
       extractedData = JSON.parse(responseContent);
@@ -171,6 +361,14 @@ ${content}`;
         continue;
       }
 
+      // H11: Calculate composite relevance score
+      const positionWeight = mention.position_weight || 1.0;
+      const baseConfidence = Math.min(1, Math.max(0, mention.confidence_score || 0.5));
+      const relevanceScore = mention.relevance_score || (baseConfidence * positionWeight);
+      
+      // Normalize to 0-1 range
+      const normalizedRelevance = Math.min(1, relevanceScore / 3.0);
+
       const { error: mentionError } = await supabase
         .from("document_technology_mentions")
         .insert({
@@ -179,7 +377,9 @@ ${content}`;
           mention_context: mention.mention_context?.slice(0, 500) || null,
           trl_mentioned: mention.trl_mentioned || null,
           policy_reference: mention.policy_reference || null,
-          confidence_score: Math.min(1, Math.max(0, mention.confidence_score || 0.5)),
+          confidence_score: baseConfidence,
+          position_weight: positionWeight,
+          relevance_score: normalizedRelevance,
           page_number: mention.page_number || null,
         });
 
@@ -190,15 +390,24 @@ ${content}`;
       }
     }
 
+    // Build enriched parsed content with H11 analysis
+    const docAnalysis = extractedData.document_analysis || { summary: extractedData.summary || "" };
+    
     // Update document with parsed content and status
     await supabase
       .from("cei_documents")
       .update({
         parse_status: "completed",
         parsed_content: {
-          summary: extractedData.summary,
+          summary: docAnalysis.summary || extractedData.summary,
           mentions_count: mentionsCreated,
           extracted_at: new Date().toISOString(),
+          h11_analysis: {
+            sectors: docAnalysis.primary_sectors || detectedSectors,
+            key_policies: docAnalysis.key_policies || [],
+            market_signals: docAnalysis.market_signals || marketSignals,
+            trl_distribution: docAnalysis.trl_distribution || null,
+          },
         },
       })
       .eq("id", documentId);
@@ -222,7 +431,12 @@ ${content}`;
       JSON.stringify({
         success: true,
         mentionsCreated,
-        summary: extractedData.summary,
+        summary: docAnalysis.summary || extractedData.summary,
+        h11_analysis: {
+          sectors: docAnalysis.primary_sectors || detectedSectors,
+          policies_detected: docAnalysis.key_policies?.length || 0,
+          market_signals: Object.keys(docAnalysis.market_signals || {}).length,
+        },
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
