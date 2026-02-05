@@ -12,6 +12,7 @@ import { formatFundingEur } from "@/types/database";
 const EXCLUDED_KEYWORDS = [
   "smart city",
   "smart cities",
+  "smart recharging",
   "fleet management",
   "logistics",
   "maritime",
