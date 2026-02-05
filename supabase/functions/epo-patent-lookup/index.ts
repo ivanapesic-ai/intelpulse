@@ -58,12 +58,12 @@ async function getEpoToken(): Promise<string> {
   return data.access_token;
 }
 
-// Search patents by applicant name
+// Search patents by applicant name - returns { patents, totalCount }
 async function searchByApplicant(
   token: string,
   applicantName: string,
   maxResults: number = 25
-): Promise<PatentResult[]> {
+): Promise<{ patents: PatentResult[]; totalCount: number }> {
   // Clean company name for EPO search
   const cleanName = applicantName
     .replace(/\s+(Inc|Corp|Ltd|LLC|GmbH|AG|SA|BV|NV|SE|PLC|S\.A\.|Co\.|Company)\.?$/i, "")
@@ -82,7 +82,7 @@ async function searchByApplicant(
 
   if (!response.ok) {
     if (response.status === 404) {
-      return []; // No results found
+      return { patents: [], totalCount: 0 }; // No results found
     }
     const errorText = await response.text();
     console.error("EPO search failed:", response.status, errorText);
@@ -93,10 +93,12 @@ async function searchByApplicant(
   const results: PatentResult[] = [];
 
   try {
-    const searchResults =
-      data["ops:world-patent-data"]?.["ops:biblio-search"]?.["ops:search-result"]?.[
-        "ops:publication-reference"
-      ] || [];
+    const biblioSearch = data["ops:world-patent-data"]?.["ops:biblio-search"];
+    
+    // Extract total count from the response
+    const totalCount = parseInt(biblioSearch?.["@total-result-count"] || "0", 10);
+    
+    const searchResults = biblioSearch?.["ops:search-result"]?.["ops:publication-reference"] || [];
 
     const refs = Array.isArray(searchResults) ? searchResults : [searchResults];
 
@@ -119,11 +121,12 @@ async function searchByApplicant(
         });
       }
     }
+    
+    return { patents: results, totalCount };
   } catch (e) {
     console.error("Error parsing EPO results:", e);
+    return { patents: [], totalCount: 0 };
   }
-
-  return results;
 }
 
 // Get patent bibliographic data
@@ -311,11 +314,11 @@ serve(async (req) => {
         if (!companyName) {
           throw new Error("companyName required for search_company action");
         }
-        const patents = await searchByApplicant(token, companyName);
+        const searchResult = await searchByApplicant(token, companyName);
         
         // Get details for first 10 patents
         const detailedPatents: PatentResult[] = [];
-        for (const p of patents.slice(0, 10)) {
+        for (const p of searchResult.patents.slice(0, 10)) {
           const details = await getPatentDetails(token, p.publicationNumber);
           if (details) {
             detailedPatents.push(details);
@@ -342,7 +345,7 @@ serve(async (req) => {
 
         result = {
           companyName,
-          patentCount: patents.length,
+          patentCount: searchResult.totalCount, // Use actual total from EPO
           patents: detailedPatents,
           ipcDistribution,
           recentFilings,
@@ -358,10 +361,10 @@ serve(async (req) => {
         const summaries: CompanyPatentSummary[] = [];
         for (const name of companyNames.slice(0, 20)) {
           try {
-            const patents = await searchByApplicant(token, name, 10);
+            const searchResult = await searchByApplicant(token, name, 10);
             summaries.push({
               companyName: name,
-              patentCount: patents.length,
+              patentCount: searchResult.totalCount, // Use actual total from EPO
               patents: [],
               ipcDistribution: {},
               recentFilings: 0,
