@@ -104,7 +104,7 @@ export interface CEIDocument {
   filename: string;
   fileType: 'pdf' | 'pptx' | 'docx';
   storagePath: string;
-  source: 'teams' | 'cei_sphere_website' | 'eucloudedgeiot' | 'manual';
+  source: 'teams' | 'cei_sphere_website' | 'eucloudedgeiot' | 'manual' | 'scraped';
   title?: string;
   uploadDate: string;
   parseStatus: 'pending' | 'parsing' | 'completed' | 'failed';
@@ -112,6 +112,16 @@ export interface CEIDocument {
     summary?: string;
     mentionsCount?: number;
     extractedAt?: string;
+    h11_analysis?: {
+      sectors?: string[];
+      trlDistribution?: Record<string, number>;
+      marketMetrics?: {
+        fundingMentions?: number;
+        adoptionRates?: number;
+        competitorDensity?: string;
+      };
+      policyReferences?: string[];
+    };
   };
   pageCount?: number;
   fileSizeBytes?: number;

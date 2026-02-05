@@ -1,19 +1,101 @@
- import { useState, useRef } from "react";
- import { Upload, FileText, Loader2 } from "lucide-react";
- import { Button } from "@/components/ui/button";
- import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
- import { Badge } from "@/components/ui/badge";
- import { useDocuments, useDocumentStats, useCreateDocument, useParseDocument } from "@/hooks/useDocuments";
- import { supabase } from "@/integrations/supabase/client";
- import { toast } from "sonner";
- 
+import { useState, useRef } from "react";
+import { Upload, FileText, Loader2, Eye, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useDocuments, useDocumentStats, useDocumentMentions, useCreateDocument, useParseDocument } from "@/hooks/useDocuments";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import type { CEIDocument } from "@/types/database";
  const statusColors = {
    completed: "bg-success/20 text-success border-success/30",
    failed: "bg-destructive/20 text-destructive border-destructive/30",
    running: "bg-blue-500/20 text-blue-500 border-blue-500/30",
    pending: "bg-muted text-muted-foreground border-border",
    parsing: "bg-blue-500/20 text-blue-500 border-blue-500/30",
- };
+};
+
+// Dialog to view document parsing results
+function DocumentViewDialog({ document }: { document: CEIDocument }) {
+  const { data: mentions, isLoading } = useDocumentMentions(document.id);
+  
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm">
+          <Eye className="h-4 w-4 mr-1" />
+          View
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[80vh]">
+        <DialogHeader>
+          <DialogTitle className="text-foreground">{document.filename}</DialogTitle>
+        </DialogHeader>
+        <ScrollArea className="h-[60vh]">
+          <div className="space-y-4 pr-4">
+            {/* H11 Analysis Summary */}
+            {document.parsedContent?.h11_analysis && (
+              <div className="p-4 rounded-lg bg-muted/50 space-y-2">
+                <h4 className="font-medium text-foreground">H11 Analysis</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Sectors:</span>{" "}
+                    <span className="text-foreground">
+                      {(document.parsedContent.h11_analysis as { sectors?: string[] })?.sectors?.join(", ") || "N/A"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">TRL Distribution:</span>{" "}
+                    <span className="text-foreground">
+                      {JSON.stringify((document.parsedContent.h11_analysis as { trlDistribution?: Record<string, number> })?.trlDistribution) || "N/A"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Technology Mentions */}
+            <div>
+              <h4 className="font-medium text-foreground mb-2">
+                Technology Mentions ({mentions?.length || 0})
+              </h4>
+              {isLoading ? (
+                <p className="text-sm text-muted-foreground">Loading mentions...</p>
+              ) : mentions?.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No technology mentions extracted</p>
+              ) : (
+                <div className="space-y-2">
+                  {mentions?.map((mention) => (
+                    <div key={mention.id} className="p-3 rounded border border-border bg-card">
+                      <div className="flex items-center justify-between mb-1">
+                        <Badge variant="secondary">{mention.keyword?.displayName || "Unknown"}</Badge>
+                        <span className="text-xs text-muted-foreground">
+                          Confidence: {(mention.confidenceScore * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                      {mention.mentionContext && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          "{mention.mentionContext}"
+                        </p>
+                      )}
+                      <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
+                        {mention.trlMentioned && <span>TRL: {mention.trlMentioned}</span>}
+                        {mention.policyReference && <span>Policy: {mention.policyReference}</span>}
+                        {mention.pageNumber && <span>Page: {mention.pageNumber}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  );
+}
  
  export function DocumentUploadPanel() {
    const [isUploading, setIsUploading] = useState(false);
@@ -191,11 +273,22 @@
                        )}
                      </Button>
                    )}
-                   {doc.parseStatus === 'completed' && (
-                     <Button variant="ghost" size="sm">
-                       View
-                     </Button>
-                   )}
+                    {(doc.parseStatus === 'completed' || doc.parseStatus === 'failed') && (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleParse(doc.id)}
+                          disabled={parseDocument.isPending}
+                          title="Re-parse document"
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                        {doc.parseStatus === 'completed' && (
+                          <DocumentViewDialog document={doc} />
+                        )}
+                      </>
+                    )}
                  </div>
                </div>
              ))}
