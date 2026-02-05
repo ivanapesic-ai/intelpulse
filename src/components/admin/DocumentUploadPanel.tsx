@@ -247,16 +247,16 @@ function DocumentViewDialog({ document }: { document: CEIDocument }) {
                    <div className="p-2 rounded-lg bg-muted">
                      <FileText className="h-5 w-5 text-muted-foreground" />
                    </div>
-                   <div>
-                     <p className="font-medium text-foreground">{doc.filename}</p>
-                     <p className="text-sm text-muted-foreground">
-                       {doc.fileType.toUpperCase()} • {doc.source}
-                       {doc.parsedContent?.mentionsCount !== undefined && (
-                         <> • {doc.parsedContent.mentionsCount} mentions</>
-                       )}
-                     </p>
-                   </div>
-                 </div>
+                    <div>
+                      <p className="font-medium text-foreground">{doc.filename}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {doc.fileType.toUpperCase()} • {doc.fileSizeBytes ? `${(doc.fileSizeBytes / 1024 / 1024).toFixed(1)} MB` : 'Unknown size'} • {doc.source}
+                        {doc.parsedContent?.mentionsCount !== undefined && (
+                          <> • {doc.parsedContent.mentionsCount} mentions</>
+                        )}
+                      </p>
+                    </div>
+                  </div>
                  <div className="flex items-center gap-3">
                    <Badge variant="outline" className={statusColors[doc.parseStatus] || statusColors.pending}>
                      {doc.parseStatus}

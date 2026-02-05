@@ -230,6 +230,11 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Parse request body FIRST to capture documentId for error handling
+  let documentId: string | undefined;
+  let content: string | undefined;
+  let supabase: ReturnType<typeof createClient> | null = null;
+
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -243,9 +248,12 @@ serve(async (req) => {
       throw new Error("Supabase configuration missing");
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { documentId, content } = await req.json();
+    // Parse request body early so we have documentId for error handling
+    const body = await req.json();
+    documentId = body.documentId;
+    content = body.content;
 
     if (!documentId) {
       throw new Error("documentId is required");
@@ -798,22 +806,17 @@ ${processedContent}`;
   } catch (error) {
     console.error("Document parsing error:", error);
 
-    // Try to update document status to failed
-    try {
-      const { documentId } = await req.json().catch(() => ({}));
-      if (documentId) {
-        const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-        const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-        if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
-          const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-          await supabase
-            .from("cei_documents")
-            .update({ parse_status: "failed" })
-            .eq("id", documentId);
-        }
+    // Update document status to failed using the documentId captured at the start
+    if (documentId && supabase) {
+      try {
+        await supabase
+          .from("cei_documents")
+          .update({ parse_status: "failed" })
+          .eq("id", documentId);
+        console.log(`Updated document ${documentId} status to failed`);
+      } catch (updateError) {
+        console.error("Failed to update document status:", updateError);
       }
-    } catch {
-      // Ignore cleanup errors
     }
 
     return new Response(
