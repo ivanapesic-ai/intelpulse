@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDocumentStats } from "@/hooks/useDocuments";
 import { useKeywordStats } from "@/hooks/useTechnologies";
- import { formatFundingEur } from "@/types/database";
+ import { formatFundingUsd, formatFundingEur } from "@/types/database";
 import { WebScrapingPanel } from "@/components/admin/WebScrapingPanel";
 import { PdfQueuePanel } from "@/components/admin/PdfQueuePanel";
 import { KeywordManager } from "@/components/admin/KeywordManager";
@@ -102,11 +102,11 @@ export default function AdminPanel() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                   <p className="text-sm text-muted-foreground">Total Funding</p>
+                   <p className="text-sm text-muted-foreground">Total Funding (USD)</p>
                    <p className="text-xl font-bold text-foreground">
-                     {formatFundingEur(crunchbaseStats?.totalFunding || 0)}
+                     {formatFundingUsd(crunchbaseStats?.totalFunding || 0)}
                    </p>
-                   <p className="text-xs text-muted-foreground mt-1">tracked investment</p>
+                   <p className="text-xs text-muted-foreground mt-1">Crunchbase investment</p>
                 </div>
                  <div className="p-3 rounded-full bg-success/10">
                    <Database className="h-6 w-6 text-success" />
@@ -261,7 +261,7 @@ export default function AdminPanel() {
                      <div className="text-sm text-muted-foreground space-y-1">
                        <p>Companies: {crunchbaseStats?.totalCompanies || 0}</p>
                        <p>With Keywords: {crunchbaseStats?.companiesWithKeywords || 0}</p>
-                       <p>Total Funding: {formatFundingEur(crunchbaseStats?.totalFunding || 0)}</p>
+                       <p>Total Funding: {formatFundingUsd(crunchbaseStats?.totalFunding || 0)}</p>
                      </div>
                    </div>
                 </CardContent>

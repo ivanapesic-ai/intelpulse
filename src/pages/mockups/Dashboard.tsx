@@ -9,7 +9,7 @@ import { PlatformHeader } from "@/components/mockups/PlatformHeader";
 import { StatCard } from "@/components/mockups/StatCard";
 import { TechnologyCard } from "@/components/mockups/TechnologyCard";
 import { useTechnologies } from "@/hooks/useTechnologies";
-import { formatFundingEur, formatNumber, getCompositeScoreLabel } from "@/types/database";
+import { formatFundingEur, formatFundingUsd, formatNumber, getCompositeScoreLabel } from "@/types/database";
 import logo from "@/assets/logo.svg";
 
 const rotatingDomains = ["Autonomous Vehicles", "Edge Computing", "Smart Infrastructure", "IoT Sensors", "Cloud AI", "Connected Mobility"];
