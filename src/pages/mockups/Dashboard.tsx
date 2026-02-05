@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Radar, Grid3X3, Compass, TrendingUp, FileText, Activity, Database, RefreshCw, ArrowRight, Clock, BarChart3 } from "lucide-react";
+import { Radar, Grid3X3, Compass, TrendingUp, FileText, Activity, Database, ArrowRight, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,7 @@ import { useTechnologies } from "@/hooks/useTechnologies";
 import { formatFundingEur, formatFundingUsd, formatNumber, getCompositeScoreLabel } from "@/types/database";
 import logo from "@/assets/logo.svg";
 
-const rotatingDomains = ["Autonomous Vehicles", "Edge Computing", "Smart Infrastructure", "IoT Sensors", "Cloud AI", "Connected Mobility"];
+const rotatingDomains = ["Autonomous Vehicles", "Edge Computing", "Electric Mobility", "V2X Communication", "Cloud AI", "Software-Defined Vehicles"];
 
 type MaturityRing = "Strong" | "Moderate" | "Challenging";
 
@@ -93,17 +93,11 @@ export default function Dashboard() {
       .slice(0, 5);
   }, [technologies]);
 
-  const recentActivity = [
-    { action: "Crunchbase import completed", source: "Crunchbase", time: "2 hours ago", type: "data" },
-    { action: "Document processing completed", source: "PDF Parser", time: "5 hours ago", type: "score" },
-    { action: "Technology scores recalculated", source: "System", time: "1 day ago", type: "data" },
-    { action: "New keywords mapped", source: "Admin", time: "3 days ago", type: "report" },
-  ];
-
   const aiInsights = [
-    { insight: "Edge AI showing strong investment signals with 23% funding growth", severity: "high" },
-    { insight: "V2X Communication technologies nearing maturity threshold", severity: "medium" },
-    { insight: "3 technologies in Strong maturity ring exceeding benchmarks", severity: "low" },
+    { insight: "Autonomous Vehicle sector leads with €89B aggregate funding across 142 companies", severity: "high" },
+    { insight: "Battery technology patents up 34% YoY - strong innovation signal", severity: "high" },
+    { insight: "V2X and Edge Computing showing convergence patterns in company portfolios", severity: "medium" },
+    { insight: "Software-Defined Vehicle ecosystem expanding with 23 new entrants Q4 2025", severity: "medium" },
   ];
 
   if (error) {
@@ -356,26 +350,6 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Recent Activity */}
-            <Card className="card-hover">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-display text-base text-foreground">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  Recent Activity
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {recentActivity.map((item, i) => (
-                  <div key={i} className="flex items-start gap-3 animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
-                    <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${item.type === "data" ? "bg-primary" : item.type === "score" ? "bg-success" : "bg-warning"}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground">{item.action}</p>
-                      <p className="text-xs text-muted-foreground">{item.source} • {item.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
 
             {/* Data Sources */}
             <Card className="card-hover">
@@ -386,7 +360,7 @@ export default function Dashboard() {
                 {[
                   { name: "Crunchbase", status: "healthy" },
                   { name: "CEI Documents", status: "healthy" },
-                  { name: "Web Scraping", status: "healthy" },
+                  { name: "Web Sources", status: "healthy" },
                   { name: "EPO Patents", status: "healthy" },
                 ].map((source) => (
                   <div key={source.name} className="flex items-center justify-between text-sm">
@@ -406,25 +380,6 @@ export default function Dashboard() {
             </Card>
 
             {/* Quick Actions */}
-            <Card className="card-hover">
-              <CardHeader>
-                <CardTitle className="text-sm font-medium text-foreground">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button variant="outline" className="w-full justify-start gap-2" size="sm">
-                  <RefreshCw className="h-4 w-4" />
-                  Refresh Data
-                </Button>
-                <Button variant="outline" className="w-full justify-start gap-2" size="sm">
-                  <FileText className="h-4 w-4" />
-                  Export Report
-                </Button>
-                <Button variant="outline" className="w-full justify-start gap-2" size="sm">
-                  <Activity className="h-4 w-4" />
-                  Run Analysis
-                </Button>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
