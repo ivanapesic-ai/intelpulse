@@ -9,7 +9,6 @@ import { PlatformHeader } from "@/components/mockups/PlatformHeader";
 import { TechnologyDetailPanel } from "@/components/intelligence/TechnologyDetailPanel";
 import { HierarchyKPICards } from "@/components/intelligence/HierarchyKPICards";
 import { ClusterCardView } from "@/components/intelligence/ClusterCardView";
-import { COMatrixSampler } from "@/components/intelligence/COMatrixSampler";
 import { GartnerMatrixSampler } from "@/components/intelligence/GartnerMatrixSampler";
 import { 
   useDomainOverview, 
@@ -189,15 +188,8 @@ export default function IntelligenceDashboard() {
             transition={{ delay: 0.2 }}
             className="space-y-8"
           >
-            {/* Gartner-style samples */}
+            {/* Gartner-style visualization samples */}
             <GartnerMatrixSampler
-              technologies={technologies || []}
-              onSelectTechnology={setSelectedTech}
-              selectedId={selectedTech?.id}
-            />
-            
-            {/* Original 3×3 samples */}
-            <COMatrixSampler
               technologies={technologies || []}
               onSelectTechnology={setSelectedTech}
               selectedId={selectedTech?.id}
