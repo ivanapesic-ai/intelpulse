@@ -2454,6 +2454,13 @@ export type Database = {
         Args: { mention_count: number }
         Returns: number
       }
+      calculate_weighted_composite_score: {
+        Args: never
+        Returns: {
+          keywords_updated: number
+          score_range: string
+        }[]
+      }
       can_manage_users: { Args: { _user_id: string }; Returns: boolean }
       explain_concept_score: {
         Args: { p_concept_id: number }
