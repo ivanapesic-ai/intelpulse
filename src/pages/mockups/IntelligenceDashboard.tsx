@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, RefreshCw, LayoutGrid, List } from "lucide-react";
+import { Search, RefreshCw, LayoutGrid, List, Network } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { COQuadrantMatrix } from "@/components/intelligence/COQuadrantMatrix";
 import { TechnologyDetailPanel } from "@/components/intelligence/TechnologyDetailPanel";
 import { DomainHierarchyView } from "@/components/intelligence/DomainHierarchyView";
 import { HierarchyKPICards } from "@/components/intelligence/HierarchyKPICards";
+import { KnowledgeGraph } from "@/components/intelligence/KnowledgeGraph";
 import { 
   useDomainOverview, 
   useKeywordOverview,
@@ -21,16 +22,18 @@ import {
   useCalculateAllCOScores,
   type TechnologyIntelligence 
 } from "@/hooks/useTechnologyIntelligence";
+import { GraphNode } from "@/hooks/useKnowledgeGraph";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-type ViewMode = "hierarchy" | "matrix";
+type ViewMode = "hierarchy" | "matrix" | "graph";
 
 export default function IntelligenceDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("hierarchy");
+  const [viewMode, setViewMode] = useState<ViewMode>("graph");
   const [selectedTech, setSelectedTech] = useState<TechnologyIntelligence | null>(null);
   const [selectedKeyword, setSelectedKeyword] = useState<KeywordOverview | null>(null);
+  const [selectedGraphNode, setSelectedGraphNode] = useState<GraphNode | null>(null);
 
   // Data hooks
   const { data: domains, isLoading: domainsLoading } = useDomainOverview();
@@ -136,7 +139,10 @@ export default function IntelligenceDashboard() {
                   {domains?.length || 0} domains • {keywords?.length || 0} keywords
                 </span>
                 <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
-                  <TabsList className="grid grid-cols-2 w-32">
+                  <TabsList className="grid grid-cols-3 w-48">
+                    <TabsTrigger value="graph" className="px-2">
+                      <Network className="h-4 w-4" />
+                    </TabsTrigger>
                     <TabsTrigger value="hierarchy" className="px-2">
                       <List className="h-4 w-4" />
                     </TabsTrigger>
@@ -158,6 +164,27 @@ export default function IntelligenceDashboard() {
               <p className="text-muted-foreground">Loading intelligence data...</p>
             </div>
           </div>
+        ) : viewMode === "graph" ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <KnowledgeGraph
+              onSelectNode={(node) => {
+                setSelectedGraphNode(node);
+                // Try to find matching technology for detail panel
+                if (node && node.group === "keyword") {
+                  const keywordId = node.id.replace("keyword-", "");
+                  const tech = technologies?.find(t => t.keywordId === keywordId);
+                  if (tech) setSelectedTech(tech);
+                } else {
+                  setSelectedTech(null);
+                }
+              }}
+              selectedNodeId={selectedGraphNode?.id}
+            />
+          </motion.div>
         ) : viewMode === "hierarchy" ? (
           <motion.div
             initial={{ opacity: 0 }}
@@ -202,6 +229,7 @@ export default function IntelligenceDashboard() {
               onClick={() => {
                 setSelectedTech(null);
                 setSelectedKeyword(null);
+                setSelectedGraphNode(null);
               }}
             />
             <TechnologyDetailPanel 
@@ -209,6 +237,7 @@ export default function IntelligenceDashboard() {
               onClose={() => {
                 setSelectedTech(null);
                 setSelectedKeyword(null);
+                setSelectedGraphNode(null);
               }}
             />
           </>
