@@ -15,6 +15,23 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+// Noise keywords to exclude from SDV ecosystem visualization
+const EXCLUDED_KEYWORDS = [
+  "smart city",
+  "smart cities",
+  "fleet management",
+  "logistics",
+  "maritime",
+  "micromobility",
+  "shipping",
+  "aviation",
+  "freight",
+];
+function isSDVRelevant(tech: TechnologyIntelligence): boolean {
+  const name = tech.name.toLowerCase();
+  return !EXCLUDED_KEYWORDS.some(keyword => name.includes(keyword));
+}
+
 interface COMatrixSamplerProps {
   technologies: TechnologyIntelligence[];
   onSelectTechnology?: (tech: TechnologyIntelligence) => void;
@@ -87,7 +104,7 @@ function GridHeatmap({
         grid[`${c}-${o}`] = [];
       }
     }
-    technologies.forEach(tech => {
+    technologies.filter(isSDVRelevant).forEach(tech => {
       const { challenge, opportunity } = getScores(tech);
       const key = `${challenge}-${opportunity}`;
       if (grid[key]) grid[key].push(tech);
@@ -187,9 +204,10 @@ function ScatterBubbles({
   selectedId 
 }: COMatrixSamplerProps) {
   const positioned = useMemo(() => {
+    const filtered = technologies.filter(isSDVRelevant);
     // Group by cell first
     const cells: Record<string, TechnologyIntelligence[]> = {};
-    technologies.forEach(tech => {
+    filtered.forEach(tech => {
       const { challenge, opportunity } = getScores(tech);
       const key = `${challenge}-${opportunity}`;
       if (!cells[key]) cells[key] = [];
@@ -197,7 +215,7 @@ function ScatterBubbles({
     });
 
     // Position each tech within its cell with jitter
-    return technologies.map(tech => {
+    return filtered.map(tech => {
       const { challenge, opportunity } = getScores(tech);
       const key = `${challenge}-${opportunity}`;
       const cellTechs = cells[key];
@@ -307,7 +325,8 @@ function RankedTable({
   selectedId 
 }: COMatrixSamplerProps) {
   const ranked = useMemo(() => {
-    return [...technologies]
+    return technologies
+      .filter(isSDVRelevant)
       .map(tech => {
         const { challenge, opportunity } = getScores(tech);
         const composite = (challenge + opportunity) / 2;
