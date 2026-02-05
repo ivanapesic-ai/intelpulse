@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { encode as encodeBase64 } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -140,15 +141,111 @@ serve(async (req) => {
       throw new Error("documentId is required");
     }
 
+    // Fetch document record to get storage path
+    const { data: document, error: docError } = await supabase
+      .from("cei_documents")
+      .select("storage_path, file_type, filename")
+      .eq("id", documentId)
+      .single();
+
+    if (docError || !document) {
+      throw new Error(`Document not found: ${docError?.message || "Unknown error"}`);
+    }
+
     // Update document status to parsing
     await supabase
       .from("cei_documents")
       .update({ parse_status: "parsing" })
       .eq("id", documentId);
 
-    // Pre-analyze document for H11 enrichment
-    const detectedSectors = detectSectors(content);
-    const marketSignals = extractMarketSignals(content);
+    // If content wasn't provided, extract it from storage using AI
+    let documentContent = content;
+    
+    if (!documentContent || documentContent.trim().length < 100) {
+      console.log(`Extracting content from storage: ${document.storage_path}`);
+      
+      // Download file from storage
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from("cei-documents")
+        .download(document.storage_path);
+      
+      if (downloadError || !fileData) {
+        throw new Error(`Failed to download document: ${downloadError?.message || "No data"}`);
+      }
+      
+      // Convert to base64 for Gemini
+      const arrayBuffer = await fileData.arrayBuffer();
+      const base64Content = encodeBase64(arrayBuffer);
+      
+      // Determine MIME type
+      const mimeTypes: Record<string, string> = {
+        pdf: "application/pdf",
+        docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      };
+      const mimeType = mimeTypes[document.file_type] || "application/pdf";
+      
+      console.log(`Extracting text from ${document.file_type} (${(arrayBuffer.byteLength / 1024).toFixed(1)} KB)...`);
+      
+      // Use Gemini to extract text from the document
+      const extractResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: `Extract ALL readable text content from this ${document.file_type.toUpperCase()} document titled "${document.filename}".
+
+Focus on capturing:
+1. All headings and section titles
+2. Body text paragraphs
+3. Table contents (format as text)
+4. Figure captions and labels
+5. Key statistics, percentages, and numbers
+6. Any technology names, TRL levels, or policy references
+
+Return the complete extracted text in a structured format, preserving the document's logical flow. Include [HEADING], [TABLE], [FIGURE] markers where appropriate.`,
+                },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: `data:${mimeType};base64,${base64Content}`,
+                  },
+                },
+              ],
+            },
+          ],
+          max_tokens: 16000,
+        }),
+      });
+      
+      if (!extractResponse.ok) {
+        const errorText = await extractResponse.text();
+        console.error("Text extraction error:", extractResponse.status, errorText);
+        throw new Error(`Failed to extract document text: ${extractResponse.status}`);
+      }
+      
+      const extractData = await extractResponse.json();
+      documentContent = extractData.choices?.[0]?.message?.content || "";
+      
+      console.log(`Extracted ${documentContent.length} characters from document`);
+      
+      if (!documentContent || documentContent.length < 100) {
+        throw new Error("Failed to extract meaningful content from document");
+      }
+    }
+
+    // Pre-analyze document for H11 enrichment (now using actual content)
+    const detectedSectors = detectSectors(documentContent);
+    const marketSignals = extractMarketSignals(documentContent);
     
     console.log("H11 Pre-analysis:", { 
       sectors: detectedSectors, 
@@ -275,7 +372,7 @@ ${JSON.stringify(keywordList, null, 2)}
 ## DOCUMENT CONTENT
 Analyze this document and extract technology mentions with H11 precision scoring:
 
-${content}`;
+${documentContent}`;
 
     // Call Lovable AI for extraction
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
