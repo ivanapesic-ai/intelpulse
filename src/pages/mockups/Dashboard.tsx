@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Radar, Grid3X3, Compass, TrendingUp, FileText, Activity, Database, RefreshCw, ArrowRight, Clock, BarChart3, Layers } from "lucide-react";
+import { Radar, Grid3X3, Compass, TrendingUp, FileText, Activity, Database, RefreshCw, ArrowRight, Clock, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { StatCard } from "@/components/mockups/StatCard";
 import { TechnologyCard } from "@/components/mockups/TechnologyCard";
 import { useTechnologies } from "@/hooks/useTechnologies";
 import { formatFundingEur, formatNumber, getCompositeScoreLabel } from "@/types/database";
+import logo from "@/assets/logo.svg";
 
 const rotatingDomains = ["Autonomous Vehicles", "Edge Computing", "Smart Infrastructure", "IoT Sensors", "Cloud AI", "Connected Mobility"];
 
@@ -431,14 +432,12 @@ export default function Dashboard() {
       {/* Footer */}
       <footer className="border-t border-border mt-12 bg-muted/30">
         <div className="container mx-auto px-4 py-8 text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <div className="w-6 h-6 rounded bg-primary flex items-center justify-center">
-              <Layers className="h-3 w-3 text-primary-foreground" />
-            </div>
-            <span className="font-display font-semibold text-foreground">AI-CE Heatmap</span>
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <img src={logo} alt="Pulse11" className="h-6 w-auto" />
+            <span className="font-display font-semibold text-foreground">Pulse11</span>
           </div>
-          <p className="text-sm text-muted-foreground">BluSpecs • ML-SDV Technology Maturity Platform</p>
-          <p className="text-xs text-muted-foreground mt-1">Last updated: January 2025 • Powered by H11 Hybrid Scoring</p>
+          <p className="text-sm text-muted-foreground">BluSpecs CEI-Sphere Intelligence Platform</p>
+          <p className="text-xs text-muted-foreground mt-1">Last updated: February 2026 • Powered by House11</p>
         </div>
       </footer>
     </div>

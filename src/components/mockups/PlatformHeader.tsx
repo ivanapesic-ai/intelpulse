@@ -21,11 +21,8 @@ export function PlatformHeader() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-6">
             <Link to="/mockups" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <img src={logo} alt="AI-CE Heatmap" className="h-8 w-auto" />
-              <div>
-                <h1 className="text-base font-semibold font-display leading-none text-foreground">Pulse11</h1>
-                <p className="text-xs text-muted-foreground">CEI-Sphere Intelligence Platform</p>
-              </div>
+              <img src={logo} alt="Pulse11" className="h-8 w-auto" />
+              <h1 className="text-base font-semibold font-display leading-none text-foreground">Pulse11</h1>
             </Link>
 
             <nav className="hidden md:flex items-center gap-1">
