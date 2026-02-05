@@ -132,7 +132,14 @@ export function useUpdateKeywordTags() {
   });
 }
 
-// Fetch all technologies with their keyword info
+// Excluded keywords list - noise terms outside SDV ecosystem
+const EXCLUDED_KEYWORDS = [
+  'smart city', 'smart cities', 'smart recharging', 
+  'fleet management', 'logistics', 'maritime', 
+  'micromobility', 'shipping', 'aviation', 'freight'
+];
+
+// Fetch all technologies with their keyword info (filtering out excluded keywords)
 export function useTechnologies() {
   return useQuery({
     queryKey: ["technologies"],
@@ -141,18 +148,34 @@ export function useTechnologies() {
         .from("technologies")
         .select(`
           *,
-          technology_keywords (
+          technology_keywords!inner (
             id,
             keyword,
             source,
-            display_name
+            display_name,
+            excluded_from_sdv
           )
         `)
         .order("composite_score", { ascending: false });
 
       if (error) throw error;
 
-      return (data || []).map((row): Technology & { keyword?: TechnologyKeyword } => {
+      // Filter out excluded keywords
+      const filtered = (data || []).filter(row => {
+        const keyword = row.technology_keywords?.keyword?.toLowerCase() || '';
+        const displayName = row.technology_keywords?.display_name?.toLowerCase() || '';
+        const isExcludedFromSdv = row.technology_keywords?.excluded_from_sdv === true;
+        
+        // Exclude if marked as excluded_from_sdv or matches noise keywords
+        if (isExcludedFromSdv) return false;
+        if (EXCLUDED_KEYWORDS.some(ex => keyword.includes(ex) || displayName.includes(ex))) return false;
+        
+        return true;
+      });
+
+      if (error) throw error;
+
+      return filtered.map((row): Technology & { keyword?: TechnologyKeyword } => {
         const rowAny = row as Record<string, unknown>;
         return {
           id: row.id,
