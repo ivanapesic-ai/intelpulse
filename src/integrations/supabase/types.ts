@@ -1351,6 +1351,7 @@ export type Database = {
           key_players: string[] | null
           keyword_id: string | null
           last_updated: string | null
+          log_composite_score: number | null
           market_signals: Json | null
           name: string
           network_centrality: number | null
@@ -1388,6 +1389,7 @@ export type Database = {
           key_players?: string[] | null
           keyword_id?: string | null
           last_updated?: string | null
+          log_composite_score?: number | null
           market_signals?: Json | null
           name: string
           network_centrality?: number | null
@@ -1425,6 +1427,7 @@ export type Database = {
           key_players?: string[] | null
           keyword_id?: string | null
           last_updated?: string | null
+          log_composite_score?: number | null
           market_signals?: Json | null
           name?: string
           network_centrality?: number | null
@@ -2522,6 +2525,14 @@ export type Database = {
           pairs_created: number
           pairs_updated: number
           quality_companies_used: number
+        }[]
+      }
+      refresh_log_composite_scores: {
+        Args: never
+        Returns: {
+          keywords_updated: number
+          max_score: number
+          min_score: number
         }[]
       }
       refresh_technology_intelligence: { Args: never; Returns: undefined }
