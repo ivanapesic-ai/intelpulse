@@ -233,7 +233,8 @@ serve(async (req) => {
   // Parse request body FIRST to capture documentId for error handling
   let documentId: string | undefined;
   let content: string | undefined;
-  let supabase: ReturnType<typeof createClient> | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let supabase: any = null;
 
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -362,9 +363,9 @@ Return the extracted text CONCISELY - prioritize key information. Max 25000 char
       const extractData = await extractResponse.json();
       documentContent = extractData.choices?.[0]?.message?.content || "";
       
-      console.log(`Extracted ${documentContent.length} characters from document`);
+      console.log(`Extracted ${(documentContent as string).length} characters from document`);
       
-      if (!documentContent || documentContent.length < 100) {
+      if (!documentContent || (documentContent as string).length < 100) {
         throw new Error("Failed to extract meaningful content from document");
       }
     }
@@ -389,7 +390,7 @@ Return the extracted text CONCISELY - prioritize key information. Max 25000 char
       throw new Error(`Failed to fetch keywords: ${keywordsError.message}`);
     }
 
-    const keywordList = keywords?.map(k => ({
+    const keywordList = keywords?.map((k: any) => ({
       id: k.id,
       terms: [k.keyword, k.display_name, ...(k.aliases || [])],
     })) || [];
@@ -635,12 +636,12 @@ ${processedContent}`;
  
      for (const mention of mentions) {
        // Try to find keyword - first by ID, then by name fuzzy match
-       let validKeyword = keywords?.find(k => k.id === mention.keyword_id);
+       let validKeyword = keywords?.find((k: any) => k.id === mention.keyword_id);
        
        // If no ID match, try fuzzy matching by name
        if (!validKeyword && mention.keyword_name) {
          const mentionName = mention.keyword_name.toLowerCase().trim();
-         validKeyword = keywords?.find(k => {
+         validKeyword = keywords?.find((k: any) => {
            const kw = k.keyword.toLowerCase();
            const display = k.display_name.toLowerCase();
            const aliases = (k.aliases || []).map((a: string) => a.toLowerCase());
