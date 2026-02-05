@@ -170,6 +170,44 @@ export function useCreateDocument() {
   });
 }
 
+// Delete a document and its storage file
+export function useDeleteDocument() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, storagePath }: { id: string; storagePath: string }) => {
+      // Delete mentions first (foreign key constraint)
+      await supabase
+        .from("document_technology_mentions")
+        .delete()
+        .eq("document_id", id);
+
+      // Delete document record
+      const { error: docError } = await supabase
+        .from("cei_documents")
+        .delete()
+        .eq("id", id);
+
+      if (docError) throw docError;
+
+      // Delete from storage (ignore errors if file doesn't exist)
+      await supabase.storage
+        .from("cei-documents")
+        .remove([storagePath]);
+
+      return { id };
+    },
+    onSuccess: () => {
+      toast.success("Document deleted");
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      queryClient.invalidateQueries({ queryKey: ["document-stats"] });
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete: ${error.message}`);
+    },
+  });
+}
+
 // Get document stats
 export function useDocumentStats() {
   return useQuery({

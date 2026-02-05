@@ -1,11 +1,12 @@
 import { useState, useRef } from "react";
-import { Upload, FileText, Loader2, Eye, RotateCcw } from "lucide-react";
+import { Upload, FileText, Loader2, Eye, RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useDocuments, useDocumentStats, useDocumentMentions, useCreateDocument, useParseDocument } from "@/hooks/useDocuments";
+import { useDocuments, useDocumentStats, useDocumentMentions, useCreateDocument, useParseDocument, useDeleteDocument } from "@/hooks/useDocuments";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { CEIDocument } from "@/types/database";
@@ -101,10 +102,11 @@ function DocumentViewDialog({ document }: { document: CEIDocument }) {
    const [isUploading, setIsUploading] = useState(false);
    const fileInputRef = useRef<HTMLInputElement>(null);
    
-   const { data: documents, isLoading: documentsLoading } = useDocuments();
-   const { data: documentStats } = useDocumentStats();
-   const createDocument = useCreateDocument();
-   const parseDocument = useParseDocument();
+  const { data: documents, isLoading: documentsLoading } = useDocuments();
+  const { data: documentStats } = useDocumentStats();
+  const createDocument = useCreateDocument();
+  const parseDocument = useParseDocument();
+  const deleteDocument = useDeleteDocument();
  
    const handleUploadClick = () => {
      fileInputRef.current?.click();
@@ -273,23 +275,52 @@ function DocumentViewDialog({ document }: { document: CEIDocument }) {
                        )}
                      </Button>
                    )}
-                    {(doc.parseStatus === 'completed' || doc.parseStatus === 'failed') && (
-                      <>
+                     {(doc.parseStatus === 'completed' || doc.parseStatus === 'failed') && (
+                       <>
+                         <Button 
+                           variant="outline" 
+                           size="sm"
+                           onClick={() => handleParse(doc.id)}
+                           disabled={parseDocument.isPending}
+                           title="Re-parse document"
+                         >
+                           <RotateCcw className="h-4 w-4" />
+                         </Button>
+                         {doc.parseStatus === 'completed' && (
+                           <DocumentViewDialog document={doc} />
+                         )}
+                       </>
+                     )}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
                         <Button 
-                          variant="outline" 
+                          variant="ghost" 
                           size="sm"
-                          onClick={() => handleParse(doc.id)}
-                          disabled={parseDocument.isPending}
-                          title="Re-parse document"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          disabled={deleteDocument.isPending}
                         >
-                          <RotateCcw className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
-                        {doc.parseStatus === 'completed' && (
-                          <DocumentViewDialog document={doc} />
-                        )}
-                      </>
-                    )}
-                 </div>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Document</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete "{doc.filename}" and all its extracted mentions. This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => deleteDocument.mutate({ id: doc.id, storagePath: doc.storagePath })}
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                </div>
              ))}
            </div>
