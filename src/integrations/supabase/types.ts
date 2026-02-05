@@ -111,6 +111,13 @@ export type Database = {
             foreignKeyName: "company_technology_evidence_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "company_technology_evidence_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
             referencedRelation: "keyword_mapping_summary"
             referencedColumns: ["keyword_id"]
           },
@@ -293,6 +300,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "crunchbase_companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crunchbase_keyword_mapping_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "sdv_ecosystem_companies"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "crunchbase_keyword_mapping_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
           },
           {
             foreignKeyName: "crunchbase_keyword_mapping_keyword_id_fkey"
@@ -623,6 +644,13 @@ export type Database = {
             foreignKeyName: "document_technology_mentions_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "document_technology_mentions_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
             referencedRelation: "keyword_mapping_summary"
             referencedColumns: ["keyword_id"]
           },
@@ -664,6 +692,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "dealroom_companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "keyword_company_mapping_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
           },
           {
             foreignKeyName: "keyword_company_mapping_keyword_id_fkey"
@@ -732,6 +767,13 @@ export type Database = {
             foreignKeyName: "keyword_industry_mappings_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "keyword_industry_mappings_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
             referencedRelation: "keyword_mapping_summary"
             referencedColumns: ["keyword_id"]
           },
@@ -782,6 +824,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "ontology_domains"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ontology_concepts_domain_id_fkey"
+            columns: ["domain_id"]
+            isOneToOne: false
+            referencedRelation: "sdv_ecosystem_companies"
+            referencedColumns: ["domain_id"]
           },
         ]
       }
@@ -842,8 +891,29 @@ export type Database = {
             foreignKeyName: "ontology_relationships_concept_from_id_fkey"
             columns: ["concept_from_id"]
             isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["concept_id"]
+          },
+          {
+            foreignKeyName: "ontology_relationships_concept_from_id_fkey"
+            columns: ["concept_from_id"]
+            isOneToOne: false
             referencedRelation: "ontology_concepts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ontology_relationships_concept_from_id_fkey"
+            columns: ["concept_from_id"]
+            isOneToOne: false
+            referencedRelation: "sdv_ecosystem_companies"
+            referencedColumns: ["concept_id"]
+          },
+          {
+            foreignKeyName: "ontology_relationships_concept_to_id_fkey"
+            columns: ["concept_to_id"]
+            isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["concept_id"]
           },
           {
             foreignKeyName: "ontology_relationships_concept_to_id_fkey"
@@ -851,6 +921,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "ontology_concepts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ontology_relationships_concept_to_id_fkey"
+            columns: ["concept_to_id"]
+            isOneToOne: false
+            referencedRelation: "sdv_ecosystem_companies"
+            referencedColumns: ["concept_id"]
           },
         ]
       }
@@ -1072,6 +1149,13 @@ export type Database = {
             foreignKeyName: "technologies_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: true
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "technologies_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: true
             referencedRelation: "keyword_mapping_summary"
             referencedColumns: ["keyword_id"]
           },
@@ -1120,6 +1204,13 @@ export type Database = {
             foreignKeyName: "technology_cooccurrences_keyword_id_a_fkey"
             columns: ["keyword_id_a"]
             isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "technology_cooccurrences_keyword_id_a_fkey"
+            columns: ["keyword_id_a"]
+            isOneToOne: false
             referencedRelation: "keyword_mapping_summary"
             referencedColumns: ["keyword_id"]
           },
@@ -1129,6 +1220,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "technology_keywords"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technology_cooccurrences_keyword_id_b_fkey"
+            columns: ["keyword_id_b"]
+            isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
           },
           {
             foreignKeyName: "technology_cooccurrences_keyword_id_b_fkey"
@@ -1203,8 +1301,29 @@ export type Database = {
             foreignKeyName: "technology_keywords_ontology_concept_id_fkey"
             columns: ["ontology_concept_id"]
             isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["concept_id"]
+          },
+          {
+            foreignKeyName: "technology_keywords_ontology_concept_id_fkey"
+            columns: ["ontology_concept_id"]
+            isOneToOne: false
             referencedRelation: "ontology_concepts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technology_keywords_ontology_concept_id_fkey"
+            columns: ["ontology_concept_id"]
+            isOneToOne: false
+            referencedRelation: "sdv_ecosystem_companies"
+            referencedColumns: ["concept_id"]
+          },
+          {
+            foreignKeyName: "technology_keywords_parent_keyword_id_fkey"
+            columns: ["parent_keyword_id"]
+            isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
           },
           {
             foreignKeyName: "technology_keywords_parent_keyword_id_fkey"
@@ -1297,6 +1416,13 @@ export type Database = {
             foreignKeyName: "web_technology_mentions_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "web_technology_mentions_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
             referencedRelation: "keyword_mapping_summary"
             referencedColumns: ["keyword_id"]
           },
@@ -1353,6 +1479,21 @@ export type Database = {
       }
     }
     Views: {
+      combined_technology_graph: {
+        Row: {
+          composite_score: number | null
+          concept_id: number | null
+          concept_name: string | null
+          domain_name: string | null
+          is_core: boolean | null
+          keyword_id: string | null
+          keyword_name: string | null
+          sdv_company_count: number | null
+          total_funding_usd: number | null
+          total_patents: number | null
+        }
+        Relationships: []
+      }
       keyword_mapping_summary: {
         Row: {
           avg_confidence: number | null
@@ -1365,6 +1506,24 @@ export type Database = {
           tangential_mappings: number | null
           total_mappings: number | null
           verified_mappings: number | null
+        }
+        Relationships: []
+      }
+      sdv_ecosystem_companies: {
+        Row: {
+          company_id: string | null
+          company_name: string | null
+          concept_id: number | null
+          concept_name: string | null
+          description: string | null
+          domain_id: number | null
+          domain_name: string | null
+          founded_date: string | null
+          hq_country: string | null
+          industries: string[] | null
+          is_core: boolean | null
+          number_of_employees: string | null
+          total_funding_usd: number | null
         }
         Relationships: []
       }
@@ -1402,6 +1561,13 @@ export type Database = {
           weighted_frequency_score: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "technologies_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: true
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
+          },
           {
             foreignKeyName: "technologies_keyword_id_fkey"
             columns: ["keyword_id"]
