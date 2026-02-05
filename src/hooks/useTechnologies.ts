@@ -156,7 +156,7 @@ export function useTechnologies() {
             excluded_from_sdv
           )
         `)
-        .order("composite_score", { ascending: false });
+        .order("log_composite_score", { ascending: false, nullsFirst: false });
 
       if (error) throw error;
 
@@ -187,7 +187,8 @@ export function useTechnologies() {
           trlScore: ((rowAny.trl_score as number) || 0) as 0 | 1 | 2,
           euAlignmentScore: ((rowAny.eu_alignment_score as number) || 0) as 0 | 1 | 2,
           visibilityScore: ((rowAny.visibility_score as number) || 0) as 0 | 1 | 2,
-          compositeScore: Number(row.composite_score) || 0,
+          // Use log_composite_score for better differentiation, fallback to composite_score
+          compositeScore: Number(rowAny.log_composite_score) || Number(row.composite_score) || 0,
           avgTrlMentioned: (rowAny.avg_trl_mentioned as number) || undefined,
           policyMentionCount: ((rowAny.policy_mention_count as number) || 0),
           // News aggregation
@@ -251,7 +252,8 @@ export function useTechnology(id: string) {
         trlScore: ((dataAny.trl_score as number) || 0) as 0 | 1 | 2,
         euAlignmentScore: ((dataAny.eu_alignment_score as number) || 0) as 0 | 1 | 2,
         visibilityScore: ((dataAny.visibility_score as number) || 0) as 0 | 1 | 2,
-        compositeScore: Number(data.composite_score) || 0,
+        // Use log_composite_score for better differentiation, fallback to composite_score
+        compositeScore: Number(dataAny.log_composite_score) || Number(data.composite_score) || 0,
         avgTrlMentioned: (dataAny.avg_trl_mentioned as number) || undefined,
         policyMentionCount: ((dataAny.policy_mention_count as number) || 0),
         // News aggregation
