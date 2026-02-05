@@ -178,109 +178,7 @@ function Classic2x2Quadrant({
   );
 }
 
-// ============================================================================
-// STYLE 2: Extended 3×3 with Gartner Styling
-// ============================================================================
-const ZONES_3X3 = [
-  { c: 2, o: 2, label: "Priority", color: "from-emerald-500/30 to-emerald-600/20", text: "text-emerald-400" },
-  { c: 2, o: 1, label: "Grow", color: "from-emerald-500/20 to-emerald-600/10", text: "text-emerald-300" },
-  { c: 1, o: 2, label: "Invest", color: "from-blue-500/25 to-blue-600/15", text: "text-blue-400" },
-  { c: 1, o: 1, label: "Maintain", color: "from-sky-500/20 to-sky-600/10", text: "text-sky-400" },
-  { c: 2, o: 0, label: "Harvest", color: "from-amber-500/15 to-amber-600/10", text: "text-amber-300" },
-  { c: 0, o: 2, label: "Bet", color: "from-violet-500/25 to-violet-600/15", text: "text-violet-400" },
-  { c: 1, o: 0, label: "Phase Out", color: "from-slate-500/15 to-slate-600/10", text: "text-slate-400" },
-  { c: 0, o: 1, label: "Evaluate", color: "from-orange-500/20 to-orange-600/10", text: "text-orange-400" },
-  { c: 0, o: 0, label: "Avoid", color: "from-rose-500/20 to-rose-600/10", text: "text-rose-400" },
-];
-
-function Extended3x3Grid({ 
-  technologies, 
-  onSelectTechnology, 
-  selectedId 
-}: GartnerMatrixSamplerProps) {
-  const grouped = useMemo(() => {
-    const cells: Record<string, TechnologyIntelligence[]> = {};
-    technologies.filter(isSDVRelevant).forEach(tech => {
-      const { challenge, opportunity } = getScores(tech);
-      const key = `${challenge}-${opportunity}`;
-      if (!cells[key]) cells[key] = [];
-      cells[key].push(tech);
-    });
-    return cells;
-  }, [technologies]);
-
-  return (
-    <div className="relative">
-      {/* Axis labels */}
-      <div className="absolute -left-6 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-medium text-muted-foreground whitespace-nowrap">
-        Challenge (Barriers) →
-      </div>
-      
-      <div className="grid grid-cols-3 gap-2 ml-4">
-        {/* Render from top-left to bottom-right, but logically C=2,O=0 is top-left */}
-        {[2, 1, 0].map(c => (
-          [0, 1, 2].map(o => {
-            const zone = ZONES_3X3.find(z => z.c === c && z.o === o)!;
-            const key = `${c}-${o}`;
-            const techs = grouped[key] || [];
-            
-            return (
-              <motion.div
-                key={key}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className={cn(
-                  "relative rounded-lg border border-border/30 p-3 min-h-[120px]",
-                  "bg-gradient-to-br",
-                  zone.color
-                )}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className={cn("text-xs font-semibold", zone.text)}>{zone.label}</span>
-                  <Badge variant="secondary" className="text-[10px]">{techs.length}</Badge>
-                </div>
-                
-                <div className="flex flex-wrap gap-1">
-                  <TooltipProvider>
-                    {techs.slice(0, 8).map(tech => (
-                      <Tooltip key={tech.id} delayDuration={0}>
-                        <TooltipTrigger asChild>
-                          <motion.div
-                            whileHover={{ scale: 1.15 }}
-                            className={cn(
-                              "w-7 h-7 rounded-full bg-foreground/80 flex items-center justify-center text-[8px] font-bold text-background cursor-pointer",
-                              selectedId === tech.id && "ring-2 ring-primary"
-                            )}
-                            onClick={() => onSelectTechnology?.(tech)}
-                          >
-                            {tech.name.slice(0, 2).toUpperCase()}
-                          </motion.div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="font-semibold">{tech.name}</p>
-                          <p className="text-xs">{formatFundingEur(tech.totalFundingEur)}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ))}
-                    {techs.length > 8 && (
-                      <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-[10px] text-muted-foreground">
-                        +{techs.length - 8}
-                      </div>
-                    )}
-                  </TooltipProvider>
-                </div>
-              </motion.div>
-            );
-          })
-        ))}
-      </div>
-      
-      <div className="text-center mt-4 text-xs font-medium text-muted-foreground">
-        Opportunity (Value) →
-      </div>
-    </div>
-  );
-}
+// (3×3 Extended Grid removed per user request)
 
 // ============================================================================
 // STYLE 3: Radar-Style with Quadrant Overlay
@@ -426,9 +324,8 @@ export function GartnerMatrixSampler(props: GartnerMatrixSamplerProps) {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="classic" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="classic">Classic 2×2</TabsTrigger>
-            <TabsTrigger value="extended">Extended 3×3</TabsTrigger>
             <TabsTrigger value="hybrid">Hybrid Radar</TabsTrigger>
           </TabsList>
           
@@ -440,16 +337,6 @@ export function GartnerMatrixSampler(props: GartnerMatrixSamplerProps) {
               </p>
             </div>
             <Classic2x2Quadrant {...props} />
-          </TabsContent>
-          
-          <TabsContent value="extended" className="mt-0">
-            <div className="text-center mb-4">
-              <Badge variant="outline">9-Zone Strategic Grid</Badge>
-              <p className="text-xs text-muted-foreground mt-1">
-                Full 0-2 scoring with action-oriented zone labels
-              </p>
-            </div>
-            <Extended3x3Grid {...props} />
           </TabsContent>
           
           <TabsContent value="hybrid" className="mt-0">
