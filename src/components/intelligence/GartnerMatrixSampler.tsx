@@ -78,27 +78,39 @@ function Classic2x2Quadrant({
   const positioned = useMemo(() => {
     const filtered = technologies.filter(isSDVRelevant);
     
-    return filtered.map(tech => {
+    return filtered.map((tech, index) => {
       const { challenge, opportunity } = getScores(tech);
       
-      // Map scores to position within safe zones (avoiding title corners)
-      // IMPORTANT: Tender defines Challenge 0=Severe (HARD), 2=No Major (EASY)
-      // But quadrant "High Challenge" means HARD, so we INVERT the X axis
-      // X-axis: Challenge 0 (Severe) → RIGHT (High Challenge), Challenge 2 (Easy) → LEFT (Low Challenge)
-      // Y-axis: Opportunity 0 → BOTTOM (Low), Opportunity 2 → TOP (High)
-      const baseX = 15 + ((2 - challenge) / 2) * 70;  // Inverted: 0→right, 2→left
-      const baseY = 15 + (opportunity / 2) * 70;       // Normal: 0→bottom, 2→top
+      // Use 3-signal model to spread bubbles within quadrants
+      // Signal 1: Investment (0-2) → horizontal micro-offset
+      // Signal 2: Patents (0-2) → vertical micro-offset  
+      // Signal 3: Media/visibility (0-2) → diagonal offset
+      const investmentSignal = tech.investmentScore ?? 0;
+      const patentSignal = tech.totalPatents >= 100 ? 2 : tech.totalPatents >= 20 ? 1 : 0;
+      const mediaSignal = tech.visibilityScore ?? 0;
       
-      // Add jitter for overlap prevention
-      const jitterX = (Math.random() - 0.5) * 12;
-      const jitterY = (Math.random() - 0.5) * 12;
+      // Base position from C-O scores (inverted challenge axis)
+      // Challenge 0 (Severe) → RIGHT, Challenge 2 (Easy) → LEFT
+      const baseX = 15 + ((2 - challenge) / 2) * 70;
+      const baseY = 15 + (opportunity / 2) * 70;
+      
+      // Signal-based spreading (±10% offset based on actual data)
+      const signalOffsetX = ((investmentSignal - 1) / 2) * 15; // -7.5 to +7.5
+      const signalOffsetY = ((patentSignal - 1) / 2) * 15;     // -7.5 to +7.5
+      const mediaOffset = ((mediaSignal - 1) / 2) * 8;         // diagonal
+      
+      // Deterministic spread based on index (for consistent layout)
+      const indexSpread = ((index % 7) - 3) * 3;
       
       return {
         tech,
-        x: Math.max(12, Math.min(88, baseX + jitterX)),
-        y: Math.max(12, Math.min(88, baseY + jitterY)),
+        x: Math.max(12, Math.min(88, baseX + signalOffsetX + mediaOffset + indexSpread)),
+        y: Math.max(12, Math.min(88, baseY + signalOffsetY + mediaOffset)),
         challenge,
         opportunity,
+        investmentSignal,
+        patentSignal,
+        mediaSignal,
       };
     });
   }, [technologies]);
@@ -213,6 +225,11 @@ function HybridRadarQuadrant({
       // Maturity ring from ACTUAL TRL data (not assumed)
       const maturityRing = getMaturityRing(tech.trlScore);
       
+      // 3-signal spreading
+      const investmentSignal = tech.investmentScore ?? 0;
+      const patentSignal = tech.totalPatents >= 100 ? 2 : tech.totalPatents >= 20 ? 1 : 0;
+      const mediaSignal = tech.visibilityScore ?? 0;
+      
       // Calculate angle based on quadrant (C-O position)
       // INVERT challenge: 0 (Severe) = right side, 2 (Easy) = left side
       const quadrantAngle = Math.atan2(
@@ -224,12 +241,19 @@ function HybridRadarQuadrant({
       // Ring 0 = center (15), Ring 1 = middle (30), Ring 2 = outer (45)
       const baseDistance = 15 + maturityRing * 15;
       
-      // Add jitter within ring band
-      const jitterAngle = ((i % 7) - 3) * 0.12;
-      const jitterDist = ((i % 5) - 2) * 3;
+      // Signal-based angle spread (investment affects angular position)
+      const signalAngleOffset = ((investmentSignal - 1) / 2) * 0.25;
+      // Patent signal affects distance within ring band
+      const signalDistOffset = ((patentSignal - 1) / 2) * 6;
+      // Media signal adds small angular variation
+      const mediaAngleOffset = ((mediaSignal - 1) / 2) * 0.15;
       
-      const finalAngle = quadrantAngle + jitterAngle;
-      const finalDist = Math.max(10, Math.min(44, baseDistance + jitterDist));
+      // Index-based deterministic spread (consistent layout)
+      const indexAngleSpread = ((i % 11) - 5) * 0.08;
+      const indexDistSpread = ((i % 5) - 2) * 2;
+      
+      const finalAngle = quadrantAngle + signalAngleOffset + mediaAngleOffset + indexAngleSpread;
+      const finalDist = Math.max(10, Math.min(44, baseDistance + signalDistOffset + indexDistSpread));
       
       const x = centerX + Math.cos(finalAngle) * finalDist;
       const y = centerY - Math.sin(finalAngle) * finalDist; // Invert Y for SVG
