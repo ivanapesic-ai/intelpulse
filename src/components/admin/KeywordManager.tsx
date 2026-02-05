@@ -4,17 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { useKeywords, useAITagMapping, useDealroomTaxonomy } from "@/hooks/useTechnologies";
+ import { useKeywords, useAITagMapping } from "@/hooks/useTechnologies";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-// Suggested mappings from Dealroom-source keywords for common CEI domains
-const SUGGESTED_DEALROOM_MAPPINGS: Record<string, string[]> = {
+ // Suggested alias mappings for common SDV domains
+ const SUGGESTED_ALIAS_MAPPINGS: Record<string, string[]> = {
   "autonomous-driving": ["AV Software", "AV Simulation", "AV Labeling", "LiDAR", "AV Camera", "AV Radar", "Teledriving", "Autonomous Mobile Robots", "Telematics"],
   "self-driving-vehicles": ["AV Software", "AV Simulation", "AV Labeling", "LiDAR", "AV Camera", "AV Radar", "Teledriving"],
   "autonomous-vehicle": ["AV Software", "AV Simulation", "AV Labeling", "LiDAR", "Autonomous Mobile Robots"],
@@ -40,9 +39,7 @@ interface KeywordWithMappings {
   displayName: string;
   source: string;
   description?: string;
-  dealroomTags: string[];
-  dealroomIndustries: string[];
-  dealroomSubIndustries: string[];
+   aliases: string[];
 }
 
 type FilterStatus = "all" | "mapped" | "unmapped";
@@ -52,11 +49,9 @@ export function KeywordManager() {
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [addingTagsFor, setAddingTagsFor] = useState<string | null>(null);
-  const [taxonomySearch, setTaxonomySearch] = useState("");
-  const [selectedTaxonomyTab, setSelectedTaxonomyTab] = useState<string>("technology");
+   const [aliasSearch, setAliasSearch] = useState("");
 
   const { data: keywords, isLoading: keywordsLoading, refetch: refetchKeywords } = useKeywords();
-  const { data: taxonomy, isLoading: taxonomyLoading } = useDealroomTaxonomy();
   const aiMapper = useAITagMapping();
   const queryClient = useQueryClient();
 
@@ -69,10 +64,7 @@ export function KeywordManager() {
       displayName: k.displayName,
       source: k.source,
       description: k.description,
-      dealroomTags: k.dealroomTags || [],
-      // These will come from the extended query once DB types are updated
-      dealroomIndustries: (k as any).dealroomIndustries || [],
-      dealroomSubIndustries: (k as any).dealroomSubIndustries || [],
+       aliases: k.aliases || [],
     }));
   }, [keywords]);
 
@@ -80,9 +72,7 @@ export function KeywordManager() {
   const stats = useMemo(() => {
     const total = keywordsWithMappings.length;
     const ceiSphere = keywordsWithMappings.filter(k => k.source === "cei_sphere").length;
-    const mapped = keywordsWithMappings.filter(k => 
-      k.dealroomTags.length > 0 || k.dealroomIndustries.length > 0 || k.dealroomSubIndustries.length > 0
-    ).length;
+     const mapped = keywordsWithMappings.filter(k => k.aliases.length > 0).length;
     const unmapped = total - mapped;
     return { total, ceiSphere, mapped, unmapped };
   }, [keywordsWithMappings]);
@@ -91,39 +81,23 @@ export function KeywordManager() {
   const filteredKeywords = useMemo(() => {
     let result = keywordsWithMappings.filter(k => k.source === "cei_sphere");
     
-    if (filter === "mapped") {
-      result = result.filter(k => 
-        k.dealroomTags.length > 0 || k.dealroomIndustries.length > 0 || k.dealroomSubIndustries.length > 0
-      );
-    } else if (filter === "unmapped") {
-      result = result.filter(k => 
-        k.dealroomTags.length === 0 && k.dealroomIndustries.length === 0 && k.dealroomSubIndustries.length === 0
-      );
+     if (filter === "mapped") {
+       result = result.filter(k => k.aliases.length > 0);
+     } else if (filter === "unmapped") {
+       result = result.filter(k => k.aliases.length === 0);
     }
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(k =>
         k.displayName.toLowerCase().includes(query) ||
-        k.keyword.toLowerCase().includes(query) ||
-        k.dealroomTags.some(t => t.toLowerCase().includes(query))
+         k.keyword.toLowerCase().includes(query) ||
+         k.aliases.some(t => t.toLowerCase().includes(query))
       );
     }
 
     return result.sort((a, b) => a.displayName.localeCompare(b.displayName));
   }, [keywordsWithMappings, filter, searchQuery]);
-
-  // Filtered taxonomy items
-  const filteredTaxonomy = useMemo(() => {
-    if (!taxonomy) return { industries: [], subIndustries: [], technology: [] };
-    
-    const query = taxonomySearch.toLowerCase();
-    return {
-      industries: taxonomy.industries.filter(i => i.name.toLowerCase().includes(query)),
-      subIndustries: taxonomy.sub_industries.filter(i => i.name.toLowerCase().includes(query)),
-      technology: taxonomy.technology.filter(i => i.name.toLowerCase().includes(query)),
-    };
-  }, [taxonomy, taxonomySearch]);
 
   // Handle AI auto-map for all unmapped
   const handleAutoMapAll = () => {
@@ -135,79 +109,50 @@ export function KeywordManager() {
     aiMapper.mutate({ keywordIds: [keywordId] });
   };
 
-  // Handle adding a mapping
-  const handleAddMapping = async (keywordId: string, term: string, type: "tag" | "industry" | "sub_industry") => {
+   // Handle adding an alias
+   const handleAddAlias = async (keywordId: string, alias: string) => {
     const keyword = keywordsWithMappings.find(k => k.id === keywordId);
     if (!keyword) return;
 
-    let column: string;
-    let currentValues: string[];
-
-    if (type === "tag") {
-      column = "dealroom_tags";
-      currentValues = keyword.dealroomTags;
-    } else if (type === "industry") {
-      column = "dealroom_industries";
-      currentValues = keyword.dealroomIndustries;
-    } else {
-      column = "dealroom_sub_industries";
-      currentValues = keyword.dealroomSubIndustries;
-    }
-
-    if (currentValues.includes(term)) {
-      toast.info("Term already mapped");
+     if (keyword.aliases.includes(alias)) {
+       toast.info("Alias already exists");
       return;
     }
 
     const { error } = await supabase
       .from("technology_keywords")
-      .update({ [column]: [...currentValues, term] })
+       .update({ aliases: [...keyword.aliases, alias] })
       .eq("id", keywordId);
 
     if (error) {
-      toast.error("Failed to add mapping");
+       toast.error("Failed to add alias");
       console.error(error);
     } else {
-      toast.success(`Added "${term}" to ${keyword.displayName}`);
+       toast.success(`Added alias "${alias}" to ${keyword.displayName}`);
       refetchKeywords();
     }
   };
 
-  // Handle removing a mapping
-  const handleRemoveMapping = async (keywordId: string, term: string, type: "tag" | "industry" | "sub_industry") => {
+   // Handle removing an alias
+   const handleRemoveAlias = async (keywordId: string, alias: string) => {
     const keyword = keywordsWithMappings.find(k => k.id === keywordId);
     if (!keyword) return;
 
-    let column: string;
-    let currentValues: string[];
-
-    if (type === "tag") {
-      column = "dealroom_tags";
-      currentValues = keyword.dealroomTags;
-    } else if (type === "industry") {
-      column = "dealroom_industries";
-      currentValues = keyword.dealroomIndustries;
-    } else {
-      column = "dealroom_sub_industries";
-      currentValues = keyword.dealroomSubIndustries;
-    }
-
     const { error } = await supabase
       .from("technology_keywords")
-      .update({ [column]: currentValues.filter(t => t !== term) })
+       .update({ aliases: keyword.aliases.filter(a => a !== alias) })
       .eq("id", keywordId);
 
     if (error) {
-      toast.error("Failed to remove mapping");
+       toast.error("Failed to remove alias");
       console.error(error);
     } else {
-      toast.success(`Removed "${term}"`);
+       toast.success(`Removed alias "${alias}"`);
       refetchKeywords();
     }
   };
 
-  const hasMappings = (k: KeywordWithMappings) => 
-    k.dealroomTags.length > 0 || k.dealroomIndustries.length > 0 || k.dealroomSubIndustries.length > 0;
+   const hasAliases = (k: KeywordWithMappings) => k.aliases.length > 0;
 
   if (keywordsLoading) {
     return (
