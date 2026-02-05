@@ -34,61 +34,68 @@ const SIGNAL_DEFINITIONS = {
 };
 
 export function SignalBreakdown({ technology }: SignalBreakdownProps) {
-  // Calculate signal scores as percentages (0-2 scale from tender)
+  // Calculate signal scores (0-2 scale for internal use)
   const signals = [
     {
       key: "investment",
       ...SIGNAL_DEFINITIONS.investment,
-      value: technology.investmentScore ?? 0,
-      maxValue: 2,
+      score: technology.investmentScore ?? 0,
+      maxScore: 2,
       icon: TrendingUp,
       color: "bg-emerald-500",
       lightColor: "bg-emerald-500/20",
       textColor: "text-emerald-500",
-      details: technology.totalFundingEur > 0 
-        ? `€${(technology.totalFundingEur / 1_000_000).toFixed(1)}M raised`
-        : "No funding data",
+      // Raw value display
+      rawValue: technology.totalFundingEur > 0 
+        ? `€${(technology.totalFundingEur / 1_000_000).toFixed(1)}M`
+        : "—",
+      rawLabel: "Total Raised",
+      secondaryValue: technology.dealroomCompanyCount > 0 ? `${technology.dealroomCompanyCount} companies` : null,
     },
     {
       key: "patents",
       ...SIGNAL_DEFINITIONS.patents,
-      value: technology.totalPatents >= 100 ? 2 : technology.totalPatents >= 20 ? 1 : 0,
-      maxValue: 2,
+      score: technology.totalPatents >= 100 ? 2 : technology.totalPatents >= 20 ? 1 : 0,
+      maxScore: 2,
       icon: FileText,
       color: "bg-blue-500",
       lightColor: "bg-blue-500/20",
       textColor: "text-blue-500",
-      details: technology.totalPatents > 0 
-        ? `${technology.totalPatents.toLocaleString()} patents`
-        : "No patent data",
+      rawValue: technology.totalPatents > 0 
+        ? technology.totalPatents.toLocaleString()
+        : "—",
+      rawLabel: "Patents Filed",
+      secondaryValue: null,
     },
     {
       key: "media",
       ...SIGNAL_DEFINITIONS.media,
-      value: technology.visibilityScore ?? 0,
-      maxValue: 2,
+      score: technology.visibilityScore ?? 0,
+      maxScore: 2,
       icon: Newspaper,
       color: "bg-purple-500",
       lightColor: "bg-purple-500/20",
       textColor: "text-purple-500",
-      details: `${technology.documentMentionCount + (technology.newsMentionCount ?? 0)} mentions`,
+      rawValue: (technology.documentMentionCount + (technology.newsMentionCount ?? 0)).toString(),
+      rawLabel: "Mentions",
+      secondaryValue: technology.documentMentionCount > 0 ? `${technology.documentMentionCount} documents` : null,
     },
   ];
 
-  const getScoreLabel = (value: number) => {
-    if (value === 2) return "Strong";
-    if (value === 1) return "Moderate";
+  const getScoreLabel = (score: number) => {
+    if (score === 2) return "Strong";
+    if (score === 1) return "Moderate";
     return "Emerging";
   };
 
-  const getScoreColor = (value: number) => {
-    if (value === 2) return "text-emerald-500";
-    if (value === 1) return "text-amber-500";
+  const getScoreColor = (score: number) => {
+    if (score === 2) return "text-emerald-500";
+    if (score === 1) return "text-amber-500";
     return "text-red-500";
   };
 
   // Calculate composite from the 3 tender signals
-  const compositeScore = signals.reduce((acc, s) => acc + s.value, 0) / signals.length;
+  const compositeScore = signals.reduce((acc, s) => acc + s.score, 0) / signals.length;
 
   return (
     <Card className="border-border">
@@ -131,33 +138,41 @@ export function SignalBreakdown({ technology }: SignalBreakdownProps) {
                     </Tooltip>
                   </div>
                 </div>
-                <Badge 
-                  variant="outline" 
-                  className={cn("text-xs font-semibold", getScoreColor(signal.value))}
-                >
-                  {getScoreLabel(signal.value)}
-                </Badge>
+                {/* Raw value prominently displayed */}
+                <div className="text-right">
+                  <span className={cn("text-lg font-bold", signal.textColor)}>
+                    {signal.rawValue}
+                  </span>
+                  <span className="text-xs text-muted-foreground block">
+                    {signal.rawLabel}
+                  </span>
+                </div>
               </div>
 
-              {/* Progress Bar */}
+              {/* Progress Bar with score indicator */}
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
+                <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: `${(signal.value / signal.maxValue) * 100}%` }}
+                    animate={{ width: `${(signal.score / signal.maxScore) * 100}%` }}
                     transition={{ delay: index * 0.1 + 0.2, duration: 0.5, ease: "easeOut" }}
                     className={cn("h-full rounded-full", signal.color)}
                   />
                 </div>
-                <span className="text-xs font-mono w-8 text-right font-semibold">
-                  {signal.value}/{signal.maxValue}
-                </span>
+                <Badge 
+                  variant="outline" 
+                  className={cn("text-xs", getScoreColor(signal.score))}
+                >
+                  {getScoreLabel(signal.score)}
+                </Badge>
               </div>
 
-              {/* Details */}
-              <p className="text-xs text-muted-foreground pl-9">
-                {signal.details}
-              </p>
+              {/* Secondary details */}
+              {signal.secondaryValue && (
+                <p className="text-xs text-muted-foreground pl-9">
+                  {signal.secondaryValue}
+                </p>
+              )}
             </motion.div>
           ))}
         </TooltipProvider>
@@ -165,17 +180,17 @@ export function SignalBreakdown({ technology }: SignalBreakdownProps) {
         {/* Composite Score */}
         <div className="pt-4 border-t border-border">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-bold">Composite Signal Score</span>
-            <span className="text-xl font-bold text-primary">
-              {compositeScore.toFixed(1)}/2
-            </span>
+            <span className="text-sm font-bold">Signal Strength</span>
+            <Badge variant="outline" className={cn("text-sm font-semibold", getScoreColor(Math.round(compositeScore)))}>
+              {getScoreLabel(Math.round(compositeScore))}
+            </Badge>
           </div>
           <Progress 
             value={(compositeScore / 2) * 100} 
             className="h-3"
           />
           <p className="text-xs text-muted-foreground mt-2">
-            Average of 3 tender-defined signals (Investment, Patents, Market Response)
+            Composite of Investment, Patents, and Market Response signals
           </p>
         </div>
       </CardContent>
