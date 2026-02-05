@@ -47,7 +47,7 @@ export function TechnologyCard({ technology, onClick, compact = false }: Technol
               </Badge>
               {technology.dealroomCompanyCount > 0 && (
                 <Badge variant="outline" className="text-xs text-muted-foreground">
-                  {technology.dealroomCompanyCount} companies
+                  {technology.dealroomCompanyCount} tracked
                 </Badge>
               )}
             </div>
@@ -99,7 +99,7 @@ export function TechnologyCard({ technology, onClick, compact = false }: Technol
         )}
         {technology.dealroomCompanyCount > 0 && (
           <Badge variant="outline" className="text-muted-foreground">
-            {technology.dealroomCompanyCount} companies
+            {technology.dealroomCompanyCount} tracked
           </Badge>
         )}
       </div>

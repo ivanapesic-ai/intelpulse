@@ -231,7 +231,7 @@ export default function TechnologyRadar() {
                                 <p className="text-xs text-muted-foreground line-clamp-2">{tech.description}</p>
                                 <div className="flex items-center gap-2">
                                   <Badge variant="outline" className="text-xs">{getMaturityRing(tech.compositeScore)}</Badge>
-                                  <Badge variant="outline" className="text-xs">{tech.dealroomCompanyCount} companies</Badge>
+                                  <Badge variant="outline" className="text-xs">{tech.dealroomCompanyCount} tracked companies</Badge>
                                 </div>
                               </div>
                             </TooltipContent>
@@ -377,7 +377,7 @@ export default function TechnologyRadar() {
 
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="outline">{getMaturityRing(selectedTech.compositeScore)}</Badge>
-                    <Badge variant="outline">{selectedTech.dealroomCompanyCount} companies</Badge>
+                    <Badge variant="outline">{selectedTech.dealroomCompanyCount} tracked companies</Badge>
                     {selectedTech.documentMentionCount > 0 && (
                       <Badge variant="outline">{selectedTech.documentMentionCount} mentions</Badge>
                     )}
@@ -535,7 +535,7 @@ export default function TechnologyRadar() {
                 <div>
                   <p className="text-sm font-medium text-foreground mb-2">Metrics</p>
                   <div className="space-y-1 text-sm text-muted-foreground">
-                    <p>{selectedTech.dealroomCompanyCount} companies</p>
+                    <p>{selectedTech.dealroomCompanyCount} tracked companies</p>
                     <p>{formatFundingEur(selectedTech.totalFundingEur)} funding</p>
                     <p>{selectedTech.totalEmployees.toLocaleString()} employees</p>
                     {selectedTech.documentMentionCount > 0 && (
