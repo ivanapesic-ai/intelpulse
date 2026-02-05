@@ -247,34 +247,40 @@ export interface TechnologyIntelligence {
    });
  }
  
- // Trigger C-O score calculation for all technologies
- export function useCalculateAllCOScores() {
-   const queryClient = useQueryClient();
- 
-   return useMutation({
-     mutationFn: async () => {
-       // Get all keyword IDs
-       const { data: techs, error: fetchError } = await supabase
-         .from("technologies")
-         .select("keyword_id")
-         .not("keyword_id", "is", null);
- 
-       if (fetchError) throw fetchError;
- 
-       // Calculate scores for each
-       for (const tech of techs || []) {
-         if (tech.keyword_id) {
-           await supabase.rpc("aggregate_document_insights", {
-             tech_keyword_id: tech.keyword_id,
-           });
-         }
-       }
- 
-       return { processed: techs?.length || 0 };
-     },
-     onSuccess: () => {
-       queryClient.invalidateQueries({ queryKey: ["technology-intelligence"] });
-       queryClient.invalidateQueries({ queryKey: ["technologies"] });
-     },
-   });
- }
+// Trigger C-O score calculation for all technologies using the new scoring engine
+export function useCalculateAllCOScores() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      // Get calculated scores from the scoring engine
+      const { data: scores, error: scoreError } = await supabase.rpc(
+        "score_all_technologies"
+      );
+
+      if (scoreError) throw scoreError;
+
+      // Update each technology with its scores
+      let updated = 0;
+      for (const score of scores || []) {
+        const { error: updateError } = await supabase
+          .from("technologies")
+          .update({
+            challenge_score: score.challenge_score,
+            opportunity_score: score.opportunity_score,
+            last_updated: new Date().toISOString(),
+          })
+          .eq("keyword_id", score.keyword_id);
+
+        if (!updateError) updated++;
+      }
+
+      return { processed: updated };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["technology-intelligence"] });
+      queryClient.invalidateQueries({ queryKey: ["technologies"] });
+      queryClient.invalidateQueries({ queryKey: ["co-scored-technologies"] });
+    },
+  });
+}
