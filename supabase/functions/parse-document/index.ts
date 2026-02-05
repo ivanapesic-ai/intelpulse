@@ -245,10 +245,18 @@ serve(async (req) => {
         pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
       };
       const mimeType = mimeTypes[document.file_type] || "application/pdf";
+      const fileSizeKB = arrayBuffer.byteLength / 1024;
       
-      console.log(`Extracting text from ${document.file_type} (${(arrayBuffer.byteLength / 1024).toFixed(1)} KB)...`);
+      console.log(`Extracting text from ${document.file_type} (${fileSizeKB.toFixed(1)} KB)...`);
       
-      // Use Gemini to extract text from the document
+      // Check file size limits (Edge function memory is ~150MB, leave room for processing)
+      const MAX_FILE_SIZE_KB = 5000; // 5MB limit for direct processing
+      if (fileSizeKB > MAX_FILE_SIZE_KB) {
+        console.warn(`File too large (${fileSizeKB.toFixed(0)} KB), may hit memory limits`);
+        // For very large files, we'll process what we can
+      }
+      
+      // Use Gemini to extract text from the document - optimized for memory
       const extractResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -267,13 +275,13 @@ serve(async (req) => {
 
 Focus on capturing:
 1. All headings and section titles
-2. Body text paragraphs
-3. Table contents (format as text)
+2. Body text paragraphs (summarize very long sections)
+3. Table contents (format as compact text)
 4. Figure captions and labels
 5. Key statistics, percentages, and numbers
-6. Any technology names, TRL levels, or policy references
+6. Technology names, TRL levels, or policy references
 
-Return the complete extracted text in a structured format, preserving the document's logical flow. Include [HEADING], [TABLE], [FIGURE] markers where appropriate.`,
+Return the extracted text CONCISELY - prioritize key information. Max 25000 characters.`,
                 },
                 {
                   type: "image_url",
@@ -284,7 +292,7 @@ Return the complete extracted text in a structured format, preserving the docume
               ],
             },
           ],
-          max_tokens: 16000,
+          max_tokens: 12000,
         }),
       });
       
@@ -444,7 +452,30 @@ Analyze this document and extract technology mentions with H11 precision scoring
 
 ${documentContent}`;
 
-    // Call Lovable AI for extraction
+    // Truncate content if too long to avoid response truncation
+    const MAX_CONTENT_LENGTH = 50000;
+    let processedContent = documentContent;
+    if (documentContent.length > MAX_CONTENT_LENGTH) {
+      console.log(`Truncating content from ${documentContent.length} to ${MAX_CONTENT_LENGTH} chars`);
+      processedContent = documentContent.slice(0, MAX_CONTENT_LENGTH) + "\n\n[CONTENT TRUNCATED FOR PROCESSING]";
+    }
+    
+    // Rebuild user prompt with potentially truncated content
+    const finalUserPrompt = `## DOCUMENT PRE-ANALYSIS (H11 Algorithm)
+
+Detected sectors: ${detectedSectors.join(", ")}
+Funding mentions found: ${marketSignals.fundingMentions.slice(0, 5).join(", ") || "none"}
+Adoption rates found: ${marketSignals.adoptionRates.slice(0, 5).join(", ") || "none"}
+
+## TECHNOLOGY KEYWORDS TO MATCH
+${JSON.stringify(keywordList.slice(0, 100), null, 2)}
+
+## DOCUMENT CONTENT
+Analyze this document and extract technology mentions with H11 precision scoring:
+
+${processedContent}`;
+
+    // Call Lovable AI for extraction with increased token limit
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -452,11 +483,12 @@ ${documentContent}`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
+          { role: "user", content: finalUserPrompt },
         ],
+        max_tokens: 8000,
         response_format: { type: "json_object" },
       }),
     });
