@@ -23,8 +23,8 @@ export function PlatformHeader() {
             <Link to="/mockups" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <img src={logo} alt="AI-CE Heatmap" className="h-8 w-auto" />
               <div>
-                <h1 className="text-base font-semibold font-display leading-none text-foreground">AI-CE Heatmap</h1>
-                <p className="text-xs text-muted-foreground">ML-SDV Intelligence</p>
+                <h1 className="text-base font-semibold font-display leading-none text-foreground">Pulse11</h1>
+                <p className="text-xs text-muted-foreground">CEI-Sphere Intelligence Platform</p>
               </div>
             </Link>
 
