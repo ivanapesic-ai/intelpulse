@@ -179,6 +179,20 @@ export type Database = {
             foreignKeyName: "concept_scoring_factors_concept_id_fkey"
             columns: ["concept_id"]
             isOneToOne: false
+            referencedRelation: "concept_heatmap"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "concept_scoring_factors_concept_id_fkey"
+            columns: ["concept_id"]
+            isOneToOne: false
+            referencedRelation: "concept_scoring_summary"
+            referencedColumns: ["concept_id"]
+          },
+          {
+            foreignKeyName: "concept_scoring_factors_concept_id_fkey"
+            columns: ["concept_id"]
+            isOneToOne: false
             referencedRelation: "ontology_concepts"
             referencedColumns: ["id"]
           },
@@ -376,6 +390,13 @@ export type Database = {
           match_source?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "crunchbase_keyword_mapping_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "crunchbase_keyword_mapping_company_id_fkey"
             columns: ["company_id"]
@@ -875,9 +896,11 @@ export type Database = {
           created_at: string | null
           description: string | null
           domain_id: number | null
+          growth_rate_yoy: number | null
           id: number
           is_core: boolean | null
           last_scored_at: string | null
+          market_size_eur: number | null
           maturity_stage: string | null
           name: string
           opportunity_score: number | null
@@ -889,9 +912,11 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           domain_id?: number | null
+          growth_rate_yoy?: number | null
           id?: number
           is_core?: boolean | null
           last_scored_at?: string | null
+          market_size_eur?: number | null
           maturity_stage?: string | null
           name: string
           opportunity_score?: number | null
@@ -903,9 +928,11 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           domain_id?: number | null
+          growth_rate_yoy?: number | null
           id?: number
           is_core?: boolean | null
           last_scored_at?: string | null
+          market_size_eur?: number | null
           maturity_stage?: string | null
           name?: string
           opportunity_score?: number | null
@@ -992,6 +1019,20 @@ export type Database = {
             foreignKeyName: "ontology_relationships_concept_from_id_fkey"
             columns: ["concept_from_id"]
             isOneToOne: false
+            referencedRelation: "concept_heatmap"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ontology_relationships_concept_from_id_fkey"
+            columns: ["concept_from_id"]
+            isOneToOne: false
+            referencedRelation: "concept_scoring_summary"
+            referencedColumns: ["concept_id"]
+          },
+          {
+            foreignKeyName: "ontology_relationships_concept_from_id_fkey"
+            columns: ["concept_from_id"]
+            isOneToOne: false
             referencedRelation: "ontology_concepts"
             referencedColumns: ["id"]
           },
@@ -1007,6 +1048,20 @@ export type Database = {
             columns: ["concept_to_id"]
             isOneToOne: false
             referencedRelation: "combined_technology_graph"
+            referencedColumns: ["concept_id"]
+          },
+          {
+            foreignKeyName: "ontology_relationships_concept_to_id_fkey"
+            columns: ["concept_to_id"]
+            isOneToOne: false
+            referencedRelation: "concept_heatmap"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ontology_relationships_concept_to_id_fkey"
+            columns: ["concept_to_id"]
+            isOneToOne: false
+            referencedRelation: "concept_scoring_summary"
             referencedColumns: ["concept_id"]
           },
           {
@@ -1402,6 +1457,20 @@ export type Database = {
             foreignKeyName: "technology_keywords_ontology_concept_id_fkey"
             columns: ["ontology_concept_id"]
             isOneToOne: false
+            referencedRelation: "concept_heatmap"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technology_keywords_ontology_concept_id_fkey"
+            columns: ["ontology_concept_id"]
+            isOneToOne: false
+            referencedRelation: "concept_scoring_summary"
+            referencedColumns: ["concept_id"]
+          },
+          {
+            foreignKeyName: "technology_keywords_ontology_concept_id_fkey"
+            columns: ["ontology_concept_id"]
+            isOneToOne: false
             referencedRelation: "ontology_concepts"
             referencedColumns: ["id"]
           },
@@ -1573,6 +1642,18 @@ export type Database = {
       }
     }
     Views: {
+      co_matrix_distribution: {
+        Row: {
+          avg_challenge: number | null
+          avg_opportunity: number | null
+          concept_count: number | null
+          investment_priority: number | null
+          strategic_quadrant: string | null
+          total_companies: number | null
+          total_funding_billions: number | null
+        }
+        Relationships: []
+      }
       combined_technology_graph: {
         Row: {
           composite_score: number | null
@@ -1588,6 +1669,182 @@ export type Database = {
         }
         Relationships: []
       }
+      companies: {
+        Row: {
+          data_source: string | null
+          description: string | null
+          founded_date: string | null
+          headquarters_location: string | null
+          hq_country: string | null
+          id: string | null
+          industries: string[] | null
+          industry_groups: string[] | null
+          last_funding_date: string | null
+          last_funding_type: string | null
+          last_updated: string | null
+          lead_investors: string[] | null
+          name: string | null
+          number_of_employees: string | null
+          operating_status: string | null
+          patents_count: number | null
+          top_5_investors: string[] | null
+          total_funding_eur: number | null
+          total_funding_usd: number | null
+          website: string | null
+        }
+        Insert: {
+          data_source?: never
+          description?: string | null
+          founded_date?: string | null
+          headquarters_location?: string | null
+          hq_country?: string | null
+          id?: string | null
+          industries?: string[] | null
+          industry_groups?: string[] | null
+          last_funding_date?: string | null
+          last_funding_type?: string | null
+          last_updated?: string | null
+          lead_investors?: string[] | null
+          name?: string | null
+          number_of_employees?: string | null
+          operating_status?: string | null
+          patents_count?: number | null
+          top_5_investors?: string[] | null
+          total_funding_eur?: never
+          total_funding_usd?: number | null
+          website?: string | null
+        }
+        Update: {
+          data_source?: never
+          description?: string | null
+          founded_date?: string | null
+          headquarters_location?: string | null
+          hq_country?: string | null
+          id?: string | null
+          industries?: string[] | null
+          industry_groups?: string[] | null
+          last_funding_date?: string | null
+          last_funding_type?: string | null
+          last_updated?: string | null
+          lead_investors?: string[] | null
+          name?: string | null
+          number_of_employees?: string | null
+          operating_status?: string | null
+          patents_count?: number | null
+          top_5_investors?: string[] | null
+          total_funding_eur?: never
+          total_funding_usd?: number | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      company_concept_mapping: {
+        Row: {
+          company_id: string | null
+          concept_id: number | null
+          created_at: string | null
+          data_source: string | null
+          id: string | null
+          match_source: string | null
+          relevance_score: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crunchbase_keyword_mapping_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crunchbase_keyword_mapping_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "crunchbase_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crunchbase_keyword_mapping_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "sdv_ecosystem_companies"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "technology_keywords_ontology_concept_id_fkey"
+            columns: ["concept_id"]
+            isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["concept_id"]
+          },
+          {
+            foreignKeyName: "technology_keywords_ontology_concept_id_fkey"
+            columns: ["concept_id"]
+            isOneToOne: false
+            referencedRelation: "concept_heatmap"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technology_keywords_ontology_concept_id_fkey"
+            columns: ["concept_id"]
+            isOneToOne: false
+            referencedRelation: "concept_scoring_summary"
+            referencedColumns: ["concept_id"]
+          },
+          {
+            foreignKeyName: "technology_keywords_ontology_concept_id_fkey"
+            columns: ["concept_id"]
+            isOneToOne: false
+            referencedRelation: "ontology_concepts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technology_keywords_ontology_concept_id_fkey"
+            columns: ["concept_id"]
+            isOneToOne: false
+            referencedRelation: "sdv_ecosystem_companies"
+            referencedColumns: ["concept_id"]
+          },
+        ]
+      }
+      concept_heatmap: {
+        Row: {
+          acronym: string | null
+          challenge_score: number | null
+          company_count: number | null
+          concept: string | null
+          description: string | null
+          domain_code: string | null
+          domain_name: string | null
+          growth_rate_yoy: number | null
+          id: number | null
+          investment_priority: number | null
+          is_core: boolean | null
+          last_scored_at: string | null
+          market_size_eur: number | null
+          maturity_stage: string | null
+          opportunity_score: number | null
+          strategic_quadrant: string | null
+          total_funding_eur: number | null
+          total_patents: number | null
+        }
+        Relationships: []
+      }
+      concept_scoring_summary: {
+        Row: {
+          acronym: string | null
+          challenge_factors: Json | null
+          challenge_score: number | null
+          concept_id: number | null
+          concept_name: string | null
+          domain_name: string | null
+          last_scored_at: string | null
+          maturity_stage: string | null
+          opportunity_factors: Json | null
+          opportunity_score: number | null
+        }
+        Relationships: []
+      }
       keyword_mapping_summary: {
         Row: {
           avg_confidence: number | null
@@ -1600,6 +1857,18 @@ export type Database = {
           tangential_mappings: number | null
           total_mappings: number | null
           verified_mappings: number | null
+        }
+        Relationships: []
+      }
+      maturity_stage_analysis: {
+        Row: {
+          avg_challenge: number | null
+          avg_growth_rate: number | null
+          avg_opportunity: number | null
+          concept_count: number | null
+          maturity_stage: string | null
+          total_companies: number | null
+          total_funding_eur: number | null
         }
         Relationships: []
       }
@@ -1749,6 +2018,35 @@ export type Database = {
         Returns: number
       }
       can_manage_users: { Args: { _user_id: string }; Returns: boolean }
+      explain_concept_score: {
+        Args: { p_concept_id: number }
+        Returns: {
+          challenge_explanation: string
+          challenge_score: number
+          company_count: number
+          concept_acronym: string
+          concept_name: string
+          maturity: string
+          opportunity_explanation: string
+          opportunity_score: number
+          quadrant: string
+          top_challenge_barriers: string[]
+          top_opportunity_drivers: string[]
+          total_funding_eur: number
+        }[]
+      }
+      get_concept_top_companies: {
+        Args: { p_concept_id: number; p_limit?: number }
+        Returns: {
+          company_id: string
+          company_name: string
+          data_source: string
+          headquarters_location: string
+          hq_country: string
+          keywords: string[]
+          total_funding_eur: number
+        }[]
+      }
       get_strategic_quadrant: {
         Args: { p_challenge_score: number; p_opportunity_score: number }
         Returns: string
