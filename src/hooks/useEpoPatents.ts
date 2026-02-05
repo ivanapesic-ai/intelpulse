@@ -226,11 +226,11 @@ export function useEnrichWithPatents() {
       total: number;
       results: Array<{ name: string; patentCount: number }>;
     }> => {
-      // Get companies without patent data
+      // Get companies needing EPO enrichment (0 or NULL patents)
       const { data: companies, error: fetchError } = await supabase
         .from("crunchbase_companies")
         .select("id, organization_name, patents_count")
-        .is("patents_count", null)
+        .or("patents_count.is.null,patents_count.eq.0")
         .order("total_funding_usd", { ascending: false })
         .limit(options?.limit || 20);
 
