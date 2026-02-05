@@ -1,9 +1,10 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Radar, Grid3X3, Compass, Settings, LayoutDashboard, Users, FileText, Layers } from "lucide-react";
+import { Radar, Grid3X3, Compass, Settings, LayoutDashboard, Users, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import logo from "@/assets/logo.svg";
 
 const navItems = [
   { path: "/mockups/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -32,9 +33,7 @@ export function PlatformHeader({ showBadge = true }: PlatformHeaderProps) {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-6">
             <Link to="/mockups" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <div className="w-8 h-8 rounded bg-primary flex items-center justify-center">
-                <Layers className="h-4 w-4 text-primary-foreground" />
-              </div>
+              <img src={logo} alt="AI-CE Heatmap" className="h-8 w-auto" />
               <div>
                 <h1 className="text-base font-semibold font-display leading-none text-foreground">AI-CE Heatmap</h1>
                 <p className="text-xs text-muted-foreground">ML-SDV Intelligence</p>
