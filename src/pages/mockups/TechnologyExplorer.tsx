@@ -11,6 +11,7 @@ import { PlatformHeader } from "@/components/mockups/PlatformHeader";
 import { MarketIntelligence } from "@/components/mockups/MarketIntelligence";
 import { useTechnologies } from "@/hooks/useTechnologies";
 import { useTechnologyRegionStats, getRegionStats } from "@/hooks/useTechnologyRegionStats";
+import { useNewsForKeyword } from "@/hooks/useNews";
 import { formatFundingEur, formatNumber, MATURITY_SCORE_CONFIG, type Technology, type TechnologyKeyword } from "@/types/database";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -115,6 +116,9 @@ export default function TechnologyExplorer() {
     if (!selectedTech || !technologies) return selectedTech;
     return technologies.find(t => t.id === selectedTech.id) || selectedTech;
   }, [selectedTech, technologies]);
+
+  // Fetch live RSS news for the selected technology
+  const { data: liveNews, isLoading: newsLoading } = useNewsForKeyword(liveSelectedTech?.keywordId ?? null);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -562,7 +566,7 @@ export default function TechnologyExplorer() {
                         </CardContent>
                       </Card>
 
-                      {/* Recent News */}
+                      {/* Recent News - Live RSS Feed */}
                       <Card>
                         <CardHeader>
                           <CardTitle className="text-sm text-foreground flex items-center gap-2">
@@ -571,11 +575,16 @@ export default function TechnologyExplorer() {
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
-                          {liveSelectedTech.recentNews && liveSelectedTech.recentNews.length > 0 ? (
+                          {newsLoading ? (
                             <div className="space-y-2">
-                              {liveSelectedTech.recentNews.slice(0, 3).map((news, index) => (
+                              <Skeleton className="h-12 w-full" />
+                              <Skeleton className="h-12 w-full" />
+                            </div>
+                          ) : liveNews && liveNews.length > 0 ? (
+                            <div className="space-y-2">
+                              {liveNews.slice(0, 3).map((news) => (
                                 <a
-                                  key={index}
+                                  key={news.id}
                                   href={news.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
@@ -588,9 +597,11 @@ export default function TechnologyExplorer() {
                                     </p>
                                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                       <Badge variant="outline" className="text-xs px-1 py-0">
-                                        {news.source}
+                                        {news.source_name || "News"}
                                       </Badge>
-                                      <span>{new Date(news.date).toLocaleDateString()}</span>
+                                      {news.published_at && (
+                                        <span>{new Date(news.published_at).toLocaleDateString()}</span>
+                                      )}
                                     </div>
                                   </div>
                                 </a>
@@ -599,10 +610,10 @@ export default function TechnologyExplorer() {
                           ) : (
                             <div className="text-center py-4">
                               <p className="text-sm text-muted-foreground">
-                                No news data available
+                                No news linked yet
                               </p>
                               <p className="text-xs text-muted-foreground mt-1">
-                                News data from web scraping
+                                Fetch RSS feeds from Admin panel
                               </p>
                             </div>
                           )}
