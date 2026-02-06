@@ -140,19 +140,6 @@ export default function IntelligenceDashboard() {
             </Button>
           </div>
 
-          {/* KPI Cards */}
-          {isLoading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {[...Array(6)].map((_, i) => (
-                <Skeleton key={i} className="h-28 rounded-xl" />
-              ))}
-            </div>
-          ) : (
-            <HierarchyKPICards 
-              domains={domains || []} 
-              totalKeywords={keywords?.length || 0} 
-            />
-          )}
         </motion.div>
 
         {/* Search */}
