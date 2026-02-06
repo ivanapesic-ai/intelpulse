@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, TrendingUp, TrendingDown, Minus, FileText, DollarSign, Users, Calendar, Building2, Newspaper, ExternalLink, Target, Globe, Tag } from "lucide-react";
+import { Search, TrendingUp, TrendingDown, Minus, FileText, DollarSign, Users, Calendar, Building2, Newspaper, ExternalLink, Target, Globe, Tag, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,21 @@ import { useTechnologyRegionStats, getRegionStats } from "@/hooks/useTechnologyR
 import { formatFundingEur, formatNumber, MATURITY_SCORE_CONFIG, type Technology, type TechnologyKeyword } from "@/types/database";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+
+// Central ecosystem hub technologies
+const CENTRAL_ECOSYSTEMS = [
+  "Software Defined Vehicle",
+  "Software-Defined Vehicle",
+  "Electric Vehicle", 
+  "Autonomous Driving"
+];
+
+function isCentralEcosystem(name: string): boolean {
+  return CENTRAL_ECOSYSTEMS.some(hub => 
+    name.toLowerCase() === hub.toLowerCase()
+  );
+}
 
 type SortOption = "composite" | "funding" | "employees" | "companies";
 type RegionFilter = "global" | "eu";
@@ -187,21 +202,37 @@ export default function TechnologyExplorer() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredTechnologies.map((tech) => {
               const displayStats = getDisplayStats(tech);
+              const isHub = isCentralEcosystem(tech.name);
               return (
                 <Card 
                   key={tech.id} 
-                  className="cursor-pointer hover:border-primary/50 transition-colors"
+                  className={cn(
+                    "cursor-pointer transition-colors",
+                    isHub 
+                      ? "bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/30 ring-1 ring-primary/20 hover:border-primary/50" 
+                      : "hover:border-primary/50"
+                  )}
                   onClick={() => openDetail(tech)}
                 >
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between mb-3">
-                      <h3 className="font-semibold text-foreground">{tech.name}</h3>
-                      <Badge 
-                        variant="outline" 
-                        className={`${getScoreColor(tech.compositeScore)} border-current`}
-                      >
-                        {tech.compositeScore.toFixed(1)}/2
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        {isHub && <Star className="h-4 w-4 text-primary fill-primary/30 shrink-0" />}
+                        <h3 className="font-semibold text-foreground">{tech.name}</h3>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {isHub && (
+                          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs">
+                            Hub
+                          </Badge>
+                        )}
+                        <Badge 
+                          variant="outline" 
+                          className={`${getScoreColor(tech.compositeScore)} border-current`}
+                        >
+                          {tech.compositeScore.toFixed(1)}/2
+                        </Badge>
+                      </div>
                     </div>
                     
                     <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
