@@ -1,8 +1,9 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Compass, LayoutDashboard, LogOut, Brain } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo.svg";
 
 const navItems = [
@@ -13,6 +14,13 @@ const navItems = [
 
 export function PlatformHeader() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/login');
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-background border-b border-border">
@@ -54,10 +62,7 @@ export function PlatformHeader() {
               variant="ghost"
               size="sm"
               className="text-muted-foreground hover:text-foreground gap-2"
-              onClick={() => {
-                // TODO: Implement actual logout
-                window.location.href = '/login';
-              }}
+              onClick={handleLogout}
             >
               <LogOut className="h-4 w-4" />
               Logout
