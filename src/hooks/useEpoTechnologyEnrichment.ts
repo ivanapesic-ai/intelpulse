@@ -1,19 +1,23 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { KEYWORD_TO_IPC_MAP } from "@/hooks/useEpoPatents";
+import { useDataSync } from "@/hooks/useDataSync";
 
 // Normalize keyword strings across snake_case / Title Case / hyphenated
 const normalize = (s: string) =>
   s
     .toLowerCase()
-    .replace(/[_-]+/g, " ")
+    .replace(/[_-]+/g, " ")  // Replace underscores AND hyphens with spaces
     .replace(/\s+/g, " ")
     .trim();
 
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-function matchesKeyword(normalizedInput: string, normalizedMapKey: string) {
+function matchesKeyword(normalizedInput: string, normalizedMapKey: string): boolean {
   if (!normalizedInput || !normalizedMapKey) return false;
+
+  // Exact match after normalization
+  if (normalizedInput === normalizedMapKey) return true;
 
   const short = Math.min(normalizedInput.length, normalizedMapKey.length) <= 3;
   if (short) {
@@ -29,7 +33,7 @@ function matchesKeyword(normalizedInput: string, normalizedMapKey: string) {
   );
 }
 
-function getMatchedIpcCodes(keywordLike: string): string[] {
+export function getMatchedIpcCodes(keywordLike: string): string[] {
   const normalized = normalize(keywordLike);
   let matched: string[] = [];
 
@@ -186,6 +190,104 @@ export function useEpoBatchEnrichTechnologies() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["technologies"] });
       queryClient.invalidateQueries({ queryKey: ["technology-intelligence"] });
+    },
+  });
+}
+
+/**
+ * Enrich ALL technologies with patent data - no limit, processes everything.
+ * Returns progress callbacks for real-time UI updates.
+ */
+export function useEpoEnrichAllTechnologies() {
+  const queryClient = useQueryClient();
+  const { syncAll } = useDataSync();
+
+  return useMutation({
+    mutationFn: async (options?: { 
+      onProgress?: (current: number, total: number, currentName: string) => void 
+    }): Promise<EnrichmentSummary> => {
+      // Get ALL technologies with their keywords
+      const { data: technologies, error: fetchError } = await supabase
+        .from("technologies")
+        .select("keyword_id, name")
+        .not("keyword_id", "is", null);
+
+      if (fetchError) throw fetchError;
+      if (!technologies || technologies.length === 0) {
+        return { technologiesEnriched: 0, totalPatentsFound: 0, results: [] };
+      }
+
+      const results: TechnologyEnrichmentResult[] = [];
+      let totalPatentsFound = 0;
+      let processed = 0;
+
+      for (const tech of technologies) {
+        if (!tech.keyword_id) continue;
+
+        const { data: keyword } = await supabase
+          .from("technology_keywords")
+          .select("id, keyword, display_name")
+          .eq("id", tech.keyword_id)
+          .single();
+
+        if (!keyword) continue;
+
+        processed++;
+        options?.onProgress?.(processed, technologies.length, keyword.display_name);
+
+        const matchedIpcCodes = getMatchedIpcCodes(keyword.keyword);
+        if (matchedIpcCodes.length === 0) {
+          results.push({
+            keywordId: keyword.id,
+            keywordName: keyword.display_name,
+            ipcCodes: [],
+            patentCount: 0,
+            topApplicants: [],
+          });
+          continue;
+        }
+
+        try {
+          const { data, error } = await supabase.functions.invoke("epo-patent-lookup", {
+            body: {
+              action: "enrich_technology",
+              keywordId: keyword.id,
+              ipcCodes: matchedIpcCodes,
+            },
+          });
+
+          if (error) {
+            console.error(`Failed to enrich ${keyword.display_name}:`, error);
+            continue;
+          }
+
+          const patentCount = Number(data?.totalPatents ?? 0);
+          totalPatentsFound += patentCount;
+
+          results.push({
+            keywordId: keyword.id,
+            keywordName: keyword.display_name,
+            ipcCodes: matchedIpcCodes,
+            patentCount,
+            topApplicants: [],
+          });
+        } catch (e) {
+          console.error(`Error enriching ${keyword.display_name}:`, e);
+        }
+
+        // Rate limiting between technologies (EPO allows 4 req/sec)
+        await new Promise((r) => setTimeout(r, 600));
+      }
+
+      return {
+        technologiesEnriched: results.filter(r => r.patentCount > 0).length,
+        totalPatentsFound,
+        results,
+      };
+    },
+    onSuccess: async () => {
+      // Full sync - update everything
+      await syncAll();
     },
   });
 }
