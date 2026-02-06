@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { TechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -62,6 +62,21 @@ function getScores(tech: TechnologyIntelligence): { challenge: number; opportuni
   
   return { challenge, opportunity };
 }
+
+// Maturity ring helper for multiple visualizations
+type MaturityRing = "Strong" | "Moderate" | "Challenging";
+
+function getMaturityRingFromComposite(compositeScore: number): MaturityRing {
+  if (compositeScore >= 1.5) return "Strong";
+  if (compositeScore >= 0.5) return "Moderate";
+  return "Challenging";
+}
+
+const ringColors: Record<MaturityRing, string> = {
+  Strong: "hsl(160 72% 35%)",
+  Moderate: "hsl(38 92% 45%)",
+  Challenging: "hsl(0 72% 50%)",
+};
 
 // ============================================================================
 // STYLE 1: Classic 2×2 Gartner Magic Quadrant
@@ -365,32 +380,178 @@ function HybridRadarQuadrant({
 }
 
 // ============================================================================
+// STYLE 4: Classic Maturity Radar (from TechnologyRadar page)
+// ============================================================================
+const ringRadii: Record<MaturityRing, number> = {
+  Strong: 0.22,
+  Moderate: 0.45,
+  Challenging: 0.72,
+};
+
+const techColors = [
+  "hsl(214 100% 49%)", // blue
+  "hsl(270 60% 50%)",  // purple
+  "hsl(160 72% 35%)",  // green
+  "hsl(350 70% 50%)",  // red
+  "hsl(38 92% 50%)",   // orange
+  "hsl(190 80% 45%)",  // cyan
+];
+
+function getTechColor(index: number): string {
+  return techColors[index % techColors.length];
+}
+
+function MaturityRadar({ 
+  technologies, 
+  onSelectTechnology, 
+  selectedId 
+}: GartnerMatrixSamplerProps) {
+  const filteredTechs = useMemo(() => technologies.filter(isSDVRelevant), [technologies]);
+  
+  const getPosition = (tech: TechnologyIntelligence, index: number) => {
+    const ring = getMaturityRingFromComposite(tech.compositeScore ?? 0);
+    const radius = ringRadii[ring];
+    
+    // Distribute technologies evenly in a ring
+    const techsInRing = filteredTechs.filter(t => getMaturityRingFromComposite(t.compositeScore ?? 0) === ring);
+    const techIndex = techsInRing.findIndex(t => t.id === tech.id);
+    const angle = (2 * Math.PI / techsInRing.length) * techIndex - Math.PI / 2;
+    
+    // Add slight jitter for visual separation
+    const jitter = (radius * 0.08) * ((index % 3) - 1);
+    const finalRadius = radius + jitter;
+
+    return {
+      x: 50 + Math.cos(angle) * finalRadius * 46,
+      y: 50 + Math.sin(angle) * finalRadius * 46,
+    };
+  };
+
+  return (
+    <div className="relative w-full aspect-square max-w-xl mx-auto">
+      <svg viewBox="0 0 100 100" className="w-full h-full">
+        {/* Background gradient circles */}
+        <circle cx="50" cy="50" r="46" fill="hsl(var(--muted) / 0.3)" />
+        <circle cx="50" cy="50" r="30" fill="hsl(var(--muted) / 0.2)" />
+        <circle cx="50" cy="50" r="15" fill="hsl(var(--muted) / 0.1)" />
+
+        {/* Ring circles */}
+        {[0.72, 0.45, 0.22].map((radius, i) => (
+          <circle
+            key={i}
+            cx="50"
+            cy="50"
+            r={radius * 46}
+            fill="none"
+            stroke="hsl(var(--border))"
+            strokeWidth="0.3"
+            strokeDasharray={i === 0 ? "1.5,1.5" : "none"}
+          />
+        ))}
+
+        {/* Technology dots */}
+        <TooltipProvider>
+          {filteredTechs.map((tech, index) => {
+            const pos = getPosition(tech, index);
+            const isSelected = selectedId === tech.id;
+            const color = getTechColor(index);
+            const ring = getMaturityRingFromComposite(tech.compositeScore ?? 0);
+
+            return (
+              <g key={tech.id}>
+                {isSelected && (
+                  <circle
+                    cx={pos.x}
+                    cy={pos.y}
+                    r="3.5"
+                    fill={color}
+                    opacity="0.2"
+                  />
+                )}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <circle
+                      cx={pos.x}
+                      cy={pos.y}
+                      r={isSelected ? 2 : 1.5}
+                      fill={color}
+                      className="cursor-pointer transition-all duration-200"
+                      stroke={isSelected ? "hsl(var(--foreground))" : "none"}
+                      strokeWidth={isSelected ? 0.4 : 0}
+                      onClick={() => onSelectTechnology?.(tech)}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-semibold text-foreground">{tech.name}</p>
+                        <span className="font-mono font-bold text-primary">{(tech.compositeScore ?? 0).toFixed(2)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">{ring}</Badge>
+                        <Badge variant="outline" className="text-xs">{tech.dealroomCompanyCount} companies</Badge>
+                      </div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </g>
+            );
+          })}
+        </TooltipProvider>
+      </svg>
+
+      {/* Ring labels */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+        <span className="text-[10px] text-success font-medium uppercase tracking-wide">Strong</span>
+      </div>
+      <div className="absolute top-[30%] left-1/2 -translate-x-1/2">
+        <span className="text-[10px] text-warning font-medium uppercase tracking-wide">Moderate</span>
+      </div>
+      <div className="absolute top-[12%] left-1/2 -translate-x-1/2">
+        <span className="text-[10px] text-destructive font-medium uppercase tracking-wide">Challenging</span>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // MAIN SAMPLER COMPONENT
 // ============================================================================
 export function GartnerMatrixSampler(props: GartnerMatrixSamplerProps) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Gartner-Style Visualization Samples</CardTitle>
+        <CardTitle className="text-lg">Technology Intelligence Views</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Compare different strategic positioning views for Challenge-Opportunity scoring
+          Strategic positioning and maturity analysis
         </p>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="classic" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="classic">Classic 2×2</TabsTrigger>
-            <TabsTrigger value="hybrid">Hybrid Radar</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="classic">Strategy Matrix</TabsTrigger>
+            <TabsTrigger value="radar">Maturity Radar</TabsTrigger>
+            <TabsTrigger value="hybrid">Hybrid View</TabsTrigger>
           </TabsList>
           
           <TabsContent value="classic" className="mt-0">
             <div className="text-center mb-4">
-              <Badge variant="outline">Magic Quadrant Style</Badge>
+              <Badge variant="outline">Challenge-Opportunity Quadrants</Badge>
               <p className="text-xs text-muted-foreground mt-1">
-                Scores collapsed to High/Low for clean 4-zone layout
+                Strategic positioning based on barriers and market potential
               </p>
             </div>
             <Classic2x2Quadrant {...props} />
+          </TabsContent>
+          
+          <TabsContent value="radar" className="mt-0">
+            <div className="text-center mb-4">
+              <Badge variant="outline">Maturity Rings</Badge>
+              <p className="text-xs text-muted-foreground mt-1">
+                Technologies grouped by composite score maturity
+              </p>
+            </div>
+            <MaturityRadar {...props} />
           </TabsContent>
           
           <TabsContent value="hybrid" className="mt-0">
