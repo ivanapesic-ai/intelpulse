@@ -241,6 +241,20 @@ export function useCrunchbaseReprocess() {
       if (error) throw error;
       if (!companies) throw new Error('No companies found');
       
+      // Fetch all active keywords for mapping
+      const { data: keywords, error: keywordsError } = await supabase
+        .from('technology_keywords')
+        .select('id, display_name')
+        .eq('is_active', true);
+      
+      if (keywordsError) throw keywordsError;
+      
+      // Build keyword name -> id map
+      const keywordIdMap = new Map<string, string>();
+      for (const kw of keywords || []) {
+        keywordIdMap.set(kw.display_name.toLowerCase(), kw.id);
+      }
+      
       let updated = 0;
       let unchanged = 0;
       const keywordCountsBefore: Record<string, number> = {};
@@ -252,6 +266,9 @@ export function useCrunchbaseReprocess() {
           keywordCountsBefore[kw] = (keywordCountsBefore[kw] || 0) + 1;
         }
       }
+      
+      // Collect all junction table inserts
+      const allMappingsToInsert: Array<{ company_id: string; keyword_id: string; match_source: string; match_confidence: number }> = [];
       
       // Process each company
       const BATCH_SIZE = 50;
@@ -300,13 +317,27 @@ export function useCrunchbaseReprocess() {
             unchanged++;
           }
           
+          // Collect junction table mappings for all keywords (new or existing)
+          const keywordsToMap = keywordsChanged ? newKeywords : oldKeywords;
+          for (const kwName of keywordsToMap) {
+            const keywordId = keywordIdMap.get(kwName.toLowerCase());
+            if (keywordId) {
+              allMappingsToInsert.push({
+                company_id: company.id,
+                keyword_id: keywordId,
+                match_source: 'reprocess',
+                match_confidence: 85,
+              });
+            }
+          }
+          
           // Count new keywords
           for (const kw of newKeywords) {
             keywordCountsAfter[kw] = (keywordCountsAfter[kw] || 0) + 1;
           }
         }
         
-        // Batch update
+        // Batch update companies
         if (updates.length > 0) {
           for (const update of updates) {
             await supabase
@@ -318,6 +349,36 @@ export function useCrunchbaseReprocess() {
               .eq('id', update.id);
           }
         }
+      }
+      
+      // Now sync the junction table: delete old mappings and insert new ones
+      // This ensures the junction table matches the company.technology_keywords array
+      onProgress?.({
+        current: companies.length,
+        total: companies.length,
+        currentCompany: 'Syncing keyword mappings...',
+        updated,
+        unchanged,
+      });
+      
+      // Delete all existing reprocess mappings (keep original import mappings)
+      await supabase
+        .from('crunchbase_keyword_mapping')
+        .delete()
+        .eq('match_source', 'reprocess');
+      
+      // Insert new mappings in batches
+      const MAPPING_BATCH_SIZE = 500;
+      for (let i = 0; i < allMappingsToInsert.length; i += MAPPING_BATCH_SIZE) {
+        const mappingBatch = allMappingsToInsert.slice(i, i + MAPPING_BATCH_SIZE);
+        
+        // Use upsert to handle duplicates (company_id + keyword_id)
+        await supabase
+          .from('crunchbase_keyword_mapping')
+          .upsert(mappingBatch, { 
+            onConflict: 'company_id,keyword_id',
+            ignoreDuplicates: true
+          });
       }
       
       // Build keyword changes summary
@@ -343,6 +404,7 @@ export function useCrunchbaseReprocess() {
       queryClient.invalidateQueries({ queryKey: ['crunchbase-companies'] });
       queryClient.invalidateQueries({ queryKey: ['crunchbase-stats'] });
       queryClient.invalidateQueries({ queryKey: ['technology-region-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['technologies'] });
     },
   });
 }
