@@ -131,14 +131,14 @@ function Classic2x2Quadrant({
   }, [technologies]);
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto">
+    <div className="relative w-full max-w-2xl mx-auto pl-12">
       {/* Y-axis label - outside left */}
-      <div className="absolute -left-8 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-medium text-muted-foreground whitespace-nowrap">
+      <div className="absolute left-0 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-medium text-muted-foreground whitespace-nowrap">
         Low Opportunity ← → High Opportunity
       </div>
       
       {/* Main matrix with aspect ratio */}
-      <div className="relative aspect-square ml-4 mb-8">
+      <div className="relative aspect-square mb-8">
         {/* Background gradient quadrants - Client naming convention */}
         <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 rounded-xl overflow-hidden">
           {/* Top-left: Quick Wins (Low Challenge, High Opportunity) - Yellow */}
