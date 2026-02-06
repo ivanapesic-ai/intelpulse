@@ -1,14 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Radar, Grid3X3, Compass, LayoutDashboard, LogOut, Brain } from "lucide-react";
+import { Compass, LayoutDashboard, LogOut, Brain } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import logo from "@/assets/logo.svg";
 
 const navItems = [
   { path: "/mockups/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/mockups/radar", label: "Radar", icon: Radar },
-  // { path: "/mockups/heatmap", label: "Heatmap", icon: Grid3X3 }, // Hidden - rethinking visualizations
+  // Radar merged into Intelligence page
   { path: "/mockups/explorer", label: "Explorer", icon: Compass },
   { path: "/mockups/intelligence", label: "Intelligence", icon: Brain },
 ];
