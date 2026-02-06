@@ -317,17 +317,17 @@ function HybridRadarQuadrant({
         <line x1="5" y1="50" x2="95" y2="50" stroke="hsl(var(--border))" strokeWidth="0.5" />
       </svg>
 
-      {/* Quadrant labels - matching Client naming */}
-      <div className="absolute top-2 left-4 text-xs font-semibold text-yellow-500">Quick Wins</div>
-      <div className="absolute top-2 right-4 text-xs font-semibold text-pink-400">Big Bets</div>
-      <div className="absolute bottom-4 left-4 text-xs font-semibold text-blue-400">When Time Permits</div>
-      <div className="absolute bottom-4 right-4 text-xs font-semibold text-orange-400">Rethink</div>
+      {/* Quadrant labels - matching Client naming - pointer-events-none to allow clicking bubbles */}
+      <div className="absolute top-2 left-4 text-xs font-semibold text-yellow-500 pointer-events-none">Quick Wins</div>
+      <div className="absolute top-2 right-4 text-xs font-semibold text-pink-400 pointer-events-none">Big Bets</div>
+      <div className="absolute bottom-4 left-4 text-xs font-semibold text-blue-400 pointer-events-none">When Time Permits</div>
+      <div className="absolute bottom-4 right-4 text-xs font-semibold text-orange-400 pointer-events-none">Rethink</div>
 
-      {/* Ring labels */}
+      {/* Ring labels - pointer-events-none to allow clicking bubbles */}
       {rings.map(({ r, label }, i) => (
         <div 
           key={i}
-          className="absolute text-[10px] text-muted-foreground/60"
+          className="absolute text-[10px] text-muted-foreground/60 pointer-events-none"
           style={{ 
             left: `${50 + r}%`, 
             top: "48%",
@@ -500,14 +500,14 @@ function MaturityRadar({
         </TooltipProvider>
       </svg>
 
-      {/* Ring labels */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+      {/* Ring labels - pointer-events-none to allow clicking bubbles underneath */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
         <span className="text-[10px] text-success font-medium uppercase tracking-wide">Strong</span>
       </div>
-      <div className="absolute top-[30%] left-1/2 -translate-x-1/2">
+      <div className="absolute top-[30%] left-1/2 -translate-x-1/2 pointer-events-none">
         <span className="text-[10px] text-warning font-medium uppercase tracking-wide">Moderate</span>
       </div>
-      <div className="absolute top-[12%] left-1/2 -translate-x-1/2">
+      <div className="absolute top-[12%] left-1/2 -translate-x-1/2 pointer-events-none">
         <span className="text-[10px] text-destructive font-medium uppercase tracking-wide">Challenging</span>
       </div>
     </div>
