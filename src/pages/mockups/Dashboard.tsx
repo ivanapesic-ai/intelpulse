@@ -14,18 +14,19 @@ import logo from "@/assets/logo.svg";
 
 const rotatingDomains = ["Autonomous Vehicles", "Edge Computing", "Electric Mobility", "V2X Communication", "Cloud AI", "Software-Defined Vehicles"];
 
-type MaturityRing = "Strong" | "Moderate" | "Challenging";
+// Maturity labels aligned with platform-wide terminology
+type MaturityRing = "Strong" | "Moderate" | "Emerging";
 
 function getMaturityRing(compositeScore: number): MaturityRing {
   if (compositeScore >= 1.5) return "Strong";
   if (compositeScore >= 0.5) return "Moderate";
-  return "Challenging";
+  return "Emerging";
 }
 
 const ringColors: Record<MaturityRing, string> = {
   Strong: "border-emerald-500/50 text-emerald-500",
   Moderate: "border-amber-500/50 text-amber-500",
-  Challenging: "border-red-500/50 text-red-500",
+  Emerging: "border-red-500/50 text-red-500",
 };
 
 export default function Dashboard() {
@@ -45,53 +46,59 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // Calculate stats from real data
+  // Filter to same subset as Explorer (exclude zero-data technologies)
+  const filteredTechnologies = useMemo(() => {
+    if (!technologies) return [];
+    return technologies.filter(
+      (tech) => tech.dealroomCompanyCount > 0 || tech.totalFundingEur > 0
+    );
+  }, [technologies]);
+
+  // Calculate stats from filtered data (consistent with Explorer)
   const stats = useMemo(() => {
-    if (!technologies || technologies.length === 0) {
+    if (filteredTechnologies.length === 0) {
       return {
         totalTechnologies: 0,
         totalPatents: 0,
         totalFunding: 0,
         avgCompositeScore: 0,
-        ringCounts: { Strong: 0, Moderate: 0, Challenging: 0 },
+        ringCounts: { Strong: 0, Moderate: 0, Emerging: 0 },
       };
     }
 
-    const totalPatents = technologies.reduce((sum, t) => sum + (t.totalPatents || 0), 0);
-    const totalFunding = technologies.reduce((sum, t) => sum + (t.totalFundingEur || 0), 0);
-    const avgCompositeScore = technologies.reduce((sum, t) => sum + (t.compositeScore || 0), 0) / technologies.length;
+    const totalPatents = filteredTechnologies.reduce((sum, t) => sum + (t.totalPatents || 0), 0);
+    const totalFunding = filteredTechnologies.reduce((sum, t) => sum + (t.totalFundingEur || 0), 0);
+    const avgCompositeScore = filteredTechnologies.reduce((sum, t) => sum + (t.compositeScore || 0), 0) / filteredTechnologies.length;
 
-    const ringCounts: Record<MaturityRing, number> = { Strong: 0, Moderate: 0, Challenging: 0 };
-    technologies.forEach((t) => {
+    const ringCounts: Record<MaturityRing, number> = { Strong: 0, Moderate: 0, Emerging: 0 };
+    filteredTechnologies.forEach((t) => {
       const ring = getMaturityRing(t.compositeScore || 0);
       ringCounts[ring]++;
     });
 
     return {
-      totalTechnologies: technologies.length,
+      totalTechnologies: filteredTechnologies.length,
       totalPatents,
       totalFunding,
       avgCompositeScore,
       ringCounts,
     };
-  }, [technologies]);
+  }, [filteredTechnologies]);
 
-  // Get top technologies by composite score
+  // Get top technologies by composite score (from filtered set)
   const topTechnologies = useMemo(() => {
-    if (!technologies) return [];
-    return [...technologies]
+    return [...filteredTechnologies]
       .sort((a, b) => (b.compositeScore || 0) - (a.compositeScore || 0))
       .slice(0, 4);
-  }, [technologies]);
+  }, [filteredTechnologies]);
 
-  // Get trending technologies (trend = 'up')
+  // Get trending technologies (trend = 'up') from filtered set
   const trendingTechnologies = useMemo(() => {
-    if (!technologies) return [];
-    return technologies
+    return filteredTechnologies
       .filter((t) => t.trend === "up")
       .sort((a, b) => (b.compositeScore || 0) - (a.compositeScore || 0))
       .slice(0, 5);
-  }, [technologies]);
+  }, [filteredTechnologies]);
 
   const aiInsights = [
     { insight: "Autonomous Vehicle sector leads with €89B aggregate funding across 142 companies", severity: "high" },
