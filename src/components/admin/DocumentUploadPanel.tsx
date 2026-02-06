@@ -113,22 +113,29 @@ function DocumentViewDialog({ document }: { document: CEIDocument }) {
 
   // Batch re-parse all documents for updated TRL extraction
   const handleBatchReparse = async () => {
-    if (!documents || documents.length === 0) {
+    // Refetch fresh data before starting
+    const freshResult = await refetchDocuments();
+    const freshDocs = freshResult.data;
+    
+    if (!freshDocs || freshDocs.length === 0) {
       toast.info("No documents to re-parse");
       return;
     }
 
     setIsBatchParsing(true);
-    setBatchProgress({ current: 0, total: documents.length, currentDoc: '' });
+    setBatchProgress({ current: 0, total: freshDocs.length, currentDoc: '' });
+    toast.info(`Starting batch re-parse of ${freshDocs.length} documents...`);
     
     let successCount = 0;
     let failCount = 0;
 
-    for (let i = 0; i < documents.length; i++) {
-      const doc = documents[i];
-      setBatchProgress({ current: i + 1, total: documents.length, currentDoc: doc.filename });
+    for (let i = 0; i < freshDocs.length; i++) {
+      const doc = freshDocs[i];
+      setBatchProgress({ current: i + 1, total: freshDocs.length, currentDoc: doc.filename });
 
       try {
+        console.log(`[Batch] Parsing ${i + 1}/${freshDocs.length}: ${doc.filename}`);
+        
         const response = await supabase.functions.invoke('parse-document', {
           body: { documentId: doc.id, content: '' },
         });
@@ -136,17 +143,20 @@ function DocumentViewDialog({ document }: { document: CEIDocument }) {
         if (response.error) {
           failCount++;
           console.error(`Failed to parse ${doc.filename}:`, response.error);
+          toast.error(`Failed: ${doc.filename}`);
         } else {
           successCount++;
+          console.log(`[Batch] Success: ${doc.filename}`);
         }
       } catch (err) {
         failCount++;
         console.error(`Error parsing ${doc.filename}:`, err);
+        toast.error(`Error: ${doc.filename}`);
       }
 
-      // Small delay between documents to avoid rate limits
-      if (i < documents.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 3000));
+      // 5 second delay between documents to respect rate limits
+      if (i < freshDocs.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 5000));
       }
     }
 
