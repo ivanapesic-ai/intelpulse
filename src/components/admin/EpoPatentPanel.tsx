@@ -30,7 +30,6 @@ import {
 import {
   useEpoBatchEnrichTechnologies,
   useEpoEnrichmentStatus,
-  TECHNOLOGY_IPC_MAP,
 } from "@/hooks/useEpoTechnologyEnrichment";
 import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
 import { useAdminDataSync } from "@/hooks/useDataSync";
@@ -146,13 +145,16 @@ export function EpoPatentPanel() {
   const handleTechEnrichment = async () => {
     try {
       const result = await enrichTechnologies.mutateAsync({ limit: 15 });
-      setTechEnrichmentResults(result.results.map(r => ({ 
-        keywordName: r.keywordName, 
-        patentCount: r.patentCount 
-      })));
+      setTechEnrichmentResults(
+        result.results.map((r) => ({ keywordName: r.keywordName, patentCount: r.patentCount }))
+      );
+
+      // Unified sync - updates radars, dashboards, cards
+      await afterEpoEnrichment();
+
       toast({
         title: "Technology enrichment complete",
-        description: `Enriched ${result.technologiesEnriched} technologies with ${result.totalPatentsFound} total patents via IPC search`,
+        description: `Enriched ${result.technologiesEnriched} technologies with ${result.totalPatentsFound} total patents via IPC search. All views synced.`,
       });
     } catch (error) {
       toast({

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowLeft, Database, FileText, Globe, Network, Layers, Upload, CheckCircle, FileSpreadsheet, BarChart, RefreshCw, Zap } from "lucide-react";
 import { useDataPipelineSync } from "@/hooks/useDataPipeline";
+import { useAdminDataSync } from "@/hooks/useDataSync";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +30,7 @@ export default function AdminPanel() {
   const { data: documentStats } = useDocumentStats();
   const { data: keywordStats } = useKeywordStats();
   const pipelineSync = useDataPipelineSync();
+  const { afterScoreRefresh } = useAdminDataSync();
 
   const totalCompanies = crunchbaseStats?.totalCompanies || 0;
   const totalKeywords = keywordStats?.totalKeywords || 0;
@@ -36,8 +38,12 @@ export default function AdminPanel() {
   const handleRefreshScores = async () => {
     setIsRefreshing(true);
     try {
-      const { error } = await supabase.rpc('refresh_log_composite_scores');
+      const { error } = await supabase.rpc("refresh_log_composite_scores");
       if (error) throw error;
+
+      // Unified routine: make sure all charts/cards refetch
+      await afterScoreRefresh();
+
       toast.success("Composite scores refreshed successfully!");
     } catch (err) {
       console.error("Error refreshing scores:", err);

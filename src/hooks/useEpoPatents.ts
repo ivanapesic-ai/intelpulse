@@ -283,43 +283,27 @@ export function useEnrichWithPatents() {
         return { enriched: 0, total: 0, results: [] };
       }
 
-      const companyNames = companies.map((c) => c.organization_name);
+      const payload = companies
+        .filter((c) => !!c.organization_name)
+        .map((c) => ({ id: c.id, name: c.organization_name }));
 
-      // Batch search patents
       const { data, error } = await supabase.functions.invoke("epo-patent-lookup", {
-        body: { action: "batch_search", companyNames },
+        body: { action: "enrich_companies", companies: payload },
       });
 
       if (error) throw error;
 
-      const summaries = data.summaries as CompanyPatentSummary[];
-      const results: Array<{ name: string; patentCount: number }> = [];
-      let enriched = 0;
+      const rawResults = (data?.results || []) as Array<{
+        id: string;
+        name: string;
+        patentCount: number;
+      }>;
 
-      // Update companies with patent counts
-      for (let i = 0; i < companies.length; i++) {
-        const company = companies[i];
-        const summary = summaries.find(
-          (s) => s.companyName === company.organization_name
-        );
-
-        if (summary) {
-          const { error: updateError } = await supabase
-            .from("crunchbase_companies")
-            .update({ patents_count: summary.patentCount })
-            .eq("id", company.id);
-
-          if (!updateError) {
-            enriched++;
-            results.push({
-              name: company.organization_name,
-              patentCount: summary.patentCount,
-            });
-          }
-        }
-      }
-
-      return { enriched, total: companies.length, results };
+      return {
+        enriched: Number(data?.enriched ?? rawResults.length ?? 0),
+        total: Number(data?.total ?? companies.length ?? 0),
+        results: rawResults.map((r) => ({ name: r.name, patentCount: r.patentCount })),
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["crunchbase-companies"] });
