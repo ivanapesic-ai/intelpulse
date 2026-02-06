@@ -3,6 +3,33 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+function getQueueDisplayFilename(input: {
+  url: string;
+  filename: string | null;
+  source_type?: string | null;
+  zenodo_record_id?: string | null;
+}): string {
+  const raw = (input.filename || '').trim();
+  const isBad = !raw || raw.toLowerCase() === 'content';
+  if (!isBad) return raw;
+
+  const recordId =
+    input.zenodo_record_id || input.url.match(/zenodo\.org\/records?\/(\d+)/)?.[1] || null;
+
+  if ((input.source_type === 'zenodo' || input.url.includes('zenodo.org')) && recordId) {
+    return `zenodo-${recordId}.pdf`;
+  }
+
+  try {
+    const urlObj = new URL(input.url);
+    const last = urlObj.pathname.split('/').filter(Boolean).pop() || 'unknown.pdf';
+    const decoded = decodeURIComponent(last);
+    return decoded.toLowerCase().endsWith('.pdf') ? decoded : `${decoded}.pdf`;
+  } catch {
+    return 'unknown.pdf';
+  }
+}
+
 export interface PdfQueueItem {
   id: string;
   url: string;
@@ -67,7 +94,7 @@ export function usePdfQueue(status?: string) {
         zenodoRecordId: row.zenodo_record_id || undefined,
         status: row.status as PdfQueueItem['status'],
         fileSizeBytes: row.file_size_bytes || undefined,
-        filename: row.filename || undefined,
+        filename: getQueueDisplayFilename(row),
         storagePath: row.storage_path || undefined,
         errorMessage: row.error_message || undefined,
         retryCount: row.retry_count || 0,
@@ -215,7 +242,7 @@ export function useProcessAllPending() {
     // Fetch all pending PDFs
     const { data, error } = await supabase
       .from('pdf_processing_queue' as any)
-      .select('id, url, filename')
+      .select('id, url, filename, source_type, zenodo_record_id')
       .eq('status', 'pending')
       .order('created_at', { ascending: true });
 
@@ -224,7 +251,7 @@ export function useProcessAllPending() {
       return;
     }
 
-    const pendingPdfs = data as unknown as { id: string; url: string; filename: string | null }[];
+    const pendingPdfs = data as unknown as { id: string; url: string; filename: string | null; source_type: string | null; zenodo_record_id: string | null }[];
     
     setState({
       isRunning: true,
@@ -242,7 +269,7 @@ export function useProcessAllPending() {
       }
 
       const pdf = pendingPdfs[i];
-      const filename = pdf.filename || pdf.url.split('/').pop() || 'unknown.pdf';
+      const filename = getQueueDisplayFilename(pdf);
       
       setState(prev => ({
         ...prev,

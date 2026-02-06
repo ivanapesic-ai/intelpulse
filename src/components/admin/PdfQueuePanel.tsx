@@ -30,12 +30,25 @@ const statusConfig: Record<string, { color: string; icon: React.ReactNode; label
   skipped: { color: 'bg-muted text-muted-foreground', icon: <SkipForward className="h-3 w-3" />, label: 'Skipped' },
 };
 
-function getFilenameFromUrl(url: string): string {
+function getDisplayFilename(pdf: PdfQueueItem): string {
+  const raw = (pdf.filename || '').trim();
+  const isBad = !raw || raw.toLowerCase() === 'content';
+
+  if (!isBad) return raw.length > 80 ? raw.slice(0, 77) + '…' : raw;
+
+  // Prefer a friendly name for Zenodo record pages.
+  if (pdf.sourceType === 'zenodo') {
+    const recordId = pdf.zenodoRecordId || pdf.url.match(/zenodo\.org\/records?\/(\d+)/)?.[1];
+    if (recordId) return `zenodo-${recordId}.pdf`;
+  }
+
+  // Otherwise, derive from URL.
   try {
-    const urlObj = new URL(url);
-    const path = urlObj.pathname;
-    const filename = path.split('/').pop() || 'unknown.pdf';
-    return decodeURIComponent(filename).slice(0, 50);
+    const urlObj = new URL(pdf.url);
+    const last = urlObj.pathname.split('/').filter(Boolean).pop() || 'unknown.pdf';
+    const decoded = decodeURIComponent(last);
+    const name = decoded.toLowerCase().endsWith('.pdf') ? decoded : `${decoded}.pdf`;
+    return name.length > 80 ? name.slice(0, 77) + '…' : name;
   } catch {
     return 'unknown.pdf';
   }
@@ -58,7 +71,7 @@ interface PdfItemProps {
 
 function PdfItem({ pdf, onProcess, onSkip, onRetry, isProcessing }: PdfItemProps) {
   const config = statusConfig[pdf.status];
-  const filename = pdf.filename || getFilenameFromUrl(pdf.url);
+  const filename = getDisplayFilename(pdf);
 
   return (
     <div className="flex items-start gap-3 p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors">
