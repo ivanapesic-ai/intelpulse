@@ -244,7 +244,7 @@ async function searchByIPC(
   token: string,
   ipcCode: string,
   maxResults: number = 50
-): Promise<PatentResult[]> {
+): Promise<{ patents: PatentResult[]; totalCount: number }> {
   const query = `ic="${ipcCode}"`;
   const url = `https://ops.epo.org/3.2/rest-services/published-data/search?q=${encodeURIComponent(query)}&Range=1-${maxResults}`;
 
@@ -256,11 +256,20 @@ async function searchByIPC(
   });
 
   if (!response.ok) {
-    if (response.status === 404) return [];
+    if (response.status === 404) return { patents: [], totalCount: 0 };
+    const errorText = await response.text().catch(() => "");
+    console.error("EPO IPC search failed:", response.status, errorText);
     throw new Error(`EPO IPC search failed: ${response.status}`);
   }
 
   const data = await response.json();
+
+  // Extract total count
+  const totalCount = parseInt(
+    data?.["ops:world-patent-data"]?.["ops:biblio-search"]?.["@total-result-count"] || "0",
+    10
+  );
+
   const results: PatentResult[] = [];
 
   try {
@@ -294,7 +303,7 @@ async function searchByIPC(
     console.error("Error parsing IPC results:", e);
   }
 
-  return results;
+  return { patents: results, totalCount };
 }
 
 serve(async (req) => {
@@ -303,9 +312,26 @@ serve(async (req) => {
   }
 
   try {
-    const { action, companyName, companyNames, ipcCode, publicationNumber } = await req.json();
+    const body = (await req.json().catch(() => ({}))) as any;
+    const {
+      action,
+      companyName,
+      companyNames,
+      ipcCode,
+      publicationNumber,
+      maxResults,
+      companies,
+      keywordId,
+      ipcCodes,
+    } = body;
 
     const token = await getEpoToken();
+
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const admin = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+      ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+      : null;
 
     let result: any;
 
@@ -315,7 +341,7 @@ serve(async (req) => {
           throw new Error("companyName required for search_company action");
         }
         const searchResult = await searchByApplicant(token, companyName);
-        
+
         // Get details for first 10 patents
         const detailedPatents: PatentResult[] = [];
         for (const p of searchResult.patents.slice(0, 10)) {
@@ -346,6 +372,7 @@ serve(async (req) => {
         result = {
           companyName,
           patentCount: searchResult.totalCount, // Use actual total from EPO
+          totalCount: searchResult.totalCount,
           patents: detailedPatents,
           ipcDistribution,
           recentFilings,
@@ -390,8 +417,11 @@ serve(async (req) => {
         if (!ipcCode) {
           throw new Error("ipcCode required for search_ipc action");
         }
-        const patents = await searchByIPC(token, ipcCode);
-        result = { ipcCode, patentCount: patents.length, patents };
+
+        const mr = typeof maxResults === "number" ? maxResults : 50;
+        const { patents, totalCount } = await searchByIPC(token, ipcCode, mr);
+
+        result = { ipcCode, patentCount: totalCount, totalCount, patents };
         break;
       }
 
@@ -399,9 +429,10 @@ serve(async (req) => {
         if (!ipcCode) {
           throw new Error("ipcCode required for search_ipc_detailed action");
         }
-        const { maxResults = 30 } = await req.json().catch(() => ({}));
-        const basicPatents = await searchByIPC(token, ipcCode, maxResults);
-        
+
+        const mr = typeof maxResults === "number" ? maxResults : 30;
+        const { patents: basicPatents, totalCount } = await searchByIPC(token, ipcCode, mr);
+
         // Get details for patents to extract applicant names
         const detailedPatents: PatentResult[] = [];
         for (const p of basicPatents.slice(0, 20)) {
@@ -412,8 +443,95 @@ serve(async (req) => {
           // Rate limiting
           await new Promise((r) => setTimeout(r, 250));
         }
-        
-        result = { ipcCode, patentCount: basicPatents.length, patents: detailedPatents };
+
+        result = { ipcCode, patentCount: totalCount, totalCount, patents: detailedPatents };
+        break;
+      }
+
+      // === Persistence helpers (use service role) ===
+      case "enrich_companies": {
+        if (!admin) throw new Error("Backend configuration missing");
+        if (!companies || !Array.isArray(companies)) {
+          throw new Error("companies array required for enrich_companies action");
+        }
+
+        const results: Array<{ id: string; name: string; patentCount: number }> = [];
+        let enriched = 0;
+
+        for (const c of companies.slice(0, 50)) {
+          if (!c?.id || !c?.name) continue;
+
+          try {
+            const searchResult = await searchByApplicant(token, c.name, 1);
+            const patentCount = searchResult.totalCount || 0;
+
+            const { error: updateError } = await admin
+              .from("crunchbase_companies")
+              .update({
+                patents_count: patentCount,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", c.id);
+
+            if (updateError) {
+              console.error("Failed to update company patents_count:", c.name, updateError);
+            } else {
+              enriched++;
+            }
+
+            results.push({ id: c.id, name: c.name, patentCount });
+          } catch (e) {
+            console.error(`Error enriching company ${c.name}:`, e);
+            results.push({ id: c.id, name: c.name, patentCount: 0 });
+          }
+
+          // Rate limiting
+          await new Promise((r) => setTimeout(r, 500));
+        }
+
+        result = { enriched, total: companies.length, results };
+        break;
+      }
+
+      case "enrich_technology": {
+        if (!admin) throw new Error("Backend configuration missing");
+        if (!keywordId) throw new Error("keywordId required for enrich_technology action");
+        if (!ipcCodes || !Array.isArray(ipcCodes) || ipcCodes.length === 0) {
+          throw new Error("ipcCodes array required for enrich_technology action");
+        }
+
+        let totalPatents = 0;
+        const perIpc: Array<{ ipcCode: string; totalCount: number }> = [];
+
+        for (const code of ipcCodes.slice(0, 3)) {
+          try {
+            const { totalCount } = await searchByIPC(token, code, 1);
+            perIpc.push({ ipcCode: code, totalCount });
+            totalPatents += totalCount || 0;
+          } catch (e) {
+            console.error(`IPC count failed for ${code}:`, e);
+            perIpc.push({ ipcCode: code, totalCount: 0 });
+          }
+
+          await new Promise((r) => setTimeout(r, 400));
+        }
+
+        const patentsScore = totalPatents >= 100 ? 2 : totalPatents >= 20 ? 1 : 0;
+
+        const { error: updateError } = await admin
+          .from("technologies")
+          .update({
+            total_patents: totalPatents,
+            patents_score: patentsScore,
+            last_updated: new Date().toISOString(),
+          })
+          .eq("keyword_id", keywordId);
+
+        if (updateError) {
+          console.error("Failed to update technology patents:", keywordId, updateError);
+        }
+
+        result = { keywordId, totalPatents, patentsScore, perIpc };
         break;
       }
 
