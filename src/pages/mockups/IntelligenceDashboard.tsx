@@ -72,6 +72,8 @@ export default function IntelligenceDashboard() {
   };
 
   // Handle selecting a cluster node - find matching technology
+  // IMPORTANT: Only show detail panel for technologies that exist in the canonical dataset
+  // to ensure metrics always match Explorer and other views
   const handleSelectNode = (node: GraphNode | null) => {
     setSelectedGraphNode(node);
 
@@ -94,38 +96,18 @@ export default function IntelligenceDashboard() {
       }
     }
 
-    // If no tech found, create minimal object from node data
-    setSelectedTech({
-      id: node.id,
-      keywordId: node.id,
-      name: node.label,
-      description: `Technology tracked in the SDV ecosystem`,
-      challengeScore: node.metadata.challengeScore ?? null,
-      opportunityScore: node.metadata.opportunityScore ?? null,
-      compositeScore: ((node.metadata.challengeScore ?? 0) + (node.metadata.opportunityScore ?? 0)) / 2,
-      trlScore: null,
-      visibilityScore: null,
-      euAlignmentScore: null,
-      investmentScore: null,
-      employeesScore: null,
-      dealroomCompanyCount: node.metadata.companyCount ?? 0,
-      totalFundingEur: node.metadata.totalFunding ?? 0,
-      totalPatents: node.metadata.patentCount ?? 0,
-      totalEmployees: 0,
-      documentMentionCount: 0,
-      policyMentionCount: 0,
-      avgTrlMentioned: null,
-      newsMentionCount: 0,
-      trend: "stable",
-      keyPlayers: [],
-      recentNews: [],
-      marketSignals: {},
-      documentInsights: {},
-      sectorTags: [],
-      aliases: [],
-      lastUpdated: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-    });
+    // Try to find by node ID or label as fallback
+    const techMatch = technologies?.find(
+      (t) => t.id === node.id || t.keywordId === node.id || t.name.toLowerCase() === node.label.toLowerCase()
+    );
+    if (techMatch) {
+      setSelectedTech(techMatch);
+      return;
+    }
+
+    // If no tech found in canonical dataset, do NOT show synthetic data
+    // This prevents mismatched metrics between views
+    setSelectedTech(null);
   };
 
   return (
