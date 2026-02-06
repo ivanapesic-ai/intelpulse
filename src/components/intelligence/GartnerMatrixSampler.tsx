@@ -210,13 +210,12 @@ function Classic2x2Quadrant({
 // ============================================================================
 // STYLE 3: Radar-Style with Quadrant Overlay
 // ============================================================================
-// Tender-aligned maturity stages (calculated from TRL data)
-// TRL 7-9 = Mainstream (center), TRL 4-6 = Early Adoption (middle), TRL 1-3 = Emerging (outer)
-function getMaturityRing(trlScore: number | null): number {
-  if (trlScore === null || trlScore === undefined) return 2; // No data = outer ring
-  if (trlScore >= 1.5) return 0; // Mainstream (TRL 7-9) = center
-  if (trlScore >= 0.5) return 1; // Early Adoption (TRL 4-6) = middle
-  return 2; // Emerging (TRL 1-3) = outer
+// Maturity ring index for radar positioning - aligned with composite score thresholds
+// Uses same thresholds as Dashboard/Explorer for consistency
+function getMaturityRingIndex(compositeScore: number): number {
+  if (compositeScore >= 1.5) return 0; // Strong = center (Mainstream)
+  if (compositeScore >= 0.5) return 1; // Moderate = middle (Early Adoption)
+  return 2; // Emerging = outer
 }
 
 function HybridRadarQuadrant({ 
@@ -232,9 +231,8 @@ function HybridRadarQuadrant({
     return filtered.map((tech, i) => {
       const { challenge, opportunity } = getScores(tech);
       
-      // Maturity ring from ACTUAL TRL data (not assumed)
-      const maturityRing = getMaturityRing(tech.trlScore);
-      
+      // Maturity ring from composite score - aligned with Dashboard/Explorer counts
+      const maturityRing = getMaturityRingIndex(tech.compositeScore ?? 0);
       // 3-signal spreading
       const investmentSignal = tech.investmentScore ?? 0;
       const patentSignal = tech.totalPatents >= 100 ? 2 : tech.totalPatents >= 20 ? 1 : 0;
@@ -272,11 +270,11 @@ function HybridRadarQuadrant({
     });
   }, [technologies]);
 
-  // Tender-aligned terminology
+  // Ring labels aligned with Dashboard/Explorer terminology
   const rings = [
-    { r: 15, label: "Mainstream" },      // TRL 7-9
-    { r: 30, label: "Early Adoption" },  // TRL 4-6
-    { r: 45, label: "Emerging" },        // TRL 1-3
+    { r: 15, label: "Strong" },    // Composite ≥ 1.5
+    { r: 30, label: "Moderate" },  // Composite ≥ 0.5
+    { r: 45, label: "Emerging" },  // Composite < 0.5
   ];
 
   return (
