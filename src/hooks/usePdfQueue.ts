@@ -251,8 +251,17 @@ export function useProcessAllPending() {
       return;
     }
 
-    const pendingPdfs = data as unknown as { id: string; url: string; filename: string | null; source_type: string | null; zenodo_record_id: string | null }[];
-    
+    const pendingPdfs = data as unknown as {
+      id: string;
+      url: string;
+      filename: string | null;
+      source_type: string | null;
+      zenodo_record_id: string | null;
+    }[];
+
+    let successCount = 0;
+    let failCount = 0;
+
     setState({
       isRunning: true,
       current: 0,
@@ -270,7 +279,7 @@ export function useProcessAllPending() {
 
       const pdf = pendingPdfs[i];
       const filename = getQueueDisplayFilename(pdf);
-      
+
       setState(prev => ({
         ...prev,
         current: i + 1,
@@ -282,17 +291,21 @@ export function useProcessAllPending() {
           body: { pdfId: pdf.id },
         });
 
-        if (response.error || !response.data?.success) {
+        const ok = !response.error && response.data?.success;
+
+        if (!ok) {
           consecutiveFailures.current++;
-          setState(prev => ({ ...prev, failCount: prev.failCount + 1 }));
-          
+          failCount++;
+          setState(prev => ({ ...prev, failCount }));
+
           if (consecutiveFailures.current >= 3) {
-            toast.error('3 consecutive failures - pausing batch (Zenodo may be down)');
+            toast.error('3 consecutive failures - pausing batch (source may be rate-limiting)');
             break;
           }
         } else {
           consecutiveFailures.current = 0;
-          setState(prev => ({ ...prev, successCount: prev.successCount + 1 }));
+          successCount++;
+          setState(prev => ({ ...prev, successCount }));
         }
 
         // Refresh data after each PDF
@@ -305,8 +318,9 @@ export function useProcessAllPending() {
         }
       } catch (err) {
         consecutiveFailures.current++;
-        setState(prev => ({ ...prev, failCount: prev.failCount + 1 }));
-        
+        failCount++;
+        setState(prev => ({ ...prev, failCount }));
+
         if (consecutiveFailures.current >= 3) {
           toast.error('3 consecutive failures - pausing batch');
           break;
@@ -314,8 +328,15 @@ export function useProcessAllPending() {
       }
     }
 
-    setState(prev => ({ ...prev, isRunning: false, currentPdfName: '' }));
-    toast.success(`Batch complete: ${state.successCount} succeeded, ${state.failCount} failed`);
+    setState(prev => ({
+      ...prev,
+      isRunning: false,
+      currentPdfName: '',
+      successCount,
+      failCount,
+    }));
+
+    toast.success(`Batch complete: ${successCount} succeeded, ${failCount} failed`);
   };
 
   const stop = () => {

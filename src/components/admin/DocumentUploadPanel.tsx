@@ -137,29 +137,18 @@ function DocumentViewDialog({ document }: { document: CEIDocument }) {
       console.log(`[Batch] Processing ${i + 1}/${freshDocs.length}: ${doc.filename} (${doc.id})`);
 
       try {
-        // Use fetch directly like the hook does for consistency
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-document`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-            },
-            body: JSON.stringify({ documentId: doc.id, content: '' }),
-          }
-        );
+        const { data, error } = await supabase.functions.invoke('parse-document', {
+          body: { documentId: doc.id, content: '' },
+        });
 
-        if (!response.ok) {
-          const errorData = await response.text();
-          console.error(`[Batch] Failed ${doc.filename}:`, response.status, errorData);
+        if (error || !data?.success) {
           failCount++;
-          toast.error(`Failed: ${doc.filename} (${response.status})`);
+          console.error(`[Batch] Failed ${doc.filename}:`, error?.message || data?.error || 'Unknown error');
+          toast.error(`Failed: ${doc.filename}`);
         } else {
-          const result = await response.json();
           successCount++;
-          console.log(`[Batch] Success: ${doc.filename}`, result);
-          toast.success(`Parsed: ${doc.filename} (${result.mentionsCreated || 0} mentions)`);
+          console.log(`[Batch] Success: ${doc.filename}`, data);
+          toast.success(`Parsed: ${doc.filename} (${data.mentionsCreated || 0} mentions)`);
         }
       } catch (err) {
         failCount++;
