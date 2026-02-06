@@ -8,7 +8,7 @@ import logo from "@/assets/logo.svg";
 const navItems = [
   { path: "/mockups/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { path: "/mockups/radar", label: "Radar", icon: Radar },
-  { path: "/mockups/heatmap", label: "Heatmap", icon: Grid3X3 },
+  // { path: "/mockups/heatmap", label: "Heatmap", icon: Grid3X3 }, // Hidden - rethinking visualizations
   { path: "/mockups/explorer", label: "Explorer", icon: Compass },
   { path: "/mockups/intelligence", label: "Intelligence", icon: Brain },
 ];
