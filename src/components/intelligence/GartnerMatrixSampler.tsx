@@ -15,9 +15,11 @@ interface GartnerMatrixSamplerProps {
   selectedId?: string | null;
 }
 
-// Use centralized filter for consistency
+// Use centralized filter for consistency - aligned with Dashboard/Explorer
+// Must have actual data (company count or funding) to appear in visualizations
 function filterSDV(tech: TechnologyIntelligence): boolean {
-  return isSDVRelevant(tech.name, false); // Already pre-filtered by hook, but double-check
+  const hasData = tech.dealroomCompanyCount > 0 || tech.totalFundingEur > 0;
+  return hasData && isSDVRelevant(tech.name, false);
 }
 
 interface GartnerMatrixSamplerProps {
