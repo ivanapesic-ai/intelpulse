@@ -341,13 +341,6 @@ export default function TechnologyExplorer() {
                           </div>
                         )}
                         
-                        <div className="flex flex-wrap gap-2">
-                          <Badge variant="outline" className="capitalize">{selectedTech.trend} trend</Badge>
-                          <Badge variant="outline">{selectedTech.dealroomCompanyCount} companies</Badge>
-                          {selectedTech.documentMentionCount > 0 && (
-                            <Badge variant="outline">{selectedTech.documentMentionCount} doc mentions</Badge>
-                          )}
-                        </div>
                       </div>
 
                       {/* Radar Chart */}
