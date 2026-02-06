@@ -2,22 +2,9 @@ import { TrendingUp, TrendingDown, Minus, ChevronRight, Star } from "lucide-reac
 import { Badge } from "@/components/ui/badge";
 import { Technology, formatFundingEur, getCompositeScoreLabel } from "@/types/database";
 import { cn } from "@/lib/utils";
+import { isCentralEcosystem } from "@/lib/taxonomy-filters";
 
 type MaturityRing = "Strong" | "Moderate" | "Challenging";
-
-// Central ecosystem hub technologies
-const CENTRAL_ECOSYSTEMS = [
-  "Software Defined Vehicle",
-  "Software-Defined Vehicle",
-  "Electric Vehicle", 
-  "Autonomous Driving"
-];
-
-function isCentralEcosystem(name: string): boolean {
-  return CENTRAL_ECOSYSTEMS.some(hub => 
-    name.toLowerCase() === hub.toLowerCase()
-  );
-}
 
 function getMaturityRing(compositeScore: number): MaturityRing {
   if (compositeScore >= 1.5) return "Strong";

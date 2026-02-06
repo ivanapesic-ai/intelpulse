@@ -1,7 +1,8 @@
- import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
- import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import type { MaturityScore, TrendDirection, NewsItem } from "@/types/database";
- 
+import { isSDVRelevant } from "@/lib/taxonomy-filters";
+
 // Extended intelligence data with C-O matrix
 export interface TechnologyIntelligence {
   id: string;
@@ -100,28 +101,36 @@ export interface TechnologyIntelligence {
    general: "bg-gray-500/10 text-gray-600 border-gray-500/30",
  };
  
- // Fetch all technologies with full intelligence data
- export function useTechnologyIntelligence() {
-   return useQuery({
-     queryKey: ["technology-intelligence"],
-     queryFn: async () => {
-       const { data, error } = await supabase
-         .from("technologies")
-         .select(`
-           *,
-           technology_keywords!inner (
-             id,
-             keyword,
-             display_name,
-             description,
-             aliases
-           )
-         `)
-         .order("composite_score", { ascending: false });
- 
-       if (error) throw error;
- 
-       return (data || []).map((row): TechnologyIntelligence => ({
+// Fetch all technologies with full intelligence data
+export function useTechnologyIntelligence() {
+  return useQuery({
+    queryKey: ["technology-intelligence"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("technologies")
+        .select(`
+          *,
+          technology_keywords!inner (
+            id,
+            keyword,
+            display_name,
+            description,
+            aliases,
+            excluded_from_sdv
+          )
+        `)
+        .order("composite_score", { ascending: false });
+
+      if (error) throw error;
+
+      // Use unified SDV taxonomy filter - same as useTechnologies
+      const filtered = (data || []).filter(row => {
+        const displayName = row.technology_keywords?.display_name || row.name;
+        const isExcludedFromSdv = (row.technology_keywords as Record<string, unknown>)?.excluded_from_sdv === true;
+        return isSDVRelevant(displayName, isExcludedFromSdv);
+      });
+
+      return filtered.map((row): TechnologyIntelligence => ({
          id: row.id,
          name: row.name,
          description: row.description || row.technology_keywords?.description || "",

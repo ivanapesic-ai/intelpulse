@@ -15,20 +15,7 @@ import { formatFundingEur, formatNumber, MATURITY_SCORE_CONFIG, type Technology,
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-
-// Central ecosystem hub technologies
-const CENTRAL_ECOSYSTEMS = [
-  "Software Defined Vehicle",
-  "Software-Defined Vehicle",
-  "Electric Vehicle", 
-  "Autonomous Driving"
-];
-
-function isCentralEcosystem(name: string): boolean {
-  return CENTRAL_ECOSYSTEMS.some(hub => 
-    name.toLowerCase() === hub.toLowerCase()
-  );
-}
+import { isCentralEcosystem } from "@/lib/taxonomy-filters";
 
 type SortOption = "composite" | "funding" | "employees" | "companies";
 type RegionFilter = "all" | "europe" | "usa";
