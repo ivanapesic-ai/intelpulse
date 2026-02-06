@@ -38,42 +38,86 @@ export const AUTOMOTIVE_IPC_CODES: Record<string, string> = {
 };
 
 // Map technology keywords to IPC codes for keyword-first patent search
+// Extended to cover ALL active technology keywords in the taxonomy
 export const KEYWORD_TO_IPC_MAP: Record<string, string[]> = {
-  "lidar": ["G01S"],
-  "radar": ["G01S"],
+  // === Autonomous Driving & Perception ===
+  "lidar": ["G01S17"], // LiDAR-specific
+  "radar": ["G01S13"], // Radar-specific
+  "av radar": ["G01S13", "G01S7"],
+  "av camera": ["G06V20", "H04N7", "G06T7"],
   "camera": ["G06V", "H04N"],
-  "sensor fusion": ["G01S", "G06V"],
-  "autonomous driving": ["B60W", "G05D"],
-  "autonomous vehicle": ["B60W", "G05D"],
-  "self-driving": ["B60W", "G05D"],
-  "adas": ["B60W", "G01S"],
-  "electric vehicle": ["B60L", "H01M"],
-  "ev": ["B60L", "H01M"],
-  "bev": ["B60L", "H01M"],
+  "sensor fusion": ["G01S", "G06V", "G05D"],
+  "autonomous driving": ["B60W60", "G05D1", "B60W30"],
+  "autonomous vehicle": ["B60W60", "G05D1"],
+  "self-driving": ["B60W60", "G05D1"],
+  "self-driving vehicles": ["B60W60", "G05D1", "B60W30"],
+  "adas": ["B60W30", "G01S", "B60W50"],
+  "av software": ["G05D1", "B60W60", "G06N"],
+  "av simulation": ["G06F30", "G05B17", "G06N3"],
+  "av labeling": ["G06V10", "G06N20", "G06F18"],
+  "autonomous mobile robots": ["B25J9", "G05D1", "B62D57"],
+  
+  // === Electric Mobility ===
+  "electric vehicle": ["B60L", "H01M10"],
+  "ev": ["B60L", "H01M10"],
+  "bev": ["B60L", "H01M10"],
+  "electric mobility": ["B60L", "H01M", "B60K"],
+  "ev battery": ["H01M10", "H01M50", "H02J7"],
+  "ev motor": ["H02K", "B60K1", "H02P"],
+  "ev services": ["G06Q50", "B60L53", "G08G"],
+  "sustainable mobility": ["B60K", "B60L", "G06Q50"],
+  
+  // === Battery & Energy Storage ===
   "battery": ["H01M"],
-  "battery management": ["H01M", "H02J"],
-  "ev charging": ["H02J", "B60L"],
-  "charging infrastructure": ["H02J"],
-  "v2x": ["H04W", "G08G"],
-  "vehicle to everything": ["H04W", "G08G"],
-  "connected car": ["H04W", "G08G"],
+  "battery management": ["H01M10", "H02J7", "G01R31"],
+  "battery management systems": ["H02J7", "G01R31", "H01M10"],
+  "storage battery systems": ["H01M10", "H02J3", "H02J7"],
+  "sbs": ["H01M10", "H02J3"],
+  
+  // === Charging Infrastructure ===
+  "ev charging": ["H02J7", "B60L53"],
+  "charging infrastructure": ["H02J7", "B60L53", "H02J3"],
+  "smart recharging": ["H02J7", "H02J3", "G05F1"],
+  "bidirectional charging": ["H02J7", "B60L55", "H02J3"],
+  "v2g": ["B60L55", "H02J3", "H02J7"],
+  "vehicle to grid": ["B60L55", "H02J3"],
+  
+  // === Grid & Energy Management ===
+  "micro grid": ["H02J3", "H02J13", "G05F1"],
+  "ems": ["G05F1", "H02J3", "G06Q50"],
+  "energy management systems": ["G05F1", "H02J3", "H02J13"],
+  
+  // === Connectivity & V2X ===
+  "v2x": ["H04W4", "G08G1"],
+  "vehicle to everything": ["H04W4", "G08G1", "H04L67"],
+  "connected car": ["H04W4", "G08G", "B60W"],
   "connectivity": ["H04W"],
-  "software defined vehicle": ["B60W", "G05D"],
-  "sdv": ["B60W", "G05D"],
-  "fleet management": ["G08G", "G06Q"],
-  "traffic management": ["G08G"],
-  "smart mobility": ["G08G", "B60W"],
-  "telematics": ["H04W", "G08G"],
-  "infotainment": ["B60R", "H04W"],
-  "hmi": ["B60K", "G06F"],
-  "digital cockpit": ["B60K", "B60R"],
-  "ota updates": ["G06F", "H04L"],
-  "cybersecurity": ["H04L", "G06F"],
-  "edge computing": ["G06F", "H04L"],
+  "telematics": ["H04W4", "G08G1", "G07C5"],
   "5g": ["H04W"],
+  
+  // === Software & Computing ===
+  "software defined vehicle": ["B60W60", "G05D1", "G06F"],
+  "sdv": ["B60W60", "G05D1"],
+  "vehicle as software": ["B60W60", "G06F9", "G05D1"],
+  "vas": ["B60W60", "G06F9"],
+  "teledriving": ["G05D1", "H04W4", "B60W60"],
+  "ota updates": ["G06F8", "H04L67"],
+  "cybersecurity": ["H04L9", "G06F21"],
+  "edge computing": ["G06F9", "H04L67"],
+  
+  // === AI & Vision ===
   "computer vision": ["G06V"],
   "machine learning": ["G06N"],
   "ai": ["G06N"],
+  
+  // === Vehicle Systems ===
+  "infotainment": ["B60R16", "H04W4"],
+  "hmi": ["B60K35", "G06F3"],
+  "digital cockpit": ["B60K35", "B60R16"],
+  "fleet management": ["G08G1", "G06Q10"],
+  "traffic management": ["G08G1"],
+  "smart mobility": ["G08G1", "B60W"],
+  "smart logistics": ["G06Q10", "G08G1", "B65G"],
 };
 
 export function useEpoCompanySearch() {
