@@ -169,8 +169,26 @@ export default function HeatmapMatrix() {
     );
   }
 
+  // Temporarily hidden - user is rethinking visualizations
   return (
     <div className="min-h-screen bg-background">
+      <PlatformHeader />
+
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+          <Grid3X3 className="h-16 w-16 text-muted-foreground/50 mb-4" />
+          <h1 className="text-2xl font-bold text-foreground mb-2">Visualization Coming Soon</h1>
+          <p className="text-muted-foreground max-w-md">
+            We're reimagining the heatmap and visualization experience. Check back soon for new ways to explore technology maturity data.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Original implementation preserved below for when ready
+  return (
+    <div className="min-h-screen bg-background hidden">
       <PlatformHeader />
 
       <div className="container mx-auto px-4 py-8">
