@@ -76,6 +76,11 @@ export default function TechnologyExplorer() {
           tech.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           tech.description.toLowerCase().includes(searchQuery.toLowerCase());
         
+        // Hide technologies with zero companies globally
+        if (tech.dealroomCompanyCount === 0 && !tech.totalFundingEur) {
+          return false;
+        }
+        
         // If region filter is active, only show technologies with companies in that region
         if (regionFilter !== "all" && regionStats) {
           const stats = getRegionStats(regionStats, tech.keywordId, regionFilter);
