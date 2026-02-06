@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
-import { X, ExternalLink, AlertTriangle, Lightbulb, FileText, Building2, TrendingUp, Users, Zap, Tag } from "lucide-react";
+import { X, ExternalLink, AlertTriangle, Lightbulb, FileText, Building2, TrendingUp, Users, Zap, Tag, Newspaper } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { 
   TechnologyIntelligence, 
@@ -13,6 +14,7 @@ import {
 } from "@/hooks/useTechnologyIntelligence";
 import { formatFundingEur, formatNumber } from "@/types/database";
 import { SignalBreakdown } from "./SignalBreakdown";
+import { useNewsForKeyword } from "@/hooks/useNews";
 
 interface TechnologyDetailPanelProps {
   technology: TechnologyIntelligence | null;
@@ -20,6 +22,8 @@ interface TechnologyDetailPanelProps {
 }
 
 export function TechnologyDetailPanel({ technology, onClose }: TechnologyDetailPanelProps) {
+  const { data: relatedNews, isLoading: newsLoading } = useNewsForKeyword(technology?.keywordId ?? null);
+  
   if (!technology) return null;
 
   const challengeConfig = CHALLENGE_LABELS[technology.challengeScore ?? 0];
@@ -179,19 +183,65 @@ export function TechnologyDetailPanel({ technology, onClose }: TechnologyDetailP
                </div>
              )}
  
-             {/* Key Players */}
-             {technology.keyPlayers && technology.keyPlayers.length > 0 && (
-               <div>
-                 <h3 className="text-sm font-semibold text-foreground mb-3">Key Players</h3>
-                 <div className="flex flex-wrap gap-2">
-                   {technology.keyPlayers.slice(0, 10).map((player, i) => (
-                     <Badge key={i} variant="secondary" className="text-xs">
-                       {player}
-                     </Badge>
-                   ))}
-                 </div>
-               </div>
-             )}
+              {/* Key Players */}
+              {technology.keyPlayers && technology.keyPlayers.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground mb-3">Key Players</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {technology.keyPlayers.slice(0, 10).map((player, i) => (
+                      <Badge key={i} variant="secondary" className="text-xs">
+                        {player}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <Separator />
+
+              {/* Related News */}
+              <div>
+                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <Newspaper className="h-4 w-4" />
+                  Related News
+                </h3>
+                {newsLoading ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-16" />
+                    <Skeleton className="h-16" />
+                  </div>
+                ) : relatedNews && relatedNews.length > 0 ? (
+                  <div className="space-y-2">
+                    {relatedNews.slice(0, 5).map((news) => (
+                      <a
+                        key={news.id}
+                        href={news.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block p-3 rounded-lg bg-muted/30 border border-border hover:bg-muted/50 transition-colors"
+                      >
+                        <p className="text-sm font-medium text-foreground line-clamp-2 mb-1">
+                          {news.title}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{news.source_name}</span>
+                          {news.published_at && (
+                            <>
+                              <span>•</span>
+                              <span>{new Date(news.published_at).toLocaleDateString()}</span>
+                            </>
+                          )}
+                          <ExternalLink className="h-3 w-3 ml-auto" />
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">
+                    No related news yet. Fetch RSS feeds from the Admin panel.
+                  </p>
+                )}
+              </div>
            </div>
          </ScrollArea>
  
