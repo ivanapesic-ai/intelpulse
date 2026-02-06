@@ -952,6 +952,108 @@ export type Database = {
           },
         ]
       }
+      news_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          fetched_at: string
+          id: string
+          image_url: string | null
+          published_at: string | null
+          source_feed: string
+          source_name: string | null
+          title: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          fetched_at?: string
+          id?: string
+          image_url?: string | null
+          published_at?: string | null
+          source_feed: string
+          source_name?: string | null
+          title: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          fetched_at?: string
+          id?: string
+          image_url?: string | null
+          published_at?: string | null
+          source_feed?: string
+          source_name?: string | null
+          title?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      news_keyword_matches: {
+        Row: {
+          created_at: string
+          id: string
+          keyword_id: string
+          match_confidence: number | null
+          match_source: string | null
+          news_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          keyword_id: string
+          match_confidence?: number | null
+          match_source?: string | null
+          news_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          keyword_id?: string
+          match_confidence?: number | null
+          match_source?: string | null
+          news_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_keyword_matches_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "news_keyword_matches_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_mapping_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "news_keyword_matches_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_overview"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "news_keyword_matches_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news_keyword_matches_news_id_fkey"
+            columns: ["news_id"]
+            isOneToOne: false
+            referencedRelation: "news_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ontology_concepts: {
         Row: {
           acronym: string | null
@@ -1321,6 +1423,36 @@ export type Database = {
           status?: string
           target_id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      rss_feed_sources: {
+        Row: {
+          created_at: string
+          fetch_frequency_hours: number | null
+          id: string
+          is_active: boolean
+          last_fetched_at: string | null
+          name: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          fetch_frequency_hours?: number | null
+          id?: string
+          is_active?: boolean
+          last_fetched_at?: string | null
+          name: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          fetch_frequency_hours?: number | null
+          id?: string
+          is_active?: boolean
+          last_fetched_at?: string | null
+          name?: string
+          url?: string
         }
         Relationships: []
       }

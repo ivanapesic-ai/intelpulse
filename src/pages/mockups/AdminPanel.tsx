@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Database, FileText, Globe, Network, Layers, Upload, CheckCircle, FileSpreadsheet, BarChart, RefreshCw, Zap } from "lucide-react";
+import { ArrowLeft, Database, FileText, Globe, Network, Layers, Upload, CheckCircle, FileSpreadsheet, BarChart, RefreshCw, Zap, Rss } from "lucide-react";
 import { useDataPipelineSync } from "@/hooks/useDataPipeline";
 import { useAdminDataSync } from "@/hooks/useDataSync";
 import { Link } from "react-router-dom";
@@ -17,12 +17,13 @@ import { TechnologyOntology } from "@/components/mockups/TechnologyOntology";
 import { CrunchbaseImportPanel } from "@/components/admin/CrunchbaseImportPanel";
 import { EpoPatentPanel } from "@/components/admin/EpoPatentPanel";
 import { DocumentUploadPanel } from "@/components/admin/DocumentUploadPanel";
+import { RssNewsPanel } from "@/components/admin/RssNewsPanel";
 import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export default function AdminPanel() {
-  const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "scraping" | "documents">("crunchbase");
+  const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "scraping" | "documents" | "news">("crunchbase");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Data hooks
@@ -213,6 +214,14 @@ export default function AdminPanel() {
                 <FileText className="h-4 w-4 mr-1.5" />
                 Documents
               </Button>
+              <Button
+                variant={dataSubTab === "news" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setDataSubTab("news")}
+              >
+                <Rss className="h-4 w-4 mr-1.5" />
+                News/RSS
+              </Button>
             </div>
 
             {/* Crunchbase Sub-tab */}
@@ -236,6 +245,11 @@ export default function AdminPanel() {
             {/* Documents Sub-tab */}
             {dataSubTab === "documents" && (
               <DocumentUploadPanel />
+            )}
+
+            {/* News/RSS Sub-tab */}
+            {dataSubTab === "news" && (
+              <RssNewsPanel />
             )}
           </TabsContent>
 
