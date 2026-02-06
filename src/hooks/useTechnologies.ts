@@ -153,7 +153,8 @@ export function useTechnologies() {
             keyword,
             source,
             display_name,
-            excluded_from_sdv
+            excluded_from_sdv,
+            aliases
           )
         `)
         .order("log_composite_score", { ascending: false, nullsFirst: false });
@@ -215,6 +216,7 @@ export function useTechnologies() {
             keyword: row.technology_keywords.keyword,
             source: row.technology_keywords.source as KeywordSource,
             displayName: row.technology_keywords.display_name,
+            aliases: row.technology_keywords.aliases || [],
             isActive: true,
             createdAt: "",
             updatedAt: "",
