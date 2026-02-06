@@ -148,17 +148,23 @@ export function useTechnologies() {
             source,
             display_name,
             excluded_from_sdv,
+            is_active,
             aliases
           )
         `)
+        // IMPORTANT: only include active taxonomy keywords in all SDV views
+        .eq("technology_keywords.is_active", true)
         .order("log_composite_score", { ascending: false, nullsFirst: false });
 
       if (error) throw error;
 
       // Use unified SDV taxonomy filter
-      const filtered = (data || []).filter(row => {
+      const filtered = (data || []).filter((row) => {
         const displayName = row.technology_keywords?.display_name || row.name;
+        const isActive = row.technology_keywords?.is_active !== false;
         const isExcludedFromSdv = row.technology_keywords?.excluded_from_sdv === true;
+
+        if (!isActive) return false;
         return isSDVRelevant(displayName, isExcludedFromSdv);
       });
 
