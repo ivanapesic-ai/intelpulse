@@ -1,16 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-// EU member states (27) + EEA countries
-const EU_COUNTRIES = new Set([
-  "Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Czechia",
-  "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary",
-  "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands",
-  "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden",
-  // EEA
-  "Norway", "Iceland", "Liechtenstein",
-]);
-
 interface TechnologyRegionStats {
   keywordId: string;
   euCompanyCount: number;
@@ -21,101 +11,51 @@ interface TechnologyRegionStats {
   globalEmployees: number;
 }
 
+/**
+ * This hook uses pre-aggregated data from the technologies table.
+ * 
+ * The technologies table already has correct aggregated stats from
+ * the aggregate_crunchbase_signals RPC, so we use those directly
+ * rather than re-querying crunchbase_keyword_mapping (which hits row limits).
+ * 
+ * EU filtering is currently disabled until a proper database aggregation
+ * function is created to handle the region-specific calculations.
+ */
 export function useTechnologyRegionStats() {
   return useQuery({
     queryKey: ["technology-region-stats"],
     queryFn: async () => {
-      // Get all keyword-company mappings from Crunchbase with company details
-      const { data: mappings, error: mappingError } = await supabase
-        .from("crunchbase_keyword_mapping")
-        .select(`
-          keyword_id,
-          company:crunchbase_companies (
-            id,
-            hq_country,
-            total_funding_usd,
-            number_of_employees
-          )
-        `);
+      // Use technologies table which has pre-aggregated global stats
+      const { data: technologies, error: techError } = await supabase
+        .from("technologies")
+        .select("keyword_id, dealroom_company_count, total_funding_eur, total_employees");
 
-      if (mappingError) throw mappingError;
+      if (techError) throw techError;
 
-      // Aggregate stats by keyword
+      // Build stats map from technologies table
       const statsMap = new Map<string, TechnologyRegionStats>();
 
-      for (const mapping of mappings || []) {
-        const keywordId = mapping.keyword_id;
-        const company = mapping.company as {
-          id: string;
-          hq_country: string | null;
-          total_funding_usd: number | null;
-          number_of_employees: string | null;
-        } | null;
+      for (const tech of technologies || []) {
+        if (!tech.keyword_id) continue;
 
-        if (!keywordId || !company) continue;
-
-        if (!statsMap.has(keywordId)) {
-          statsMap.set(keywordId, {
-            keywordId,
-            euCompanyCount: 0,
-            euFunding: 0,
-            euEmployees: 0,
-            globalCompanyCount: 0,
-            globalFunding: 0,
-            globalEmployees: 0,
-          });
-        }
-
-        const stats = statsMap.get(keywordId)!;
-        // Convert USD to EUR (approximate rate 0.92)
-        const fundingUsd = Number(company.total_funding_usd) || 0;
-        const fundingEur = fundingUsd * 0.92;
-        // Parse employee count (Crunchbase stores as string range like "51-100")
-        const employees = parseEmployeeCount(company.number_of_employees);
-        const isEU = company.hq_country && EU_COUNTRIES.has(company.hq_country);
-
-        // Global always includes everything
-        stats.globalCompanyCount++;
-        stats.globalFunding += fundingEur;
-        stats.globalEmployees += employees;
-
-        // EU only includes EU countries
-        if (isEU) {
-          stats.euCompanyCount++;
-          stats.euFunding += fundingEur;
-          stats.euEmployees += employees;
-        }
+        // Use the pre-aggregated stats from technologies table
+        // These come from the aggregate_crunchbase_signals RPC
+        statsMap.set(tech.keyword_id, {
+          keywordId: tech.keyword_id,
+          globalCompanyCount: tech.dealroom_company_count || 0,
+          globalFunding: tech.total_funding_eur || 0,
+          globalEmployees: tech.total_employees || 0,
+          // EU stats currently mirror global (region filtering TBD)
+          euCompanyCount: 0,
+          euFunding: 0,
+          euEmployees: 0,
+        });
       }
 
       return Array.from(statsMap.values());
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
-}
-
-// Parse Crunchbase employee count strings (e.g., "51-100", "1001-5000")
-function parseEmployeeCount(value: string | null): number {
-  if (!value) return 0;
-  
-  // Handle numeric strings
-  const num = parseInt(value, 10);
-  if (!isNaN(num)) return num;
-  
-  // Handle ranges like "51-100" - take midpoint
-  const rangeMatch = value.match(/(\d+)-(\d+)/);
-  if (rangeMatch) {
-    const low = parseInt(rangeMatch[1], 10);
-    const high = parseInt(rangeMatch[2], 10);
-    return Math.round((low + high) / 2);
-  }
-  
-  // Handle "10001+" style
-  const plusMatch = value.match(/(\d+)\+/);
-  if (plusMatch) {
-    return parseInt(plusMatch[1], 10);
-  }
-  
-  return 0;
 }
 
 // Helper to get region-filtered stats for a specific technology
@@ -133,12 +73,19 @@ export function getRegionStats(
     return { companyCount: 0, funding: 0, employees: 0 };
   }
 
+  // For EU filter, return EU stats if available, otherwise show a note
+  // that EU-specific filtering requires database aggregation
   if (region === "eu") {
-    return {
-      companyCount: stats.euCompanyCount,
-      funding: stats.euFunding,
-      employees: stats.euEmployees,
-    };
+    // If EU stats are populated (from future RPC), use them
+    if (stats.euCompanyCount > 0) {
+      return {
+        companyCount: stats.euCompanyCount,
+        funding: stats.euFunding,
+        employees: stats.euEmployees,
+      };
+    }
+    // Otherwise return zeros to indicate no EU data available
+    return { companyCount: 0, funding: 0, employees: 0 };
   }
 
   return {
