@@ -41,12 +41,13 @@ export function useNewsForKeyword(keywordId: string | null) {
     queryFn: async () => {
       if (!keywordId) return [];
 
+      // Use a direct join query for cleaner data access
       const { data, error } = await supabase
         .from("news_keyword_matches")
         .select(`
           news_id,
           match_confidence,
-          news_items!inner (
+          news_items (
             id,
             title,
             description,
@@ -57,16 +58,39 @@ export function useNewsForKeyword(keywordId: string | null) {
           )
         `)
         .eq("keyword_id", keywordId)
-        .order("match_confidence", { ascending: false })
+        .not("news_items", "is", null)
         .limit(10);
 
       if (error) throw error;
 
-      // Flatten the response
-      return data.map((match: any) => ({
-        ...match.news_items,
-        match_confidence: match.match_confidence,
-      })) as (NewsItem & { match_confidence: number })[];
+      // Flatten and dedupe by news_id (avoid duplicate entries)
+      const seen = new Set<string>();
+      const results: (NewsItem & { match_confidence: number })[] = [];
+      
+      for (const match of data || []) {
+        const newsItem = match.news_items as any;
+        if (newsItem && !seen.has(newsItem.id)) {
+          seen.add(newsItem.id);
+          results.push({
+            id: newsItem.id,
+            title: newsItem.title,
+            description: newsItem.description,
+            url: newsItem.url,
+            source_name: newsItem.source_name,
+            published_at: newsItem.published_at,
+            image_url: newsItem.image_url,
+            created_at: newsItem.published_at || new Date().toISOString(),
+            match_confidence: match.match_confidence || 0,
+          });
+        }
+      }
+      
+      // Sort by published date
+      return results.sort((a, b) => {
+        const dateA = a.published_at ? new Date(a.published_at).getTime() : 0;
+        const dateB = b.published_at ? new Date(b.published_at).getTime() : 0;
+        return dateB - dateA;
+      }).slice(0, 5);
     },
     enabled: !!keywordId,
   });
