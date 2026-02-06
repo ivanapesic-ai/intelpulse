@@ -1,11 +1,12 @@
 import { useState, useRef } from "react";
-import { Upload, FileText, Loader2, Eye, RotateCcw, Trash2 } from "lucide-react";
+import { Upload, FileText, Loader2, Eye, RotateCcw, Trash2, RefreshCw, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
 import { useDocuments, useDocumentStats, useDocumentMentions, useCreateDocument, useParseDocument, useDeleteDocument } from "@/hooks/useDocuments";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -100,13 +101,62 @@ function DocumentViewDialog({ document }: { document: CEIDocument }) {
  
  export function DocumentUploadPanel() {
    const [isUploading, setIsUploading] = useState(false);
+   const [isBatchParsing, setIsBatchParsing] = useState(false);
+   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, currentDoc: '' });
    const fileInputRef = useRef<HTMLInputElement>(null);
    
-  const { data: documents, isLoading: documentsLoading } = useDocuments();
-  const { data: documentStats } = useDocumentStats();
+  const { data: documents, isLoading: documentsLoading, refetch: refetchDocuments } = useDocuments();
+  const { data: documentStats, refetch: refetchStats } = useDocumentStats();
   const createDocument = useCreateDocument();
   const parseDocument = useParseDocument();
   const deleteDocument = useDeleteDocument();
+
+  // Batch re-parse all documents for updated TRL extraction
+  const handleBatchReparse = async () => {
+    if (!documents || documents.length === 0) {
+      toast.info("No documents to re-parse");
+      return;
+    }
+
+    setIsBatchParsing(true);
+    setBatchProgress({ current: 0, total: documents.length, currentDoc: '' });
+    
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < documents.length; i++) {
+      const doc = documents[i];
+      setBatchProgress({ current: i + 1, total: documents.length, currentDoc: doc.filename });
+
+      try {
+        const response = await supabase.functions.invoke('parse-document', {
+          body: { documentId: doc.id, content: '' },
+        });
+
+        if (response.error) {
+          failCount++;
+          console.error(`Failed to parse ${doc.filename}:`, response.error);
+        } else {
+          successCount++;
+        }
+      } catch (err) {
+        failCount++;
+        console.error(`Error parsing ${doc.filename}:`, err);
+      }
+
+      // Small delay between documents to avoid rate limits
+      if (i < documents.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 3000));
+      }
+    }
+
+    setIsBatchParsing(false);
+    setBatchProgress({ current: 0, total: 0, currentDoc: '' });
+    
+    toast.success(`Batch complete: ${successCount} succeeded, ${failCount} failed`);
+    refetchDocuments();
+    refetchStats();
+  };
  
    const handleUploadClick = () => {
      fileInputRef.current?.click();
@@ -182,32 +232,62 @@ function DocumentViewDialog({ document }: { document: CEIDocument }) {
      parseDocument.mutate({ documentId, content: '' });
    };
  
-   return (
-     <Card>
-       <CardHeader className="flex flex-row items-center justify-between">
-         <div>
-           <CardTitle className="text-foreground">CEI Documents</CardTitle>
-           <CardDescription>Upload and parse CEI-SPHERE documents for technology mentions</CardDescription>
-         </div>
-         <div>
-           <input
-             type="file"
-             ref={fileInputRef}
-             onChange={handleFileChange}
-             accept=".pdf,.docx,.pptx"
-             className="hidden"
-           />
-           <Button size="sm" onClick={handleUploadClick} disabled={isUploading}>
-             {isUploading ? (
-               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-             ) : (
-               <Upload className="h-4 w-4 mr-2" />
-             )}
-             {isUploading ? "Uploading..." : "Upload Document"}
-           </Button>
-         </div>
-       </CardHeader>
-       <CardContent>
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-foreground">CEI Documents</CardTitle>
+            <CardDescription>Upload and parse CEI-SPHERE documents for technology mentions</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept=".pdf,.docx,.pptx"
+              className="hidden"
+            />
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={handleBatchReparse} 
+              disabled={isBatchParsing || !documents?.length}
+              title="Re-parse all documents with updated TRL extraction"
+            >
+              {isBatchParsing ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Play className="h-4 w-4 mr-2" />
+              )}
+              {isBatchParsing ? `${batchProgress.current}/${batchProgress.total}` : "Re-parse All"}
+            </Button>
+            <Button size="sm" onClick={handleUploadClick} disabled={isUploading}>
+              {isUploading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4 mr-2" />
+              )}
+              {isUploading ? "Uploading..." : "Upload Document"}
+            </Button>
+          </div>
+        </CardHeader>
+        
+        {/* Batch progress indicator */}
+        {isBatchParsing && (
+          <div className="px-6 pb-4 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground truncate">
+                Parsing: {batchProgress.currentDoc}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {batchProgress.current}/{batchProgress.total}
+              </span>
+            </div>
+            <Progress value={(batchProgress.current / batchProgress.total) * 100} className="h-2" />
+          </div>
+        )}
+        
+        <CardContent>
          {/* Stats */}
          <div className="grid sm:grid-cols-4 gap-4 mb-6">
            <div className="p-3 rounded-lg bg-muted/50">
