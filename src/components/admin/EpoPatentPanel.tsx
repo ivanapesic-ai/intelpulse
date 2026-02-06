@@ -30,6 +30,7 @@ import {
 import {
   useEpoBatchEnrichTechnologies,
   useEpoEnrichmentStatus,
+  useEpoEnrichAllTechnologies,
 } from "@/hooks/useEpoTechnologyEnrichment";
 import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
 import { useAdminDataSync } from "@/hooks/useDataSync";
@@ -44,11 +45,13 @@ export function EpoPatentPanel() {
   const [techEnrichmentResults, setTechEnrichmentResults] = useState<Array<{ keywordName: string; patentCount: number }>>([]);
   const [aggregationResult, setAggregationResult] = useState<{ keywords: number; patents: number } | null>(null);
   const [enrichmentStatus, setEnrichmentStatus] = useState<{ needsEnrichment: number; alreadyEnriched: number; unmapped: number } | null>(null);
+  const [allEnrichProgress, setAllEnrichProgress] = useState<{ current: number; total: number; currentName: string } | null>(null);
 
   const companySearch = useEpoCompanySearch();
   const keywordSearch = useEpoKeywordSearch();
   const enrichWithPatents = useEnrichWithPatents();
   const enrichTechnologies = useEpoBatchEnrichTechnologies();
+  const enrichAllTechnologies = useEpoEnrichAllTechnologies();
   const checkEnrichmentStatus = useEpoEnrichmentStatus();
   const aggregateSignals = useAggregateCrunchbaseSignals();
   const { data: crunchbaseStats } = useCrunchbaseStats();
@@ -159,6 +162,35 @@ export function EpoPatentPanel() {
     } catch (error) {
       toast({
         title: "Technology enrichment failed",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEnrichAllTechnologies = async () => {
+    try {
+      setAllEnrichProgress({ current: 0, total: 0, currentName: "Starting..." });
+      
+      const result = await enrichAllTechnologies.mutateAsync({
+        onProgress: (current, total, currentName) => {
+          setAllEnrichProgress({ current, total, currentName });
+        },
+      });
+
+      setAllEnrichProgress(null);
+      setTechEnrichmentResults(
+        result.results.map((r) => ({ keywordName: r.keywordName, patentCount: r.patentCount }))
+      );
+
+      toast({
+        title: "✅ All technologies enriched!",
+        description: `Enriched ${result.technologiesEnriched} technologies with ${result.totalPatentsFound.toLocaleString()} total patents. All views synced automatically.`,
+      });
+    } catch (error) {
+      setAllEnrichProgress(null);
+      toast({
+        title: "Enrichment failed",
         description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive",
       });
@@ -553,27 +585,59 @@ export function EpoPatentPanel() {
               <div className="flex items-center gap-4">
                 <Button
                   onClick={handleTechEnrichment}
-                  disabled={enrichTechnologies.isPending}
+                  disabled={enrichTechnologies.isPending || enrichAllTechnologies.isPending}
                   className="gap-2"
+                  variant="outline"
                 >
                   {enrichTechnologies.isPending ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Enriching Technologies...
+                      Enriching...
                     </>
                   ) : (
                     <>
                       <Zap className="h-4 w-4" />
-                      Enrich Technologies via IPC
+                      Enrich Next 15
                     </>
                   )}
                 </Button>
-                <p className="text-sm text-muted-foreground">
-                  Searches EPO by IPC codes mapped to each technology keyword
-                </p>
+
+                <Button
+                  onClick={handleEnrichAllTechnologies}
+                  disabled={enrichAllTechnologies.isPending || enrichTechnologies.isPending}
+                  className="gap-2"
+                >
+                  {enrichAllTechnologies.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {allEnrichProgress ? `${allEnrichProgress.current}/${allEnrichProgress.total}` : "Processing..."}
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-4 w-4" />
+                      Enrich ALL Technologies
+                    </>
+                  )}
+                </Button>
               </div>
 
-              {enrichTechnologies.isPending && (
+              {/* Progress for Enrich All */}
+              {allEnrichProgress && (
+                <div className="space-y-2 p-3 rounded-lg bg-muted/50">
+                  <div className="flex justify-between text-sm">
+                    <span>Processing: <strong>{allEnrichProgress.currentName}</strong></span>
+                    <span className="text-muted-foreground">
+                      {allEnrichProgress.current} / {allEnrichProgress.total}
+                    </span>
+                  </div>
+                  <Progress 
+                    value={allEnrichProgress.total > 0 ? (allEnrichProgress.current / allEnrichProgress.total) * 100 : 0} 
+                    className="h-2" 
+                  />
+                </div>
+              )}
+
+              {enrichTechnologies.isPending && !allEnrichProgress && (
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Searching EPO by IPC codes...</span>
@@ -598,7 +662,7 @@ export function EpoPatentPanel() {
                             <span className="font-medium">{result.keywordName}</span>
                           </div>
                           <Badge variant={result.patentCount > 0 ? "default" : "secondary"}>
-                            {result.patentCount} patents
+                            {result.patentCount.toLocaleString()} patents
                           </Badge>
                         </div>
                       ))}

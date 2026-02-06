@@ -111,6 +111,13 @@ export default function TechnologyExplorer() {
     setDetailOpen(true);
   };
 
+  // Get LIVE data for the selected technology from the query results
+  // This ensures the dialog always shows current data, not a stale snapshot
+  const liveSelectedTech = useMemo(() => {
+    if (!selectedTech || !technologies) return selectedTech;
+    return technologies.find(t => t.id === selectedTech.id) || selectedTech;
+  }, [selectedTech, technologies]);
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
@@ -121,11 +128,11 @@ export default function TechnologyExplorer() {
   };
 
   // 3-Dimension scoring: Investment, Employees, TRL
-  const radarData = selectedTech
+  const radarData = liveSelectedTech
     ? [
-        { dimension: "Investment", value: selectedTech.investmentScore, fullMark: 2 },
-        { dimension: "Employees", value: selectedTech.employeesScore, fullMark: 2 },
-        { dimension: "TRL", value: selectedTech.trlScore, fullMark: 2 },
+        { dimension: "Investment", value: liveSelectedTech.investmentScore, fullMark: 2 },
+        { dimension: "Employees", value: liveSelectedTech.employeesScore, fullMark: 2 },
+        { dimension: "TRL", value: liveSelectedTech.trlScore, fullMark: 2 },
       ]
     : [];
 
@@ -364,16 +371,16 @@ export default function TechnologyExplorer() {
       {/* Detail Dialog */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-          {selectedTech && (
+          {liveSelectedTech && (
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-3">
-                  <span className="text-2xl text-foreground">{selectedTech.name}</span>
+                  <span className="text-2xl text-foreground">{liveSelectedTech.name}</span>
                   <Badge 
                     variant="outline" 
-                    className={`${getScoreColor(selectedTech.compositeScore)} border-current text-lg px-3 py-1`}
+                    className={`${getScoreColor(liveSelectedTech.compositeScore)} border-current text-lg px-3 py-1`}
                   >
-                    {selectedTech.compositeScore.toFixed(2)}/2
+                    {liveSelectedTech.compositeScore.toFixed(2)}/2
                   </Badge>
                 </DialogTitle>
               </DialogHeader>
@@ -393,27 +400,27 @@ export default function TechnologyExplorer() {
                     <div className="space-y-6">
                       <div>
                         {/* Show description if exists, otherwise show alias explanation */}
-                        {selectedTech.description ? (
-                          <p className="text-muted-foreground mb-3">{selectedTech.description}</p>
-                        ) : selectedTech.keyword?.aliases && selectedTech.keyword.aliases.length > 0 ? (
+                        {liveSelectedTech.description ? (
+                          <p className="text-muted-foreground mb-3">{liveSelectedTech.description}</p>
+                        ) : liveSelectedTech.keyword?.aliases && liveSelectedTech.keyword.aliases.length > 0 ? (
                           <div className="flex items-start gap-2 mb-3 p-3 rounded-lg bg-muted/50 border border-border">
                             <Tag className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                             <p className="text-sm text-muted-foreground">
                               <span className="font-medium text-foreground">Company metrics include: </span>
-                              {selectedTech.keyword.aliases.slice(0, 5).join(", ")}
-                              {selectedTech.keyword.aliases.length > 5 && ` +${selectedTech.keyword.aliases.length - 5} more`}
+                              {liveSelectedTech.keyword.aliases.slice(0, 5).join(", ")}
+                              {liveSelectedTech.keyword.aliases.length > 5 && ` +${liveSelectedTech.keyword.aliases.length - 5} more`}
                             </p>
                           </div>
                         ) : null}
                         
                         {/* If has description AND aliases, show aliases as secondary info */}
-                        {selectedTech.description && selectedTech.keyword?.aliases && selectedTech.keyword.aliases.length > 0 && (
+                        {liveSelectedTech.description && liveSelectedTech.keyword?.aliases && liveSelectedTech.keyword.aliases.length > 0 && (
                           <div className="flex items-start gap-2 mb-3 p-3 rounded-lg bg-muted/50 border border-border">
                             <Tag className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                             <p className="text-sm text-muted-foreground">
                               <span className="font-medium text-foreground">Company metrics include: </span>
-                              {selectedTech.keyword.aliases.slice(0, 5).join(", ")}
-                              {selectedTech.keyword.aliases.length > 5 && ` +${selectedTech.keyword.aliases.length - 5} more`}
+                              {liveSelectedTech.keyword.aliases.slice(0, 5).join(", ")}
+                              {liveSelectedTech.keyword.aliases.length > 5 && ` +${liveSelectedTech.keyword.aliases.length - 5} more`}
                             </p>
                           </div>
                         )}
@@ -440,7 +447,7 @@ export default function TechnologyExplorer() {
                       </Card>
 
                       {/* Key Players */}
-                      {selectedTech.keyPlayers && selectedTech.keyPlayers.length > 0 && (
+                      {liveSelectedTech.keyPlayers && liveSelectedTech.keyPlayers.length > 0 && (
                         <Card>
                           <CardHeader>
                             <CardTitle className="text-sm text-foreground flex items-center gap-2">
@@ -450,7 +457,7 @@ export default function TechnologyExplorer() {
                           </CardHeader>
                           <CardContent>
                             <div className="flex flex-wrap gap-2">
-                              {selectedTech.keyPlayers.map((player) => (
+                              {liveSelectedTech.keyPlayers.map((player) => (
                                 <Badge key={player} variant="secondary">
                                   {player}
                                 </Badge>
@@ -471,7 +478,7 @@ export default function TechnologyExplorer() {
                               <Building2 className="h-4 w-4 text-muted-foreground" />
                               <span className="text-sm text-muted-foreground">Companies</span>
                             </div>
-                            <p className="text-2xl font-bold text-foreground">{selectedTech.dealroomCompanyCount}</p>
+                            <p className="text-2xl font-bold text-foreground">{liveSelectedTech.dealroomCompanyCount}</p>
                           </CardContent>
                         </Card>
                         <Card>
@@ -480,7 +487,7 @@ export default function TechnologyExplorer() {
                               <DollarSign className="h-4 w-4 text-muted-foreground" />
                               <span className="text-sm text-muted-foreground">Total Funding</span>
                             </div>
-                            <p className="text-2xl font-bold text-foreground">{formatFundingEur(selectedTech.totalFundingEur)}</p>
+                            <p className="text-2xl font-bold text-foreground">{formatFundingEur(liveSelectedTech.totalFundingEur)}</p>
                           </CardContent>
                         </Card>
                         <Card>
@@ -489,7 +496,7 @@ export default function TechnologyExplorer() {
                               <Users className="h-4 w-4 text-muted-foreground" />
                               <span className="text-sm text-muted-foreground">Total Employees</span>
                             </div>
-                            <p className="text-2xl font-bold text-foreground">{formatNumber(selectedTech.totalEmployees)}</p>
+                            <p className="text-2xl font-bold text-foreground">{formatNumber(liveSelectedTech.totalEmployees)}</p>
                           </CardContent>
                         </Card>
                         <Card>
@@ -498,8 +505,8 @@ export default function TechnologyExplorer() {
                               <FileText className="h-4 w-4 text-muted-foreground" />
                               <span className="text-sm text-muted-foreground">Patents</span>
                             </div>
-                            {selectedTech.totalPatents > 0 ? (
-                              <p className="text-2xl font-bold text-foreground">{formatNumber(selectedTech.totalPatents)}</p>
+                            {liveSelectedTech.totalPatents > 0 ? (
+                              <p className="text-2xl font-bold text-foreground">{formatNumber(liveSelectedTech.totalPatents)}</p>
                             ) : (
                               <p className="text-sm text-muted-foreground italic">No data</p>
                             )}
@@ -516,9 +523,9 @@ export default function TechnologyExplorer() {
                         <CardContent>
                           <div className="space-y-3">
                             {[
-                              { label: "Investment", score: selectedTech.investmentScore, tooltip: "Crunchbase funding signals" },
-                              { label: "Employees", score: selectedTech.employeesScore, tooltip: "Crunchbase employee data" },
-                              { label: "TRL (Readiness)", score: selectedTech.trlScore, tooltip: selectedTech.avgTrlMentioned ? `Avg TRL ${selectedTech.avgTrlMentioned.toFixed(1)}` : "No TRL data" },
+                              { label: "Investment", score: liveSelectedTech.investmentScore, tooltip: "Crunchbase funding signals" },
+                              { label: "Employees", score: liveSelectedTech.employeesScore, tooltip: "Crunchbase employee data" },
+                              { label: "TRL (Readiness)", score: liveSelectedTech.trlScore, tooltip: liveSelectedTech.avgTrlMentioned ? `Avg TRL ${liveSelectedTech.avgTrlMentioned.toFixed(1)}` : "No TRL data" },
                             ].map((item) => {
                               const config = MATURITY_SCORE_CONFIG[item.score as 0|1|2];
                               return (
@@ -540,11 +547,11 @@ export default function TechnologyExplorer() {
                             })}
                           </div>
                           <div className="flex items-center justify-between text-xs text-muted-foreground pt-3 border-t border-border">
-                            <span>Visibility: {selectedTech.documentMentionCount} doc mentions</span>
-                            {selectedTech.newsMentionCount > 0 && (
+                            <span>Visibility: {liveSelectedTech.documentMentionCount} doc mentions</span>
+                            {liveSelectedTech.newsMentionCount > 0 && (
                               <span className="flex items-center gap-1">
                                 <Newspaper className="h-3 w-3" />
-                                {selectedTech.newsMentionCount} news
+                                {liveSelectedTech.newsMentionCount} news
                               </span>
                             )}
                           </div>
@@ -560,9 +567,9 @@ export default function TechnologyExplorer() {
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
-                          {selectedTech.recentNews && selectedTech.recentNews.length > 0 ? (
+                          {liveSelectedTech.recentNews && liveSelectedTech.recentNews.length > 0 ? (
                             <div className="space-y-2">
-                              {selectedTech.recentNews.slice(0, 3).map((news, index) => (
+                              {liveSelectedTech.recentNews.slice(0, 3).map((news, index) => (
                                 <a
                                   key={index}
                                   href={news.url}
@@ -602,13 +609,13 @@ export default function TechnologyExplorer() {
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          Last updated: {selectedTech.lastUpdated ? new Date(selectedTech.lastUpdated).toLocaleDateString() : "N/A"}
+                          Last updated: {liveSelectedTech.lastUpdated ? new Date(liveSelectedTech.lastUpdated).toLocaleDateString() : "N/A"}
                         </span>
                         <span className="flex items-center gap-1">
                           Trend:{" "}
-                          {selectedTech.trend === "up" ? (
+                          {liveSelectedTech.trend === "up" ? (
                             <TrendingUp className="h-3 w-3 text-emerald-500" />
-                          ) : selectedTech.trend === "down" ? (
+                          ) : liveSelectedTech.trend === "down" ? (
                             <TrendingDown className="h-3 w-3 text-red-500" />
                           ) : (
                             <Minus className="h-3 w-3" />
@@ -621,8 +628,8 @@ export default function TechnologyExplorer() {
 
               <TabsContent value="market-intel" className="mt-4">
                 <MarketIntelligence 
-                  keywordId={selectedTech.keywordId} 
-                  technologyName={selectedTech.name} 
+                  keywordId={liveSelectedTech.keywordId} 
+                  technologyName={liveSelectedTech.name} 
                 />
               </TabsContent>
             </Tabs>
