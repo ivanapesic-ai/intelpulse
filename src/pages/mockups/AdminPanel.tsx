@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ArrowLeft, Database, FileText, Globe, Network, Layers, Upload, CheckCircle, FileSpreadsheet, BarChart, RefreshCw } from "lucide-react";
+import { ArrowLeft, Database, FileText, Globe, Network, Layers, Upload, CheckCircle, FileSpreadsheet, BarChart, RefreshCw, Zap } from "lucide-react";
+import { useDataPipelineSync } from "@/hooks/useDataPipeline";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,7 @@ export default function AdminPanel() {
   const { data: crunchbaseStats } = useCrunchbaseStats();
   const { data: documentStats } = useDocumentStats();
   const { data: keywordStats } = useKeywordStats();
+  const pipelineSync = useDataPipelineSync();
 
   const totalCompanies = crunchbaseStats?.totalCompanies || 0;
   const totalKeywords = keywordStats?.totalKeywords || 0;
@@ -60,9 +62,19 @@ export default function AdminPanel() {
               <p className="text-sm text-muted-foreground">BluSpecs Staff Portal</p>
             </div>
           </div>
-          <Badge variant="outline" className="text-primary border-primary">
-            Admin Access
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={() => pipelineSync.mutate()}
+              disabled={pipelineSync.isPending}
+              className="gap-2"
+            >
+              <Zap className={`h-4 w-4 ${pipelineSync.isPending ? 'animate-pulse' : ''}`} />
+              {pipelineSync.isPending ? "Syncing..." : "Sync All Data"}
+            </Button>
+            <Badge variant="outline" className="text-primary border-primary">
+              Admin Access
+            </Badge>
+          </div>
         </div>
       </header>
 

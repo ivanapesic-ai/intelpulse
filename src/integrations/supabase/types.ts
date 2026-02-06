@@ -2552,6 +2552,7 @@ export type Database = {
           total_funding: number
         }[]
       }
+      sync_keyword_data_pipeline: { Args: never; Returns: Json }
       upsert_cooccurrence: {
         Args: { kw_a: string; kw_b: string; relevance_score?: number }
         Returns: undefined
