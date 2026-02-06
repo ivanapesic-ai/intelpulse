@@ -523,13 +523,148 @@ Return ONLY a JSON array: [{"keyword_id": "uuid", "context": "...", "trl": 5, "t
   }
 }
 
+// Declare EdgeRuntime for background tasks
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
+
+async function processPdfCore(
+  pdfId: string,
+  jobId: string,
+  supabase: ReturnType<typeof createClient>,
+  lovableApiKey: string,
+  zenodoToken?: string
+): Promise<void> {
+  // Fetch the PDF queue item
+  const { data: pdfItem, error: fetchError } = await supabase
+    .from('pdf_processing_queue')
+    .select('*')
+    .eq('id', pdfId)
+    .single();
+
+  if (fetchError || !pdfItem) {
+    throw new Error('PDF not found in queue');
+  }
+
+  const pdf = pdfItem as PdfQueueRow;
+
+  // Update status to processing
+  await supabase
+    .from('pdf_processing_queue')
+    .update({ status: 'processing' })
+    .eq('id', pdfId);
+
+  let downloadUrl = pdf.url;
+
+  // For Zenodo, resolve the direct download URL
+  if (pdf.source_type === 'zenodo' && pdf.zenodo_record_id && zenodoToken) {
+    const resolvedUrl = await getZenodoDownloadUrl(pdf.zenodo_record_id, zenodoToken);
+    if (resolvedUrl) {
+      downloadUrl = resolvedUrl;
+      console.log('Resolved Zenodo URL:', resolvedUrl);
+    }
+  }
+
+  // Download the PDF
+  const downloadResult = await downloadPdfWithRetry(downloadUrl, 3, zenodoToken);
+
+  if (!downloadResult) {
+    await supabase
+      .from('pdf_processing_queue')
+      .update({
+        status: 'failed',
+        error_message: 'Download failed after retries',
+        retry_count: pdf.retry_count + 1,
+      })
+      .eq('id', pdfId);
+    throw new Error('Download failed');
+  }
+
+  // Check file size (20MB limit)
+  if (downloadResult.size > 20 * 1024 * 1024) {
+    await supabase
+      .from('pdf_processing_queue')
+      .update({
+        status: 'skipped',
+        error_message: 'File too large (>20MB)',
+        file_size_bytes: downloadResult.size,
+        filename: downloadResult.filename,
+      })
+      .eq('id', pdfId);
+    throw new Error('File too large');
+  }
+
+  // Extract text from PDF
+  const extractedText = await extractPdfText(downloadResult.buffer, downloadResult.filename, lovableApiKey);
+
+  if (!extractedText) {
+    await supabase
+      .from('pdf_processing_queue')
+      .update({
+        status: 'failed',
+        error_message: 'Text extraction failed',
+        file_size_bytes: downloadResult.size,
+        filename: downloadResult.filename,
+        retry_count: pdf.retry_count + 1,
+      })
+      .eq('id', pdfId);
+    throw new Error('Text extraction failed');
+  }
+
+  // Fetch keywords for matching
+  const { data: keywords } = await supabase
+    .from('technology_keywords')
+    .select('id, keyword, display_name, aliases')
+    .eq('is_active', true);
+
+  // Extract technology mentions
+  const mentionsCount = await extractTechMentions(
+    extractedText,
+    pdf.url,
+    keywords || [],
+    lovableApiKey,
+    supabase
+  );
+
+  // Update queue item as completed
+  await supabase
+    .from('pdf_processing_queue')
+    .update({
+      status: 'completed',
+      file_size_bytes: downloadResult.size,
+      filename: downloadResult.filename,
+      mentions_extracted: mentionsCount,
+      processed_at: new Date().toISOString(),
+    })
+    .eq('id', pdfId);
+
+  // Mark job as completed
+  await supabase
+    .from('processing_jobs')
+    .update({
+      status: 'completed',
+      progress: 100,
+      result: {
+        mentionsExtracted: mentionsCount,
+        filename: downloadResult.filename,
+        fileSize: downloadResult.size,
+      },
+    })
+    .eq('id', jobId);
+
+  console.log(`PDF ${pdfId} processed. Job ${jobId} complete.`);
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let pdfId: string | undefined;
+  let jobId: string | undefined;
+  let supabase: ReturnType<typeof createClient> | null = null;
+
   try {
-    const { pdfId } = await req.json();
+    const body = await req.json();
+    pdfId = body.pdfId;
 
     if (!pdfId) {
       return new Response(
@@ -544,138 +679,73 @@ serve(async (req) => {
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
     const zenodoToken = Deno.env.get('ZENODO_API_TOKEN');
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch the PDF queue item
-    const { data: pdfItem, error: fetchError } = await supabase
-      .from('pdf_processing_queue')
-      .select('*')
-      .eq('id', pdfId)
+    // Create a processing job record
+    const { data: job, error: jobError } = await supabase
+      .from('processing_jobs')
+      .insert({
+        job_type: 'process_pdf',
+        target_id: pdfId,
+        status: 'processing',
+        progress: 0,
+      })
+      .select()
       .single();
 
-    if (fetchError || !pdfItem) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'PDF not found in queue' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (jobError || !job) {
+      throw new Error(`Failed to create job: ${jobError?.message}`);
     }
 
-    const pdf = pdfItem as PdfQueueRow;
+    jobId = job.id;
 
-    // Update status to processing
-    await supabase
-      .from('pdf_processing_queue')
-      .update({ status: 'processing' })
-      .eq('id', pdfId);
-
-    let downloadUrl = pdf.url;
-
-    // For Zenodo, resolve the direct download URL
-    if (pdf.source_type === 'zenodo' && pdf.zenodo_record_id && zenodoToken) {
-      const resolvedUrl = await getZenodoDownloadUrl(pdf.zenodo_record_id, zenodoToken);
-      if (resolvedUrl) {
-        downloadUrl = resolvedUrl;
-        console.log('Resolved Zenodo URL:', resolvedUrl);
-      }
-    }
-
-    // Download the PDF
-    const downloadResult = await downloadPdfWithRetry(downloadUrl, 3, zenodoToken);
-
-    if (!downloadResult) {
-      await supabase
-        .from('pdf_processing_queue')
-        .update({
-          status: 'failed',
-          error_message: 'Download failed after retries',
-          retry_count: pdf.retry_count + 1,
-        })
-        .eq('id', pdfId);
-
-      return new Response(
-        JSON.stringify({ success: false, error: 'Download failed' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Check file size (20MB limit)
-    if (downloadResult.size > 20 * 1024 * 1024) {
-      await supabase
-        .from('pdf_processing_queue')
-        .update({
-          status: 'skipped',
-          error_message: 'File too large (>20MB)',
-          file_size_bytes: downloadResult.size,
-          filename: downloadResult.filename,
-        })
-        .eq('id', pdfId);
-
-      return new Response(
-        JSON.stringify({ success: false, error: 'File too large' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Extract text from PDF
-    const extractedText = await extractPdfText(downloadResult.buffer, downloadResult.filename, lovableApiKey);
-
-    if (!extractedText) {
-      await supabase
-        .from('pdf_processing_queue')
-        .update({
-          status: 'failed',
-          error_message: 'Text extraction failed',
-          file_size_bytes: downloadResult.size,
-          filename: downloadResult.filename,
-          retry_count: pdf.retry_count + 1,
-        })
-        .eq('id', pdfId);
-
-      return new Response(
-        JSON.stringify({ success: false, error: 'Text extraction failed' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Fetch keywords for matching
-    const { data: keywords } = await supabase
-      .from('technology_keywords')
-      .select('id, keyword, display_name, aliases')
-      .eq('is_active', true);
-
-    // Extract technology mentions
-    const mentionsCount = await extractTechMentions(
-      extractedText,
-      pdf.url,
-      keywords || [],
+    // Start background processing
+    const processingPromise = processPdfCore(
+      pdfId,
+      jobId,
+      supabase,
       lovableApiKey,
-      supabase
-    );
+      zenodoToken
+    ).catch(async (error: unknown) => {
+      console.error('Background PDF processing error:', error);
+      if (supabase && jobId) {
+        await supabase
+          .from('processing_jobs')
+          .update({
+            status: 'failed',
+            error_message: error instanceof Error ? error.message : 'Unknown error',
+          })
+          .eq('id', jobId);
+      }
+    });
 
-    // Update queue item as completed
-    await supabase
-      .from('pdf_processing_queue')
-      .update({
-        status: 'completed',
-        file_size_bytes: downloadResult.size,
-        filename: downloadResult.filename,
-        mentions_extracted: mentionsCount,
-        processed_at: new Date().toISOString(),
-      })
-      .eq('id', pdfId);
+    if (typeof EdgeRuntime !== 'undefined') {
+      EdgeRuntime.waitUntil(processingPromise);
+    } else {
+      await processingPromise;
+    }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        mentionsExtracted: mentionsCount,
-        filename: downloadResult.filename,
-        fileSize: downloadResult.size,
+      JSON.stringify({
+        success: true,
+        job_id: jobId,
+        message: 'PDF processing started. Poll the job for status.',
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-
   } catch (error) {
     console.error('Process PDF error:', error);
+
+    if (jobId && supabase) {
+      await supabase
+        .from('processing_jobs')
+        .update({
+          status: 'failed',
+          error_message: error instanceof Error ? error.message : 'Unknown error',
+        })
+        .eq('id', jobId);
+    }
+
     return new Response(
       JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { pollJobUntilComplete } from '@/hooks/useProcessingJobs';
 
 function getQueueDisplayFilename(input: {
   url: string;
@@ -291,18 +292,43 @@ export function useProcessAllPending() {
           body: { pdfId: pdf.id },
         });
 
-        const ok = !response.error && response.data?.success;
-
-        if (!ok) {
+        if (response.error || !response.data?.success) {
           consecutiveFailures.current++;
           failCount++;
           setState(prev => ({ ...prev, failCount }));
 
           if (consecutiveFailures.current >= 3) {
-            toast.error('3 consecutive failures - pausing batch (source may be rate-limiting)');
+            toast.error('3 consecutive failures - pausing batch');
             break;
           }
+        } else if (response.data.job_id) {
+          // Poll for completion
+          try {
+            const job = await pollJobUntilComplete(response.data.job_id, 120000, 3000);
+            if (job.status === 'completed') {
+              consecutiveFailures.current = 0;
+              successCount++;
+              setState(prev => ({ ...prev, successCount }));
+            } else {
+              consecutiveFailures.current++;
+              failCount++;
+              setState(prev => ({ ...prev, failCount }));
+              if (consecutiveFailures.current >= 3) {
+                toast.error('3 consecutive failures - pausing batch');
+                break;
+              }
+            }
+          } catch (pollError) {
+            consecutiveFailures.current++;
+            failCount++;
+            setState(prev => ({ ...prev, failCount }));
+            if (consecutiveFailures.current >= 3) {
+              toast.error('3 consecutive failures - pausing batch');
+              break;
+            }
+          }
         } else {
+          // Legacy sync response
           consecutiveFailures.current = 0;
           successCount++;
           setState(prev => ({ ...prev, successCount }));
@@ -312,9 +338,9 @@ export function useProcessAllPending() {
         queryClient.invalidateQueries({ queryKey: ['pdf-queue'] });
         queryClient.invalidateQueries({ queryKey: ['pdf-queue-stats'] });
 
-        // Wait 10 seconds before next PDF (unless it's the last one)
+        // Wait 3 seconds before next PDF (unless it's the last one)
         if (i < pendingPdfs.length - 1 && !stopRef.current) {
-          await delay(10000);
+          await delay(3000);
         }
       } catch (err) {
         consecutiveFailures.current++;

@@ -8,6 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { useDocuments, useDocumentStats, useDocumentMentions, useCreateDocument, useParseDocument, useDeleteDocument } from "@/hooks/useDocuments";
+import { pollJobUntilComplete } from "@/hooks/useProcessingJobs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { CEIDocument } from "@/types/database";
@@ -144,11 +145,28 @@ function DocumentViewDialog({ document }: { document: CEIDocument }) {
         if (error || !data?.success) {
           failCount++;
           console.error(`[Batch] Failed ${doc.filename}:`, error?.message || data?.error || 'Unknown error');
-          toast.error(`Failed: ${doc.filename}`);
+          toast.error(`Failed to start: ${doc.filename}`);
+        } else if (data.job_id) {
+          // Poll for completion
+          console.log(`[Batch] Job started for ${doc.filename}: ${data.job_id}`);
+          try {
+            const job = await pollJobUntilComplete(data.job_id, 120000, 3000);
+            if (job.status === 'completed') {
+              successCount++;
+              toast.success(`Parsed: ${doc.filename} (${job.result?.mentionsCreated || 0} mentions)`);
+            } else {
+              failCount++;
+              toast.error(`Failed: ${doc.filename} - ${job.errorMessage || 'Unknown error'}`);
+            }
+          } catch (pollError) {
+            failCount++;
+            console.error(`[Batch] Poll timeout ${doc.filename}:`, pollError);
+            toast.error(`Timeout: ${doc.filename}`);
+          }
         } else {
+          // Legacy sync response (fallback)
           successCount++;
-          console.log(`[Batch] Success: ${doc.filename}`, data);
-          toast.success(`Parsed: ${doc.filename} (${data.mentionsCreated || 0} mentions)`);
+          toast.success(`Parsed: ${doc.filename}`);
         }
       } catch (err) {
         failCount++;
