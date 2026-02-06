@@ -102,27 +102,36 @@ export function TechnologyDetailPanel({ technology, onClose }: TechnologyDetailP
                </div>
              </div>
  
-             {/* Key Metrics Grid */}
-             <div>
-               <h3 className="text-sm font-semibold text-foreground mb-3">Key Metrics</h3>
-               <div className="grid grid-cols-3 gap-3">
-                 <div className="text-center p-3 rounded-lg bg-muted/50">
-                   <Building2 className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
-                   <p className="text-lg font-bold text-foreground">{technology.dealroomCompanyCount}</p>
-                   <p className="text-xs text-muted-foreground">Companies</p>
-                 </div>
-                 <div className="text-center p-3 rounded-lg bg-muted/50">
-                   <TrendingUp className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
-                   <p className="text-lg font-bold text-foreground">{formatFundingEur(technology.totalFundingEur)}</p>
-                   <p className="text-xs text-muted-foreground">Total Funding</p>
-                 </div>
-                 <div className="text-center p-3 rounded-lg bg-muted/50">
-                   <Users className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
-                   <p className="text-lg font-bold text-foreground">{formatNumber(technology.totalEmployees)}</p>
-                   <p className="text-xs text-muted-foreground">Employees</p>
-                 </div>
-               </div>
-             </div>
+              {/* Key Metrics Grid */}
+              <div>
+                <h3 className="text-sm font-semibold text-foreground mb-3">Key Metrics</h3>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="text-center p-3 rounded-lg bg-muted/50">
+                    <Building2 className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
+                    <p className="text-lg font-bold text-foreground">{technology.dealroomCompanyCount}</p>
+                    <p className="text-xs text-muted-foreground">Companies</p>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-muted/50">
+                    <TrendingUp className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
+                    <p className="text-lg font-bold text-foreground">{formatFundingEur(technology.totalFundingEur)}</p>
+                    <p className="text-xs text-muted-foreground">Total Funding</p>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-muted/50">
+                    <Users className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
+                    <p className="text-lg font-bold text-foreground">{formatNumber(technology.totalEmployees)}</p>
+                    <p className="text-xs text-muted-foreground">Employees</p>
+                  </div>
+                </div>
+                
+                {/* Alias enrichment explanation */}
+                {technology.aliases && technology.aliases.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-3 italic">
+                    <Zap className="h-3 w-3 inline mr-1" />
+                    Metrics include companies tagged with: {technology.aliases.slice(0, 4).join(", ")}
+                    {technology.aliases.length > 4 && ` +${technology.aliases.length - 4} more`}
+                  </p>
+                )}
+              </div>
  
              <Separator />
  
