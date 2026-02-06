@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Search, RefreshCw } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -10,15 +10,15 @@ import { TechnologyDetailPanel } from "@/components/intelligence/TechnologyDetai
 import { HierarchyKPICards } from "@/components/intelligence/HierarchyKPICards";
 import { ClusterCardView } from "@/components/intelligence/ClusterCardView";
 import { GartnerMatrixSampler } from "@/components/intelligence/GartnerMatrixSampler";
-import { 
-  useDomainOverview, 
+import {
+  useDomainOverview,
   useKeywordOverview,
-  KeywordOverview 
+  KeywordOverview,
 } from "@/hooks/useDomainHierarchy";
-import { 
-  useTechnologyIntelligence, 
+import {
+  useTechnologyIntelligence,
   useCalculateAllCOScores,
-  type TechnologyIntelligence 
+  type TechnologyIntelligence,
 } from "@/hooks/useTechnologyIntelligence";
 import { GraphNode } from "@/hooks/useKnowledgeGraph";
 import { toast } from "sonner";
@@ -38,10 +38,29 @@ export default function IntelligenceDashboard() {
 
   const isLoading = domainsLoading || keywordsLoading || techLoading;
 
-  // Filter technologies based on search query
-  const filteredTechnologies = technologies?.filter(tech => 
-    !searchQuery || tech.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  // Filter technologies based on search query (UI-only filter)
+  const filteredTechnologies =
+    technologies?.filter(
+      (tech) => !searchQuery || tech.name.toLowerCase().includes(searchQuery.toLowerCase())
+    ) || [];
+
+  // Align keyword/domain counters to the SAME dataset driving the matrix
+  const alignedKeywords = useMemo(() => {
+    if (!keywords || !technologies) return [];
+    const ids = new Set(technologies.map((t) => t.keywordId));
+    return keywords.filter((k) => ids.has(k.keywordId));
+  }, [keywords, technologies]);
+
+  const displayKeywordCount = useMemo(() => {
+    if (!technologies) return keywords?.length || 0;
+    return alignedKeywords.length;
+  }, [alignedKeywords.length, keywords?.length, technologies]);
+
+  const displayDomainCount = useMemo(() => {
+    if (!technologies) return domains?.length || 0;
+    const domainIds = new Set(alignedKeywords.map((k) => k.domainId));
+    return domainIds.size || 0;
+  }, [alignedKeywords, domains?.length, technologies]);
 
   const handleRecalculate = async () => {
     try {
@@ -55,7 +74,7 @@ export default function IntelligenceDashboard() {
   // Handle selecting a cluster node - find matching technology
   const handleSelectNode = (node: GraphNode | null) => {
     setSelectedGraphNode(node);
-    
+
     if (!node) {
       setSelectedTech(null);
       return;
@@ -65,16 +84,16 @@ export default function IntelligenceDashboard() {
     if (node.group === "concept") {
       const conceptId = node.id.replace("concept-", "");
       // Find keyword linked to this concept
-      const kw = keywords?.find(k => String(k.domainId) === conceptId);
+      const kw = keywords?.find((k) => String(k.domainId) === conceptId);
       if (kw) {
-        const tech = technologies?.find(t => t.keywordId === kw.keywordId);
+        const tech = technologies?.find((t) => t.keywordId === kw.keywordId);
         if (tech) {
           setSelectedTech(tech);
           return;
         }
       }
     }
-    
+
     // If no tech found, create minimal object from node data
     setSelectedTech({
       id: node.id,
@@ -115,31 +134,24 @@ export default function IntelligenceDashboard() {
 
       <div className="container mx-auto px-4 py-8">
         {/* Hero Header */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
           <div className="flex items-start justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">
-                Technology Intelligence
-              </h1>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Technology Intelligence</h1>
               <p className="text-muted-foreground max-w-xl">
-                SDV ecosystem overview with Challenge-Opportunity scoring based on the 
-                tender's 3-signal model (Investment, Patents, Market Response).
+                SDV ecosystem overview with Challenge-Opportunity scoring based on the tender's 3-signal model (Investment,
+                Patents, Market Response).
               </p>
             </div>
-            <Button 
-              variant="outline" 
-              onClick={handleRecalculate}
-              disabled={calculateScores.isPending}
-            >
+            <Button variant="outline" onClick={handleRecalculate} disabled={calculateScores.isPending}>
               <RefreshCw className={cn("h-4 w-4 mr-2", calculateScores.isPending && "animate-spin")} />
               Recalculate
             </Button>
           </div>
-
         </motion.div>
 
         {/* Search */}
@@ -155,11 +167,11 @@ export default function IntelligenceDashboard() {
                   className="pl-10"
                 />
               </div>
-              
+
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>{domains?.length || 0} domains</span>
+                <span>{displayDomainCount} domains</span>
                 <span>•</span>
-                <span>{keywords?.length || 0} keywords</span>
+                <span>{displayKeywordCount} keywords</span>
               </div>
             </div>
           </CardContent>
