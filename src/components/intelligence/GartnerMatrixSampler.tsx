@@ -408,6 +408,16 @@ function MaturityRadar({
 }: GartnerMatrixSamplerProps) {
   const filteredTechs = useMemo(() => technologies.filter(filterSDV), [technologies]);
   
+  // Group technologies by ring for the legend counts
+  const ringCounts = useMemo(() => {
+    const counts: Record<MaturityRing, number> = { Strong: 0, Moderate: 0, Emerging: 0 };
+    filteredTechs.forEach(tech => {
+      const ring = getMaturityRingFromComposite(tech.compositeScore ?? 0);
+      counts[ring]++;
+    });
+    return counts;
+  }, [filteredTechs]);
+  
   const getPosition = (tech: TechnologyIntelligence, index: number) => {
     const ring = getMaturityRingFromComposite(tech.compositeScore ?? 0);
     const radius = ringRadii[ring];
@@ -428,87 +438,117 @@ function MaturityRadar({
   };
 
   return (
-    <div className="relative w-full aspect-square max-w-xl mx-auto">
-      <svg viewBox="0 0 100 100" className="w-full h-full">
-        {/* Background gradient circles */}
-        <circle cx="50" cy="50" r="46" fill="hsl(var(--muted) / 0.3)" />
-        <circle cx="50" cy="50" r="30" fill="hsl(var(--muted) / 0.2)" />
-        <circle cx="50" cy="50" r="15" fill="hsl(var(--muted) / 0.1)" />
-
-        {/* Ring circles */}
-        {[0.72, 0.45, 0.22].map((radius, i) => (
-          <circle
-            key={i}
-            cx="50"
-            cy="50"
-            r={radius * 46}
-            fill="none"
-            stroke="hsl(var(--border))"
-            strokeWidth="0.3"
-            strokeDasharray={i === 0 ? "1.5,1.5" : "none"}
-          />
+    <div className="space-y-4">
+      {/* Legend */}
+      <div className="flex flex-wrap items-center justify-center gap-4 pb-2">
+        {(["Strong", "Moderate", "Emerging"] as MaturityRing[]).map(ring => (
+          <div key={ring} className="flex items-center gap-2">
+            <div 
+              className="w-3 h-3 rounded-full" 
+              style={{ backgroundColor: ringColors[ring] }}
+            />
+            <span className="text-xs text-muted-foreground">
+              {ring} ({ringCounts[ring]})
+            </span>
+          </div>
         ))}
+      </div>
 
-        {/* Technology dots */}
-        <TooltipProvider>
-          {filteredTechs.map((tech, index) => {
-            const pos = getPosition(tech, index);
-            const isSelected = selectedId === tech.id;
-            const color = getTechColor(index);
-            const ring = getMaturityRingFromComposite(tech.compositeScore ?? 0);
+      <div className="relative w-full aspect-square max-w-xl mx-auto">
+        <svg viewBox="0 0 100 100" className="w-full h-full">
+          {/* Background gradient circles */}
+          <circle cx="50" cy="50" r="46" fill="hsl(var(--muted) / 0.3)" />
+          <circle cx="50" cy="50" r="30" fill="hsl(var(--muted) / 0.2)" />
+          <circle cx="50" cy="50" r="15" fill="hsl(var(--muted) / 0.1)" />
 
-            return (
-              <g key={tech.id}>
-                {isSelected && (
-                  <circle
-                    cx={pos.x}
-                    cy={pos.y}
-                    r="3.5"
-                    fill={color}
-                    opacity="0.2"
-                  />
-                )}
-                <Tooltip>
-                  <TooltipTrigger asChild>
+          {/* Ring circles */}
+          {[0.72, 0.45, 0.22].map((radius, i) => (
+            <circle
+              key={i}
+              cx="50"
+              cy="50"
+              r={radius * 46}
+              fill="none"
+              stroke="hsl(var(--border))"
+              strokeWidth="0.3"
+              strokeDasharray={i === 0 ? "1.5,1.5" : "none"}
+            />
+          ))}
+
+          {/* Technology dots - larger with maturity-based colors */}
+          <TooltipProvider>
+            {filteredTechs.map((tech, index) => {
+              const pos = getPosition(tech, index);
+              const isSelected = selectedId === tech.id;
+              const ring = getMaturityRingFromComposite(tech.compositeScore ?? 0);
+              const color = ringColors[ring];
+              // Size based on funding, with larger minimum for better hover
+              const baseSize = 2.2;
+              const fundingBonus = Math.min(tech.totalFundingEur / 100_000_000, 1) * 1.2;
+              const dotRadius = isSelected ? baseSize + fundingBonus + 0.5 : baseSize + fundingBonus;
+
+              return (
+                <g key={tech.id}>
+                  {isSelected && (
                     <circle
                       cx={pos.x}
                       cy={pos.y}
-                      r={isSelected ? 2 : 1.5}
+                      r={dotRadius + 1.5}
                       fill={color}
-                      className="cursor-pointer transition-all duration-200"
-                      stroke={isSelected ? "hsl(var(--foreground))" : "none"}
-                      strokeWidth={isSelected ? 0.4 : 0}
-                      onClick={() => onSelectTechnology?.(tech)}
+                      opacity="0.25"
                     />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="font-semibold text-foreground">{tech.name}</p>
-                        <span className="font-mono font-bold text-primary">{(tech.compositeScore ?? 0).toFixed(2)}</span>
+                  )}
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <circle
+                        cx={pos.x}
+                        cy={pos.y}
+                        r={dotRadius}
+                        fill={color}
+                        className="cursor-pointer transition-all duration-200 hover:opacity-80"
+                        stroke={isSelected ? "hsl(var(--foreground))" : "hsl(var(--background))"}
+                        strokeWidth={isSelected ? 0.5 : 0.2}
+                        onClick={() => onSelectTechnology?.(tech)}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs z-50">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="font-semibold text-foreground">{tech.name}</p>
+                          <span className="font-mono font-bold text-primary">{(tech.compositeScore ?? 0).toFixed(2)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge 
+                            variant="outline" 
+                            className="text-xs"
+                            style={{ borderColor: color, color: color }}
+                          >
+                            {ring}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">{tech.dealroomCompanyCount} companies</Badge>
+                          {tech.totalFundingEur > 0 && (
+                            <Badge variant="outline" className="text-xs">{formatFundingEur(tech.totalFundingEur)}</Badge>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">{ring}</Badge>
-                        <Badge variant="outline" className="text-xs">{tech.dealroomCompanyCount} companies</Badge>
-                      </div>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </g>
-            );
-          })}
-        </TooltipProvider>
-      </svg>
+                    </TooltipContent>
+                  </Tooltip>
+                </g>
+              );
+            })}
+          </TooltipProvider>
+        </svg>
 
-      {/* Ring labels - pointer-events-none to allow clicking bubbles underneath */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-        <span className="text-[10px] text-success font-medium uppercase tracking-wide">Strong</span>
-      </div>
-      <div className="absolute top-[30%] left-1/2 -translate-x-1/2 pointer-events-none">
-        <span className="text-[10px] text-warning font-medium uppercase tracking-wide">Moderate</span>
-      </div>
-      <div className="absolute top-[12%] left-1/2 -translate-x-1/2 pointer-events-none">
-        <span className="text-[10px] text-destructive font-medium uppercase tracking-wide">Emerging</span>
+        {/* Ring labels - pointer-events-none to allow clicking bubbles underneath */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+          <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: ringColors.Strong }}>Strong</span>
+        </div>
+        <div className="absolute top-[30%] left-1/2 -translate-x-1/2 pointer-events-none">
+          <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: ringColors.Moderate }}>Moderate</span>
+        </div>
+        <div className="absolute top-[12%] left-1/2 -translate-x-1/2 pointer-events-none">
+          <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: ringColors.Emerging }}>Emerging</span>
+        </div>
       </div>
     </div>
   );
