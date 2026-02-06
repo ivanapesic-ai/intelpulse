@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { TechnologyKeyword, Technology, KeywordSource } from "@/types/database";
 import { toast } from "@/hooks/use-toast";
+import { isSDVRelevant } from "@/lib/taxonomy-filters";
 
 // AI-powered tag mapping
 export function useAITagMapping() {
@@ -132,13 +133,6 @@ export function useUpdateKeywordTags() {
   });
 }
 
-// Excluded keywords list - noise terms outside SDV ecosystem
-const EXCLUDED_KEYWORDS = [
-  'smart city', 'smart cities', 'smart recharging', 
-  'fleet management', 'logistics', 'maritime', 
-  'micromobility', 'shipping', 'aviation', 'freight'
-];
-
 // Fetch all technologies with their keyword info (filtering out excluded keywords)
 export function useTechnologies() {
   return useQuery({
@@ -161,20 +155,12 @@ export function useTechnologies() {
 
       if (error) throw error;
 
-      // Filter out excluded keywords
+      // Use unified SDV taxonomy filter
       const filtered = (data || []).filter(row => {
-        const keyword = row.technology_keywords?.keyword?.toLowerCase() || '';
-        const displayName = row.technology_keywords?.display_name?.toLowerCase() || '';
+        const displayName = row.technology_keywords?.display_name || row.name;
         const isExcludedFromSdv = row.technology_keywords?.excluded_from_sdv === true;
-        
-        // Exclude if marked as excluded_from_sdv or matches noise keywords
-        if (isExcludedFromSdv) return false;
-        if (EXCLUDED_KEYWORDS.some(ex => keyword.includes(ex) || displayName.includes(ex))) return false;
-        
-        return true;
+        return isSDVRelevant(displayName, isExcludedFromSdv);
       });
-
-      if (error) throw error;
 
       return filtered.map((row): Technology & { keyword?: TechnologyKeyword } => {
         const rowAny = row as Record<string, unknown>;

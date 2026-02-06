@@ -7,24 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { formatFundingEur } from "@/types/database";
+import { isSDVRelevant } from "@/lib/taxonomy-filters";
 
-// Noise keywords to exclude from SDV ecosystem visualization
-const EXCLUDED_KEYWORDS = [
-  "smart city",
-  "smart cities",
-  "smart recharging",
-  "fleet management",
-  "logistics",
-  "maritime",
-  "micromobility",
-  "shipping",
-  "aviation",
-  "freight",
-];
+interface GartnerMatrixSamplerProps {
+  technologies: TechnologyIntelligence[];
+  onSelectTechnology?: (tech: TechnologyIntelligence) => void;
+  selectedId?: string | null;
+}
 
-function isSDVRelevant(tech: TechnologyIntelligence): boolean {
-  const name = tech.name.toLowerCase();
-  return !EXCLUDED_KEYWORDS.some(keyword => name.includes(keyword));
+// Use centralized filter for consistency
+function filterSDV(tech: TechnologyIntelligence): boolean {
+  return isSDVRelevant(tech.name, false); // Already pre-filtered by hook, but double-check
 }
 
 interface GartnerMatrixSamplerProps {
@@ -91,7 +84,7 @@ function Classic2x2Quadrant({
   selectedId 
 }: GartnerMatrixSamplerProps) {
   const positioned = useMemo(() => {
-    const filtered = technologies.filter(isSDVRelevant);
+    const filtered = technologies.filter(filterSDV);
     
     return filtered.map((tech, index) => {
       const { challenge, opportunity } = getScores(tech);
@@ -230,7 +223,7 @@ function HybridRadarQuadrant({
   selectedId 
 }: GartnerMatrixSamplerProps) {
   const positioned = useMemo(() => {
-    const filtered = technologies.filter(isSDVRelevant);
+    const filtered = technologies.filter(filterSDV);
     const centerX = 50;
     const centerY = 50;
     
@@ -406,7 +399,7 @@ function MaturityRadar({
   onSelectTechnology, 
   selectedId 
 }: GartnerMatrixSamplerProps) {
-  const filteredTechs = useMemo(() => technologies.filter(isSDVRelevant), [technologies]);
+  const filteredTechs = useMemo(() => technologies.filter(filterSDV), [technologies]);
   
   const getPosition = (tech: TechnologyIntelligence, index: number) => {
     const ring = getMaturityRingFromComposite(tech.compositeScore ?? 0);
