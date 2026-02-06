@@ -126,9 +126,9 @@ function Classic2x2Quadrant({
   }, [technologies]);
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto pl-12">
-      {/* Y-axis label - outside left */}
-      <div className="absolute left-0 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-medium text-muted-foreground whitespace-nowrap">
+    <div className="relative w-full max-w-2xl mx-auto">
+      {/* Y-axis label - vertically centered along left edge */}
+      <div className="absolute -left-6 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-medium text-muted-foreground whitespace-nowrap origin-center">
         Low Opportunity ← → High Opportunity
       </div>
       
