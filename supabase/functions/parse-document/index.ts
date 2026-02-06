@@ -225,16 +225,32 @@ function extractJsonFromResponse(response: string): any {
   }
 }
 
+// Declare EdgeRuntime for background tasks (Supabase edge functions provide this)
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
+
+// The heavy lifting is split out so we can run it in the background
+async function processDocument(
+  documentId: string,
+  content: string | undefined,
+  jobId: string,
+  supabase: ReturnType<typeof createClient>,
+  LOVABLE_API_KEY: string
+): Promise<void> {
+  // Implementation moved to helper; see below
+  await processDocumentCore(documentId, content, jobId, supabase, LOVABLE_API_KEY);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Parse request body FIRST to capture documentId for error handling
+  // Capture references early for error handling
   let documentId: string | undefined;
   let content: string | undefined;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let supabase: any = null;
+  let jobId: string | undefined;
 
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -251,7 +267,7 @@ serve(async (req) => {
 
     supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Parse request body early so we have documentId for error handling
+    // Parse request body
     const body = await req.json();
     documentId = body.documentId;
     content = body.content;
@@ -260,6 +276,105 @@ serve(async (req) => {
       throw new Error("documentId is required");
     }
 
+    // Create a processing job record
+    const { data: job, error: jobError } = await supabase
+      .from("processing_jobs")
+      .insert({
+        job_type: "parse_document",
+        target_id: documentId,
+        status: "processing",
+        progress: 0,
+      })
+      .select()
+      .single();
+
+    if (jobError || !job) {
+      throw new Error(`Failed to create job: ${jobError?.message}`);
+    }
+
+    jobId = job.id;
+
+    // Start background processing using EdgeRuntime.waitUntil if available
+    const processingPromise = processDocument(
+      documentId,
+      content,
+      jobId,
+      supabase,
+      LOVABLE_API_KEY
+    ).catch(async (error: unknown) => {
+      console.error("Background processing error:", error);
+      await supabase
+        .from("processing_jobs")
+        .update({
+          status: "failed",
+          error_message: error instanceof Error ? error.message : "Unknown error",
+        })
+        .eq("id", jobId);
+      await supabase
+        .from("cei_documents")
+        .update({ parse_status: "failed" })
+        .eq("id", documentId);
+    });
+
+    if (typeof EdgeRuntime !== "undefined") {
+      EdgeRuntime.waitUntil(processingPromise);
+    } else {
+      // Fallback: await directly (slower, but ensures completion)
+      await processingPromise;
+    }
+
+    // Return immediately with job ID for polling
+    return new Response(
+      JSON.stringify({
+        success: true,
+        job_id: jobId,
+        message: "Document parsing started. Poll the job for status.",
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("Request handling error:", error);
+
+    // Attempt to mark job as failed if it was created
+    if (jobId && supabase) {
+      await supabase
+        .from("processing_jobs")
+        .update({
+          status: "failed",
+          error_message: error instanceof Error ? error.message : "Unknown error",
+        })
+        .eq("id", jobId);
+    }
+
+    // Attempt to mark document as failed
+    if (documentId && supabase) {
+      await supabase
+        .from("cei_documents")
+        .update({ parse_status: "failed" })
+        .eq("id", documentId);
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
+
+// ============================================================================
+// Core document processing logic (runs in background)
+// ============================================================================
+async function processDocumentCore(
+  documentId: string,
+  content: string | undefined,
+  jobId: string,
+  supabase: ReturnType<typeof createClient>,
+  LOVABLE_API_KEY: string
+): Promise<void> {
+  try {
     // Fetch document record to get storage path
     const { data: document, error: docError } = await supabase
       .from("cei_documents")
@@ -801,47 +916,41 @@ ${processedContent}`;
       }
     }
 
-     return new Response(
-       JSON.stringify({
-         success: true,
-         mentionsCreated,
-         summary: docAnalysis.summary || extractedData.summary,
-         co_analysis: {
-           sectors: docAnalysis.primary_sectors || detectedSectors,
-           policies_detected: docAnalysis.key_policies?.length || 0,
-           keywords_assessed: Object.keys(keywordCOScores).length,
-           market_signals: docAnalysis.overall_market_signals || null,
-         },
-       }),
-       {
-         headers: { ...corsHeaders, "Content-Type": "application/json" },
-       }
-     );
+    // Mark job as completed
+    await supabase
+      .from("processing_jobs")
+      .update({
+        status: "completed",
+        progress: 100,
+        result: {
+          mentionsCreated,
+          summary: docAnalysis.summary || extractedData.summary,
+          sectors: docAnalysis.primary_sectors || detectedSectors,
+          policies_detected: docAnalysis.key_policies?.length || 0,
+          keywords_assessed: Object.keys(keywordCOScores).length,
+        },
+      })
+      .eq("id", jobId);
+
+    console.log(`Document ${documentId} parsing completed. Job ${jobId} done.`);
   } catch (error) {
     console.error("Document parsing error:", error);
 
-    // Update document status to failed using the documentId captured at the start
-    if (documentId && supabase) {
-      try {
-        await supabase
-          .from("cei_documents")
-          .update({ parse_status: "failed" })
-          .eq("id", documentId);
-        console.log(`Updated document ${documentId} status to failed`);
-      } catch (updateError) {
-        console.error("Failed to update document status:", updateError);
-      }
-    }
+    // Mark job as failed
+    await supabase
+      .from("processing_jobs")
+      .update({
+        status: "failed",
+        error_message: error instanceof Error ? error.message : "Unknown error",
+      })
+      .eq("id", jobId);
 
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    // Update document status to failed
+    await supabase
+      .from("cei_documents")
+      .update({ parse_status: "failed" })
+      .eq("id", documentId);
+
+    throw error; // Rethrow so the caller can log
   }
-});
+}
