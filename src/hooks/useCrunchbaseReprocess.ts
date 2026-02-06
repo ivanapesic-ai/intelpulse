@@ -55,9 +55,9 @@ const KEYWORD_MATCHING_RULES: Record<string, KeywordMatchConfig> = {
     exclude: ['marketplace', 'dealership', 'mining', 'tourism', 'chauffeur', 'e-scooter', 'scooter', 'bicycle', 'e-bike', 'aircraft', 'aerospace', 'aviation', 'boat', 'marine', 'yacht', 'motorcycle', 'motorbike']
   },
   'Sensor Fusion': {
-    required: ['sensor fusion', 'multi-sensor fusion'],
+    required: ['sensor fusion', 'multi-sensor fusion', 'multi-sensor', 'sensor integration', 'perception system'],
     context: ['automotive', 'vehicle', 'autonomous', 'adas'],
-    exclude: []
+    exclude: ['industrial', 'manufacturing']
   },
   'Fleet Management': {
     required: ['fleet management', 'fleet software', 'fleet optimization', 'fleet platform'],
@@ -105,23 +105,59 @@ const KEYWORD_MATCHING_RULES: Record<string, KeywordMatchConfig> = {
     exclude: []
   },
   'HD Mapping': {
-    required: ['hd map', 'high definition map', 'hd mapping', 'precision mapping'],
-    context: ['autonomous', 'vehicle'],
+    required: ['hd map', 'high definition map', 'hd mapping', 'precision mapping', 'mapping services', 'navigation map'],
+    context: ['autonomous', 'vehicle', 'navigation'],
     exclude: []
   },
   'Vehicle to Grid': {
-    required: ['v2g', 'vehicle to grid', 'vehicle-to-grid', 'bidirectional charging'],
+    required: ['v2g', 'vehicle to grid', 'vehicle-to-grid', 'bidirectional charging', 'bi-directional'],
     context: [],
     exclude: []
   },
   'Digital Twin': {
-    required: ['digital twin', 'vehicle simulation', 'vehicle digital twin'],
+    required: ['digital twin', 'vehicle simulation', 'vehicle digital twin', 'simulation platform'],
     context: ['automotive', 'vehicle'],
     exclude: []
   },
   'Semiconductor': {
     required: ['automotive chip', 'automotive semiconductor', 'vehicle processor'],
     context: ['automotive', 'vehicle'],
+    exclude: []
+  },
+  // NEW: Zero-funding keywords with expanded matching
+  'AV Camera': {
+    required: ['camera', 'computer vision', 'vision system', 'imaging sensor'],
+    context: ['automotive', 'vehicle', 'autonomous', 'adas', 'driving', 'perception'],
+    exclude: ['phone', 'smartphone', 'consumer', 'security camera', 'cctv']
+  },
+  'AV Simulation': {
+    required: ['simulation', '3d technology', 'virtual testing', 'driving simulation', 'av simulation'],
+    context: ['autonomous', 'vehicle', 'automotive', 'driving'],
+    exclude: ['game', 'entertainment', 'flight']
+  },
+  'AV Labeling': {
+    required: ['labeling', 'annotation', 'training data', 'data labeling', 'machine learning data'],
+    context: ['autonomous', 'driving', 'vehicle', 'ai', 'perception'],
+    exclude: ['food', 'retail', 'medical']
+  },
+  'Automotive Ethernet': {
+    required: ['automotive ethernet', 'in-vehicle network', 'vehicle networking', 'automotive network'],
+    context: ['automotive', 'vehicle'],
+    exclude: []
+  },
+  'AUTOSAR': {
+    required: ['autosar', 'automotive software', 'ecu software', 'embedded automotive', 'vehicle software platform'],
+    context: ['automotive', 'vehicle', 'ecu'],
+    exclude: []
+  },
+  'EV Motor': {
+    required: ['electric motor', 'e-motor', 'electric drive', 'electric powertrain', 'traction motor'],
+    context: ['vehicle', 'automotive', 'ev', 'electric'],
+    exclude: ['appliance', 'fan', 'pump', 'industrial motor']
+  },
+  'Bidirectional Charging': {
+    required: ['bidirectional', 'bi-directional', 'v2g', 'v2h', 'v2l', 'vehicle-to-grid', 'two-way charging'],
+    context: ['charging', 'ev', 'vehicle', 'grid'],
     exclude: []
   }
 };
