@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, TrendingUp, TrendingDown, Minus, FileText, DollarSign, Users, Calendar, Building2, Newspaper, ExternalLink, Target, Globe, Tag, Star } from "lucide-react";
+import { Search, TrendingUp, TrendingDown, Minus, FileText, DollarSign, Users, Calendar, Building2, Newspaper, ExternalLink, Target, Globe, Tag, Star, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,9 +39,23 @@ export default function TechnologyExplorer() {
   const [regionFilter, setRegionFilter] = useState<RegionFilter>("all");
   const [selectedTech, setSelectedTech] = useState<(Technology & { keyword?: TechnologyKeyword }) | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const { data: technologies, isLoading, error } = useTechnologies();
-  const { data: regionStats } = useTechnologyRegionStats();
+  const {
+    data: technologies,
+    isLoading,
+    error,
+    refetch: refetchTechnologies,
+    isFetching: isFetchingTechnologies,
+  } = useTechnologies();
+
+  const {
+    data: regionStats,
+    refetch: refetchRegionStats,
+    isFetching: isFetchingRegionStats,
+  } = useTechnologyRegionStats();
+
+  const isFetching = isRefreshing || isFetchingTechnologies || isFetchingRegionStats;
 
   // Helper to get display values based on region filter
   const getDisplayStats = (tech: Technology) => {
@@ -92,6 +106,15 @@ export default function TechnologyExplorer() {
     setDetailOpen(true);
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([refetchTechnologies(), refetchRegionStats()]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   // 3-Dimension scoring: Investment, Employees, TRL
   const radarData = selectedTech
     ? [
@@ -120,10 +143,25 @@ export default function TechnologyExplorer() {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Technology Explorer</h1>
-          <p className="text-muted-foreground">
-            Browse and analyze {technologies?.length || 0} technologies powered by Crunchbase data
-          </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground mb-2">Technology Explorer</h1>
+              <p className="text-muted-foreground">
+                Browse and analyze {technologies?.length || 0} technologies powered by Crunchbase data
+              </p>
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isFetching}
+              className="gap-2"
+            >
+              <RefreshCw className={cn("h-4 w-4", isFetching ? "animate-spin" : "")} />
+              {isFetching ? "Refreshing..." : "Refresh"}
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
