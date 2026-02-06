@@ -38,6 +38,11 @@ export default function IntelligenceDashboard() {
 
   const isLoading = domainsLoading || keywordsLoading || techLoading;
 
+  // Filter technologies based on search query
+  const filteredTechnologies = technologies?.filter(tech => 
+    !searchQuery || tech.name.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
+
   const handleRecalculate = async () => {
     try {
       const result = await calculateScores.mutateAsync();
@@ -190,7 +195,7 @@ export default function IntelligenceDashboard() {
           >
             {/* Gartner-style visualization samples */}
             <GartnerMatrixSampler
-              technologies={technologies || []}
+              technologies={filteredTechnologies}
               onSelectTechnology={setSelectedTech}
               selectedId={selectedTech?.id}
             />
