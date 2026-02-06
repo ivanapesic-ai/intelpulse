@@ -468,50 +468,56 @@ export default function TechnologyExplorer() {
 
                     {/* Right Column */}
                     <div className="space-y-6">
-                      {/* Metrics */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <Card>
-                          <CardContent className="pt-4">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Building2 className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm text-muted-foreground">Companies</span>
-                            </div>
-                            <p className="text-2xl font-bold text-foreground">{liveSelectedTech.dealroomCompanyCount}</p>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardContent className="pt-4">
-                            <div className="flex items-center gap-2 mb-1">
-                              <DollarSign className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm text-muted-foreground">Total Funding</span>
-                            </div>
-                            <p className="text-2xl font-bold text-foreground">{formatFundingEur(liveSelectedTech.totalFundingEur)}</p>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardContent className="pt-4">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Users className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm text-muted-foreground">Total Employees</span>
-                            </div>
-                            <p className="text-2xl font-bold text-foreground">{formatNumber(liveSelectedTech.totalEmployees)}</p>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardContent className="pt-4">
-                            <div className="flex items-center gap-2 mb-1">
-                              <FileText className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm text-muted-foreground">Patents</span>
-                            </div>
-                            {liveSelectedTech.totalPatents > 0 ? (
-                              <p className="text-2xl font-bold text-foreground">{formatNumber(liveSelectedTech.totalPatents)}</p>
-                            ) : (
-                              <p className="text-sm text-muted-foreground italic">No data</p>
-                            )}
-                            <p className="text-xs text-muted-foreground">Patent count</p>
-                          </CardContent>
-                        </Card>
-                      </div>
+                      {/* Metrics - use region-aware stats to match cards */}
+                      {(() => {
+                        const detailStats = getDisplayStats(liveSelectedTech);
+                        const regionLabel = regionFilter === "europe" ? "EU" : regionFilter === "usa" ? "US" : "";
+                        return (
+                          <div className="grid grid-cols-2 gap-4">
+                            <Card>
+                              <CardContent className="pt-4">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm text-muted-foreground">{regionLabel ? `${regionLabel} Companies` : "Companies"}</span>
+                                </div>
+                                <p className="text-2xl font-bold text-foreground">{detailStats.companyCount}</p>
+                              </CardContent>
+                            </Card>
+                            <Card>
+                              <CardContent className="pt-4">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm text-muted-foreground">{regionLabel ? `${regionLabel} Funding` : "Total Funding"}</span>
+                                </div>
+                                <p className="text-2xl font-bold text-foreground">{formatFundingEur(detailStats.funding)}</p>
+                              </CardContent>
+                            </Card>
+                            <Card>
+                              <CardContent className="pt-4">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Users className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm text-muted-foreground">{regionLabel ? `${regionLabel} Employees` : "Total Employees"}</span>
+                                </div>
+                                <p className="text-2xl font-bold text-foreground">{formatNumber(detailStats.employees)}</p>
+                              </CardContent>
+                            </Card>
+                            <Card>
+                              <CardContent className="pt-4">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <FileText className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm text-muted-foreground">Patents</span>
+                                </div>
+                                {liveSelectedTech.totalPatents > 0 ? (
+                                  <p className="text-2xl font-bold text-foreground">{formatNumber(liveSelectedTech.totalPatents)}</p>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground italic">No data</p>
+                                )}
+                                <p className="text-xs text-muted-foreground">Patent count</p>
+                              </CardContent>
+                            </Card>
+                          </div>
+                        );
+                      })()}
 
                       {/* Maturity Scores */}
                       <Card>
@@ -625,15 +631,20 @@ export default function TechnologyExplorer() {
                 </TabsContent>
 
               <TabsContent value="market-intel" className="mt-4">
-                <MarketIntelligence 
-                  keywordId={liveSelectedTech.keywordId} 
-                  technologyName={liveSelectedTech.name}
-                  summary={{
-                    totalCompanies: liveSelectedTech.dealroomCompanyCount || 0,
-                    totalFunding: liveSelectedTech.totalFundingEur || 0,
-                    totalEmployees: liveSelectedTech.totalEmployees || 0,
-                  }}
-                />
+                {(() => {
+                  const marketStats = getDisplayStats(liveSelectedTech);
+                  return (
+                    <MarketIntelligence 
+                      keywordId={liveSelectedTech.keywordId} 
+                      technologyName={liveSelectedTech.name}
+                      summary={{
+                        totalCompanies: marketStats.companyCount,
+                        totalFunding: marketStats.funding,
+                        totalEmployees: marketStats.employees,
+                      }}
+                    />
+                  );
+                })()}
               </TabsContent>
             </Tabs>
             </>
