@@ -13,18 +13,18 @@ import { useTechnologies } from "@/hooks/useTechnologies";
 import { formatFundingEur, formatNumber, getCompositeScoreLabel } from "@/types/database";
 import logo from "@/assets/logo.svg";
 
-type MaturityRing = "Strong" | "Moderate" | "Challenging";
+type MaturityRing = "Strong" | "Moderate" | "Emerging";
 
 function getMaturityRing(compositeScore: number): MaturityRing {
   if (compositeScore >= 1.5) return "Strong";
   if (compositeScore >= 0.5) return "Moderate";
-  return "Challenging";
+  return "Emerging";
 }
 
 const ringColors: Record<MaturityRing, string> = {
   Strong: "border-emerald-500/50 text-emerald-500",
   Moderate: "border-amber-500/50 text-amber-500",
-  Challenging: "border-red-500/50 text-red-500",
+  Emerging: "border-red-500/50 text-red-500",
 };
 
 const premiumFeatures = [

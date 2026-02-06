@@ -46,18 +46,18 @@ const getScoreBg = (score: number): string => {
   return "bg-[hsl(0_72%_50%)] text-white";
 };
 
-type MaturityRing = "Strong" | "Moderate" | "Challenging";
+type MaturityRing = "Strong" | "Moderate" | "Emerging";
 
 function getMaturityRing(compositeScore: number): MaturityRing {
   if (compositeScore >= 1.5) return "Strong";
   if (compositeScore >= 0.5) return "Moderate";
-  return "Challenging";
+  return "Emerging";
 }
 
 const ringColors: Record<MaturityRing, string> = {
   Strong: "hsl(160 72% 35%)",
   Moderate: "hsl(38 92% 50%)",
-  Challenging: "hsl(0 72% 50%)",
+  Emerging: "hsl(0 72% 50%)",
 };
 
 // EU Country data now comes from useEUCountryStats hook
@@ -100,12 +100,12 @@ export default function HeatmapMatrix() {
         avgCompositeScore: 0,
         highMaturityCount: 0,
         needsAssessmentCount: 0,
-        ringCounts: { Strong: 0, Moderate: 0, Challenging: 0 },
+        ringCounts: { Strong: 0, Moderate: 0, Emerging: 0 },
       };
     }
 
     const avgCompositeScore = technologies.reduce((sum, t) => sum + (t.compositeScore || 0), 0) / technologies.length;
-    const ringCounts: Record<MaturityRing, number> = { Strong: 0, Moderate: 0, Challenging: 0 };
+    const ringCounts: Record<MaturityRing, number> = { Strong: 0, Moderate: 0, Emerging: 0 };
     technologies.forEach((t) => {
       const ring = getMaturityRing(t.compositeScore || 0);
       ringCounts[ring]++;
@@ -140,7 +140,7 @@ export default function HeatmapMatrix() {
     const grouped: Record<MaturityRing, Array<{ name: string; size: number; color: string }>> = {
       Strong: [],
       Moderate: [],
-      Challenging: [],
+      Emerging: [],
     };
 
     technologies.forEach(tech => {
