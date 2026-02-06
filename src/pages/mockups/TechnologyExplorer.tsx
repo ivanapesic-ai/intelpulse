@@ -146,7 +146,7 @@ export default function TechnologyExplorer() {
             <div>
               <h1 className="text-2xl font-bold text-foreground mb-2">Technology Explorer</h1>
               <p className="text-muted-foreground">
-                Browse and analyze {technologies?.length || 0} technologies powered by Crunchbase data
+                Browse and analyze {filteredTechnologies.length} SDV technologies powered by Crunchbase data
               </p>
             </div>
 
@@ -218,7 +218,7 @@ export default function TechnologyExplorer() {
         {/* Results */}
         <div className="mb-4 flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Showing {filteredTechnologies.length} of {technologies?.length || 0} technologies
+            {filteredTechnologies.length} technologies
           </p>
         </div>
 
