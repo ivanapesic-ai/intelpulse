@@ -135,26 +135,6 @@ export default function Dashboard() {
               Real-time maturity tracking powered by Crunchbase market signals, document analysis, and H11 hybrid scoring model.
             </p>
             
-            <div className="flex flex-wrap gap-3 animate-fade-in-up" style={{ animationDelay: '150ms' }}>
-              <Link to="/mockups/radar">
-                <Button size="default" className="gap-2">
-                  <Radar className="h-4 w-4" />
-                  Technology Radar
-                </Button>
-              </Link>
-              <Link to="/mockups/heatmap">
-                <Button variant="outline" size="default" className="gap-2">
-                  <Grid3X3 className="h-4 w-4" />
-                  Heatmap Matrix
-                </Button>
-              </Link>
-              <Link to="/mockups/explorer">
-                <Button variant="ghost" size="default" className="gap-2">
-                  <Compass className="h-4 w-4" />
-                  Explorer
-                </Button>
-              </Link>
-            </div>
           </div>
         </div>
       </section>
