@@ -315,21 +315,29 @@ export default function TechnologyExplorer() {
                     {/* Left Column */}
                     <div className="space-y-6">
                       <div>
-                        <p className="text-muted-foreground mb-3">
-                          {selectedTech.description || `Technology area tracked from Crunchbase data.`}
-                        </p>
-                        
-                        {/* Aliases explanation */}
-                        {selectedTech.keyword?.aliases && selectedTech.keyword.aliases.length > 0 && (
+                        {/* Show description if exists, otherwise show alias explanation */}
+                        {selectedTech.description ? (
+                          <p className="text-muted-foreground mb-3">{selectedTech.description}</p>
+                        ) : selectedTech.keyword?.aliases && selectedTech.keyword.aliases.length > 0 ? (
                           <div className="flex items-start gap-2 mb-3 p-3 rounded-lg bg-muted/50 border border-border">
                             <Tag className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                            <div>
-                              <p className="text-sm text-muted-foreground">
-                                <span className="font-medium text-foreground">Company metrics include: </span>
-                                {selectedTech.keyword.aliases.slice(0, 5).join(", ")}
-                                {selectedTech.keyword.aliases.length > 5 && ` +${selectedTech.keyword.aliases.length - 5} more`}
-                              </p>
-                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              <span className="font-medium text-foreground">Company metrics include: </span>
+                              {selectedTech.keyword.aliases.slice(0, 5).join(", ")}
+                              {selectedTech.keyword.aliases.length > 5 && ` +${selectedTech.keyword.aliases.length - 5} more`}
+                            </p>
+                          </div>
+                        ) : null}
+                        
+                        {/* If has description AND aliases, show aliases as secondary info */}
+                        {selectedTech.description && selectedTech.keyword?.aliases && selectedTech.keyword.aliases.length > 0 && (
+                          <div className="flex items-start gap-2 mb-3 p-3 rounded-lg bg-muted/50 border border-border">
+                            <Tag className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                            <p className="text-sm text-muted-foreground">
+                              <span className="font-medium text-foreground">Company metrics include: </span>
+                              {selectedTech.keyword.aliases.slice(0, 5).join(", ")}
+                              {selectedTech.keyword.aliases.length > 5 && ` +${selectedTech.keyword.aliases.length - 5} more`}
+                            </p>
                           </div>
                         )}
                         
