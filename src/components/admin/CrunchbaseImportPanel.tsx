@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { parseCSV, useCrunchbaseImport, useCrunchbaseStats, useCrunchbaseImportLogs, ImportProgress, ImportSummary } from "@/hooks/useCrunchbase";
 import { useCrunchbaseReprocess, ReprocessProgress, ReprocessSummary } from "@/hooks/useCrunchbaseReprocess";
 import { formatFundingEur } from "@/types/database";
+import { useAdminDataSync } from "@/hooks/useDataSync";
 
 export function CrunchbaseImportPanel() {
   const [isDragging, setIsDragging] = useState(false);
@@ -25,6 +26,8 @@ export function CrunchbaseImportPanel() {
   const importMutation = useCrunchbaseImport();
   const reprocessMutation = useCrunchbaseReprocess();
   
+  const { afterCrunchbaseImport } = useAdminDataSync();
+  
   const handleReprocessKeywords = async () => {
     setReprocessProgress({ current: 0, total: 0, currentCompany: '', updated: 0, unchanged: 0 });
     setReprocessSummary(null);
@@ -36,7 +39,9 @@ export function CrunchbaseImportPanel() {
       
       setReprocessSummary(summary);
       setReprocessProgress(null);
-      toast.success(`Updated ${summary.updated} companies with new keywords!`);
+      // Unified sync - updates radars, dashboards, cards
+      await afterCrunchbaseImport();
+      toast.success(`Updated ${summary.updated} companies with new keywords! All views synced.`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Reprocess failed');
       setReprocessProgress(null);
@@ -99,7 +104,9 @@ export function CrunchbaseImportPanel() {
       
       setImportSummary(summary);
       setImportProgress(null);
-      toast.success(`Successfully imported ${summary.importedRows} companies!`);
+      // Unified sync - updates radars, dashboards, cards
+      await afterCrunchbaseImport();
+      toast.success(`Successfully imported ${summary.importedRows} companies! All views synced.`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Import failed');
       setImportProgress(null);

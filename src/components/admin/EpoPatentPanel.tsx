@@ -33,6 +33,7 @@ import {
   TECHNOLOGY_IPC_MAP,
 } from "@/hooks/useEpoTechnologyEnrichment";
 import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
+import { useAdminDataSync } from "@/hooks/useDataSync";
 
 export function EpoPatentPanel() {
   const { toast } = useToast();
@@ -99,13 +100,17 @@ export function EpoPatentPanel() {
     }
   };
 
+  const { afterEpoEnrichment } = useAdminDataSync();
+
   const handleEnrichment = async () => {
     try {
       const result = await enrichWithPatents.mutateAsync({ limit: 20 });
       setEnrichmentResults(result.results);
+      // Unified sync - updates radars, dashboards, cards
+      await afterEpoEnrichment();
       toast({
         title: "Enrichment complete",
-        description: `Updated ${result.enriched} of ${result.total} companies with patent data`,
+        description: `Updated ${result.enriched} of ${result.total} companies with patent data. All views synced.`,
       });
     } catch (error) {
       toast({
@@ -123,9 +128,11 @@ export function EpoPatentPanel() {
         keywords: result.keywords_processed,
         patents: Number(result.total_patents_aggregated),
       });
+      // Unified sync - updates radars, dashboards, cards
+      await afterEpoEnrichment();
       toast({
         title: "Aggregation complete",
-        description: `Updated ${result.keywords_processed} keywords with ${result.total_patents_aggregated} total patents`,
+        description: `Updated ${result.keywords_processed} keywords with ${result.total_patents_aggregated} total patents. All views synced.`,
       });
     } catch (error) {
       toast({
