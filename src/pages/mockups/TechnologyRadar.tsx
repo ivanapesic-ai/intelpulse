@@ -249,7 +249,7 @@ export default function TechnologyRadar() {
                     <span className="text-[10px] text-warning font-medium uppercase tracking-wide">Moderate</span>
                   </div>
                   <div className="absolute top-[12%] left-1/2 -translate-x-1/2">
-                    <span className="text-[10px] text-destructive font-medium uppercase tracking-wide">Challenging</span>
+                    <span className="text-[10px] text-destructive font-medium uppercase tracking-wide">Emerging</span>
                   </div>
                 </div>
               </CardContent>

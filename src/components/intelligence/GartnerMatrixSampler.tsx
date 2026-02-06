@@ -56,19 +56,19 @@ function getScores(tech: TechnologyIntelligence): { challenge: number; opportuni
   return { challenge, opportunity };
 }
 
-// Maturity ring helper for multiple visualizations
-type MaturityRing = "Strong" | "Moderate" | "Challenging";
+// Maturity ring helper for multiple visualizations - aligned with platform terminology
+type MaturityRing = "Strong" | "Moderate" | "Emerging";
 
 function getMaturityRingFromComposite(compositeScore: number): MaturityRing {
   if (compositeScore >= 1.5) return "Strong";
   if (compositeScore >= 0.5) return "Moderate";
-  return "Challenging";
+  return "Emerging";
 }
 
 const ringColors: Record<MaturityRing, string> = {
   Strong: "hsl(160 72% 35%)",
   Moderate: "hsl(38 92% 45%)",
-  Challenging: "hsl(0 72% 50%)",
+  Emerging: "hsl(0 72% 50%)",
 };
 
 // ============================================================================
@@ -378,7 +378,7 @@ function HybridRadarQuadrant({
 const ringRadii: Record<MaturityRing, number> = {
   Strong: 0.22,
   Moderate: 0.45,
-  Challenging: 0.72,
+  Emerging: 0.72,
 };
 
 const techColors = [
@@ -501,7 +501,7 @@ function MaturityRadar({
         <span className="text-[10px] text-warning font-medium uppercase tracking-wide">Moderate</span>
       </div>
       <div className="absolute top-[12%] left-1/2 -translate-x-1/2 pointer-events-none">
-        <span className="text-[10px] text-destructive font-medium uppercase tracking-wide">Challenging</span>
+        <span className="text-[10px] text-destructive font-medium uppercase tracking-wide">Emerging</span>
       </div>
     </div>
   );
