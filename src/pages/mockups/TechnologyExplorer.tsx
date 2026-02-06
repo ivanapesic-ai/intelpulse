@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, TrendingUp, TrendingDown, Minus, FileText, DollarSign, Users, Calendar, Building2, Newspaper, ExternalLink, Target, Globe } from "lucide-react";
+import { Search, TrendingUp, TrendingDown, Minus, FileText, DollarSign, Users, Calendar, Building2, Newspaper, ExternalLink, Target, Globe, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { PlatformHeader } from "@/components/mockups/PlatformHeader";
 import { MarketIntelligence } from "@/components/mockups/MarketIntelligence";
 import { useTechnologies } from "@/hooks/useTechnologies";
 import { useTechnologyRegionStats, getRegionStats } from "@/hooks/useTechnologyRegionStats";
-import { formatFundingEur, formatNumber, MATURITY_SCORE_CONFIG, type Technology } from "@/types/database";
+import { formatFundingEur, formatNumber, MATURITY_SCORE_CONFIG, type Technology, type TechnologyKeyword } from "@/types/database";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -22,7 +22,7 @@ export default function TechnologyExplorer() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("composite");
   const [regionFilter, setRegionFilter] = useState<RegionFilter>("global");
-  const [selectedTech, setSelectedTech] = useState<Technology | null>(null);
+  const [selectedTech, setSelectedTech] = useState<(Technology & { keyword?: TechnologyKeyword }) | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
   const { data: technologies, isLoading, error } = useTechnologies();
@@ -315,9 +315,24 @@ export default function TechnologyExplorer() {
                     {/* Left Column */}
                     <div className="space-y-6">
                       <div>
-                      <p className="text-muted-foreground mb-4">
-                        {selectedTech.description || `Technology area with ${selectedTech.dealroomCompanyCount} companies tracked from Crunchbase.`}
-                      </p>
+                        <p className="text-muted-foreground mb-3">
+                          {selectedTech.description || `Technology area tracked from Crunchbase data.`}
+                        </p>
+                        
+                        {/* Aliases explanation */}
+                        {selectedTech.keyword?.aliases && selectedTech.keyword.aliases.length > 0 && (
+                          <div className="flex items-start gap-2 mb-3 p-3 rounded-lg bg-muted/50 border border-border">
+                            <Tag className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                            <div>
+                              <p className="text-sm text-muted-foreground">
+                                <span className="font-medium text-foreground">Company metrics include: </span>
+                                {selectedTech.keyword.aliases.slice(0, 5).join(", ")}
+                                {selectedTech.keyword.aliases.length > 5 && ` +${selectedTech.keyword.aliases.length - 5} more`}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        
                         <div className="flex flex-wrap gap-2">
                           <Badge variant="outline" className="capitalize">{selectedTech.trend} trend</Badge>
                           <Badge variant="outline">{selectedTech.dealroomCompanyCount} companies</Badge>
