@@ -2597,6 +2597,14 @@ export type Database = {
         Args: { policy_count: number }
         Returns: number
       }
+      calculate_market_response_count: {
+        Args: { p_keyword_id: string }
+        Returns: number
+      }
+      calculate_market_response_score: {
+        Args: { p_keyword_id: string }
+        Returns: number
+      }
       calculate_network_centrality: { Args: never; Returns: undefined }
       calculate_technology_challenge_score: {
         Args: {
