@@ -31,12 +31,12 @@ function isCentralEcosystem(name: string): boolean {
 }
 
 type SortOption = "composite" | "funding" | "employees" | "companies";
-type RegionFilter = "global" | "eu";
+type RegionFilter = "all" | "europe" | "usa";
 
 export default function TechnologyExplorer() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("composite");
-  const [regionFilter, setRegionFilter] = useState<RegionFilter>("global");
+  const [regionFilter, setRegionFilter] = useState<RegionFilter>("all");
   const [selectedTech, setSelectedTech] = useState<(Technology & { keyword?: TechnologyKeyword }) | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
@@ -62,9 +62,9 @@ export default function TechnologyExplorer() {
           tech.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           tech.description.toLowerCase().includes(searchQuery.toLowerCase());
         
-        // If EU filter is active, only show technologies with EU companies
-        if (regionFilter === "eu" && regionStats) {
-          const stats = getRegionStats(regionStats, tech.keywordId, "eu");
+        // If region filter is active, only show technologies with companies in that region
+        if (regionFilter !== "all" && regionStats) {
+          const stats = getRegionStats(regionStats, tech.keywordId, regionFilter);
           if (stats.companyCount === 0) return false;
         }
         
@@ -149,12 +149,15 @@ export default function TechnologyExplorer() {
                   onValueChange={(value) => value && setRegionFilter(value as RegionFilter)}
                   size="sm"
                 >
-                  <ToggleGroupItem value="global" aria-label="Global">
+                  <ToggleGroupItem value="all" aria-label="Both">
                     <Globe className="h-4 w-4 mr-1" />
-                    Global
+                    Both
                   </ToggleGroupItem>
-                  <ToggleGroupItem value="eu" aria-label="EU Only">
-                    🇪🇺 EU
+                  <ToggleGroupItem value="europe" aria-label="Europe">
+                    🇪🇺 Europe
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="usa" aria-label="USA">
+                    🇺🇸 USA
                   </ToggleGroupItem>
                 </ToggleGroup>
               </div>
@@ -244,7 +247,7 @@ export default function TechnologyExplorer() {
                         <Building2 className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
                         <p className="text-sm font-medium text-foreground">{displayStats.companyCount}</p>
                         <p className="text-xs text-muted-foreground">
-                          {regionFilter === "eu" ? "EU Co." : "Companies"}
+                          {regionFilter === "europe" ? "EU Co." : regionFilter === "usa" ? "US Co." : "Companies"}
                         </p>
                       </div>
                       <div className="p-2 rounded bg-muted/50">

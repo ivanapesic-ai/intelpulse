@@ -1,55 +1,128 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+// European countries list (EU27 + UK, Norway, Switzerland, Iceland)
+const EUROPE_COUNTRIES = [
+  "Germany", "France", "Netherlands", "Belgium", "Italy", "Spain", "Sweden", "Finland",
+  "Denmark", "Ireland", "Austria", "Poland", "Portugal", "Czech Republic", "Czechia",
+  "Hungary", "Romania", "Bulgaria", "Greece", "Slovakia", "Croatia", "Slovenia",
+  "Lithuania", "Latvia", "Estonia", "Luxembourg", "Malta", "Cyprus",
+  "United Kingdom", "Norway", "Switzerland", "Iceland", "Liechtenstein"
+];
+
+const USA_COUNTRIES = ["United States", "USA", "US"];
+
 interface TechnologyRegionStats {
   keywordId: string;
-  euCompanyCount: number;
-  euFunding: number;
-  euEmployees: number;
+  europeCompanyCount: number;
+  europeFunding: number;
+  europeEmployees: number;
+  usaCompanyCount: number;
+  usaFunding: number;
+  usaEmployees: number;
   globalCompanyCount: number;
   globalFunding: number;
   globalEmployees: number;
 }
 
+// Parse employee count string to number (e.g., "51-100" -> 75)
+function parseEmployeeCount(employeeStr: string | null): number {
+  if (!employeeStr) return 0;
+  const ranges: Record<string, number> = {
+    "1-10": 5,
+    "11-50": 30,
+    "51-100": 75,
+    "101-250": 175,
+    "251-500": 375,
+    "501-1000": 750,
+    "1001-5000": 3000,
+    "5001-10000": 7500,
+    "10001+": 15000,
+  };
+  return ranges[employeeStr] || 0;
+}
+
 /**
- * This hook uses pre-aggregated data from the technologies table.
- * 
- * The technologies table already has correct aggregated stats from
- * the aggregate_crunchbase_signals RPC, so we use those directly
- * rather than re-querying crunchbase_keyword_mapping (which hits row limits).
- * 
- * EU filtering is currently disabled until a proper database aggregation
- * function is created to handle the region-specific calculations.
+ * This hook fetches company data and aggregates stats by region (Europe, USA, Both).
+ * Client-side filtering based on hq_country.
  */
 export function useTechnologyRegionStats() {
   return useQuery({
     queryKey: ["technology-region-stats"],
     queryFn: async () => {
-      // Use technologies table which has pre-aggregated global stats
-      const { data: technologies, error: techError } = await supabase
-        .from("technologies")
-        .select("keyword_id, dealroom_company_count, total_funding_eur, total_employees");
+      // Fetch all keyword mappings with company details
+      const { data: mappings, error: mappingError } = await supabase
+        .from("crunchbase_keyword_mapping")
+        .select(`
+          keyword_id,
+          company_id,
+          crunchbase_companies!inner (
+            hq_country,
+            total_funding_usd,
+            number_of_employees
+          )
+        `)
+        .limit(10000);
 
-      if (techError) throw techError;
+      if (mappingError) throw mappingError;
 
-      // Build stats map from technologies table
+      // Build stats map by keyword
       const statsMap = new Map<string, TechnologyRegionStats>();
 
-      for (const tech of technologies || []) {
-        if (!tech.keyword_id) continue;
+      for (const mapping of mappings || []) {
+        if (!mapping.keyword_id || !mapping.crunchbase_companies) continue;
 
-        // Use the pre-aggregated stats from technologies table
-        // These come from the aggregate_crunchbase_signals RPC
-        statsMap.set(tech.keyword_id, {
-          keywordId: tech.keyword_id,
-          globalCompanyCount: tech.dealroom_company_count || 0,
-          globalFunding: tech.total_funding_eur || 0,
-          globalEmployees: tech.total_employees || 0,
-          // EU stats currently mirror global (region filtering TBD)
-          euCompanyCount: 0,
-          euFunding: 0,
-          euEmployees: 0,
-        });
+        const company = mapping.crunchbase_companies as {
+          hq_country: string | null;
+          total_funding_usd: number | null;
+          number_of_employees: string | null;
+        };
+
+        const country = company.hq_country || "";
+        const fundingEur = (company.total_funding_usd || 0) * 0.92; // USD to EUR
+        const employees = parseEmployeeCount(company.number_of_employees);
+
+        const isEurope = EUROPE_COUNTRIES.some(c => 
+          country.toLowerCase() === c.toLowerCase()
+        );
+        const isUSA = USA_COUNTRIES.some(c => 
+          country.toLowerCase() === c.toLowerCase()
+        );
+
+        // Get or create stats entry
+        let stats = statsMap.get(mapping.keyword_id);
+        if (!stats) {
+          stats = {
+            keywordId: mapping.keyword_id,
+            europeCompanyCount: 0,
+            europeFunding: 0,
+            europeEmployees: 0,
+            usaCompanyCount: 0,
+            usaFunding: 0,
+            usaEmployees: 0,
+            globalCompanyCount: 0,
+            globalFunding: 0,
+            globalEmployees: 0,
+          };
+          statsMap.set(mapping.keyword_id, stats);
+        }
+
+        // Aggregate by region
+        stats.globalCompanyCount++;
+        stats.globalFunding += fundingEur;
+        stats.globalEmployees += employees;
+
+        if (isEurope) {
+          stats.europeCompanyCount++;
+          stats.europeFunding += fundingEur;
+          stats.europeEmployees += employees;
+        }
+
+        if (isUSA) {
+          stats.usaCompanyCount++;
+          stats.usaFunding += fundingEur;
+          stats.usaEmployees += employees;
+        }
       }
 
       return Array.from(statsMap.values());
@@ -62,7 +135,7 @@ export function useTechnologyRegionStats() {
 export function getRegionStats(
   allStats: TechnologyRegionStats[] | undefined,
   keywordId: string | undefined,
-  region: "global" | "eu"
+  region: "all" | "europe" | "usa"
 ): { companyCount: number; funding: number; employees: number } {
   if (!allStats || !keywordId) {
     return { companyCount: 0, funding: 0, employees: 0 };
@@ -73,21 +146,23 @@ export function getRegionStats(
     return { companyCount: 0, funding: 0, employees: 0 };
   }
 
-  // For EU filter, return EU stats if available, otherwise show a note
-  // that EU-specific filtering requires database aggregation
-  if (region === "eu") {
-    // If EU stats are populated (from future RPC), use them
-    if (stats.euCompanyCount > 0) {
-      return {
-        companyCount: stats.euCompanyCount,
-        funding: stats.euFunding,
-        employees: stats.euEmployees,
-      };
-    }
-    // Otherwise return zeros to indicate no EU data available
-    return { companyCount: 0, funding: 0, employees: 0 };
+  if (region === "europe") {
+    return {
+      companyCount: stats.europeCompanyCount,
+      funding: stats.europeFunding,
+      employees: stats.europeEmployees,
+    };
   }
 
+  if (region === "usa") {
+    return {
+      companyCount: stats.usaCompanyCount,
+      funding: stats.usaFunding,
+      employees: stats.usaEmployees,
+    };
+  }
+
+  // "all" - return global stats
   return {
     companyCount: stats.globalCompanyCount,
     funding: stats.globalFunding,
