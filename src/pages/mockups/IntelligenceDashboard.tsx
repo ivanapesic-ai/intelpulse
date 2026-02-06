@@ -194,19 +194,6 @@ export default function IntelligenceDashboard() {
               onSelectTechnology={setSelectedTech}
               selectedId={selectedTech?.id}
             />
-            
-            {/* Keep cluster view below for context */}
-            <Card>
-              <CardContent className="pt-6">
-                <h3 className="text-sm font-semibold text-muted-foreground mb-4">
-                  Cluster Ecosystem View (for reference)
-                </h3>
-                <ClusterCardView
-                  onSelectNode={handleSelectNode}
-                  selectedNodeId={selectedGraphNode?.id}
-                />
-              </CardContent>
-            </Card>
           </motion.div>
         )}
       </div>
