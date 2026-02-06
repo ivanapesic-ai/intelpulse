@@ -117,6 +117,8 @@ function DocumentViewDialog({ document }: { document: CEIDocument }) {
     const freshResult = await refetchDocuments();
     const freshDocs = freshResult.data;
     
+    console.log("[Batch] Documents fetched:", freshDocs?.length);
+    
     if (!freshDocs || freshDocs.length === 0) {
       toast.info("No documents to re-parse");
       return;
@@ -132,30 +134,42 @@ function DocumentViewDialog({ document }: { document: CEIDocument }) {
     for (let i = 0; i < freshDocs.length; i++) {
       const doc = freshDocs[i];
       setBatchProgress({ current: i + 1, total: freshDocs.length, currentDoc: doc.filename });
+      console.log(`[Batch] Processing ${i + 1}/${freshDocs.length}: ${doc.filename} (${doc.id})`);
 
       try {
-        console.log(`[Batch] Parsing ${i + 1}/${freshDocs.length}: ${doc.filename}`);
-        
-        const response = await supabase.functions.invoke('parse-document', {
-          body: { documentId: doc.id, content: '' },
-        });
+        // Use fetch directly like the hook does for consistency
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-document`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({ documentId: doc.id, content: '' }),
+          }
+        );
 
-        if (response.error) {
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error(`[Batch] Failed ${doc.filename}:`, response.status, errorData);
           failCount++;
-          console.error(`Failed to parse ${doc.filename}:`, response.error);
-          toast.error(`Failed: ${doc.filename}`);
+          toast.error(`Failed: ${doc.filename} (${response.status})`);
         } else {
+          const result = await response.json();
           successCount++;
-          console.log(`[Batch] Success: ${doc.filename}`);
+          console.log(`[Batch] Success: ${doc.filename}`, result);
+          toast.success(`Parsed: ${doc.filename} (${result.mentionsCreated || 0} mentions)`);
         }
       } catch (err) {
         failCount++;
-        console.error(`Error parsing ${doc.filename}:`, err);
+        console.error(`[Batch] Error ${doc.filename}:`, err);
         toast.error(`Error: ${doc.filename}`);
       }
 
       // 5 second delay between documents to respect rate limits
       if (i < freshDocs.length - 1) {
+        console.log("[Batch] Waiting 5s before next document...");
         await new Promise(resolve => setTimeout(resolve, 5000));
       }
     }
