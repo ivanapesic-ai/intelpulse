@@ -10,14 +10,14 @@ interface KeywordMatchConfig {
 
 const KEYWORD_MATCHING_RULES: Record<string, KeywordMatchConfig> = {
   'Software Defined Vehicle': {
-    required: ['software defined vehicle', 'vehicle software platform', 'vehicle operating system', 'automotive software platform', 'vehicle os', 'sdv'],
-    context: ['automotive', 'vehicle', 'oem'],
+    required: ['software defined vehicle', 'vehicle software platform', 'vehicle operating system', 'automotive software platform', 'vehicle os', 'sdv', 'automotive software', 'in-vehicle software', 'vehicle software'],
+    context: [], // Removed context requirement - these terms are specific enough
     exclude: ['music', 'streaming', 'marketplace', 'travel']
   },
   'Autonomous Driving': {
-    required: ['autonomous driving', 'autonomous vehicle', 'self-driving', 'autopilot', 'automated driving', 'driverless'],
-    context: ['vehicle', 'automotive', 'car', 'truck', 'fleet'],
-    exclude: ['pedestrian', 'glasses', 'blind', 'medical']
+    required: ['autonomous driving', 'autonomous vehicle', 'self-driving', 'autopilot', 'automated driving', 'driverless', 'self driving', 'av software', 'autonomous mobility'],
+    context: [], // Terms are specific enough
+    exclude: ['pedestrian', 'glasses', 'blind', 'medical', 'robot', 'drone', 'uav', 'warehouse']
   },
   'ADAS': {
     required: ['adas', 'advanced driver assistance', 'driver assistance system', 'lane keeping', 'adaptive cruise', 'collision avoidance'],
@@ -35,8 +35,8 @@ const KEYWORD_MATCHING_RULES: Record<string, KeywordMatchConfig> = {
     exclude: []
   },
   'Connected Car': {
-    required: ['connected car platform', 'vehicle connectivity platform', 'automotive connectivity', 'connected vehicle'],
-    context: ['platform', 'infrastructure', 'oem'],
+    required: ['connected car', 'vehicle connectivity', 'automotive connectivity', 'connected vehicle', 'vehicle telematics platform', 'car connectivity'],
+    context: [], // Terms are specific enough
     exclude: ['music', 'streaming', 'entertainment only']
   },
   'OTA Updates': {
@@ -50,9 +50,9 @@ const KEYWORD_MATCHING_RULES: Record<string, KeywordMatchConfig> = {
     exclude: []
   },
   'Electric Vehicle': {
-    required: ['electric vehicle', ' ev ', 'battery electric', 'bev'],
-    context: ['technology', 'software', 'platform', 'manufacturer', 'oem', 'mobility'],
-    exclude: ['marketplace', 'dealership', 'mining', 'tourism', 'chauffeur']
+    required: ['electric vehicle', ' ev ', 'battery electric', 'bev', 'e-vehicle'],
+    context: [], // No context required - EV industry is broad
+    exclude: ['marketplace', 'dealership', 'mining', 'tourism', 'chauffeur', 'e-scooter', 'scooter', 'bicycle', 'e-bike', 'aircraft', 'aerospace', 'aviation', 'boat', 'marine', 'yacht']
   },
   'Sensor Fusion': {
     required: ['sensor fusion', 'multi-sensor fusion'],
