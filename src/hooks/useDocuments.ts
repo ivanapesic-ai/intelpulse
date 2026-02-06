@@ -98,6 +98,8 @@ export function useParseDocument() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            // Both headers are required for the functions gateway in browser contexts.
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
           body: JSON.stringify({ documentId, content }),

@@ -38,37 +38,49 @@ const WEBSITE_CONFIGS = {
   }
 };
 
-// Patterns to detect PDF links
+// Patterns to detect PDF links (used as a secondary pass)
 const PDF_PATTERNS = [
   /https?:\/\/zenodo\.org\/records?\/\d+\/files\/[^"'\s<>]+\.pdf/gi,
   /https?:\/\/[^"'\s<>]+\.pdf(?:\?[^"'\s<>]*)?/gi,
   /https?:\/\/zenodo\.org\/api\/records\/\d+\/files-archive/gi,
 ];
 
+function sanitizeExtractedUrl(raw: string): string {
+  // Trim and remove common trailing punctuation from markdown/HTML contexts
+  let url = raw.trim();
+  url = url.replace(/^[\[(<]+/, "");
+  url = url.replace(/[\])>.,;]+$/g, "");
+  return url;
+}
+
+function isPdfOrZenodo(url: string): boolean {
+  const lower = url.toLowerCase();
+  if (lower.includes('zenodo.org/record') || lower.includes('zenodo.org/records')) return true;
+  return /\.pdf(\?|#|$)/i.test(url);
+}
+
 // Extract PDF links from content
 function extractPdfLinks(markdown: string, html?: string): string[] {
-  const content = markdown + (html || '');
+  const content = (markdown || '') + (html || '');
   const links = new Set<string>();
-  
+
+  // Primary pass: extract URLs without accidentally swallowing markdown link syntax
+  // e.g. "...jpg)](https://example.com/file.pdf" should yield TWO urls, not one broken string.
+  const urlRegex = /https?:\/\/[^\s"'<>\)\]]+/gi;
+  for (const match of content.matchAll(urlRegex)) {
+    const cleaned = sanitizeExtractedUrl(match[0]);
+    if (cleaned && isPdfOrZenodo(cleaned)) links.add(cleaned);
+  }
+
+  // Secondary pass: keep legacy patterns (deduped by Set)
   for (const pattern of PDF_PATTERNS) {
     const matches = content.matchAll(new RegExp(pattern));
     for (const match of matches) {
-      // Clean up the URL
-      let url = match[0].replace(/['"<>].*$/, '');
-      if (url.endsWith('.pdf') || url.includes('zenodo.org')) {
-        links.add(url);
-      }
+      const cleaned = sanitizeExtractedUrl(match[0].replace(/['"<>].*$/, ''));
+      if (cleaned && isPdfOrZenodo(cleaned)) links.add(cleaned);
     }
   }
-  
-  // Also look for Zenodo record pages (not direct PDF links)
-  const zenodoRecordPattern = /https?:\/\/zenodo\.org\/records?\/(\d+)/gi;
-  const zenodoMatches = content.matchAll(zenodoRecordPattern);
-  for (const match of zenodoMatches) {
-    // Add the record URL for later processing
-    links.add(match[0]);
-  }
-  
+
   return [...links];
 }
 
