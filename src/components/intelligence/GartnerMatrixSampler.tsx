@@ -126,80 +126,87 @@ function Classic2x2Quadrant({
   }, [technologies]);
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto">
-      {/* Y-axis label - vertically centered along left edge */}
-      <div className="absolute -left-6 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-medium text-muted-foreground whitespace-nowrap origin-center">
-        Low Opportunity ← → High Opportunity
-      </div>
-      
-      {/* Main matrix with aspect ratio */}
-      <div className="relative aspect-square mb-8">
-        {/* Background gradient quadrants - Client naming convention */}
-        <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 rounded-xl overflow-hidden">
-          {/* Top-left: Quick Wins (Low Challenge, High Opportunity) - Yellow */}
-          <div className="bg-gradient-to-br from-yellow-400/25 to-yellow-500/15 border-r border-b border-border/30 p-4">
-            <span className="text-sm font-semibold text-yellow-600 dark:text-yellow-500">Quick Wins</span>
-            <p className="text-xs text-muted-foreground">Low challenge, high opportunity</p>
-          </div>
-          {/* Top-right: Big Bets (High Challenge, High Opportunity) - Pink */}
-          <div className="bg-gradient-to-br from-pink-400/25 to-pink-500/15 border-b border-border/30 p-4">
-            <span className="text-sm font-semibold text-pink-600 dark:text-pink-400">Big Bets</span>
-            <p className="text-xs text-muted-foreground">High challenge, high opportunity</p>
-          </div>
-          {/* Bottom-left: Do it if/when there is time (Low Challenge, Low Opportunity) - Blue */}
-          <div className="bg-gradient-to-br from-blue-400/20 to-blue-500/10 border-r border-border/30 p-4">
-            <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">When Time Permits</span>
-            <p className="text-xs text-muted-foreground">Low challenge, low opportunity</p>
-          </div>
-          {/* Bottom-right: Rethink (High Challenge, Low Opportunity) - Orange */}
-          <div className="bg-gradient-to-br from-orange-400/20 to-orange-500/10 p-4">
-            <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">Rethink</span>
-            <p className="text-xs text-muted-foreground">High challenge, low opportunity</p>
+    <div className="w-full max-w-2xl mx-auto">
+      <div className="flex items-stretch gap-3">
+        {/* Y-axis label - dedicated left gutter (no overlay) */}
+        <div className="w-8 shrink-0 flex items-center justify-center overflow-visible">
+          <div className="-rotate-90 origin-center text-xs font-medium text-muted-foreground whitespace-nowrap">
+            Low Opportunity ← → High Opportunity
           </div>
         </div>
 
-        {/* Tech bubbles */}
-        <TooltipProvider>
-          {positioned.map(({ tech, x, y }, i) => {
-            const size = 28 + Math.min(tech.totalFundingEur / 50_000_000, 1) * 20;
-            const isSelected = selectedId === tech.id;
-            
-            return (
-              <Tooltip key={tech.id} delayDuration={0}>
-                <TooltipTrigger asChild>
-                  <motion.div
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: i * 0.02 }}
-                    className={cn(
-                      "absolute cursor-pointer rounded-full bg-primary/80 flex items-center justify-center text-[9px] font-bold text-primary-foreground shadow-lg hover:scale-110 transition-transform z-10",
-                      isSelected && "ring-2 ring-white ring-offset-2 ring-offset-background scale-125 z-20"
-                    )}
-                    style={{
-                      left: `${x}%`,
-                      bottom: `${y}%`,
-                      width: size,
-                      height: size,
-                      transform: "translate(-50%, 50%)",
-                    }}
-                    onClick={() => onSelectTechnology?.(tech)}
-                  >
-                    {tech.name.slice(0, 2).toUpperCase()}
-                  </motion.div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="font-semibold">{tech.name}</p>
-                  <p className="text-xs text-muted-foreground">{formatFundingEur(tech.totalFundingEur)}</p>
-                </TooltipContent>
-              </Tooltip>
-            );
-          })}
-        </TooltipProvider>
-      </div>
-      
-      {/* X-axis label - outside bottom */}
-      <div className="text-center text-xs font-medium text-muted-foreground ml-4">
-        Low Challenge ← → High Challenge
+        <div className="flex-1">
+          {/* Main matrix with aspect ratio */}
+          <div className="relative aspect-square mb-8">
+            {/* Background gradient quadrants - Client naming convention */}
+            <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 rounded-xl overflow-hidden">
+              {/* Top-left: Quick Wins (Low Challenge, High Opportunity) - Yellow */}
+              <div className="bg-gradient-to-br from-yellow-400/25 to-yellow-500/15 border-r border-b border-border/30 p-4">
+                <span className="text-sm font-semibold text-yellow-600 dark:text-yellow-500">Quick Wins</span>
+                <p className="text-xs text-muted-foreground">Low challenge, high opportunity</p>
+              </div>
+              {/* Top-right: Big Bets (High Challenge, High Opportunity) - Pink */}
+              <div className="bg-gradient-to-br from-pink-400/25 to-pink-500/15 border-b border-border/30 p-4">
+                <span className="text-sm font-semibold text-pink-600 dark:text-pink-400">Big Bets</span>
+                <p className="text-xs text-muted-foreground">High challenge, high opportunity</p>
+              </div>
+              {/* Bottom-left: Do it if/when there is time (Low Challenge, Low Opportunity) - Blue */}
+              <div className="bg-gradient-to-br from-blue-400/20 to-blue-500/10 border-r border-border/30 p-4">
+                <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">When Time Permits</span>
+                <p className="text-xs text-muted-foreground">Low challenge, low opportunity</p>
+              </div>
+              {/* Bottom-right: Rethink (High Challenge, Low Opportunity) - Orange */}
+              <div className="bg-gradient-to-br from-orange-400/20 to-orange-500/10 p-4">
+                <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">Rethink</span>
+                <p className="text-xs text-muted-foreground">High challenge, low opportunity</p>
+              </div>
+            </div>
+
+            {/* Tech bubbles */}
+            <TooltipProvider>
+              {positioned.map(({ tech, x, y }, i) => {
+                const size = 28 + Math.min(tech.totalFundingEur / 50_000_000, 1) * 20;
+                const isSelected = selectedId === tech.id;
+
+                return (
+                  <Tooltip key={tech.id} delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <motion.div
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: i * 0.02 }}
+                        className={cn(
+                          "absolute cursor-pointer rounded-full bg-primary/80 flex items-center justify-center text-[9px] font-bold text-primary-foreground shadow-lg hover:scale-110 transition-transform z-10",
+                          isSelected &&
+                            "ring-2 ring-white ring-offset-2 ring-offset-background scale-125 z-20",
+                        )}
+                        style={{
+                          left: `${x}%`,
+                          bottom: `${y}%`,
+                          width: size,
+                          height: size,
+                          transform: "translate(-50%, 50%)",
+                        }}
+                        onClick={() => onSelectTechnology?.(tech)}
+                      >
+                        {tech.name.slice(0, 2).toUpperCase()}
+                      </motion.div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="font-semibold">{tech.name}</p>
+                      <p className="text-xs text-muted-foreground">{formatFundingEur(tech.totalFundingEur)}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </TooltipProvider>
+          </div>
+
+          {/* X-axis label - outside bottom */}
+          <div className="text-center text-xs font-medium text-muted-foreground">
+            Low Challenge ← → High Challenge
+          </div>
+        </div>
       </div>
     </div>
   );
