@@ -12,26 +12,26 @@ import { cn } from "@/lib/utils";
 import { formatFundingEur, MATURITY_SCORE_CONFIG, type MaturityScore } from "@/types/database";
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Cell, PieChart, Pie } from "recharts";
 
-// Map composite score (0-2) to maturity ring
-type MaturityRing = "Strong" | "Moderate" | "Challenging";
+// Map composite score (0-2) to maturity ring - aligned with platform terminology
+type MaturityRing = "Strong" | "Moderate" | "Emerging";
 
 function getMaturityRing(compositeScore: number): MaturityRing {
   if (compositeScore >= 1.5) return "Strong";
   if (compositeScore >= 0.5) return "Moderate";
-  return "Challenging";
+  return "Emerging";
 }
 
 // Ring radii for positioning (inverted - Strong is center)
 const ringRadii: Record<MaturityRing, number> = {
   Strong: 0.22,
   Moderate: 0.45,
-  Challenging: 0.72,
+  Emerging: 0.72,
 };
 
 const ringColors: Record<MaturityRing, { bg: string; text: string }> = {
   Strong: { bg: "hsl(160 72% 35%)", text: "text-success" },
   Moderate: { bg: "hsl(38 92% 45%)", text: "text-warning" },
-  Challenging: { bg: "hsl(0 72% 50%)", text: "text-destructive" },
+  Emerging: { bg: "hsl(0 72% 50%)", text: "text-destructive" },
 };
 
 // Simple color palette for technologies
@@ -66,7 +66,7 @@ export default function TechnologyRadar() {
     const ringCounts: Record<MaturityRing, number> = {
       Strong: 0,
       Moderate: 0,
-      Challenging: 0,
+      Emerging: 0,
     };
 
     let totalCompositeScore = 0;
@@ -346,7 +346,7 @@ export default function TechnologyRadar() {
                 <CardTitle className="text-sm font-medium text-foreground">Maturity Rings</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {(["Strong", "Moderate", "Challenging"] as MaturityRing[]).map((ring) => (
+                {(["Strong", "Moderate", "Emerging"] as MaturityRing[]).map((ring) => (
                   <div key={ring} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full" style={{ background: ringColors[ring].bg }} />
