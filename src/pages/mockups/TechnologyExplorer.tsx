@@ -46,11 +46,22 @@ export default function TechnologyExplorer() {
 
   // Helper to get display values based on region filter
   const getDisplayStats = (tech: Technology) => {
+    // IMPORTANT: Global totals must come from the canonical aggregated Technology record
+    // so cards, dialogs, dashboards, and radars stay aligned.
+    if (regionFilter === "all") {
+      return {
+        companyCount: tech.dealroomCompanyCount,
+        funding: tech.totalFundingEur,
+        employees: tech.totalEmployees,
+      };
+    }
+
+    // Region-specific views come from per-company aggregation
     const stats = getRegionStats(regionStats, tech.keywordId, regionFilter);
     return {
-      companyCount: stats.companyCount > 0 ? stats.companyCount : tech.dealroomCompanyCount,
-      funding: stats.funding > 0 ? stats.funding : tech.totalFundingEur,
-      employees: stats.employees > 0 ? stats.employees : tech.totalEmployees,
+      companyCount: stats.companyCount,
+      funding: stats.funding,
+      employees: stats.employees,
     };
   };
 
@@ -270,7 +281,7 @@ export default function TechnologyExplorer() {
                           variant="outline" 
                           className={`${getScoreColor(tech.compositeScore)} border-current`}
                         >
-                          {tech.compositeScore.toFixed(1)}/2
+                          {tech.compositeScore.toFixed(2)}/2
                         </Badge>
                       </div>
                     </div>
@@ -616,7 +627,12 @@ export default function TechnologyExplorer() {
               <TabsContent value="market-intel" className="mt-4">
                 <MarketIntelligence 
                   keywordId={liveSelectedTech.keywordId} 
-                  technologyName={liveSelectedTech.name} 
+                  technologyName={liveSelectedTech.name}
+                  summary={{
+                    totalCompanies: liveSelectedTech.dealroomCompanyCount || 0,
+                    totalFunding: liveSelectedTech.totalFundingEur || 0,
+                    totalEmployees: liveSelectedTech.totalEmployees || 0,
+                  }}
                 />
               </TabsContent>
             </Tabs>
