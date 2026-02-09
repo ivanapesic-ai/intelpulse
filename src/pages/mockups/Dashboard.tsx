@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Radar, Grid3X3, Compass, TrendingUp, FileText, Activity, Database, ArrowRight, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +30,7 @@ const ringColors: Record<MaturityRing, string> = {
 };
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [currentDomainIndex, setCurrentDomainIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   
@@ -218,7 +219,11 @@ export default function Dashboard() {
                   <div className="grid sm:grid-cols-2 gap-4">
                     {topTechnologies.map((tech, i) => (
                       <div key={tech.id} className="animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
-                        <TechnologyCard technology={tech} compact />
+                        <TechnologyCard 
+                          technology={tech} 
+                          compact 
+                          onClick={() => navigate('/explorer')}
+                        />
                       </div>
                     ))}
                   </div>
