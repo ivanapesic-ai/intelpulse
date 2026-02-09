@@ -201,7 +201,7 @@ export default function Dashboard() {
                   </CardTitle>
                   <CardDescription>Highest composite maturity scores</CardDescription>
                 </div>
-                <Link to="/mockups/explorer">
+                <Link to="/explorer">
                   <Button variant="ghost" size="sm" className="gap-1 text-primary hover:text-primary hover:bg-primary/10">
                     View all <ArrowRight className="h-4 w-4" />
                   </Button>
