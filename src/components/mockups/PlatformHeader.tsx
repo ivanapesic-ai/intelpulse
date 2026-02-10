@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Compass, LayoutDashboard, LogOut, Brain } from "lucide-react";
+import { Compass, LayoutDashboard, LogOut, Brain, Network } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,6 +10,7 @@ const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { path: "/explorer", label: "Explorer", icon: Compass },
   { path: "/intelligence", label: "Intelligence", icon: Brain },
+  { path: "/knowledge-graph", label: "Graph", icon: Network },
 ];
 
 export function PlatformHeader() {
