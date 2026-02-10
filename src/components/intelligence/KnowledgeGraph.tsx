@@ -87,6 +87,10 @@ export function KnowledgeGraph({ onSelectNode, selectedNodeId }: KnowledgeGraphP
       }
     };
 
+    // Use ResizeObserver for container-based sizing
+    const observer = new ResizeObserver(updateDimensions);
+    if (containerRef.current) observer.observe(containerRef.current);
+
     updateDimensions();
     window.addEventListener("resize", updateDimensions);
     return () => window.removeEventListener("resize", updateDimensions);
