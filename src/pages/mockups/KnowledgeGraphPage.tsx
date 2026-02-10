@@ -25,9 +25,9 @@ export default function KnowledgeGraphPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
           {/* Graph - takes most space */}
-          <div className="lg:col-span-3">
+          <div className="xl:col-span-4">
             <KnowledgeGraph
               onSelectNode={setSelectedNode}
               selectedNodeId={selectedNode?.id}
