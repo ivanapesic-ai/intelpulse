@@ -15,6 +15,7 @@ import TechnologyExplorer from "./pages/mockups/TechnologyExplorer";
 import AdminPanel from "./pages/mockups/AdminPanel";
 import PublicDemo from "./pages/mockups/PublicDemo";
 import IntelligenceDashboard from "./pages/mockups/IntelligenceDashboard";
+import KnowledgeGraphPage from "./pages/mockups/KnowledgeGraphPage";
 
 const queryClient = new QueryClient();
 
