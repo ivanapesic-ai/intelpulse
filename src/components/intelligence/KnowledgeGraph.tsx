@@ -93,7 +93,10 @@ export function KnowledgeGraph({ onSelectNode, selectedNodeId }: KnowledgeGraphP
 
     updateDimensions();
     window.addEventListener("resize", updateDimensions);
-    return () => window.removeEventListener("resize", updateDimensions);
+    return () => {
+      window.removeEventListener("resize", updateDimensions);
+      observer.disconnect();
+    };
   }, []);
 
   // Initialize D3 force simulation
