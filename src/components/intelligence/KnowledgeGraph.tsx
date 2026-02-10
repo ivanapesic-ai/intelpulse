@@ -87,9 +87,16 @@ export function KnowledgeGraph({ onSelectNode, selectedNodeId }: KnowledgeGraphP
       }
     };
 
+    // Use ResizeObserver for container-based sizing
+    const observer = new ResizeObserver(updateDimensions);
+    if (containerRef.current) observer.observe(containerRef.current);
+
     updateDimensions();
     window.addEventListener("resize", updateDimensions);
-    return () => window.removeEventListener("resize", updateDimensions);
+    return () => {
+      window.removeEventListener("resize", updateDimensions);
+      observer.disconnect();
+    };
   }, []);
 
   // Initialize D3 force simulation
@@ -392,7 +399,7 @@ export function KnowledgeGraph({ onSelectNode, selectedNodeId }: KnowledgeGraphP
       </CardHeader>
       
       <CardContent className="p-0">
-        <div ref={containerRef} className="relative w-full h-[500px]">
+        <div ref={containerRef} className="relative w-full" style={{ height: "calc(100vh - 220px)", minHeight: 500 }}>
           <svg
             ref={svgRef}
             width={dimensions.width}
