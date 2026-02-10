@@ -35,7 +35,7 @@ export default function KnowledgeGraphPage() {
           </div>
 
           {/* Detail panel */}
-          <div className="lg:col-span-1">
+          <div className="xl:col-span-1">
             {selectedNode ? (
               <Card>
                 <CardHeader className="pb-3">
