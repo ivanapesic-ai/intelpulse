@@ -48,6 +48,11 @@ const App = () => (
                   <IntelligenceDashboard />
                 </ProtectedRoute>
               } />
+              <Route path="/knowledge-graph" element={
+                <ProtectedRoute>
+                  <KnowledgeGraphPage />
+                </ProtectedRoute>
+              } />
               
               {/* Admin Only */}
               <Route path="/admin" element={
