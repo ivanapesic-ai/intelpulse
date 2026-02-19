@@ -3,20 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface CompanyForTechnology {
   id: string;
-  dealroomId: string;
   name: string;
   tagline?: string;
   website?: string;
   hqCountry?: string;
-  hqCity?: string;
-  foundedYear?: number;
-  employeesCount: number;
-  totalFundingEur: number;
-  growthStage?: string;
-  status?: string;
-  acquiredBy?: string;
+  hqLocation?: string;
+  foundedDate?: string;
+  employeesCount: string;
+  totalFundingUsd: number;
   industries: string[];
-  relevanceScore?: number;
+  operatingStatus?: string;
+  matchConfidence?: number;
 }
 
 // Fetch companies linked to a specific technology keyword
@@ -26,43 +23,40 @@ export function useCompaniesForTechnology(keywordId?: string) {
     queryFn: async () => {
       if (!keywordId) return [];
 
-      // First get company IDs from the mapping
+      // Get company IDs from crunchbase_keyword_mapping
       const { data: mappings, error: mappingError } = await supabase
-        .from("keyword_company_mapping")
-        .select("company_id, relevance_score")
+        .from("crunchbase_keyword_mapping")
+        .select("company_id, match_confidence")
         .eq("keyword_id", keywordId);
 
       if (mappingError) throw mappingError;
       if (!mappings || mappings.length === 0) return [];
 
       const companyIds = mappings.map(m => m.company_id).filter(Boolean) as string[];
-      const relevanceMap = new Map(mappings.map(m => [m.company_id, m.relevance_score]));
+      const confidenceMap = new Map(mappings.map(m => [m.company_id, m.match_confidence]));
 
-      // Fetch company details
+      // Fetch company details from crunchbase_companies
       const { data: companies, error: companyError } = await supabase
-        .from("dealroom_companies")
+        .from("crunchbase_companies")
         .select("*")
         .in("id", companyIds)
-        .order("total_funding_eur", { ascending: false });
+        .order("total_funding_usd", { ascending: false });
 
       if (companyError) throw companyError;
 
       return (companies || []).map((row): CompanyForTechnology => ({
         id: row.id,
-        dealroomId: row.dealroom_id,
-        name: row.name,
-        tagline: row.tagline || undefined,
+        name: row.organization_name,
+        tagline: row.description || undefined,
         website: row.website || undefined,
         hqCountry: row.hq_country || undefined,
-        hqCity: row.hq_city || undefined,
-        foundedYear: row.founded_year || undefined,
-        employeesCount: row.employees_count || 0,
-        totalFundingEur: Number(row.total_funding_eur) || 0,
-        growthStage: row.growth_stage || undefined,
-        status: row.status || "active",
-        acquiredBy: row.acquired_by || undefined,
+        hqLocation: row.hq_location || undefined,
+        foundedDate: row.founded_date || undefined,
+        employeesCount: row.number_of_employees || "Unknown",
+        totalFundingUsd: Number(row.total_funding_usd) || 0,
         industries: row.industries || [],
-        relevanceScore: relevanceMap.get(row.id) || undefined,
+        operatingStatus: row.operating_status || "Active",
+        matchConfidence: confidenceMap.get(row.id) || undefined,
       }));
     },
     enabled: !!keywordId,
