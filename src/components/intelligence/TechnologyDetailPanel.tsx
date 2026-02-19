@@ -15,6 +15,7 @@ import {
 import { formatFundingEur, formatNumber } from "@/types/database";
 import { SignalBreakdown } from "./SignalBreakdown";
 import { useNewsForKeyword } from "@/hooks/useNews";
+import { NewsTimelineChart } from "./NewsTimelineChart";
 
 interface TechnologyDetailPanelProps {
   technology: TechnologyIntelligence | null;
@@ -199,12 +200,25 @@ export function TechnologyDetailPanel({ technology, onClose }: TechnologyDetailP
 
               <Separator />
 
-              {/* Related News */}
-              <div>
-                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <Newspaper className="h-4 w-4" />
-                  Related News
-                </h3>
+               {/* News Timeline */}
+               {technology.keywordId && (
+                 <div>
+                   <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                     <TrendingUp className="h-4 w-4" />
+                     News Mentions (12 weeks)
+                   </h3>
+                   <NewsTimelineChart keywordId={technology.keywordId} />
+                 </div>
+               )}
+
+               <Separator />
+
+               {/* Related News */}
+               <div>
+                 <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                   <Newspaper className="h-4 w-4" />
+                   Related News
+                 </h3>
                 {newsLoading ? (
                   <div className="space-y-2">
                     <Skeleton className="h-16" />
