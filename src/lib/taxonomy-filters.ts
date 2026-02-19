@@ -32,6 +32,17 @@ export const DUPLICATE_KEYWORDS: Record<string, string> = {
   // Autonomous driving consolidation - "Autonomous Driving" is canonical
   'autonomous mobile robots': 'Autonomous Driving',
   'self-driving vehicles': 'Autonomous Driving',
+
+  // EV Battery consolidation - "EV Battery" is canonical
+  'ev motor': 'EV Battery',
+  'ev services': 'EV Battery',
+
+  // Battery Management Systems consolidation
+  'storage battery systems': 'Battery Management Systems',
+
+  // Vehicle to Grid consolidation
+  'micro grid': 'Vehicle to Grid',
+  'bidirectional charging': 'Vehicle to Grid',
 };
 
 // Canonical keywords that should always be shown (even if they match patterns)
