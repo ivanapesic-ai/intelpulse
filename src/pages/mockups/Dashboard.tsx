@@ -10,6 +10,7 @@ import { StatCard } from "@/components/mockups/StatCard";
 import { TechnologyCard } from "@/components/mockups/TechnologyCard";
 import { useTechnologies } from "@/hooks/useTechnologies";
 import { formatFundingEur, formatFundingUsd, formatNumber, getCompositeScoreLabel } from "@/types/database";
+import { TrendingTechnologiesWidget } from "@/components/intelligence/TrendingTechnologiesWidget";
 import logo from "@/assets/logo.svg";
 import BrandName from "@/components/BrandName";
 
@@ -94,13 +95,7 @@ export default function Dashboard() {
       .slice(0, 4);
   }, [filteredTechnologies]);
 
-  // Get trending technologies (trend = 'up') from filtered set
-  const trendingTechnologies = useMemo(() => {
-    return filteredTechnologies
-      .filter((t) => t.trend === "up")
-      .sort((a, b) => (b.compositeScore || 0) - (a.compositeScore || 0))
-      .slice(0, 5);
-  }, [filteredTechnologies]);
+  // trendingTechnologies now handled by TrendingTechnologiesWidget
 
   const aiInsights = [
     { insight: "Autonomous Vehicle sector leads with €89B aggregate funding across 142 companies", severity: "high" },
@@ -273,49 +268,8 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Signal Trends */}
-            <Card className="card-hover">
-              <CardHeader>
-                <CardTitle className="font-display flex items-center gap-2 text-foreground">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                  Trending Technologies
-                </CardTitle>
-                <CardDescription>Technologies with upward trend signals</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {isLoading ? (
-                  <>
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <Skeleton key={i} className="h-16" />
-                    ))}
-                  </>
-                ) : trendingTechnologies.length > 0 ? (
-                  trendingTechnologies.map((tech, i) => {
-                    const maturityRing = getMaturityRing(tech.compositeScore || 0);
-                    return (
-                      <div 
-                        key={tech.id} 
-                        className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors animate-fade-in-up"
-                        style={{ animationDelay: `${i * 50}ms` }}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate text-foreground">{tech.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {maturityRing} • {formatFundingEur(tech.totalFundingEur || 0)} funding
-                          </p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className="font-mono font-bold text-lg text-primary">{(tech.compositeScore || 0).toFixed(2)}</p>
-                          <p className="text-xs text-muted-foreground">Composite</p>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p className="text-muted-foreground text-sm">No trending technologies found.</p>
-                )}
-              </CardContent>
-            </Card>
+            {/* News Momentum — live trending from news mentions */}
+            <TrendingTechnologiesWidget />
           </div>
 
           {/* Sidebar */}

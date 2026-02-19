@@ -2670,6 +2670,25 @@ export type Database = {
           total_funding_eur: number
         }[]
       }
+      get_news_timeline: {
+        Args: { p_keyword_id: string; p_weeks?: number }
+        Returns: {
+          mention_count: number
+          week_start: string
+        }[]
+      }
+      get_news_trends: {
+        Args: { p_limit?: number; p_window_days?: number }
+        Returns: {
+          current_count: number
+          display_name: string
+          keyword_id: string
+          previous_count: number
+          total_all_time: number
+          trend_direction: string
+          trend_velocity: number
+        }[]
+      }
       get_strategic_quadrant: {
         Args: { p_challenge_score: number; p_opportunity_score: number }
         Returns: string
