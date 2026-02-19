@@ -131,3 +131,27 @@ export function useFetchRss() {
     },
   });
 }
+
+// Trigger NewsAPI fetch
+export function useFetchNewsAPI() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (customQuery?: string) => {
+      const { data, error } = await supabase.functions.invoke("fetch-newsapi", {
+        body: customQuery ? { query: customQuery } : {},
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["news"] });
+      toast.success(
+        `NewsAPI: ${data.articlesInserted} articles imported, ${data.matchesCreated} keyword matches`
+      );
+    },
+    onError: (error) => {
+      toast.error(`NewsAPI fetch failed: ${error.message}`);
+    },
+  });
+}

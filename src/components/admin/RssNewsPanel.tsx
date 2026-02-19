@@ -1,15 +1,18 @@
 import { useState } from "react";
-import { Rss, RefreshCw, ExternalLink, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Rss, RefreshCw, ExternalLink, Clock, CheckCircle, XCircle, Newspaper, Search } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useRssFeedSources, useFetchRss, useLatestNews } from "@/hooks/useNews";
+import { Input } from "@/components/ui/input";
+import { useRssFeedSources, useFetchRss, useFetchNewsAPI, useLatestNews } from "@/hooks/useNews";
 
 export function RssNewsPanel() {
+  const [newsApiQuery, setNewsApiQuery] = useState("");
   const { data: sources, isLoading: sourcesLoading } = useRssFeedSources();
   const { data: latestNews, isLoading: newsLoading } = useLatestNews(15);
   const fetchRss = useFetchRss();
+  const fetchNewsAPI = useFetchNewsAPI();
 
   return (
     <div className="space-y-6">
@@ -71,6 +74,42 @@ export function RssNewsPanel() {
               ))}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* NewsAPI Integration */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-foreground flex items-center gap-2">
+              <Newspaper className="h-5 w-5" />
+              NewsAPI — SDV Targeted Search
+            </CardTitle>
+            <CardDescription>
+              Fetch automotive & SDV news from 150,000+ sources via NewsAPI
+            </CardDescription>
+          </div>
+          <Button 
+            onClick={() => fetchNewsAPI.mutate(newsApiQuery || undefined)} 
+            disabled={fetchNewsAPI.isPending}
+            className="gap-2"
+          >
+            <Search className={`h-4 w-4 ${fetchNewsAPI.isPending ? "animate-spin" : ""}`} />
+            {fetchNewsAPI.isPending ? "Fetching..." : "Fetch SDV News"}
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex gap-2">
+            <Input
+              placeholder='Custom query (optional) e.g. "solid-state battery"'
+              value={newsApiQuery}
+              onChange={(e) => setNewsApiQuery(e.target.value)}
+              className="flex-1"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Leave empty to run all 10 built-in SDV queries (autonomous driving, EV battery, V2X, ADAS, etc.)
+          </p>
         </CardContent>
       </Card>
 
