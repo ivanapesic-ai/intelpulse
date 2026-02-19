@@ -133,22 +133,30 @@ serve(async (req) => {
 
             results.articlesInserted++;
 
-            // Match against technology keywords
+            // Match against technology keywords (word-boundary aware)
             const titleLower = article.title.toLowerCase();
             const descLower = (article.description || "").toLowerCase();
             const combinedText = `${titleLower} ${descLower}`;
 
             for (const kw of keywords!) {
               const searchTerms = [
-                kw.keyword.toLowerCase(),
+                kw.keyword.toLowerCase().replace(/[_-]/g, ' '),
                 kw.display_name.toLowerCase(),
                 ...(kw.aliases || []).map((a: string) => a.toLowerCase()),
               ];
 
-              const matched = searchTerms.some(term => combinedText.includes(term));
+              const matched = searchTerms.some(term => {
+                if (term.length <= 4) {
+                  const regex = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+                  return regex.test(combinedText);
+                }
+                const variants = [term, term.replace(/\s+/g, '-'), term.replace(/-/g, ' ')];
+                return variants.some(v => combinedText.includes(v));
+              });
 
               if (matched) {
-                const confidence = titleLower.includes(searchTerms[0]) ? 1.0 : 0.7;
+                const titleMatched = searchTerms.some(t => titleLower.includes(t));
+                const confidence = titleMatched ? 1.0 : 0.7;
 
                 const { error: matchError } = await supabase
                   .from("news_keyword_matches")
