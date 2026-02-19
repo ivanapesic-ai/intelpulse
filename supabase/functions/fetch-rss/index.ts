@@ -126,22 +126,34 @@ serve(async (req) => {
 
           results.itemsInserted++;
 
-          // Match against technology keywords
+          // Match against technology keywords (word-boundary aware)
           const titleLower = item.title.toLowerCase();
           const descLower = (item.description || "").toLowerCase();
           const combinedText = `${titleLower} ${descLower}`;
 
           for (const kw of keywords!) {
             const searchTerms = [
-              kw.keyword.toLowerCase(),
+              kw.keyword.toLowerCase().replace(/[_-]/g, ' '),
               kw.display_name.toLowerCase(),
               ...(kw.aliases || []).map((a: string) => a.toLowerCase()),
             ];
 
-            const matched = searchTerms.some(term => combinedText.includes(term));
+            // Word-boundary matching: term must appear as a whole word/phrase
+            const matched = searchTerms.some(term => {
+              // Short terms (≤4 chars like "sdv", "adas") need word boundaries
+              // Longer terms can use includes since they're specific enough
+              if (term.length <= 4) {
+                const regex = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+                return regex.test(combinedText);
+              }
+              // Also try hyphenated/spaced variants
+              const variants = [term, term.replace(/\s+/g, '-'), term.replace(/-/g, ' ')];
+              return variants.some(v => combinedText.includes(v));
+            });
 
             if (matched) {
-              const confidence = titleLower.includes(searchTerms[0]) ? 1.0 : 0.7;
+              const titleMatched = searchTerms.some(t => titleLower.includes(t));
+              const confidence = titleMatched ? 1.0 : 0.7;
               
               const { error: matchError } = await supabase
                 .from("news_keyword_matches")
