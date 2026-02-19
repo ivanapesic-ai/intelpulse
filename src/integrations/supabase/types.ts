@@ -2735,6 +2735,14 @@ export type Database = {
         Args: { tech_keyword_id: string }
         Returns: undefined
       }
+      rematch_all_news: {
+        Args: never
+        Returns: {
+          articles_processed: number
+          keywords_matched: number
+          new_matches_created: number
+        }[]
+      }
       score_all_technologies: {
         Args: never
         Returns: {
