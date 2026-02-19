@@ -97,11 +97,11 @@ export const KEYWORD_TO_IPC_MAP: Record<string, string[]> = {
   
   // === Software & Computing ===
   "software defined vehicle": ["B60W60", "G05D1", "G06F"],
-  "sdv": ["B60W60", "G05D1"],
+  "sdv": ["B60W60", "G05D1", "G06F9"],
   "vehicle as software": ["B60W60", "G06F9", "G05D1"],
   "vas": ["B60W60", "G06F9"],
   "teledriving": ["G05D1", "H04W4", "B60W60"],
-  "ota updates": ["G06F8", "H04L67"],
+  "ota updates": ["G06F8/65", "H04L67"],
   "cybersecurity": ["H04L9", "G06F21"],
   "edge computing": ["G06F9", "H04L67"],
   
