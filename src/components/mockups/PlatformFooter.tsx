@@ -5,9 +5,9 @@ export function PlatformFooter() {
   return (
     <footer className="border-t border-border bg-background py-6">
       <div className="container mx-auto px-4 flex flex-col items-center gap-2">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5">
           <img src={logo} alt="pulse11" className="h-6 w-auto" />
-          <BrandName className="text-sm text-foreground" />
+          <BrandName className="text-lg text-foreground" />
         </div>
          <p className="text-sm text-muted-foreground">
            BluSpecs CEI-Sphere Intelligence Platform
