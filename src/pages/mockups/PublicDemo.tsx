@@ -12,6 +12,7 @@ import { StatCard } from "@/components/mockups/StatCard";
 import { useTechnologies } from "@/hooks/useTechnologies";
 import { formatFundingEur, formatNumber, getCompositeScoreLabel } from "@/types/database";
 import logo from "@/assets/logo.svg";
+import BrandName from "@/components/BrandName";
 
 type MaturityRing = "Strong" | "Moderate" | "Emerging";
 
@@ -70,8 +71,8 @@ export default function PublicDemo() {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
-              <img src={logo} alt="Pulse11" className="h-8 w-auto" />
-              <h1 className="text-base font-semibold font-display leading-none text-foreground">Pulse11</h1>
+              <img src={logo} alt="pulse11" className="h-8 w-auto" />
+              <h1 className="text-base leading-none text-foreground"><BrandName /></h1>
               <Badge variant="outline" className="ml-2 text-xs">Demo</Badge>
             </div>
 
@@ -240,7 +241,7 @@ export default function PublicDemo() {
                   Full Access
                 </CardTitle>
                 <CardDescription>
-                  Unlock the complete Pulse11 platform
+                  Unlock the complete pulse11 platform
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -290,8 +291,8 @@ export default function PublicDemo() {
       <footer className="border-t border-border mt-12 bg-muted/30">
         <div className="container mx-auto px-4 py-8 text-center">
           <div className="flex items-center justify-center gap-3 mb-2">
-            <img src={logo} alt="Pulse11" className="h-6 w-auto" />
-            <span className="font-display font-semibold text-foreground">Pulse11</span>
+            <img src={logo} alt="pulse11" className="h-6 w-auto" />
+            <BrandName className="text-foreground" />
           </div>
           <p className="text-sm text-muted-foreground">BluSpecs CEI-Sphere Intelligence Platform</p>
           <p className="text-xs text-muted-foreground mt-1">Powered by House11</p>

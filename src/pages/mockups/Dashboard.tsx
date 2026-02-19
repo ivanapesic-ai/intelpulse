@@ -11,6 +11,7 @@ import { TechnologyCard } from "@/components/mockups/TechnologyCard";
 import { useTechnologies } from "@/hooks/useTechnologies";
 import { formatFundingEur, formatFundingUsd, formatNumber, getCompositeScoreLabel } from "@/types/database";
 import logo from "@/assets/logo.svg";
+import BrandName from "@/components/BrandName";
 
 const rotatingDomains = ["Autonomous Vehicles", "Edge Computing", "Electric Mobility", "V2X Communication", "Cloud AI", "Software-Defined Vehicles"];
 
@@ -380,8 +381,8 @@ export default function Dashboard() {
       <footer className="border-t border-border mt-12 bg-muted/30">
         <div className="container mx-auto px-4 py-8 text-center">
           <div className="flex items-center justify-center gap-3 mb-2">
-            <img src={logo} alt="Pulse11" className="h-6 w-auto" />
-            <span className="font-display font-semibold text-foreground">Pulse11</span>
+            <img src={logo} alt="pulse11" className="h-6 w-auto" />
+            <BrandName className="text-foreground" />
           </div>
           <p className="text-sm text-muted-foreground">BluSpecs CEI-Sphere Intelligence Platform</p>
           <p className="text-xs text-muted-foreground mt-1">Last updated: February 2026 • Powered by House11</p>

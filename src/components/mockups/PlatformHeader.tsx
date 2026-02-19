@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo.svg";
+import BrandName from "@/components/BrandName";
 
 const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -29,8 +30,8 @@ export function PlatformHeader() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-6">
             <Link to="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <img src={logo} alt="Pulse11" className="h-8 w-auto" />
-              <h1 className="text-base font-semibold font-display leading-none text-foreground">Pulse11</h1>
+              <img src={logo} alt="pulse11" className="h-8 w-auto" />
+              <h1 className="text-base leading-none text-foreground"><BrandName /></h1>
             </Link>
 
             <nav className="hidden md:flex items-center gap-1">
