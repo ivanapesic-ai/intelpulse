@@ -66,7 +66,7 @@ export default function AdminPanel() {
             </Link>
             <div>
               <h1 className="text-xl font-bold text-foreground">Admin Panel</h1>
-              <p className="text-sm text-muted-foreground">BluSpecs Staff Portal</p>
+              <p className="text-sm text-muted-foreground">Staff Portal</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

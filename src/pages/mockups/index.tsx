@@ -43,7 +43,7 @@ const otherViews = [
   },
   {
     title: "Admin Panel",
-    description: "User management and data refresh interface for BluSpecs staff",
+    description: "User management and data refresh interface for staff",
     icon: Shield,
     path: "/mockups/admin",
   },
@@ -256,7 +256,7 @@ export default function MockupsIndex() {
         <section className="text-center mb-16">
           <p className="text-sm text-muted-foreground mb-6">Trusted by EU transport authorities and industry experts</p>
           <div className="flex flex-wrap justify-center gap-8">
-            {["CEI-Sphere", "BluSpecs", "EU Horizon", "PATSTAT/EPO"].map((name) => (
+            {["CEI-Sphere", "EU Horizon", "PATSTAT/EPO"].map((name) => (
               <div key={name} className="flex items-center gap-2 text-muted-foreground">
                 <CheckCircle2 className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium">{name}</span>

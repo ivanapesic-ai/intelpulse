@@ -294,7 +294,7 @@ export default function PublicDemo() {
             <img src={logo} alt="pulse11" className="h-6 w-auto" />
             <BrandName className="text-foreground" />
           </div>
-          <p className="text-sm text-muted-foreground">BluSpecs CEI-Sphere Intelligence Platform</p>
+          <p className="text-sm text-muted-foreground">CEI-Sphere Intelligence Platform</p>
           <p className="text-xs text-muted-foreground mt-1">Powered by House11</p>
         </div>
       </footer>
