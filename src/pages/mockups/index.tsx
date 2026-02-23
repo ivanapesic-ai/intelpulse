@@ -275,7 +275,7 @@ export default function MockupsIndex() {
             </div>
             <span className="font-display font-semibold text-foreground">AI-CE Heatmap</span>
           </div>
-          <p className="text-sm text-muted-foreground">BluSpecs • ML-SDV Technology Intelligence</p>
+          <p className="text-sm text-muted-foreground">ML-SDV Technology Intelligence</p>
           <p className="text-xs text-muted-foreground mt-1">Preview Build • December 2024</p>
         </div>
       </footer>
