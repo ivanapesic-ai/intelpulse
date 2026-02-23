@@ -10,11 +10,11 @@ export function PlatformFooter() {
           <BrandName className="text-xl text-foreground" />
         </div>
          <p className="text-sm text-muted-foreground">
-           BluSpecs CEI-Sphere Intelligence Platform
+           CEI-Sphere Intelligence Platform
          </p>
          <p className="text-xs text-muted-foreground/70">
-           Last updated: February 2026 • Powered by House11
-         </p>
+            Last updated: February 2026 • Powered by House11
+          </p>
        </div>
      </footer>
    );
