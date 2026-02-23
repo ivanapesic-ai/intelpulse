@@ -43,7 +43,7 @@ const otherViews = [
   },
   {
     title: "Admin Panel",
-    description: "User management and data refresh interface for BluSpecs staff",
+    description: "User management and data refresh interface for staff",
     icon: Shield,
     path: "/mockups/admin",
   },
