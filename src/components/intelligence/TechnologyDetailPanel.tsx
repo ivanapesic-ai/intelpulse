@@ -139,10 +139,6 @@ export function TechnologyDetailPanel({ technology, onClose }: TechnologyDetailP
                 )}
               </div>
  
-              <Separator />
-
-              {/* International Standards */}
-              <StandardsSection keywordId={technology.keywordId} aliases={technology.aliases} />
 
               <Separator />
 
