@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, ExternalLink, BookOpen, Building } from "lucide-react";
+import { Plus, Trash2, ExternalLink, BookOpen, Building, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import {
   ISSUING_BODIES,
   type CreateStandardInput,
 } from "@/hooks/useKeywordStandards";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -22,8 +22,8 @@ export function StandardsManagerPanel() {
   const { data: standards, isLoading } = useAllStandards();
   const createStandard = useCreateStandard();
   const deleteStandard = useDeleteStandard();
+  const queryClient = useQueryClient();
 
-  // Fetch keywords for the selector
   const { data: keywords } = useQuery({
     queryKey: ["keywords-for-standards"],
     queryFn: async () => {
@@ -45,6 +45,11 @@ export function StandardsManagerPanel() {
     issuing_body: "",
     body_type: "sdo",
   });
+
+  // AI enrichment state
+  const [enrichingAll, setEnrichingAll] = useState(false);
+  const [enrichingSingle, setEnrichingSingle] = useState<string | null>(null);
+  const [enrichProgress, setEnrichProgress] = useState("");
 
   const handleSubmit = async () => {
     if (!form.keyword_id || !form.standard_code || !form.standard_title || !form.issuing_body) {
@@ -74,11 +79,70 @@ export function StandardsManagerPanel() {
     }
   };
 
+  const enrichKeywords = async (keywordIds: string[], label: string) => {
+    try {
+      setEnrichProgress(`Researching standards for ${label}...`);
+      const { data, error } = await supabase.functions.invoke("enrich-standards", {
+        body: { keyword_ids: keywordIds },
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        const { total_added, total_skipped, keywords_processed } = data.summary;
+        toast.success(`Added ${total_added} standards across ${keywords_processed} keywords (${total_skipped} duplicates skipped)`);
+
+        // Show per-keyword details if there were errors
+        const errors = data.details?.filter((d: any) => d.errors?.length > 0);
+        if (errors?.length > 0) {
+          errors.forEach((e: any) => toast.warning(`${e.keyword_name}: ${e.errors.join(", ")}`));
+        }
+      } else {
+        toast.error(data?.error || "Enrichment failed");
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["keyword-standards-all"] });
+    } catch (err: any) {
+      toast.error(err.message || "Enrichment failed");
+    } finally {
+      setEnrichProgress("");
+    }
+  };
+
+  const handleEnrichAll = async () => {
+    if (!keywords?.length) return;
+    setEnrichingAll(true);
+    // Process in batches of 5 to avoid timeouts
+    const batchSize = 5;
+    const allIds = keywords.map((k) => k.id);
+    for (let i = 0; i < allIds.length; i += batchSize) {
+      const batch = allIds.slice(i, i + batchSize);
+      const batchNum = Math.floor(i / batchSize) + 1;
+      const totalBatches = Math.ceil(allIds.length / batchSize);
+      setEnrichProgress(`Batch ${batchNum}/${totalBatches}...`);
+      await enrichKeywords(batch, `batch ${batchNum}/${totalBatches}`);
+    }
+    setEnrichingAll(false);
+    toast.success("Bulk enrichment complete!");
+  };
+
+  const handleEnrichSingle = async (keywordId: string, keywordName: string) => {
+    setEnrichingSingle(keywordId);
+    await enrichKeywords([keywordId], keywordName);
+    setEnrichingSingle(null);
+  };
+
   // Group by keyword
   const grouped = (standards || []).reduce<Record<string, typeof standards>>((acc, s) => {
     const name = s.technology_keywords?.display_name || "Unknown";
     if (!acc[name]) acc[name] = [];
     acc[name]!.push(s);
+    return acc;
+  }, {});
+
+  // Build a keyword name→id lookup for the enrich button
+  const keywordNameToId = (keywords || []).reduce<Record<string, string>>((acc, kw) => {
+    acc[kw.display_name] = kw.id;
     return acc;
   }, {});
 
@@ -93,12 +157,25 @@ export function StandardsManagerPanel() {
             </CardTitle>
             <CardDescription>
               Manage ISO, IEC, IEEE, ETSI, ITU standards and private consortia per technology keyword.
+              Use AI enrichment to auto-populate from Perplexity research.
             </CardDescription>
           </div>
-          <Button size="sm" onClick={() => setShowForm(!showForm)} className="gap-1.5">
-            <Plus className="h-4 w-4" />
-            Add Standard
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleEnrichAll}
+              disabled={enrichingAll || !keywords?.length}
+              className="gap-1.5"
+            >
+              {enrichingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {enrichingAll ? enrichProgress : "Enrich All Keywords"}
+            </Button>
+            <Button size="sm" onClick={() => setShowForm(!showForm)} className="gap-1.5">
+              <Plus className="h-4 w-4" />
+              Add Manual
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -189,12 +266,33 @@ export function StandardsManagerPanel() {
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Loading standards...</p>
         ) : Object.keys(grouped).length === 0 ? (
-          <p className="text-sm text-muted-foreground italic">No standards added yet. Click "Add Standard" to begin.</p>
+          <p className="text-sm text-muted-foreground italic">
+            No standards added yet. Click "Enrich All Keywords" to auto-populate via AI, or "Add Manual" to enter one.
+          </p>
         ) : (
           <div className="space-y-4">
             {Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([kwName, items]) => (
               <div key={kwName} className="space-y-1.5">
-                <h4 className="text-sm font-semibold text-foreground">{kwName}</h4>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-semibold text-foreground">{kwName}</h4>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    disabled={enrichingSingle === keywordNameToId[kwName]}
+                    onClick={() => {
+                      const id = keywordNameToId[kwName];
+                      if (id) handleEnrichSingle(id, kwName);
+                    }}
+                    title="AI enrich this keyword"
+                  >
+                    {enrichingSingle === keywordNameToId[kwName] ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </div>
                 <div className="space-y-1">
                   {items!.map((s) => (
                     <div key={s.id} className="flex items-center gap-3 px-3 py-2 rounded-md bg-background border border-border">
@@ -206,6 +304,9 @@ export function StandardsManagerPanel() {
                       <Badge variant="outline" className="text-xs flex-shrink-0">{s.issuing_body}</Badge>
                       <span className="text-sm font-medium text-foreground flex-shrink-0">{s.standard_code}</span>
                       <span className="text-sm text-muted-foreground truncate flex-1">{s.standard_title}</span>
+                      {s.status === "ai_suggested" && (
+                        <Badge variant="secondary" className="text-xs">AI</Badge>
+                      )}
                       {s.url && (
                         <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground">
                           <ExternalLink className="h-3.5 w-3.5" />
