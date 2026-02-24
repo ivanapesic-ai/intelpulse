@@ -34,18 +34,53 @@ export const ISSUING_BODIES = {
   consortia: ISSUING_BODIES_CONSORTIA,
 };
 
-export function useKeywordStandards(keywordId: string | null) {
+export function useKeywordStandards(keywordId: string | null, aliases?: string[]) {
   return useQuery({
-    queryKey: ["keyword-standards", keywordId],
+    queryKey: ["keyword-standards", keywordId, aliases],
     queryFn: async () => {
       if (!keywordId) return [];
-      const { data, error } = await supabase
+
+      // 1. Fetch standards for the main keyword
+      const { data: mainStandards, error: mainErr } = await supabase
         .from("keyword_standards")
         .select("*")
         .eq("keyword_id", keywordId)
         .order("issuing_body", { ascending: true });
-      if (error) throw error;
-      return (data || []) as KeywordStandard[];
+      if (mainErr) throw mainErr;
+
+      let allStandards = (mainStandards || []) as KeywordStandard[];
+
+      // 2. If aliases exist, find excluded child keywords whose display_name is in our aliases
+      if (aliases && aliases.length > 0) {
+        const { data: childKeywords } = await supabase
+          .from("technology_keywords")
+          .select("id")
+          .in("display_name", aliases)
+          .eq("excluded_from_sdv", true)
+          .neq("id", keywordId);
+
+        if (childKeywords && childKeywords.length > 0) {
+          const childIds = childKeywords.map((k) => k.id);
+          const { data: childStandards } = await supabase
+            .from("keyword_standards")
+            .select("*")
+            .in("keyword_id", childIds)
+            .order("issuing_body", { ascending: true });
+
+          if (childStandards) {
+            // Deduplicate by standard_code
+            const seen = new Set(allStandards.map((s) => s.standard_code));
+            for (const cs of childStandards) {
+              if (!seen.has(cs.standard_code)) {
+                seen.add(cs.standard_code);
+                allStandards.push(cs as KeywordStandard);
+              }
+            }
+          }
+        }
+      }
+
+      return allStandards;
     },
     enabled: !!keywordId,
   });
