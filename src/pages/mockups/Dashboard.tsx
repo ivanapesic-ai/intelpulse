@@ -254,15 +254,6 @@ export default function Dashboard() {
                         );
                       })}
                     </div>
-                    <div className="mt-5 pt-5 border-t border-border">
-                      <div className="flex flex-wrap gap-3 justify-center">
-                        {(Object.entries(stats.ringCounts) as [MaturityRing, number][]).map(([ring, count]) => (
-                          <Badge key={ring} variant="outline" className={`gap-1.5 px-3 py-1 ${ringColors[ring]}`}>
-                            <span className="font-bold">{count}</span> {ring}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
                   </>
                 )}
               </CardContent>
