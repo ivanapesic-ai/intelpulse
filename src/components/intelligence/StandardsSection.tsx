@@ -5,10 +5,11 @@ import { useKeywordStandards } from "@/hooks/useKeywordStandards";
 
 interface StandardsSectionProps {
   keywordId: string | null;
+  aliases?: string[];
 }
 
-export function StandardsSection({ keywordId }: StandardsSectionProps) {
-  const { data: standards, isLoading } = useKeywordStandards(keywordId);
+export function StandardsSection({ keywordId, aliases }: StandardsSectionProps) {
+  const { data: standards, isLoading } = useKeywordStandards(keywordId, aliases);
 
   if (isLoading) {
     return (
