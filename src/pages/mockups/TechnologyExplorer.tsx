@@ -17,6 +17,7 @@ import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Responsi
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { isCentralEcosystem } from "@/lib/taxonomy-filters";
+import { StandardsSection } from "@/components/intelligence/StandardsSection";
 
 type SortOption = "composite" | "funding" | "employees" | "companies";
 type RegionFilter = "all" | "europe" | "usa";

@@ -186,6 +186,9 @@ export function TechnologyDetailPanel({ technology, onClose }: TechnologyDetailP
                </div>
              )}
  
+              {/* International Standards */}
+              <StandardsSection keywordId={technology.keywordId} aliases={technology.aliases} />
+
               {/* Key Players */}
               {technology.keyPlayers && technology.keyPlayers.length > 0 && (
                 <div>
