@@ -449,6 +449,16 @@ export default function TechnologyExplorer() {
                         </CardContent>
                       </Card>
 
+                      {/* International Standards */}
+                      <Card>
+                        <CardContent className="pt-4">
+                          <StandardsSection 
+                            keywordId={liveSelectedTech.keywordId} 
+                            aliases={liveSelectedTech.keyword?.aliases} 
+                          />
+                        </CardContent>
+                      </Card>
+
                       {/* Key Players */}
                       {liveSelectedTech.keyPlayers && liveSelectedTech.keyPlayers.length > 0 && (
                         <Card>
