@@ -1,5 +1,4 @@
 import { BookOpen, Building } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useKeywordStandards } from "@/hooks/useKeywordStandards";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -7,20 +6,19 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 interface StandardsSectionProps {
   keywordId: string | null;
   aliases?: string[];
-  compact?: boolean;
 }
 
-export function StandardsSection({ keywordId, aliases, compact }: StandardsSectionProps) {
+export function StandardsSection({ keywordId, aliases }: StandardsSectionProps) {
   const { data: standards, isLoading } = useKeywordStandards(keywordId, aliases);
 
   if (isLoading) {
     return (
-      <div>
-        <Skeleton className="h-6 w-48 mb-2" />
+      <div className="space-y-3">
+        <Skeleton className="h-5 w-32" />
         <div className="flex flex-wrap gap-1.5">
-          <Skeleton className="h-6 w-20" />
-          <Skeleton className="h-6 w-24" />
-          <Skeleton className="h-6 w-16" />
+          <Skeleton className="h-6 w-20 rounded-full" />
+          <Skeleton className="h-6 w-24 rounded-full" />
+          <Skeleton className="h-6 w-16 rounded-full" />
         </div>
       </div>
     );
@@ -33,74 +31,80 @@ export function StandardsSection({ keywordId, aliases, compact }: StandardsSecti
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="space-y-2.5">
-        {/* SDO Standards */}
+      <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-4">
         {sdoStandards.length > 0 && (
-          <div>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-              <BookOpen className="h-3 w-3" />
-              Standards Bodies
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {sdoStandards.map((s) => (
-                <StandardChip key={s.id} standard={s} />
-              ))}
-            </div>
-          </div>
+          <StandardGroup
+            icon={<BookOpen className="h-3.5 w-3.5" />}
+            label="Standards Bodies"
+            standards={sdoStandards}
+          />
         )}
-
-        {/* Consortia */}
         {consortiaStandards.length > 0 && (
-          <div>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-              <Building className="h-3 w-3" />
-              Private Consortia
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {consortiaStandards.map((s) => (
-                <StandardChip key={s.id} standard={s} />
-              ))}
-            </div>
-          </div>
+          <StandardGroup
+            icon={<Building className="h-3.5 w-3.5" />}
+            label="Private Consortia"
+            standards={consortiaStandards}
+          />
         )}
       </div>
     </TooltipProvider>
   );
 }
 
+function StandardGroup({ icon, label, standards }: {
+  icon: React.ReactNode;
+  label: string;
+  standards: Array<{ id: string; standard_code: string; standard_title: string; issuing_body: string; url: string | null; description: string | null; status: string }>;
+}) {
+  // Group by issuing body for visual clarity
+  const grouped = standards.reduce<Record<string, typeof standards>>((acc, s) => {
+    (acc[s.issuing_body] ??= []).push(s);
+    return acc;
+  }, {});
+
+  return (
+    <div>
+      <p className="text-[11px] text-muted-foreground font-semibold uppercase tracking-widest mb-2 flex items-center gap-1.5">
+        {icon}
+        {label}
+        <span className="text-muted-foreground/50 font-normal normal-case tracking-normal ml-1">({standards.length})</span>
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {Object.entries(grouped).map(([body, items]) =>
+          items.map((s) => <StandardChip key={s.id} standard={s} />)
+        )}
+      </div>
+    </div>
+  );
+}
+
 function StandardChip({ standard }: { standard: { standard_code: string; standard_title: string; issuing_body: string; url: string | null; description: string | null; status: string } }) {
   const hasValidUrl = standard.url && standard.url.startsWith("http");
-  
-  const chip = (
-    <Badge
-      variant="outline"
-      className="text-xs cursor-default hover:bg-muted/50 transition-colors"
-    >
-      {standard.standard_code}
-    </Badge>
+
+  const content = (
+    <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full border border-border bg-background text-foreground/80 hover:bg-muted hover:text-foreground transition-colors cursor-default select-none">
+      <span className="text-muted-foreground/60 font-semibold">{standard.issuing_body}</span>
+      <span className="text-muted-foreground/30">·</span>
+      <span>{standard.standard_code.replace(new RegExp(`^${standard.issuing_body}\\s*`, "i"), "")}</span>
+    </span>
   );
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         {hasValidUrl ? (
-          <a href={standard.url!} target="_blank" rel="noopener noreferrer">
-            <Badge
-              variant="outline"
-              className="text-xs cursor-pointer hover:bg-primary/10 hover:border-primary/30 transition-colors"
-            >
-              {standard.standard_code}
-            </Badge>
+          <a href={standard.url!} target="_blank" rel="noopener noreferrer" className="no-underline">
+            {content}
           </a>
         ) : (
-          chip
+          content
         )}
       </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-xs">
-        <p className="font-medium text-xs">{standard.issuing_body} — {standard.standard_code}</p>
-        <p className="text-xs text-muted-foreground">{standard.standard_title}</p>
+      <TooltipContent side="top" className="max-w-xs text-left">
+        <p className="font-semibold text-xs">{standard.standard_code}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{standard.standard_title}</p>
         {standard.description && (
-          <p className="text-xs text-muted-foreground/70 italic mt-0.5">{standard.description}</p>
+          <p className="text-xs text-muted-foreground/70 italic mt-1">{standard.description}</p>
         )}
       </TooltipContent>
     </Tooltip>
