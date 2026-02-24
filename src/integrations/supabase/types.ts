@@ -952,6 +952,77 @@ export type Database = {
           },
         ]
       }
+      keyword_standards: {
+        Row: {
+          body_type: string
+          created_at: string
+          description: string | null
+          id: string
+          issuing_body: string
+          keyword_id: string
+          standard_code: string
+          standard_title: string
+          status: string | null
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          body_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          issuing_body: string
+          keyword_id: string
+          standard_code: string
+          standard_title: string
+          status?: string | null
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          body_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          issuing_body?: string
+          keyword_id?: string
+          standard_code?: string
+          standard_title?: string
+          status?: string | null
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "keyword_standards_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "keyword_standards_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_mapping_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "keyword_standards_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_overview"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "keyword_standards_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       news_items: {
         Row: {
           created_at: string
