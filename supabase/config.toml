@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.tracxn-sync]
 verify_jwt = false
+
+[functions.enrich-standards]
+verify_jwt = false
