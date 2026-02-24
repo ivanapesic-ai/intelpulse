@@ -16,6 +16,7 @@ import { formatFundingEur, formatNumber } from "@/types/database";
 import { SignalBreakdown } from "./SignalBreakdown";
 import { useNewsForKeyword } from "@/hooks/useNews";
 import { NewsTimelineChart } from "./NewsTimelineChart";
+import { StandardsSection } from "./StandardsSection";
 
 interface TechnologyDetailPanelProps {
   technology: TechnologyIntelligence | null;
@@ -138,10 +139,15 @@ export function TechnologyDetailPanel({ technology, onClose }: TechnologyDetailP
                 )}
               </div>
  
-             <Separator />
- 
-             {/* Signal Breakdown */}
-             <SignalBreakdown technology={technology} />
+              <Separator />
+
+              {/* International Standards */}
+              <StandardsSection keywordId={technology.keywordId} />
+
+              <Separator />
+
+              {/* Signal Breakdown */}
+              <SignalBreakdown technology={technology} />
  
              <Separator />
  
