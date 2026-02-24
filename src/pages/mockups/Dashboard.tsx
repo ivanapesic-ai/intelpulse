@@ -101,7 +101,7 @@ export default function Dashboard() {
     { insight: "Autonomous Vehicle sector leads with €89B aggregate funding across 142 companies", severity: "high" },
     { insight: "Battery technology patents up 34% YoY - strong innovation signal", severity: "high" },
     { insight: "V2X and Edge Computing showing convergence patterns in company portfolios", severity: "medium" },
-    { insight: "Software-Defined Vehicle ecosystem expanding with 23 new entrants Q4 2025", severity: "medium" },
+    { insight: "Software-Defined Vehicle ecosystem expanding with 23 new entrants Q1 2026", severity: "medium" },
   ];
 
   if (error) {
@@ -125,7 +125,7 @@ export default function Dashboard() {
         <div className="container mx-auto px-4 py-14">
           <div className="max-w-3xl">
             <Badge variant="outline" className="mb-4 animate-fade-in">
-              ML-SDV Sphere • January 2025
+              ML-SDV Sphere • February 2026
             </Badge>
             
             <h1 className="text-3xl md:text-4xl font-bold font-display leading-tight mb-4 text-foreground animate-fade-in-up">
