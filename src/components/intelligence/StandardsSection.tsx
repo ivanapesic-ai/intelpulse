@@ -65,28 +65,31 @@ export function StandardsSection({ keywordId }: StandardsSectionProps) {
 }
 
 function StandardRow({ standard }: { standard: { standard_code: string; standard_title: string; issuing_body: string; url: string | null; description: string | null; status: string } }) {
+  const hasValidUrl = standard.url && standard.url.startsWith("http");
+
   return (
     <div className="p-2.5 rounded-lg bg-muted/30 border border-border">
-      <div className="flex items-start gap-2">
-        <Badge variant="outline" className="text-xs flex-shrink-0 mt-0.5">{standard.issuing_body}</Badge>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-medium text-foreground">{standard.standard_code}</span>
-            {standard.status === "draft" && (
-              <Badge variant="secondary" className="text-[10px] px-1 py-0">Draft</Badge>
-            )}
-            {standard.url && (
-              <a href={standard.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground ml-auto">
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            )}
-          </div>
-          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{standard.standard_title}</p>
-          {standard.description && (
-            <p className="text-xs text-muted-foreground/70 italic mt-0.5 line-clamp-1">{standard.description}</p>
-          )}
-        </div>
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded flex-shrink-0">
+          {standard.issuing_body}
+        </span>
+        <span className="text-sm font-medium text-foreground truncate">{standard.standard_code}</span>
+        {standard.status === "draft" && (
+          <Badge variant="secondary" className="text-[10px] px-1 py-0 flex-shrink-0">Draft</Badge>
+        )}
+        {standard.status === "ai_suggested" && (
+          <Badge variant="secondary" className="text-[10px] px-1 py-0 flex-shrink-0">AI</Badge>
+        )}
+        {hasValidUrl && (
+          <a href={standard.url!} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground ml-auto flex-shrink-0">
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        )}
       </div>
+      <p className="text-xs text-muted-foreground line-clamp-1 mt-1 pl-0">{standard.standard_title}</p>
+      {standard.description && (
+        <p className="text-xs text-muted-foreground/60 italic line-clamp-1 mt-0.5">{standard.description}</p>
+      )}
     </div>
   );
 }
