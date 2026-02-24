@@ -18,6 +18,7 @@ import { CrunchbaseImportPanel } from "@/components/admin/CrunchbaseImportPanel"
 import { EpoPatentPanel } from "@/components/admin/EpoPatentPanel";
 import { DocumentUploadPanel } from "@/components/admin/DocumentUploadPanel";
 import { RssNewsPanel } from "@/components/admin/RssNewsPanel";
+import { StandardsManagerPanel } from "@/components/admin/StandardsManagerPanel";
 import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -176,6 +177,7 @@ export default function AdminPanel() {
           {/* ===== TAXONOMY TAB ===== */}
           <TabsContent value="taxonomy" className="space-y-4">
              <KeywordManager />
+             <StandardsManagerPanel />
           </TabsContent>
 
           {/* ===== DATA SOURCES TAB ===== */}
