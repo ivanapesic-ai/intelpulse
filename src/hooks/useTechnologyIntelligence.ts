@@ -206,7 +206,11 @@ export function useSingleTechnologyIntelligence(keywordId: string | null) {
             description,
             aliases,
             excluded_from_sdv,
-            is_active
+            is_active,
+            ontology_concepts (
+              name,
+              ontology_domains ( name )
+            )
           )
         `)
         .eq("technology_keywords.is_active", true)
