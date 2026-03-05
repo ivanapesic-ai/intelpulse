@@ -177,7 +177,9 @@ export function useTechnologyIntelligence() {
           // New C-O Matrix fields
           challengeScore: row.challenge_score,
           opportunityScore: row.opportunity_score,
-          sectorTags: row.sector_tags || [],
+          sectorTags: (row.sector_tags && row.sector_tags.length > 0)
+            ? row.sector_tags
+            : [(row.technology_keywords as any)?.ontology_concepts?.name].filter(Boolean),
           marketSignals: (row.market_signals as TechnologyIntelligence["marketSignals"]) || {},
           documentInsights: (row.document_insights as TechnologyIntelligence["documentInsights"]) || {},
         })
