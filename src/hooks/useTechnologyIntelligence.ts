@@ -117,7 +117,11 @@ export function useTechnologyIntelligence() {
             description,
             aliases,
             excluded_from_sdv,
-            is_active
+            is_active,
+            ontology_concepts (
+              name,
+              ontology_domains ( name )
+            )
           )
         `)
         // IMPORTANT: keep Intelligence aligned with Explorer/Radar by only using active taxonomy keywords
