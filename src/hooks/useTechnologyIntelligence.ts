@@ -117,7 +117,11 @@ export function useTechnologyIntelligence() {
             description,
             aliases,
             excluded_from_sdv,
-            is_active
+            is_active,
+            ontology_concepts (
+              name,
+              ontology_domains ( name )
+            )
           )
         `)
         // IMPORTANT: keep Intelligence aligned with Explorer/Radar by only using active taxonomy keywords
@@ -173,7 +177,9 @@ export function useTechnologyIntelligence() {
           // New C-O Matrix fields
           challengeScore: row.challenge_score,
           opportunityScore: row.opportunity_score,
-          sectorTags: row.sector_tags || [],
+          sectorTags: (row.sector_tags && row.sector_tags.length > 0)
+            ? row.sector_tags
+            : [(row.technology_keywords as any)?.ontology_concepts?.name].filter(Boolean),
           marketSignals: (row.market_signals as TechnologyIntelligence["marketSignals"]) || {},
           documentInsights: (row.document_insights as TechnologyIntelligence["documentInsights"]) || {},
         })
@@ -200,7 +206,11 @@ export function useSingleTechnologyIntelligence(keywordId: string | null) {
             description,
             aliases,
             excluded_from_sdv,
-            is_active
+            is_active,
+            ontology_concepts (
+              name,
+              ontology_domains ( name )
+            )
           )
         `)
         .eq("technology_keywords.is_active", true)
@@ -250,7 +260,9 @@ export function useSingleTechnologyIntelligence(keywordId: string | null) {
         aliases: row.technology_keywords?.aliases || [],
         challengeScore: row.challenge_score,
         opportunityScore: row.opportunity_score,
-        sectorTags: row.sector_tags || [],
+        sectorTags: (row.sector_tags && row.sector_tags.length > 0)
+          ? row.sector_tags
+          : [(row.technology_keywords as any)?.ontology_concepts?.name].filter(Boolean),
         marketSignals: (row.market_signals as TechnologyIntelligence["marketSignals"]) || {},
         documentInsights: (row.document_insights as TechnologyIntelligence["documentInsights"]) || {},
       };
