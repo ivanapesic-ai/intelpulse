@@ -22,7 +22,7 @@ function DeltaBadge({ value, suffix = "" }: { value: number | null; suffix?: str
       variant="outline"
       className={cn(
         "text-xs font-mono gap-1",
-        isPositive ? "border-emerald-500/30 text-emerald-600" : "border-red-500/30 text-red-500"
+        isPositive ? "border-emerald-500/30 text-emerald-500" : "border-red-500/30 text-red-500"
       )}
     >
       <Icon className="h-3 w-3" />
