@@ -12,6 +12,7 @@ const navItems = [
   { path: "/explorer", label: "Explorer", icon: Compass },
   { path: "/intelligence", label: "Intelligence", icon: Brain },
   { path: "/knowledge-graph", label: "Graph", icon: Network },
+  { path: "/my-signals", label: "My Signals", icon: Eye },
 ];
 
 export function PlatformHeader() {
