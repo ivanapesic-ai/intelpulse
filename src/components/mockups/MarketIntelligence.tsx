@@ -1,4 +1,4 @@
-import { Banknote, MapPin, TrendingUp, Target, Clock } from "lucide-react";
+import { Coins, MapPin, TrendingUp, Target, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -140,7 +140,7 @@ export function MarketIntelligence({
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm text-foreground flex items-center gap-2">
-            <Banknote className="h-4 w-4" />
+            <Coins className="h-4 w-4" />
             Top Strategic Investors
           </CardTitle>
         </CardHeader>

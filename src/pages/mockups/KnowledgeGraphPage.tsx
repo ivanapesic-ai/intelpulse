@@ -5,7 +5,7 @@ import { KnowledgeGraph } from "@/components/intelligence/KnowledgeGraph";
 import { GraphNode } from "@/hooks/useKnowledgeGraph";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Banknote, FileText, X } from "lucide-react";
+import { Building2, Coins, FileText, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatFundingEur } from "@/types/database";
 
@@ -57,7 +57,7 @@ export default function KnowledgeGraphPage() {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-1 text-muted-foreground">
-                        <Banknote className="h-3 w-3" /> Funding
+                        <Coins className="h-3 w-3" /> Funding
                       </span>
                       <span className="font-medium">{formatFundingEur(selectedNode.metadata.totalFunding)}</span>
                     </div>

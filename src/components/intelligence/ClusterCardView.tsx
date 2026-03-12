@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
   Building2, 
-  Banknote, 
+  Coins, 
   FileText,
   Link2,
   Zap,
@@ -248,7 +248,7 @@ export function ClusterCardView({ onSelectNode, selectedNodeId }: ClusterCardVie
                             <span>{node.metadata.companyCount}</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <Banknote className="h-3 w-3" />
+                            <Coins className="h-3 w-3" />
                             <span>{formatFundingEur(node.metadata.totalFunding)}</span>
                           </div>
                           <div className="flex items-center gap-1">

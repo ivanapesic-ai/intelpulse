@@ -18,7 +18,7 @@ import {
   Maximize2, 
   X,
   Building2,
-  Banknote,
+  Coins,
   FileText
 } from "lucide-react";
 import { 
@@ -445,7 +445,7 @@ export function KnowledgeGraph({ onSelectNode, selectedNodeId }: KnowledgeGraphP
                     <span>{hoveredNode.metadata.companyCount}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Banknote className="h-3 w-3 text-muted-foreground" />
+                    <Coins className="h-3 w-3 text-muted-foreground" />
                     <span>{formatFundingEur(hoveredNode.metadata.totalFunding)}</span>
                   </div>
                   <div className="flex items-center gap-1">

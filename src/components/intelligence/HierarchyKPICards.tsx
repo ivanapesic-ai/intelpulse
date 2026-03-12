@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Building2, Banknote, FileText, Layers } from "lucide-react";
+import { Building2, Coins, FileText, Layers } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { DomainOverview, formatCompactNumber } from "@/hooks/useDomainHierarchy";
@@ -25,7 +25,7 @@ export function HierarchyKPICards({ domains, totalKeywords }: HierarchyKPICardsP
     {
       label: "Total Funding",
       value: formatCompactNumber(totalFunding),
-      icon: Banknote,
+      icon: Coins,
       color: "text-emerald-500",
       bgColor: "bg-emerald-500/10",
     },

@@ -1,4 +1,4 @@
-import { Building2, Banknote, FileText } from "lucide-react";
+import { Building2, Coins, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { 
   KeywordOverview, 
@@ -43,7 +43,7 @@ export function KeywordRow({ keyword, isSelected, onSelect }: KeywordRowProps) {
           <span>{keyword.companyCount}</span>
         </div>
         <div className="flex items-center gap-1" title="Total Funding">
-          <Banknote className="h-3.5 w-3.5" />
+          <Coins className="h-3.5 w-3.5" />
           <span>{formatCompactNumber(keyword.totalFundingUsd)}</span>
         </div>
         <div className="flex items-center gap-1" title="Patents">

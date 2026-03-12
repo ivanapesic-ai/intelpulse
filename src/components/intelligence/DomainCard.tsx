@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronRight, Building2, Banknote, FileText } from "lucide-react";
+import { ChevronDown, ChevronRight, Building2, Coins, FileText } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -87,7 +87,7 @@ export function DomainCard({
                   <span className="font-medium text-foreground">{domain.companyCount}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <Banknote className="h-4 w-4" />
+                  <Coins className="h-4 w-4" />
                   <span className="font-medium text-foreground">{formatCompactNumber(domain.totalFundingUsd)}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-muted-foreground">
