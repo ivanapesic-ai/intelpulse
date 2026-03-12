@@ -85,7 +85,7 @@ function SignalCard({
           <div className="mt-4 flex gap-2">
             {[
               { label: "Investment", score: tech.investmentScore },
-              { label: "Patents", score: tech.patentsScore },
+              { label: "Patents", score: tech.trlScore },
               { label: "Visibility", score: tech.visibilityScore },
             ].map((s) => (
               <div key={s.label} className="flex-1">
