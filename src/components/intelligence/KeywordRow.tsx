@@ -1,4 +1,4 @@
-import { Building2, Banknote, FileText } from "lucide-react";
+import { Building2, Coins, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { 
   KeywordOverview, 
