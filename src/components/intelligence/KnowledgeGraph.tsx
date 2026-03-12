@@ -18,7 +18,7 @@ import {
   Maximize2, 
   X,
   Building2,
-  Banknote,
+  Coins,
   FileText
 } from "lucide-react";
 import { 
