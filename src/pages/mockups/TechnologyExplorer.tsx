@@ -80,8 +80,8 @@ export default function TechnologyExplorer() {
           return false;
         }
         
-        // If region filter is active, only show technologies with companies in that region
-        if (regionFilter !== "all" && regionStats) {
+        // Always filter by currently displayed regional scope once stats are loaded
+        if (regionStats) {
           const stats = getRegionStats(regionStats, tech.keywordId, regionFilter);
           if (stats.companyCount === 0) return false;
         }
