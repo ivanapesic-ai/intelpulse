@@ -162,10 +162,10 @@ export function getRegionStats(
     };
   }
 
-  // "all" - return global stats
+  // "all" in UI means "Both" (Europe + USA), not worldwide totals.
   return {
-    companyCount: stats.globalCompanyCount,
-    funding: stats.globalFunding,
-    employees: stats.globalEmployees,
+    companyCount: stats.europeCompanyCount + stats.usaCompanyCount,
+    funding: stats.europeFunding + stats.usaFunding,
+    employees: stats.europeEmployees + stats.usaEmployees,
   };
 }

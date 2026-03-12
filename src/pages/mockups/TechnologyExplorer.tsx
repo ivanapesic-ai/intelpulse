@@ -48,9 +48,13 @@ export default function TechnologyExplorer() {
 
   // Helper to get display values based on region filter
   const getDisplayStats = (tech: Technology) => {
-    // IMPORTANT: Global totals must come from the canonical aggregated Technology record
-    // so cards, dialogs, dashboards, and radars stay aligned.
+    // "all" in UI is "Both" (Europe + USA). Use aggregated region stats when available.
     if (regionFilter === "all") {
+      if (regionStats) {
+        return getRegionStats(regionStats, tech.keywordId, "all");
+      }
+
+      // Fallback while region stats are loading
       return {
         companyCount: tech.dealroomCompanyCount,
         funding: tech.totalFundingEur,
@@ -59,12 +63,7 @@ export default function TechnologyExplorer() {
     }
 
     // Region-specific views come from per-company aggregation
-    const stats = getRegionStats(regionStats, tech.keywordId, regionFilter);
-    return {
-      companyCount: stats.companyCount,
-      funding: stats.funding,
-      employees: stats.employees,
-    };
+    return getRegionStats(regionStats, tech.keywordId, regionFilter);
   };
 
   const filteredTechnologies = useMemo(() => {
@@ -81,8 +80,8 @@ export default function TechnologyExplorer() {
           return false;
         }
         
-        // If region filter is active, only show technologies with companies in that region
-        if (regionFilter !== "all" && regionStats) {
+        // Always filter by currently displayed regional scope once stats are loaded
+        if (regionStats) {
           const stats = getRegionStats(regionStats, tech.keywordId, regionFilter);
           if (stats.companyCount === 0) return false;
         }
