@@ -306,7 +306,7 @@ export default function TechnologyExplorer() {
                       <div className="p-2 rounded bg-muted/50">
                         <Coins className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
                         <p className="text-sm font-medium text-foreground">{formatFundingEur(displayStats.funding)}</p>
-                        <p className="text-xs text-muted-foreground">Funding</p>
+                        <p className="text-xs text-muted-foreground">{regionFilter === "europe" ? "EU Funding" : regionFilter === "usa" ? "US Funding" : "Funding"}</p>
                       </div>
                       <div className="p-2 rounded bg-muted/50">
                         <Users className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
