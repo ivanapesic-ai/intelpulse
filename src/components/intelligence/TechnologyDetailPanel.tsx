@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { X, ExternalLink, AlertTriangle, Lightbulb, FileText, Building2, TrendingUp, Users, Zap, Tag, Newspaper } from "lucide-react";
+import { WatchToggle } from "./WatchToggle";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
