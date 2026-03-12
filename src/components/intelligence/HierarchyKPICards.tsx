@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Building2, Banknote, FileText, Layers } from "lucide-react";
+import { Building2, Coins, FileText, Layers } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { DomainOverview, formatCompactNumber } from "@/hooks/useDomainHierarchy";
