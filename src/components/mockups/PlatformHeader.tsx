@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Compass, LayoutDashboard, LogOut, Brain, Network } from "lucide-react";
+import { Compass, LayoutDashboard, LogOut, Brain, Network, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
