@@ -5,7 +5,7 @@ import { KnowledgeGraph } from "@/components/intelligence/KnowledgeGraph";
 import { GraphNode } from "@/hooks/useKnowledgeGraph";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Banknote, FileText, X } from "lucide-react";
+import { Building2, Coins, FileText, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatFundingEur } from "@/types/database";
 
