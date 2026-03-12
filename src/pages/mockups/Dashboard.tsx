@@ -162,7 +162,7 @@ export default function Dashboard() {
                 trend={{ value: 12, label: "vs last quarter" }}
               />
               <StatCard
-                title="Total Patents"
+                title="Patents"
                 value={formatNumber(stats.totalPatents)}
                 subtitle="Aggregated from EPO & Crunchbase"
                 icon={FileText}
