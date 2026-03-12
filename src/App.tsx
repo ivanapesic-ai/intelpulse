@@ -16,6 +16,7 @@ import AdminPanel from "./pages/mockups/AdminPanel";
 import PublicDemo from "./pages/mockups/PublicDemo";
 import IntelligenceDashboard from "./pages/mockups/IntelligenceDashboard";
 import KnowledgeGraphPage from "./pages/mockups/KnowledgeGraphPage";
+import MySignals from "./pages/mockups/MySignals";
 
 const queryClient = new QueryClient();
 
