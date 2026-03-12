@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Eye, TrendingUp, TrendingDown, Minus, Activity, ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
