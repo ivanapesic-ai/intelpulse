@@ -30,7 +30,7 @@ const SIGNAL_DEFINITIONS = {
   investment: {
     name: "Signal 1: Investment",
     indicator: "Investment",
-    source: "Crunchbase",
+    source: "Market Data",
     description: "Venture capital funding, growth stage, and capital raised by ecosystem companies",
   },
   patents: {

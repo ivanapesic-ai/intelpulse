@@ -103,7 +103,7 @@ export default function PublicDemo() {
             </h1>
             
             <p className="text-base text-muted-foreground mb-6 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-              Real-time maturity tracking powered by Crunchbase market signals, document analysis, and H11 hybrid scoring model.
+              Real-time maturity tracking powered by market signals, document analysis, and H11 hybrid scoring model.
             </p>
 
             {/* Demo Notice */}
@@ -141,7 +141,7 @@ export default function PublicDemo() {
               <StatCard
                 title="Sample Funding"
                 value={formatFundingEur(stats.totalFunding)}
-                subtitle="Crunchbase data"
+                subtitle="Market data"
                 icon={TrendingUp}
               />
               <StatCard
@@ -266,7 +266,7 @@ export default function PublicDemo() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {[
-                  { name: "Crunchbase", status: "healthy" },
+                  { name: "Market Data", status: "healthy" },
                   { name: "CEI Documents", status: "healthy" },
                   { name: "Web Sources", status: "healthy" },
                   { name: "EPO Patents", status: "healthy" },

@@ -162,7 +162,7 @@ export default function TechnologyExplorer() {
             <div>
               <h1 className="text-2xl font-bold text-foreground mb-2">Technology Explorer</h1>
               <p className="text-muted-foreground">
-                Browse and analyze {filteredTechnologies.length} SDV technologies powered by Crunchbase data
+                Browse and analyze {filteredTechnologies.length} SDV technologies with market intelligence and scoring
               </p>
             </div>
 
@@ -292,7 +292,7 @@ export default function TechnologyExplorer() {
                     </div>
                     
                     <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                      {tech.description || "Technology area tracked via Crunchbase market data"}
+                      {tech.description || "SDV ecosystem technology area"}
                     </p>
 
                     <div className="grid grid-cols-3 gap-2 text-center">
@@ -542,8 +542,8 @@ export default function TechnologyExplorer() {
                         <CardContent>
                           <div className="space-y-3">
                             {[
-                              { label: "Investment", score: liveSelectedTech.investmentScore, tooltip: "Crunchbase funding signals" },
-                              { label: "Employees", score: liveSelectedTech.employeesScore, tooltip: "Crunchbase employee data" },
+                              { label: "Investment", score: liveSelectedTech.investmentScore, tooltip: "Funding signals" },
+                              { label: "Employees", score: liveSelectedTech.employeesScore, tooltip: "Employee data" },
                               { label: "TRL (Readiness)", score: liveSelectedTech.trlScore, tooltip: liveSelectedTech.avgTrlMentioned ? `Avg TRL ${liveSelectedTech.avgTrlMentioned.toFixed(1)}` : "No TRL data" },
                             ].map((item) => {
                               const config = MATURITY_SCORE_CONFIG[item.score as 0|1|2];
