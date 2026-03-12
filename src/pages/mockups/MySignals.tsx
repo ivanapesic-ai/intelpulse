@@ -60,7 +60,7 @@ function SignalCard({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div>
               <p className="text-xs text-muted-foreground mb-1">Companies</p>
-              <p className="text-lg font-semibold text-foreground">{tech.companyCount ?? 0}</p>
+              <p className="text-lg font-semibold text-foreground">{tech.dealroomCompanyCount ?? 0}</p>
               <DeltaBadge value={d?.companies ?? null} />
             </div>
             <div>
