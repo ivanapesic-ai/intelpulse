@@ -162,7 +162,7 @@ export default function TechnologyExplorer() {
             <div>
               <h1 className="text-2xl font-bold text-foreground mb-2">Technology Explorer</h1>
               <p className="text-muted-foreground">
-                Browse and analyze {filteredTechnologies.length} SDV technologies powered by Crunchbase data
+                Browse and analyze {filteredTechnologies.length} SDV technologies with market intelligence and scoring
               </p>
             </div>
 
