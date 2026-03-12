@@ -25,7 +25,7 @@
        title: "Total Market Value",
        value: formatFundingEur(data.totalMarketValue),
        subtitle: "Aggregate funding raised",
-       icon: Banknote,
+       icon: Coins,
        color: "from-emerald-500 to-emerald-600",
        bgColor: "bg-emerald-500/10",
        trend: "+12% YoY",

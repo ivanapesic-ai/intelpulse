@@ -25,7 +25,7 @@ export function HierarchyKPICards({ domains, totalKeywords }: HierarchyKPICardsP
     {
       label: "Total Funding",
       value: formatCompactNumber(totalFunding),
-      icon: Banknote,
+      icon: Coins,
       color: "text-emerald-500",
       bgColor: "bg-emerald-500/10",
     },

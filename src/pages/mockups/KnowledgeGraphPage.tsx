@@ -57,7 +57,7 @@ export default function KnowledgeGraphPage() {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-1 text-muted-foreground">
-                        <Banknote className="h-3 w-3" /> Funding
+                        <Coins className="h-3 w-3" /> Funding
                       </span>
                       <span className="font-medium">{formatFundingEur(selectedNode.metadata.totalFunding)}</span>
                     </div>
