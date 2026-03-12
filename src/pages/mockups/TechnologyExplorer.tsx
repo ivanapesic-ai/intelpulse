@@ -292,7 +292,7 @@ export default function TechnologyExplorer() {
                     </div>
                     
                     <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                      {tech.description || "Technology area tracked via Crunchbase market data"}
+                      {tech.description || "SDV ecosystem technology area"}
                     </p>
 
                     <div className="grid grid-cols-3 gap-2 text-center">
