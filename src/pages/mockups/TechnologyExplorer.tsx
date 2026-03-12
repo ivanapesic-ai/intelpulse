@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, TrendingUp, TrendingDown, Minus, FileText, DollarSign, Users, Calendar, Building2, Newspaper, ExternalLink, Target, Globe, Tag, Star, RefreshCw } from "lucide-react";
+import { Search, TrendingUp, TrendingDown, Minus, FileText, Banknote, Users, Calendar, Building2, Newspaper, ExternalLink, Target, Globe, Tag, Star, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -304,7 +304,7 @@ export default function TechnologyExplorer() {
                         </p>
                       </div>
                       <div className="p-2 rounded bg-muted/50">
-                        <DollarSign className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                        <Banknote className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
                         <p className="text-sm font-medium text-foreground">{formatFundingEur(displayStats.funding)}</p>
                         <p className="text-xs text-muted-foreground">Funding</p>
                       </div>
@@ -501,7 +501,7 @@ export default function TechnologyExplorer() {
                             <Card>
                               <CardContent className="pt-4">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                  <Banknote className="h-4 w-4 text-muted-foreground" />
                                   <span className="text-sm text-muted-foreground">{regionLabel ? `${regionLabel} Funding` : "Total Funding"}</span>
                                 </div>
                                 <p className="text-2xl font-bold text-foreground">{formatFundingEur(detailStats.funding)}</p>

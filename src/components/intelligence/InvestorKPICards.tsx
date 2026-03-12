@@ -1,5 +1,5 @@
  import { motion } from "framer-motion";
- import { TrendingUp, Users, Building2, Shield, Target, Zap, DollarSign, BarChart3 } from "lucide-react";
+ import { TrendingUp, Users, Building2, Shield, Target, Zap, Banknote, BarChart3 } from "lucide-react";
  import { cn } from "@/lib/utils";
  import { formatFundingEur, formatNumber } from "@/types/database";
  
@@ -25,7 +25,7 @@
        title: "Total Market Value",
        value: formatFundingEur(data.totalMarketValue),
        subtitle: "Aggregate funding raised",
-       icon: DollarSign,
+       icon: Banknote,
        color: "from-emerald-500 to-emerald-600",
        bgColor: "bg-emerald-500/10",
        trend: "+12% YoY",
