@@ -222,7 +222,7 @@ export default function TechnologyExplorer() {
                   className="h-9 text-sm rounded border border-border bg-background px-3 text-foreground"
                 >
                   <option value="composite">Composite Score</option>
-                  <option value="funding">Total Funding</option>
+                  <option value="funding">Funding</option>
                   <option value="employees">Employees</option>
                   <option value="companies">Company Count</option>
                 </select>
@@ -502,7 +502,7 @@ export default function TechnologyExplorer() {
                               <CardContent className="pt-4">
                                 <div className="flex items-center gap-2 mb-1">
                                   <Coins className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-sm text-muted-foreground">{regionLabel ? `Funding in ${regionLabel}` : "Total Funding"}</span>
+                                  <span className="text-sm text-muted-foreground">{regionLabel ? `Funding in ${regionLabel}` : "Funding"}</span>
                                 </div>
                                 <p className="text-2xl font-bold text-foreground">{formatFundingEur(detailStats.funding)}</p>
                               </CardContent>
@@ -511,7 +511,7 @@ export default function TechnologyExplorer() {
                               <CardContent className="pt-4">
                                 <div className="flex items-center gap-2 mb-1">
                                   <Users className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-sm text-muted-foreground">{regionLabel ? `${regionLabel} Employees` : "Total Employees"}</span>
+                                  <span className="text-sm text-muted-foreground">{regionLabel ? `${regionLabel} Employees` : "Employees"}</span>
                                 </div>
                                 <p className="text-2xl font-bold text-foreground">{formatNumber(detailStats.employees)}</p>
                               </CardContent>

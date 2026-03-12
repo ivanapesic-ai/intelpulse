@@ -120,7 +120,7 @@ export function TechnologyDetailPanel({ technology, onClose }: TechnologyDetailP
                   <div className="text-center p-3 rounded-lg bg-muted/50">
                     <TrendingUp className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
                     <p className="text-lg font-bold text-foreground">{formatFundingEur(technology.totalFundingEur)}</p>
-                    <p className="text-xs text-muted-foreground">Total Funding</p>
+                    <p className="text-xs text-muted-foreground">Funding</p>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-muted/50">
                     <Users className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
