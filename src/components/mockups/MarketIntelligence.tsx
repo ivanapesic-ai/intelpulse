@@ -140,7 +140,7 @@ export function MarketIntelligence({
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm text-foreground flex items-center gap-2">
-            <DollarSign className="h-4 w-4" />
+            <Banknote className="h-4 w-4" />
             Top Strategic Investors
           </CardTitle>
         </CardHeader>
