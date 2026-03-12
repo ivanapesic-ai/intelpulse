@@ -292,7 +292,7 @@ export default function TechnologyExplorer() {
                     </div>
                     
                     <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                      {tech.description || "SDV ecosystem technology area"}
+                      {tech.description || "Technology area in the automotive and mobility ecosystem"}
                     </p>
 
                     <div className="grid grid-cols-3 gap-2 text-center">
