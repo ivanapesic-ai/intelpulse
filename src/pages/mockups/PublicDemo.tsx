@@ -266,7 +266,7 @@ export default function PublicDemo() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {[
-                  { name: "Crunchbase", status: "healthy" },
+                  { name: "Market Data", status: "healthy" },
                   { name: "CEI Documents", status: "healthy" },
                   { name: "Web Sources", status: "healthy" },
                   { name: "EPO Patents", status: "healthy" },

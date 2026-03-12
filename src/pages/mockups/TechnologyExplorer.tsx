@@ -542,8 +542,8 @@ export default function TechnologyExplorer() {
                         <CardContent>
                           <div className="space-y-3">
                             {[
-                              { label: "Investment", score: liveSelectedTech.investmentScore, tooltip: "Crunchbase funding signals" },
-                              { label: "Employees", score: liveSelectedTech.employeesScore, tooltip: "Crunchbase employee data" },
+                              { label: "Investment", score: liveSelectedTech.investmentScore, tooltip: "Funding signals" },
+                              { label: "Employees", score: liveSelectedTech.employeesScore, tooltip: "Employee data" },
                               { label: "TRL (Readiness)", score: liveSelectedTech.trlScore, tooltip: liveSelectedTech.avgTrlMentioned ? `Avg TRL ${liveSelectedTech.avgTrlMentioned.toFixed(1)}` : "No TRL data" },
                             ].map((item) => {
                               const config = MATURITY_SCORE_CONFIG[item.score as 0|1|2];

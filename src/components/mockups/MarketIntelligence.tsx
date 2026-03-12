@@ -101,7 +101,7 @@ export function MarketIntelligence({
       <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Clock className="h-4 w-4" />
-          <span>Market data from Crunchbase</span>
+          <span>Market data signals</span>
         </div>
         <span className="text-xs text-muted-foreground">Refresh data from Admin Panel</span>
       </div>
