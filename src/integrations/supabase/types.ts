@@ -952,6 +952,83 @@ export type Database = {
           },
         ]
       }
+      keyword_signal_snapshots: {
+        Row: {
+          company_count: number | null
+          composite_score: number | null
+          created_at: string
+          id: string
+          investment_score: number | null
+          keyword_id: string
+          news_mention_count: number | null
+          patents_score: number | null
+          snapshot_date: string
+          total_employees: number | null
+          total_funding_usd: number | null
+          total_patents: number | null
+          visibility_score: number | null
+        }
+        Insert: {
+          company_count?: number | null
+          composite_score?: number | null
+          created_at?: string
+          id?: string
+          investment_score?: number | null
+          keyword_id: string
+          news_mention_count?: number | null
+          patents_score?: number | null
+          snapshot_date?: string
+          total_employees?: number | null
+          total_funding_usd?: number | null
+          total_patents?: number | null
+          visibility_score?: number | null
+        }
+        Update: {
+          company_count?: number | null
+          composite_score?: number | null
+          created_at?: string
+          id?: string
+          investment_score?: number | null
+          keyword_id?: string
+          news_mention_count?: number | null
+          patents_score?: number | null
+          snapshot_date?: string
+          total_employees?: number | null
+          total_funding_usd?: number | null
+          total_patents?: number | null
+          visibility_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "keyword_signal_snapshots_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "keyword_signal_snapshots_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_mapping_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "keyword_signal_snapshots_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_overview"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "keyword_signal_snapshots_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       keyword_standards: {
         Row: {
           body_type: string
@@ -1966,6 +2043,56 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_watchlist: {
+        Row: {
+          created_at: string
+          id: string
+          keyword_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          keyword_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          keyword_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_watchlist_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "user_watchlist_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_mapping_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "user_watchlist_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_overview"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "user_watchlist_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       web_technology_mentions: {
         Row: {

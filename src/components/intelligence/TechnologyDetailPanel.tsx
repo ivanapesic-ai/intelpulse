@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { X, ExternalLink, AlertTriangle, Lightbulb, FileText, Building2, TrendingUp, Users, Zap, Tag, Newspaper } from "lucide-react";
+import { WatchToggle } from "./WatchToggle";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -43,7 +44,10 @@ export function TechnologyDetailPanel({ technology, onClose }: TechnologyDetailP
         {/* Header */}
         <div className="flex items-start justify-between p-6 border-b border-border">
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-bold text-foreground mb-2">{technology.name}</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-bold text-foreground mb-2">{technology.name}</h2>
+              <WatchToggle keywordId={technology.keywordId} />
+            </div>
             
             {/* Aliases/Synonyms */}
             {technology.aliases && technology.aliases.length > 0 && (
