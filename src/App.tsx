@@ -54,6 +54,11 @@ const App = () => (
                   <KnowledgeGraphPage />
                 </ProtectedRoute>
               } />
+              <Route path="/my-signals" element={
+                <ProtectedRoute>
+                  <MySignals />
+                </ProtectedRoute>
+              } />
               
               {/* Admin Only */}
               <Route path="/admin" element={
