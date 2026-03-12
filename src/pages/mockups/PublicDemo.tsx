@@ -141,7 +141,7 @@ export default function PublicDemo() {
               <StatCard
                 title="Sample Funding"
                 value={formatFundingEur(stats.totalFunding)}
-                subtitle="Crunchbase data"
+                subtitle="Market data"
                 icon={TrendingUp}
               />
               <StatCard
