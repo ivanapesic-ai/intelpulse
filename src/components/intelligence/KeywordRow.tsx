@@ -42,7 +42,7 @@ export function KeywordRow({ keyword, isSelected, onSelect }: KeywordRowProps) {
           <Building2 className="h-3.5 w-3.5" />
           <span>{keyword.companyCount}</span>
         </div>
-        <div className="flex items-center gap-1" title="Total Funding">
+        <div className="flex items-center gap-1" title="Funding">
           <Coins className="h-3.5 w-3.5" />
           <span>{formatCompactNumber(keyword.totalFundingUsd)}</span>
         </div>

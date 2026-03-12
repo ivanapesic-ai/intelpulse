@@ -126,7 +126,7 @@ export function MarketIntelligence({
             </div>
             <div className="text-center p-3 rounded-lg bg-muted/50">
               <p className="text-2xl font-bold text-foreground">{formatNumber(displayTotalEmployees)}</p>
-              <p className="text-xs text-muted-foreground">Total Employees</p>
+              <p className="text-xs text-muted-foreground">Employees</p>
             </div>
             <div className="text-center p-3 rounded-lg bg-muted/50">
               <p className="text-2xl font-bold text-foreground">{safe.euCompanies}</p>

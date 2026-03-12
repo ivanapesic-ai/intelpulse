@@ -222,7 +222,7 @@ export default function TechnologyExplorer() {
                   className="h-9 text-sm rounded border border-border bg-background px-3 text-foreground"
                 >
                   <option value="composite">Composite Score</option>
-                  <option value="funding">Total Funding</option>
+                  <option value="funding">Funding</option>
                   <option value="employees">Employees</option>
                   <option value="companies">Company Count</option>
                 </select>
