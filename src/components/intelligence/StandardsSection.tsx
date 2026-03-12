@@ -35,7 +35,7 @@ export function StandardsSection({ keywordId, aliases }: StandardsSectionProps) 
         {sdoStandards.length > 0 && (
           <StandardGroup
             icon={<BookOpen className="h-3.5 w-3.5" />}
-            label="Standards Bodies"
+            label="Applicable Standards"
             standards={sdoStandards}
           />
         )}
