@@ -1,5 +1,5 @@
  import { motion } from "framer-motion";
- import { TrendingUp, Users, Building2, Shield, Target, Zap, Banknote, BarChart3 } from "lucide-react";
+ import { TrendingUp, Users, Building2, Shield, Target, Zap, Coins, BarChart3 } from "lucide-react";
  import { cn } from "@/lib/utils";
  import { formatFundingEur, formatNumber } from "@/types/database";
  
