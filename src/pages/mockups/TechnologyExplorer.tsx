@@ -486,7 +486,7 @@ export default function TechnologyExplorer() {
                       {/* Metrics - use region-aware stats to match cards */}
                       {(() => {
                         const detailStats = getDisplayStats(liveSelectedTech);
-                        const regionLabel = regionFilter === "europe" ? "Funding in Europe" : regionFilter === "usa" ? "US" : "";
+                        const regionLabel = regionFilter === "europe" ? "Europe" : regionFilter === "usa" ? "US" : "";
                         return (
                           <div className="grid grid-cols-2 gap-4">
                             <Card>
