@@ -71,7 +71,7 @@ function SignalCard({
             <div>
               <p className="text-xs text-muted-foreground mb-1">Funding</p>
               <p className="text-lg font-semibold text-foreground">
-                {tech.totalFunding ? `€${(tech.totalFunding / 1e9).toFixed(1)}B` : "–"}
+                {tech.totalFundingEur ? `€${(tech.totalFundingEur / 1e9).toFixed(1)}B` : "–"}
               </p>
               <DeltaBadge value={d?.funding ? Math.round(d.funding / 1e6) : null} suffix="M" />
             </div>
