@@ -28,7 +28,9 @@ interface TechnologyDetailPanelProps {
 
 export function TechnologyDetailPanel({ technology, onClose }: TechnologyDetailPanelProps) {
   const { data: relatedNews, isLoading: newsLoading } = useNewsForKeyword(technology?.keywordId ?? null);
-  
+  const { data: allNews } = useNewsForKeyword(technology?.keywordId ?? null, { limit: 200, deduplicate: false });
+  const [showAllNews, setShowAllNews] = useState(false);
+
   if (!technology) return null;
 
   const challengeConfig = CHALLENGE_LABELS[technology.challengeScore ?? 0];
