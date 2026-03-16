@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, TrendingUp, TrendingDown, Minus, FileText, Coins, Users, Calendar, Building2, Newspaper, ExternalLink, Target, Globe, Tag, Star, RefreshCw } from "lucide-react";
+import { Search, TrendingUp, TrendingDown, Minus, FileText, Coins, Users, Calendar, Building2, Newspaper, ExternalLink, Target, Globe, Tag, Star, RefreshCw, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,7 @@ import { useNewsForKeyword } from "@/hooks/useNews";
 import { formatFundingEur, formatNumber, MATURITY_SCORE_CONFIG, type Technology, type TechnologyKeyword } from "@/types/database";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { isCentralEcosystem } from "@/lib/taxonomy-filters";
 import { StandardsSection } from "@/components/intelligence/StandardsSection";
@@ -119,6 +120,8 @@ export default function TechnologyExplorer() {
 
   // Fetch live RSS news for the selected technology
   const { data: liveNews, isLoading: newsLoading } = useNewsForKeyword(liveSelectedTech?.keywordId ?? null);
+  const { data: allLiveNews } = useNewsForKeyword(liveSelectedTech?.keywordId ?? null, { limit: 200, deduplicate: false });
+  const [showAllNews, setShowAllNews] = useState(false);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -578,10 +581,15 @@ export default function TechnologyExplorer() {
 
                       {/* Recent News - Live RSS Feed */}
                       <Card>
-                        <CardHeader>
+                        <CardHeader className="pb-2">
                           <CardTitle className="text-sm text-foreground flex items-center gap-2">
                             <Newspaper className="h-4 w-4" />
                             Recent News
+                            {allLiveNews && allLiveNews.length > 0 && (
+                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                                {allLiveNews.length}
+                              </Badge>
+                            )}
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -601,7 +609,7 @@ export default function TechnologyExplorer() {
                                   className="flex items-start gap-2 p-2 rounded hover:bg-muted/50 transition-colors group"
                                 >
                                   <ExternalLink className="h-3 w-3 mt-1 text-muted-foreground group-hover:text-primary shrink-0" />
-                                  <div className="min-w-0">
+                                  <div className="min-w-0 flex-1">
                                     <p className="text-sm text-foreground line-clamp-1 group-hover:text-primary">
                                       {news.title}
                                     </p>
@@ -612,10 +620,31 @@ export default function TechnologyExplorer() {
                                       {news.published_at && (
                                         <span>{new Date(news.published_at).toLocaleDateString()}</span>
                                       )}
+                                      {'match_confidence' in news && (
+                                        <Badge variant="outline" className={cn(
+                                          "text-[10px] ml-auto",
+                                          (news as any).match_confidence >= 0.9 ? "border-emerald-500/40 text-emerald-600" :
+                                          (news as any).match_confidence >= 0.7 ? "border-amber-500/40 text-amber-600" :
+                                          "border-muted-foreground/30"
+                                        )}>
+                                          {Math.round((news as any).match_confidence * 100)}%
+                                        </Badge>
+                                      )}
                                     </div>
                                   </div>
                                 </a>
                               ))}
+                              {allLiveNews && allLiveNews.length > 3 && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full text-xs gap-1 text-muted-foreground hover:text-foreground"
+                                  onClick={() => setShowAllNews(true)}
+                                >
+                                  View all {allLiveNews.length} articles
+                                  <ChevronRight className="h-3 w-3" />
+                                </Button>
+                              )}
                             </div>
                           ) : (
                             <div className="text-center py-4">
@@ -629,6 +658,57 @@ export default function TechnologyExplorer() {
                           )}
                         </CardContent>
                       </Card>
+
+                      {/* All News Dialog */}
+                      <Dialog open={showAllNews} onOpenChange={setShowAllNews}>
+                        <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+                          <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                              <Newspaper className="h-4 w-4" />
+                              All News — {liveSelectedTech?.name}
+                              <Badge variant="secondary" className="ml-1">{allLiveNews?.length ?? 0}</Badge>
+                            </DialogTitle>
+                          </DialogHeader>
+                          <ScrollArea className="flex-1 -mx-2 px-2">
+                            <div className="space-y-1">
+                              {allLiveNews?.map((news) => (
+                                <a
+                                  key={news.id}
+                                  href={news.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-start gap-2 p-2 rounded hover:bg-muted/50 transition-colors group"
+                                >
+                                  <ExternalLink className="h-3 w-3 mt-1 text-muted-foreground group-hover:text-primary shrink-0" />
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm text-foreground line-clamp-2 group-hover:text-primary">
+                                      {news.title}
+                                    </p>
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                      <Badge variant="outline" className="text-xs px-1 py-0">
+                                        {news.source_name || "News"}
+                                      </Badge>
+                                      {news.published_at && (
+                                        <span>{new Date(news.published_at).toLocaleDateString()}</span>
+                                      )}
+                                      {'match_confidence' in news && (
+                                        <Badge variant="outline" className={cn(
+                                          "text-[10px] ml-auto",
+                                          (news as any).match_confidence >= 0.9 ? "border-emerald-500/40 text-emerald-600" :
+                                          (news as any).match_confidence >= 0.7 ? "border-amber-500/40 text-amber-600" :
+                                          "border-muted-foreground/30"
+                                        )}>
+                                          {Math.round((news as any).match_confidence * 100)}%
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                </a>
+                              ))}
+                            </div>
+                          </ScrollArea>
+                        </DialogContent>
+                      </Dialog>
 
                       {/* Last Updated */}
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
