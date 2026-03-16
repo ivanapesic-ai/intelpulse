@@ -85,8 +85,18 @@ export function useNewsForKeyword(keywordId: string | null) {
         }
       }
       
-      // Sort by published date
-      return results.sort((a, b) => {
+      // Sort by published date (earliest first for dedup), then deduplicate similar stories
+      results.sort((a, b) => {
+        const dateA = a.published_at ? new Date(a.published_at).getTime() : 0;
+        const dateB = b.published_at ? new Date(b.published_at).getTime() : 0;
+        return dateA - dateB; // earliest first for primary source selection
+      });
+
+      // Deduplicate similar stories — keep earliest (primary source)
+      const deduped = deduplicateStories(results);
+
+      // Re-sort newest first for display
+      return deduped.sort((a, b) => {
         const dateA = a.published_at ? new Date(a.published_at).getTime() : 0;
         const dateB = b.published_at ? new Date(b.published_at).getTime() : 0;
         return dateB - dateA;
