@@ -535,6 +535,141 @@ serve(async (req) => {
         break;
       }
 
+      case "enrich_all_technologies": {
+        if (!admin) throw new Error("Backend configuration missing");
+
+        // Server-side IPC mapping (mirrors frontend KEYWORD_TO_IPC_MAP)
+        const IPC_MAP: Record<string, string[]> = {
+          "lidar": ["G01S17"],
+          "radar": ["G01S13"],
+          "av radar": ["G01S13", "G01S7"],
+          "av camera": ["G06V20", "H04N7", "G06T7"],
+          "camera": ["G06V", "H04N"],
+          "sensor fusion": ["G01S", "G06V", "G05D"],
+          "autonomous driving": ["B60W60", "G05D1", "B60W30"],
+          "adas": ["B60W30", "B60W50", "G08G1"],
+          "path planning": ["G05D1", "G01C21"],
+          "slam": ["G01C21", "G06T7"],
+          "electric vehicle": ["B60L", "B60K1"],
+          "ev battery": ["H01M10", "H01M50", "H01M4"],
+          "battery management": ["H01M10/42", "H02J7", "G01R31"],
+          "battery recycling": ["H01M10/54", "C22B7", "B09B3"],
+          "solid state battery": ["H01M10/052", "H01M10/056"],
+          "ev charging": ["H02J7", "B60L53"],
+          "wireless charging": ["H02J50", "B60L53/12"],
+          "fast charging": ["H02J7/00", "B60L53/20"],
+          "v2x": ["H04W4", "H04L67"],
+          "connected vehicle": ["H04W4", "B60W50"],
+          "vehicle to grid": ["H02J3/38", "B60L55"],
+          "5g automotive": ["H04W4", "H04B7"],
+          "over the air updates": ["G06F8/65", "H04L67"],
+          "automotive ethernet": ["H04L12", "H04L49"],
+          "can bus": ["H04L12/40", "B60R16"],
+          "autosar": ["G06F9/44", "G06F8"],
+          "vehicle os": ["G06F9", "B60W50"],
+          "automotive middleware": ["G06F9/46", "G06F9/54"],
+          "digital twin": ["G06F30", "G06T19"],
+          "simulation": ["G06F30/20", "G06F30/27"],
+          "hd mapping": ["G01C21", "G09B29"],
+          "ai chip": ["G06F17", "G06N3"],
+          "edge computing": ["G06F9/50", "H04L67/10"],
+          "automotive cybersecurity": ["H04L63", "G06F21"],
+          "functional safety": ["G05B9", "B60W50"],
+          "fleet management": ["G06Q10", "G08G1"],
+          "ride hailing": ["G06Q50", "G06Q30"],
+          "micro mobility": ["B62K", "B62M"],
+          "hydrogen fuel cell": ["H01M8", "B60L50/70"],
+          "power electronics": ["H02M", "H02P"],
+          "motor control": ["H02P", "H02K"],
+          "thermal management": ["F01P", "H01M10/60"],
+          "lightweight materials": ["B62D29", "C22C"],
+          "vehicle to everything": ["H04W4", "H04L67"],
+          "smart city": ["G08G1", "H04L67", "G06Q50"],
+          "smart grid": ["H02J3", "H02J13", "G05F1"],
+          "logistics tech": ["G06Q10/08", "G06Q50"],
+          "supply chain management": ["G06Q10", "G06Q30", "G06Q50"],
+          "predictive maintenance": ["G05B23", "G06Q10"],
+          "in vehicle infotainment": ["B60K35", "G06F3"],
+          "hmi automotive": ["B60K35", "G06F3"],
+          "ar hud": ["G02B27/01", "B60K35"],
+          "telematics": ["G07C5", "G08G1"],
+          "vehicle tracking": ["G01S19", "G08G1"],
+          "parking tech": ["G08G1/14", "E04H6"],
+          "traffic management": ["G08G1", "G06Q50"],
+          "autonomous trucking": ["B60W60", "G05D1", "B62D"],
+          "last mile delivery": ["G06Q10/08", "B60L"],
+          "robotaxi": ["B60W60", "G05D1", "G06Q50"],
+          "platooning": ["G08G1/16", "B60W30"],
+          "v2i": ["H04W4/44", "G08G1"],
+        };
+
+        const normalize = (s: string) => s.toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+
+        // Fetch all active keywords
+        const { data: keywords, error: kwErr } = await admin
+          .from("technology_keywords")
+          .select("id, keyword, display_name")
+          .eq("is_active", true);
+
+        if (kwErr) throw kwErr;
+
+        let enriched = 0;
+        let totalPatentsFound = 0;
+        const enrichResults: Array<{ keyword: string; patents: number; score: number }> = [];
+
+        for (const kw of keywords || []) {
+          const normalizedKw = normalize(kw.keyword);
+          const normalizedDn = normalize(kw.display_name);
+
+          // Find matching IPC codes
+          let matchedIpc: string[] = [];
+          for (const [mapKey, codes] of Object.entries(IPC_MAP)) {
+            const normalizedMapKey = normalize(mapKey);
+            if (
+              normalizedKw === normalizedMapKey ||
+              normalizedDn === normalizedMapKey ||
+              normalizedKw.includes(normalizedMapKey) ||
+              normalizedMapKey.includes(normalizedKw) ||
+              normalizedDn.includes(normalizedMapKey) ||
+              normalizedMapKey.includes(normalizedDn)
+            ) {
+              matchedIpc = [...new Set([...matchedIpc, ...codes])];
+            }
+          }
+
+          if (matchedIpc.length === 0) continue;
+
+          let totalPatents = 0;
+          for (const code of matchedIpc.slice(0, 3)) {
+            try {
+              const { totalCount } = await searchByIPC(token, code, 1);
+              totalPatents += totalCount || 0;
+            } catch (e) {
+              console.error(`IPC count failed for ${code}:`, e);
+            }
+            await new Promise((r) => setTimeout(r, 400));
+          }
+
+          const patentsScore = totalPatents >= 100 ? 2 : totalPatents >= 20 ? 1 : 0;
+
+          await admin
+            .from("technologies")
+            .update({
+              total_patents: totalPatents,
+              patents_score: patentsScore,
+              last_updated: new Date().toISOString(),
+            })
+            .eq("keyword_id", kw.id);
+
+          enriched++;
+          totalPatentsFound += totalPatents;
+          enrichResults.push({ keyword: kw.display_name, patents: totalPatents, score: patentsScore });
+        }
+
+        result = { enriched, totalPatentsFound, results: enrichResults };
+        break;
+      }
+
       case "get_details": {
         if (!publicationNumber) {
           throw new Error("publicationNumber required for get_details action");
