@@ -77,13 +77,15 @@ export function useLatestNews(limit = 10) {
 }
 
 // Fetch news for a specific technology keyword
-export function useNewsForKeyword(keywordId: string | null) {
+export function useNewsForKeyword(keywordId: string | null, options?: { limit?: number; deduplicate?: boolean }) {
+  const limit = options?.limit ?? 50;
+  const deduplicate = options?.deduplicate ?? true;
+
   return useQuery({
-    queryKey: ["news", "keyword", keywordId],
+    queryKey: ["news", "keyword", keywordId, limit],
     queryFn: async () => {
       if (!keywordId) return [];
 
-      // Use a direct join query for cleaner data access
       const { data, error } = await supabase
         .from("news_keyword_matches")
         .select(`
@@ -101,11 +103,12 @@ export function useNewsForKeyword(keywordId: string | null) {
         `)
         .eq("keyword_id", keywordId)
         .not("news_items", "is", null)
-        .limit(10);
+        .order("match_confidence", { ascending: false })
+        .limit(limit);
 
       if (error) throw error;
 
-      // Flatten and dedupe by news_id (avoid duplicate entries)
+      // Flatten and dedupe by news_id
       const seen = new Set<string>();
       const results: (NewsItem & { match_confidence: number })[] = [];
       
@@ -127,22 +130,26 @@ export function useNewsForKeyword(keywordId: string | null) {
         }
       }
       
-      // Sort by published date (earliest first for dedup), then deduplicate similar stories
+      // Sort by confidence first, then by date
       results.sort((a, b) => {
+        const confDiff = b.match_confidence - a.match_confidence;
+        if (Math.abs(confDiff) > 0.1) return confDiff;
         const dateA = a.published_at ? new Date(a.published_at).getTime() : 0;
         const dateB = b.published_at ? new Date(b.published_at).getTime() : 0;
-        return dateA - dateB; // earliest first for primary source selection
+        return dateB - dateA;
       });
 
-      // Deduplicate similar stories — keep earliest (primary source)
+      if (!deduplicate) return results;
+
+      // Deduplicate similar stories — keep highest-confidence one
       const deduped = deduplicateStories(results);
 
-      // Re-sort newest first for display
+      // Final sort: newest first for display
       return deduped.sort((a, b) => {
         const dateA = a.published_at ? new Date(a.published_at).getTime() : 0;
         const dateB = b.published_at ? new Date(b.published_at).getTime() : 0;
         return dateB - dateA;
-      }).slice(0, 5);
+      });
     },
     enabled: !!keywordId,
   });

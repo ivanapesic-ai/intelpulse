@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { X, ExternalLink, AlertTriangle, Lightbulb, FileText, Building2, TrendingUp, Users, Zap, Tag, Newspaper } from "lucide-react";
+import { X, ExternalLink, AlertTriangle, Lightbulb, FileText, Building2, TrendingUp, Users, Zap, Tag, Newspaper, ChevronRight } from "lucide-react";
 import { WatchToggle } from "./WatchToggle";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -26,7 +28,9 @@ interface TechnologyDetailPanelProps {
 
 export function TechnologyDetailPanel({ technology, onClose }: TechnologyDetailPanelProps) {
   const { data: relatedNews, isLoading: newsLoading } = useNewsForKeyword(technology?.keywordId ?? null);
-  
+  const { data: allNews } = useNewsForKeyword(technology?.keywordId ?? null, { limit: 200, deduplicate: false });
+  const [showAllNews, setShowAllNews] = useState(false);
+
   if (!technology) return null;
 
   const challengeConfig = CHALLENGE_LABELS[technology.challengeScore ?? 0];
@@ -227,6 +231,11 @@ export function TechnologyDetailPanel({ technology, onClose }: TechnologyDetailP
                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                    <Newspaper className="h-4 w-4" />
                    Related News
+                   {relatedNews && relatedNews.length > 0 && (
+                     <Badge variant="secondary" className="text-[10px] ml-auto">
+                       {allNews?.length ?? relatedNews.length} total
+                     </Badge>
+                   )}
                  </h3>
                 {newsLoading ? (
                   <div className="space-y-2">
@@ -254,10 +263,31 @@ export function TechnologyDetailPanel({ technology, onClose }: TechnologyDetailP
                               <span>{new Date(news.published_at).toLocaleDateString()}</span>
                             </>
                           )}
+                          {'match_confidence' in news && (
+                            <Badge variant="outline" className={cn(
+                              "text-[10px] ml-1",
+                              (news as any).match_confidence >= 0.9 ? "border-emerald-500/40 text-emerald-600" :
+                              (news as any).match_confidence >= 0.7 ? "border-amber-500/40 text-amber-600" :
+                              "border-muted-foreground/30"
+                            )}>
+                              {Math.round((news as any).match_confidence * 100)}%
+                            </Badge>
+                          )}
                           <ExternalLink className="h-3 w-3 ml-auto" />
                         </div>
                       </a>
                     ))}
+                    {(allNews?.length ?? 0) > 5 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full text-xs gap-1 text-muted-foreground hover:text-foreground"
+                        onClick={() => setShowAllNews(true)}
+                      >
+                        View all {allNews?.length} articles
+                        <ChevronRight className="h-3 w-3" />
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground italic">
@@ -265,6 +295,55 @@ export function TechnologyDetailPanel({ technology, onClose }: TechnologyDetailP
                   </p>
                 )}
               </div>
+
+              {/* All News Dialog */}
+              <Dialog open={showAllNews} onOpenChange={setShowAllNews}>
+                <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Newspaper className="h-5 w-5" />
+                      All News — {technology.name}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <ScrollArea className="flex-1 -mx-6 px-6">
+                    <div className="space-y-2 pb-4">
+                      {(allNews ?? []).map((news) => (
+                        <a
+                          key={news.id}
+                          href={news.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block p-3 rounded-lg bg-muted/30 border border-border hover:bg-muted/50 transition-colors"
+                        >
+                          <p className="text-sm font-medium text-foreground line-clamp-2 mb-1">
+                            {news.title}
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                            <span className="font-medium">{news.source_name}</span>
+                            {news.published_at && (
+                              <>
+                                <span>•</span>
+                                <span>{new Date(news.published_at).toLocaleDateString()}</span>
+                              </>
+                            )}
+                            {'match_confidence' in news && (
+                              <Badge variant="outline" className={cn(
+                                "text-[10px]",
+                                (news as any).match_confidence >= 0.9 ? "border-emerald-500/40 text-emerald-600" :
+                                (news as any).match_confidence >= 0.7 ? "border-amber-500/40 text-amber-600" :
+                                "border-muted-foreground/30"
+                              )}>
+                                {Math.round((news as any).match_confidence * 100)}%
+                              </Badge>
+                            )}
+                            <ExternalLink className="h-3 w-3 ml-auto flex-shrink-0" />
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </DialogContent>
+              </Dialog>
            </div>
          </ScrollArea>
  
