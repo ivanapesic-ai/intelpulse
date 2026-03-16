@@ -298,14 +298,14 @@ export function TechnologyDetailPanel({ technology, onClose }: TechnologyDetailP
 
               {/* All News Dialog */}
               <Dialog open={showAllNews} onOpenChange={setShowAllNews}>
-                <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
-                  <DialogHeader>
+                <DialogContent className="max-w-lg max-h-[80vh] flex flex-col overflow-hidden">
+                  <DialogHeader className="shrink-0">
                     <DialogTitle className="flex items-center gap-2">
                       <Newspaper className="h-5 w-5" />
                       All News — {technology.name}
                     </DialogTitle>
                   </DialogHeader>
-                  <ScrollArea className="flex-1 -mx-6 px-6">
+                  <ScrollArea className="flex-1 min-h-0 -mx-6 px-6">
                     <div className="space-y-2 pb-4">
                       {(allNews ?? []).map((news) => (
                         <a
