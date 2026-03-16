@@ -661,15 +661,15 @@ export default function TechnologyExplorer() {
 
                       {/* All News Dialog */}
                       <Dialog open={showAllNews} onOpenChange={setShowAllNews}>
-                        <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
-                          <DialogHeader>
+                        <DialogContent className="max-w-lg max-h-[80vh] flex flex-col overflow-hidden">
+                          <DialogHeader className="shrink-0">
                             <DialogTitle className="flex items-center gap-2">
                               <Newspaper className="h-4 w-4" />
                               All News — {liveSelectedTech?.name}
                               <Badge variant="secondary" className="ml-1">{allLiveNews?.length ?? 0}</Badge>
                             </DialogTitle>
                           </DialogHeader>
-                          <ScrollArea className="flex-1 -mx-2 px-2">
+                          <ScrollArea className="flex-1 min-h-0 -mx-2 px-2">
                             <div className="space-y-1">
                               {allLiveNews?.map((news) => (
                                 <a
