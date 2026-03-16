@@ -2,6 +2,48 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+// Stop words to ignore when comparing titles
+const STOP_WORDS = new Set([
+  "a","an","the","and","or","but","in","on","at","to","for","of","with","by",
+  "from","is","are","was","were","be","been","being","has","have","had","do",
+  "does","did","will","would","shall","should","may","might","can","could",
+  "it","its","this","that","these","those","how","what","which","who","whom",
+  "why","where","when","not","no","nor","so","if","then","than","too","very",
+  "just","about","up","out","over","into","after","before","new","says","said",
+]);
+
+function normalizeTitle(title: string): string[] {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 2 && !STOP_WORDS.has(w));
+}
+
+function titleSimilarity(a: string[], b: string[]): number {
+  if (a.length === 0 || b.length === 0) return 0;
+  const setA = new Set(a);
+  const setB = new Set(b);
+  let overlap = 0;
+  for (const w of setA) if (setB.has(w)) overlap++;
+  const minLen = Math.min(setA.size, setB.size);
+  return minLen > 0 ? overlap / minLen : 0;
+}
+
+/** Keep the earliest article per story cluster (≥50% word overlap). */
+function deduplicateStories<T extends { title: string }>(items: T[]): T[] {
+  const clusters: { words: string[]; item: T }[] = [];
+  for (const item of items) {
+    const words = normalizeTitle(item.title);
+    const match = clusters.find((c) => titleSimilarity(c.words, words) >= 0.5);
+    if (!match) {
+      clusters.push({ words, item });
+    }
+    // else skip — earlier item already claimed this cluster
+  }
+  return clusters.map((c) => c.item);
+}
+
 interface NewsItem {
   id: string;
   title: string;
