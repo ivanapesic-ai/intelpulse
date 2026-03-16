@@ -118,6 +118,14 @@ export const KEYWORD_TO_IPC_MAP: Record<string, string[]> = {
   "traffic management": ["G08G1"],
   "smart mobility": ["G08G1", "B60W"],
   "smart logistics": ["G06Q10", "G08G1", "B65G"],
+  
+  // === Smart Infrastructure ===
+  "smart city": ["G08G1", "H04L67", "G06Q50"],
+  "smart cities": ["G08G1", "H04L67", "G06Q50"],
+  "smart grid": ["H02J3", "H02J13", "G05F1"],
+  "logistics tech": ["G06Q10", "B65G", "G08G1"],
+  "supply chain": ["G06Q10", "G06Q30"],
+  "supply chain management": ["G06Q10", "G06Q30", "G06Q50"],
 };
 
 export function useEpoCompanySearch() {
