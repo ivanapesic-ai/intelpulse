@@ -15,6 +15,7 @@ import { useNewsForKeyword } from "@/hooks/useNews";
 import { formatFundingEur, formatNumber, MATURITY_SCORE_CONFIG, type Technology, type TechnologyKeyword } from "@/types/database";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { isCentralEcosystem } from "@/lib/taxonomy-filters";
 import { StandardsSection } from "@/components/intelligence/StandardsSection";
