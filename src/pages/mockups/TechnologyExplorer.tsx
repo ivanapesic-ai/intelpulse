@@ -119,6 +119,8 @@ export default function TechnologyExplorer() {
 
   // Fetch live RSS news for the selected technology
   const { data: liveNews, isLoading: newsLoading } = useNewsForKeyword(liveSelectedTech?.keywordId ?? null);
+  const { data: allLiveNews } = useNewsForKeyword(liveSelectedTech?.keywordId ?? null, { limit: 200, deduplicate: false });
+  const [showAllNews, setShowAllNews] = useState(false);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
