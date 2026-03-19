@@ -7,9 +7,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// OpenAlex API - completely free, no API key needed
 const OPENALEX_BASE = "https://api.openalex.org";
-const POLITE_EMAIL = "intelligence@pulse11.com"; // polite pool for better rate limits
+const POLITE_EMAIL = "intelligence@pulse11.com";
+
+// OpenAlex domain IDs (highest level of topic hierarchy)
+// Domain 1 = Physical Sciences (includes Engineering, CS, Math, Physics)
+// We restrict to this domain to exclude Health Sciences, Life Sciences, Social Sciences
+const DOMAIN_FILTER = "topics.domain.id:1";
 
 interface OpenAlexWork {
   id: string;
@@ -29,33 +33,44 @@ interface OpenAlexWork {
 interface OpenAlexSearchResult {
   meta: { count: number; per_page: number };
   results: OpenAlexWork[];
-  group_by?: Array<{ key: string; count: number }>;
 }
 
-async function fetchOpenAlex(path: string, params: Record<string, string> = {}): Promise<any> {
+function stripHtml(text: string): string {
+  return text.replace(/<[^>]*>/g, "").trim();
+}
+
+// Build search query from keyword + aliases (no domain context needed — handled by topics filter)
+function buildSearchQuery(keyword: string, displayName: string, aliases: string[] = []): string {
+  const terms = new Set<string>();
+  terms.add(displayName);
+  const cleaned = keyword.replace(/[_-]/g, " ");
+  if (cleaned !== displayName) terms.add(cleaned);
+  for (const alias of aliases) {
+    if (alias) terms.add(alias);
+  }
+  return [...terms].map(t => `"${t}"`).join(" OR ");
+}
+
+// Build filter string (type + domain + optional date range)
+function buildFilter(dateFilter?: string): string {
+  const parts = [`type:article|review|preprint`, DOMAIN_FILTER];
+  if (dateFilter) parts.push(dateFilter);
+  return parts.join(",");
+}
+
+async function fetchOpenAlex(
+  path: string,
+  params: Record<string, string> = {}
+): Promise<any> {
   params["mailto"] = POLITE_EMAIL;
   const url = new URL(`${OPENALEX_BASE}${path}`);
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-  
+
   const response = await fetch(url.toString());
   if (!response.ok) {
     throw new Error(`OpenAlex API error: ${response.status} ${await response.text()}`);
   }
   return response.json();
-}
-
-// Automotive/SDV domain context terms — appended as AND to narrow results
-const DOMAIN_CONTEXT = "automotive OR vehicle OR vehicular OR \"self-driving\" OR \"connected car\" OR mobility";
-
-// Build search filter for a keyword, scoped to automotive domain
-function buildSearchFilter(keyword: string, displayName: string, aliases: string[] = []): string {
-  const terms = [displayName, keyword.replace(/[_-]/g, " ")];
-  for (const alias of aliases) {
-    if (alias && !terms.includes(alias)) terms.push(alias);
-  }
-  // Primary terms OR'd together, then AND'd with domain context
-  const primaryQuery = terms.map(t => `"${t}"`).join(" OR ");
-  return `(${primaryQuery}) AND (${DOMAIN_CONTEXT})`;
 }
 
 serve(async (req) => {
@@ -68,14 +83,12 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Optional: enrich only a specific keyword
     let targetKeywordId: string | null = null;
     try {
       const body = await req.json();
       targetKeywordId = body?.keywordId || null;
     } catch { /* no body */ }
 
-    // Fetch keywords
     let query = supabase
       .from("technology_keywords")
       .select("id, keyword, display_name, aliases")
@@ -106,64 +119,64 @@ serve(async (req) => {
 
     for (const kw of keywords || []) {
       try {
-        const searchQuery = buildSearchFilter(kw.keyword, kw.display_name, kw.aliases || []);
-        console.log(`OpenAlex search: ${kw.display_name} → "${searchQuery.substring(0, 60)}..."`);
+        const searchQuery = buildSearchQuery(kw.keyword, kw.display_name, kw.aliases || []);
+        console.log(`OpenAlex search: ${kw.display_name} → ${searchQuery.substring(0, 80)}`);
 
-        // Use title_and_abstract.search for precision (not broad full-text search)
-        // This ensures we count papers actually ABOUT the topic, not just mentioning it
-        const searchFilter = `type:article|review|preprint,title_and_abstract.search:${searchQuery}`;
-        
-        // 1. Get total works count
+        // 1. Total works count
         const totalResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
-          filter: searchFilter,
+          search: searchQuery,
+          filter: buildFilter(),
           per_page: "1",
         });
-
         const totalWorks = totalResult.meta.count;
 
-        // 2. Get works from last 5 years
+        // 2. Works last 5 years
         const fiveYearResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
-          filter: `${searchFilter},from_publication_date:${currentYear - 5}-01-01`,
+          search: searchQuery,
+          filter: buildFilter(`from_publication_date:${currentYear - 5}-01-01`),
           per_page: "1",
         });
         const worksLast5y = fiveYearResult.meta.count;
 
-        // 3. Get works from last 2 years
+        // 3. Works last 2 years
         const twoYearResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
-          filter: `${searchFilter},from_publication_date:${currentYear - 2}-01-01`,
+          search: searchQuery,
+          filter: buildFilter(`from_publication_date:${currentYear - 2}-01-01`),
           per_page: "1",
         });
         const worksLast2y = twoYearResult.meta.count;
 
-        // 4. Get year-by-year counts for growth rate (last 3 years)
+        // 4. Year-by-year counts for growth rate (last 3 years)
         const yearCounts: Record<number, number> = {};
         for (let y = currentYear - 3; y <= currentYear - 1; y++) {
           const yearResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
-            filter: `${searchFilter},from_publication_date:${y}-01-01,to_publication_date:${y}-12-31`,
+            search: searchQuery,
+            filter: buildFilter(`from_publication_date:${y}-01-01,to_publication_date:${y}-12-31`),
             per_page: "1",
           });
           yearCounts[y] = yearResult.meta.count;
-          await new Promise(r => setTimeout(r, 150)); // Rate limit
+          await new Promise(r => setTimeout(r, 150));
         }
 
-        // Calculate YoY growth rate
         const prevYear = yearCounts[currentYear - 2] || 0;
         const lastYear = yearCounts[currentYear - 1] || 0;
         const growthRate = prevYear > 0 ? ((lastYear - prevYear) / prevYear) * 100 : 0;
 
-        // 5. Get top papers — most RECENT works (last 12 months only)
+        // 5. Top papers — last 12 months, sorted by recency
         const twelveMonthsAgo = new Date();
         twelveMonthsAgo.setFullYear(twelveMonthsAgo.getFullYear() - 1);
         const recentDateStr = twelveMonthsAgo.toISOString().split("T")[0];
+
         const topPapersResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
-          filter: `${searchFilter},from_publication_date:${recentDateStr}`,
+          search: searchQuery,
+          filter: buildFilter(`from_publication_date:${recentDateStr}`),
           sort: "publication_date:desc",
           per_page: "5",
         });
 
         const topPapers = topPapersResult.results.map(w => ({
           id: w.id,
-          title: w.title,
+          title: stripHtml(w.title),
           year: w.publication_year,
           citations: w.cited_by_count,
           doi: w.doi,
@@ -171,10 +184,11 @@ serve(async (req) => {
           authors: w.authorships.slice(0, 3).map(a => a.author.display_name),
         }));
 
-        // Total citations from top papers
-        const citationCount = topPapersResult.results.reduce((sum, w) => sum + (w.cited_by_count || 0), 0);
+        const citationCount = topPapersResult.results.reduce(
+          (sum, w) => sum + (w.cited_by_count || 0), 0
+        );
 
-        // 6. Get top institutions
+        // 6. Top institutions from top papers
         const institutionMap: Record<string, { name: string; country: string; count: number }> = {};
         for (const paper of topPapersResult.results) {
           for (const authorship of paper.authorships) {
@@ -190,7 +204,7 @@ serve(async (req) => {
           .sort((a, b) => b.count - a.count)
           .slice(0, 10);
 
-        // 7. Build co-author network from top papers
+        // 7. Co-author network
         const coAuthorEdges: Record<string, { from: string; to: string; weight: number }> = {};
         for (const paper of topPapersResult.results) {
           const authors = paper.authorships.slice(0, 5).map(a => a.author.display_name);
@@ -205,11 +219,13 @@ serve(async (req) => {
           }
         }
         const coAuthorNetwork = {
-          nodes: [...new Set(topPapersResult.results.flatMap(p => p.authorships.slice(0, 5).map(a => a.author.display_name)))],
+          nodes: [...new Set(topPapersResult.results.flatMap(
+            p => p.authorships.slice(0, 5).map(a => a.author.display_name)
+          ))],
           edges: Object.values(coAuthorEdges).slice(0, 30),
         };
 
-        // Calculate h-index approximation (from top papers)
+        // H-index approximation
         const sortedCitations = topPapersResult.results
           .map(w => w.cited_by_count)
           .sort((a, b) => b - a);
@@ -218,8 +234,7 @@ serve(async (req) => {
           if (sortedCitations[i] >= i + 1) hIndex = i + 1;
         }
 
-        // Scoring: calibrated for title_and_abstract search precision
-        // 0 = emerging (<500 papers/5yr), 1 = moderate (500-5000), 2 = strong (>5000)
+        // Score: 0=emerging, 1=moderate, 2=strong
         const researchScore = worksLast5y >= 5000 ? 2 : worksLast5y >= 500 ? 1 : 0;
 
         // Upsert research signal
@@ -241,7 +256,7 @@ serve(async (req) => {
           }, { onConflict: "keyword_id,snapshot_date" });
 
         if (upsertErr) {
-          console.error(`Failed to upsert research signal for ${kw.display_name}:`, upsertErr);
+          console.error(`Upsert failed for ${kw.display_name}:`, upsertErr);
           results.errors.push(`${kw.display_name}: ${upsertErr.message}`);
           continue;
         }
@@ -271,9 +286,7 @@ serve(async (req) => {
 
         console.log(`✓ ${kw.display_name}: ${totalWorks} total, ${worksLast5y} recent, score=${researchScore}, growth=${growthRate.toFixed(1)}%`);
 
-        // Rate limiting for OpenAlex polite pool
         await new Promise(r => setTimeout(r, 200));
-
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Unknown error";
         console.error(`Error for ${kw.display_name}:`, msg);
