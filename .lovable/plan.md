@@ -1,51 +1,94 @@
 
 
-# Technology Deep-Dive Page (`/technology/:slug`) — Updated Plan
+## Plan: Strict Keyword Taxonomy & Precise Mapping System
 
-## Overview
-A new protected page providing a complete single-technology view organized around the Three Horizons narrative. All data pulled from existing sources.
+### Goal
+Update the keyword system to match the approved taxonomy from the Jan 22 meeting, then implement precise AI mapping that prioritizes Dealroom's actual terminology over semantic associations.
 
-## Note on Patents (H2)
-The patent section uses `useEpoKeywordSearch` as a mutation triggered on mount. This hits the EPO API live each page load. **Accepted for v1** — if rate-limiting or latency becomes an issue, we'll add DB caching with on-demand refresh later.
+### ✅ Phase 1: Sync Keywords to Approved List (COMPLETED)
 
-## Files to Create
+**Added missing CEI-SPHERE keywords:**
+- E-Vehicle (alias for EV)
+- Self-driving vehicles
+- Autonomous Vehicle
+- SES - Solar Energy System
+- SES - Stationary Energy Storage (differentiate from Shared Energy Storage)
 
-### 1. `src/pages/mockups/TechnologyDeepDive.tsx`
-Main page component. Uses `useParams()` to resolve `:slug` → keyword ID, then loads all sections:
+**Added missing Dealroom keywords:**
+- Teledriving
+- Telematics
+- Sustainability Measurement
 
-- **Header**: display_name, composite score badge (emerald ≥1.5 / amber ≥0.5 / red), domain tag from `ontology_concepts`, description
-- **Score Cards**: 5 horizontal cards — Investment, Employees, Patents, TRL, Visibility. Each shows 0-2 color-coded score + raw value (e.g. "€15B", "847 patents")
-- **H1 "Today"**: News via `useNews` filtered by keyword — recent articles with source, date, link
-- **H2 "Tomorrow"**: Patent data via `useEpoKeywordSearch` mutation fired on mount — top applicants, IPC codes, recent patents. *Live API call, no caching for v1.*
-- **H3 "The Future"**: Research via query on `research_signals` — YoY growth, top institutions, publication counts
-- **Company Landscape**: `useCompaniesForTechnology` — table sorted by funding + region donut (EU/US/China/Rest from `hqCountry`)
-- **Related Technologies**: Query `technology_cooccurrences` both directions, render as clickable Link tags to `/technology/:slug`
-- **Document Evidence**: Query `document_technology_mentions` — TRL distribution bars, policy references
+### ✅ Phase 2: Clear Bad Mappings & Improve AI Mapper (COMPLETED)
 
-### 2. `src/hooks/useTechnologyBySlug.ts`
-Queries `technology_keywords` where `keyword = slug`, joins to `technologies` for scores, fetches domain from `ontology_concepts` via `ontology_concept_id`.
+**Cleared existing polluted mappings:**
+```sql
+UPDATE technology_keywords 
+SET dealroom_tags = '{}', 
+    dealroom_industries = '{}', 
+    dealroom_sub_industries = '{}';
+```
 
-### 3. `src/hooks/useCooccurrences.ts`
-Queries `technology_cooccurrences` where `keyword_id_a = id OR keyword_id_b = id`, joins to `technology_keywords` for display names/slugs, sorted by `cooccurrence_count` desc.
+**Rewrote AI mapper with strict rules:**
+- CRITICAL MATCHING RULES enforcing exact domain matches
+- Programmatic blacklist filter blocking generic terms:
+  - artificial intelligence, machine learning, AI/ML
+  - software, cloud computing, automation
+  - IoT, internet of things
+  - robotics (unless keyword is about robots)
+  - sustainability, cleantech, climate tech (too broad)
+  - automotive, transportation, energy (too broad)
 
-### 4. `src/hooks/useDocumentMentions.ts`
-Queries `document_technology_mentions` by `keyword_id`. Computes TRL distribution (low 1-3, mid 4-6, high 7-9). Extracts policy references.
+### ✅ Phase 3: Create Semantic Mapping Suggestions (COMPLETED)
 
-## Files to Modify
+Added SUGGESTED_DEALROOM_MAPPINGS constant in KeywordManager:
 
-### 5. `src/App.tsx`
-Add route `/technology/:slug` → `ProtectedRoute` → `TechnologyDeepDive`
+| CEI Keyword | Suggested Dealroom Terms |
+|-------------|--------------------------|
+| Autonomous Driving | AV Software, AV Simulation, AV Labeling, LiDAR, AV Camera, AV Radar, Teledriving |
+| Battery Electric Vehicle | EV Battery, EV Manufacturing, EV Motor, Electric Mobility, EV Services |
+| Vehicle to Grid | Electric Mobility, EV Charging |
+| Logistics | Logistics Tech, Logistics Robots, Fleet Management, Supply Chain Management |
+| Smart City | Smart Cities |
+| Maritime | Maritime |
+| EV Charging | EV Charging |
+| Supply Chain | Supply Chain Management, Logistics Tech |
 
-### 6. Make technology names clickable
-- `TechnologyDetailPanel.tsx` — wrap name in Link
-- `TechnologyCard.tsx` — wrap name in Link
-- `TechnologyExplorer.tsx` — list items link to deep-dive
-- `Dashboard.tsx` — top technologies link
-- `HeatmapMatrix.tsx` — cell click navigates
+### ✅ Phase 4: Update AdminPanel UI (COMPLETED)
 
-## Technical Notes
-- Region classification: EU = DE/FR/IT/ES/NL/SE/etc., US = "United States", CN = "China", rest = "Other"
-- TRL bar chart: simple Tailwind div-based horizontal bars, no charting library
-- Co-occurrences: `.or()` filter on both `keyword_id_a` and `keyword_id_b`
-- Score badge colors reuse existing `getCompositeScoreLabel` pattern
+Enhanced the Keyword Manager to:
+1. Show Dealroom-source keywords as "verified Dealroom terms" with BadgeCheck icon
+2. Prioritize suggesting Dealroom-source keywords as mappings
+3. Added visual indicator (amber color) for suggested vs. browsed taxonomy mappings
+4. Tooltip explaining what suggested terms are
 
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `supabase/functions/ai-tag-mapper/index.ts` | Rewrote prompts + added blacklist filter |
+| `src/components/admin/KeywordManager.tsx` | Added Dealroom-source keyword suggestions UI |
+| Migration | Added missing keywords + cleared bad mappings |
+
+### Expected Outcome
+
+**Before:**
+```
+Autonomous Driving -> ['autonomous driving', 'automotive', 'artificial intelligence']
+```
+
+**After:**
+```
+Autonomous Driving -> 
+  industries: []
+  sub_industries: ['Autonomous vehicles']
+  tags: ['Autonomous driving', 'ADAS', 'LiDAR', 'AV Software', 'AV Simulation']
+```
+
+This ensures when you search Dealroom for "Autonomous Driving" companies, you get actual autonomous driving companies - not every AI startup in the world.
+
+### Next Steps
+
+1. **Run Auto-map**: Go to Admin Panel > Keyword Management and click "Auto-map Missing" to re-run AI mapping with strict rules
+2. **Review mappings**: Verify the new mappings are domain-specific
+3. **Run Dealroom sync**: After mapping, sync with Dealroom to pull company data with the precise tags

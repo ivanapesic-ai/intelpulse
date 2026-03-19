@@ -1,0 +1,432 @@
+import { useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
+import { ArrowLeft, TrendingUp, Users, FileText, Eye, Cpu, Newspaper, Shield, Microscope, Building2, Globe, ExternalLink, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { PlatformHeader } from "@/components/mockups/PlatformHeader";
+import { useTechnologyBySlug } from "@/hooks/useTechnologyBySlug";
+import { useCompaniesForTechnology } from "@/hooks/useCompaniesForTechnology";
+import { useResearchSignalForKeyword } from "@/hooks/useResearchSignals";
+import { useNewsForKeyword } from "@/hooks/useNews";
+import { useEpoKeywordSearch } from "@/hooks/useEpoPatents";
+import { useCooccurrences } from "@/hooks/useCooccurrences";
+import { useDocumentMentions } from "@/hooks/useDocumentMentions";
+import { formatFundingEur, formatFundingUsd, formatNumber } from "@/types/database";
+import { cn } from "@/lib/utils";
+
+// ── Helpers ──────────────────────────────────────────────
+
+function scoreBadgeColor(score: number) {
+  if (score >= 1.5) return "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
+  if (score >= 0.5) return "bg-amber-500/20 text-amber-400 border-amber-500/30";
+  return "bg-red-500/20 text-red-400 border-red-500/30";
+}
+
+function scoreLabel(score: number) {
+  if (score >= 1.5) return "Strong";
+  if (score >= 0.5) return "Moderate";
+  return "Challenging";
+}
+
+function classifyRegion(country: string | undefined): "EU" | "US" | "China" | "Other" {
+  if (!country) return "Other";
+  const eu = ["Germany","France","Netherlands","Belgium","Spain","Italy","Sweden","Finland","Denmark","Ireland","Austria","Poland","Portugal","Czech Republic","Czechia","Hungary","Romania","Bulgaria","Greece","Slovakia","Croatia","Slovenia","Lithuania","Latvia","Estonia","Luxembourg","Malta","Cyprus","Norway","Switzerland"];
+  if (eu.includes(country)) return "EU";
+  if (country === "United States") return "US";
+  if (country === "China") return "China";
+  return "Other";
+}
+
+const regionColors: Record<string, string> = {
+  EU: "bg-primary",
+  US: "bg-accent-secondary",
+  China: "bg-amber-500",
+  Other: "bg-muted-foreground/50",
+};
+
+// ── Score Card ──────────────────────────────────────────
+
+function ScoreCard({ label, score, raw, icon: Icon }: { label: string; score: number; raw: string; icon: React.ElementType }) {
+  const color = score >= 1.5 ? "text-emerald-400" : score >= 0.5 ? "text-amber-400" : "text-red-400";
+  const bg = score >= 1.5 ? "border-emerald-500/20" : score >= 0.5 ? "border-amber-500/20" : "border-red-500/20";
+  return (
+    <Card className={cn("border", bg)}>
+      <CardContent className="p-4 text-center">
+        <Icon className={cn("h-5 w-5 mx-auto mb-2", color)} />
+        <p className={cn("text-2xl font-bold font-mono", color)}>{score}</p>
+        <p className="text-xs text-muted-foreground mt-1">{label}</p>
+        <p className="text-sm font-medium text-foreground mt-1">{raw}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── TRL Distribution Bars ────────────────────────────────
+
+function TrlBars({ dist }: { dist: { low: number; mid: number; high: number; unknown: number } }) {
+  const total = dist.low + dist.mid + dist.high + dist.unknown || 1;
+  const items = [
+    { label: "TRL 1-3 (Low)", count: dist.low, color: "bg-red-500" },
+    { label: "TRL 4-6 (Mid)", count: dist.mid, color: "bg-amber-500" },
+    { label: "TRL 7-9 (High)", count: dist.high, color: "bg-emerald-500" },
+    { label: "Unknown", count: dist.unknown, color: "bg-muted-foreground/40" },
+  ];
+  return (
+    <div className="space-y-2">
+      {items.map(i => (
+        <div key={i.label} className="flex items-center gap-3">
+          <span className="text-xs text-muted-foreground w-28 shrink-0">{i.label}</span>
+          <div className="flex-1 h-4 rounded bg-muted overflow-hidden">
+            <div className={cn("h-full rounded", i.color)} style={{ width: `${(i.count / total) * 100}%` }} />
+          </div>
+          <span className="text-xs font-mono text-foreground w-8 text-right">{i.count}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Main Page ────────────────────────────────────────────
+
+export default function TechnologyDeepDive() {
+  const { slug } = useParams<{ slug: string }>();
+  const { data: tech, isLoading, error } = useTechnologyBySlug(slug);
+  const { data: companies } = useCompaniesForTechnology(tech?.keywordId);
+  const { data: research } = useResearchSignalForKeyword(tech?.keywordId ?? null);
+  const { data: news } = useNewsForKeyword(tech?.keywordId ?? null, { limit: 10 });
+  const { data: cooccurrences } = useCooccurrences(tech?.keywordId);
+  const { data: docMentions } = useDocumentMentions(tech?.keywordId);
+
+  const patentSearch = useEpoKeywordSearch();
+
+  // Fire patent search on mount (v1 — live API, no caching)
+  useEffect(() => {
+    if (tech?.keyword && !patentSearch.data && !patentSearch.isPending) {
+      patentSearch.mutate(tech.keyword);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tech?.keyword]);
+
+  // Region breakdown
+  const regionCounts = (companies || []).reduce((acc, c) => {
+    const r = classifyRegion(c.hqCountry);
+    acc[r] = (acc[r] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const totalCompanies = companies?.length || 0;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <PlatformHeader />
+        <div className="flex items-center justify-center h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !tech) {
+    return (
+      <div className="min-h-screen bg-background">
+        <PlatformHeader />
+        <div className="container mx-auto px-4 py-16 text-center">
+          <h1 className="text-2xl font-bold text-foreground mb-2">Technology not found</h1>
+          <p className="text-muted-foreground mb-6">No keyword matches "{slug}"</p>
+          <Link to="/explorer">
+            <Button variant="outline"><ArrowLeft className="h-4 w-4 mr-2" /> Back to Explorer</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <PlatformHeader />
+
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Back */}
+        <Link to="/explorer" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
+          <ArrowLeft className="h-4 w-4" /> Back to Explorer
+        </Link>
+
+        {/* ── Header ── */}
+        <div className="mb-8">
+          <div className="flex flex-wrap items-center gap-3 mb-3">
+            <h1 className="text-3xl font-bold text-foreground">{tech.displayName}</h1>
+            <Badge className={cn("text-sm border", scoreBadgeColor(tech.compositeScore))}>
+              {tech.compositeScore.toFixed(2)} — {scoreLabel(tech.compositeScore)}
+            </Badge>
+            {tech.domainName && (
+              <Badge variant="outline" className="text-xs text-primary border-primary/30">
+                {tech.domainName}
+              </Badge>
+            )}
+          </div>
+          {tech.description && (
+            <p className="text-muted-foreground max-w-3xl">{tech.description}</p>
+          )}
+        </div>
+
+        {/* ── Score Cards ── */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-10">
+          <ScoreCard label="Investment" score={tech.investmentScore} raw={formatFundingEur(tech.totalFundingEur)} icon={TrendingUp} />
+          <ScoreCard label="Employees" score={tech.employeesScore} raw={formatNumber(tech.totalEmployees)} icon={Users} />
+          <ScoreCard label="Patents" score={tech.patentsScore} raw={`${tech.totalPatents} patents`} icon={FileText} />
+          <ScoreCard label="TRL" score={tech.trlScore} raw={tech.avgTrlMentioned ? `TRL ${tech.avgTrlMentioned.toFixed(1)}` : "N/A"} icon={Cpu} />
+          <ScoreCard label="Visibility" score={tech.visibilityScore} raw={`${tech.newsMentionCount + tech.documentMentionCount} mentions`} icon={Eye} />
+        </div>
+
+        <Separator className="mb-10" />
+
+        {/* ── Three Horizons ── */}
+        <h2 className="text-xl font-bold text-foreground mb-6">Three Horizons</h2>
+        <div className="grid lg:grid-cols-3 gap-6 mb-10">
+
+          {/* H1 — Today */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Newspaper className="h-4 w-4 text-primary" />
+                Today — News & Market
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 max-h-80 overflow-y-auto">
+              {!news || news.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No recent news</p>
+              ) : (
+                news.map((item: any) => (
+                  <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer" className="block group">
+                    <p className="text-sm text-foreground group-hover:text-primary line-clamp-2">{item.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {item.source_name} · {item.published_at ? new Date(item.published_at).toLocaleDateString() : ""}
+                    </p>
+                  </a>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          {/* H2 — Tomorrow */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Shield className="h-4 w-4 text-amber-400" />
+                Tomorrow — Patents
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 max-h-80 overflow-y-auto">
+              {patentSearch.isPending ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Searching EPO…
+                </div>
+              ) : patentSearch.data ? (
+                <>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Total patents found</span>
+                    <span className="font-mono font-bold text-foreground">{patentSearch.data.totalPatents}</span>
+                  </div>
+                  {patentSearch.data.ipcCodes.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {patentSearch.data.ipcCodes.map((c: string) => (
+                        <Badge key={c} variant="outline" className="text-xs font-mono">{c}</Badge>
+                      ))}
+                    </div>
+                  )}
+                  {patentSearch.data.topApplicants.length > 0 && (
+                    <div className="space-y-1.5 mt-2">
+                      <p className="text-xs text-muted-foreground font-medium">Top Applicants</p>
+                      {patentSearch.data.topApplicants.slice(0, 6).map((a: any) => (
+                        <div key={a.name} className="flex justify-between text-sm">
+                          <span className="text-foreground truncate">{a.name}</span>
+                          <span className="text-muted-foreground font-mono">{a.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">No patent data</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* H3 — The Future */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Microscope className="h-4 w-4 text-emerald-400" />
+                The Future — Research
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 max-h-80 overflow-y-auto">
+              {research ? (
+                <>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Total works</p>
+                      <p className="font-mono font-bold text-foreground">{formatNumber(research.totalWorks)}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">YoY Growth</p>
+                      <p className={cn("font-mono font-bold", research.growthRateYoy > 0 ? "text-emerald-400" : "text-red-400")}>
+                        {research.growthRateYoy > 0 ? "+" : ""}{research.growthRateYoy.toFixed(1)}%
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Citations</p>
+                      <p className="font-mono font-bold text-foreground">{formatNumber(research.citationCount)}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">h-index</p>
+                      <p className="font-mono font-bold text-foreground">{research.hIndex}</p>
+                    </div>
+                  </div>
+                  {research.topInstitutions.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      <p className="text-xs text-muted-foreground font-medium">Top Institutions</p>
+                      {research.topInstitutions.slice(0, 5).map((inst: any, i: number) => (
+                        <p key={i} className="text-sm text-foreground truncate">{inst.name} <span className="text-muted-foreground">({inst.country})</span></p>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">No research signals</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <Separator className="mb-10" />
+
+        {/* ── Company Landscape ── */}
+        <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+          <Building2 className="h-5 w-5 text-primary" /> Company Landscape
+        </h2>
+        <div className="grid lg:grid-cols-3 gap-6 mb-10">
+          <div className="lg:col-span-2">
+            {totalCompanies === 0 ? (
+              <p className="text-sm text-muted-foreground">No companies mapped to this technology.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-left">
+                      <th className="pb-2 text-muted-foreground font-medium">Company</th>
+                      <th className="pb-2 text-muted-foreground font-medium">Funding</th>
+                      <th className="pb-2 text-muted-foreground font-medium">Employees</th>
+                      <th className="pb-2 text-muted-foreground font-medium">HQ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(companies || []).slice(0, 15).map(c => (
+                      <tr key={c.id} className="border-b border-border/50 hover:bg-muted/30">
+                        <td className="py-2 text-foreground font-medium">
+                          {c.website ? (
+                            <a href={c.website} target="_blank" rel="noopener noreferrer" className="hover:text-primary flex items-center gap-1">
+                              {c.name} <ExternalLink className="h-3 w-3" />
+                            </a>
+                          ) : c.name}
+                        </td>
+                        <td className="py-2 font-mono text-foreground">{formatFundingUsd(c.totalFundingUsd)}</td>
+                        <td className="py-2 text-foreground">{c.employeesCount}</td>
+                        <td className="py-2 text-muted-foreground">{c.hqCountry || "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Region Donut (simple bar) */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Globe className="h-4 w-4" /> Region Breakdown
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {totalCompanies === 0 ? (
+                <p className="text-xs text-muted-foreground">No data</p>
+              ) : (
+                ["EU", "US", "China", "Other"].map(r => {
+                  const count = regionCounts[r] || 0;
+                  const pct = totalCompanies > 0 ? (count / totalCompanies) * 100 : 0;
+                  return (
+                    <div key={r} className="flex items-center gap-3">
+                      <span className="text-xs text-muted-foreground w-12">{r}</span>
+                      <div className="flex-1 h-3 rounded bg-muted overflow-hidden">
+                        <div className={cn("h-full rounded", regionColors[r])} style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-xs font-mono text-foreground w-8 text-right">{count}</span>
+                    </div>
+                  );
+                })
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <Separator className="mb-10" />
+
+        {/* ── Related Technologies ── */}
+        {cooccurrences && cooccurrences.length > 0 && (
+          <>
+            <h2 className="text-xl font-bold text-foreground mb-4">Related Technologies</h2>
+            <div className="flex flex-wrap gap-2 mb-10">
+              {cooccurrences.map(co => (
+                <Link key={co.keywordId} to={`/technology/${co.keyword}`}>
+                  <Badge variant="outline" className="cursor-pointer hover:bg-primary/10 hover:border-primary/40 transition-colors">
+                    {co.displayName}
+                    <span className="ml-1.5 text-muted-foreground font-mono text-xs">×{co.count}</span>
+                  </Badge>
+                </Link>
+              ))}
+            </div>
+            <Separator className="mb-10" />
+          </>
+        )}
+
+        {/* ── Document Evidence ── */}
+        {docMentions && docMentions.totalMentions > 0 && (
+          <>
+            <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" /> Document Evidence
+            </h2>
+            <div className="grid md:grid-cols-2 gap-6 mb-10">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">TRL Distribution</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <TrlBars dist={docMentions.trlDistribution} />
+                  <p className="text-xs text-muted-foreground mt-3">{docMentions.totalMentions} total mentions across documents</p>
+                </CardContent>
+              </Card>
+
+              {docMentions.policyReferences.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Policy References</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-1">
+                      {docMentions.policyReferences.map((ref, i) => (
+                        <li key={i} className="text-sm text-foreground">• {ref}</li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

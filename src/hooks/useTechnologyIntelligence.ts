@@ -32,6 +32,8 @@ export interface TechnologyIntelligence {
   createdAt: string;
   // Aliases/synonyms from taxonomy
   aliases?: string[];
+  // Keyword slug for deep-dive links
+  keyword?: string;
   // H11 scores
   avgSemanticScore?: number;
   networkCentrality?: number;
@@ -178,6 +180,7 @@ export function useTechnologyIntelligence() {
           documentDiversity: row.document_diversity ?? undefined,
           // Aliases from taxonomy
           aliases: row.technology_keywords?.aliases || [],
+          keyword: row.technology_keywords?.keyword || undefined,
           // New C-O Matrix fields
           challengeScore: row.challenge_score,
           opportunityScore: row.opportunity_score,

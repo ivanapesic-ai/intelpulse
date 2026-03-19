@@ -18,6 +18,7 @@ import IntelligenceDashboard from "./pages/mockups/IntelligenceDashboard";
 import KnowledgeGraphPage from "./pages/mockups/KnowledgeGraphPage";
 import MySignals from "./pages/mockups/MySignals";
 import HorizonsPage from "./pages/mockups/HorizonsPage";
+import TechnologyDeepDive from "./pages/mockups/TechnologyDeepDive";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,11 @@ const App = () => (
               <Route path="/horizons" element={
                 <ProtectedRoute>
                   <HorizonsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/technology/:slug" element={
+                <ProtectedRoute>
+                  <TechnologyDeepDive />
                 </ProtectedRoute>
               } />
               
