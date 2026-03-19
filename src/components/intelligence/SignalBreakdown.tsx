@@ -148,7 +148,7 @@ export function SignalBreakdown({ technology }: SignalBreakdownProps) {
           Early Indicators of New Technologies
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          3-signal model for technology maturity assessment
+          4-signal model: H1 Now · H2 Emerging · H3 Vision
         </p>
       </CardHeader>
       <CardContent className="space-y-5">
