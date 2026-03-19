@@ -105,10 +105,13 @@ serve(async (req) => {
         const searchQuery = buildSearchFilter(kw.keyword, kw.display_name, kw.aliases || []);
         console.log(`OpenAlex search: ${kw.display_name} → "${searchQuery.substring(0, 60)}..."`);
 
-        // 1. Get total works count + recent works
+        // Use title_and_abstract.search for precision (not broad full-text search)
+        // This ensures we count papers actually ABOUT the topic, not just mentioning it
+        const searchFilter = `type:article|review|preprint,title_and_abstract.search:${searchQuery}`;
+        
+        // 1. Get total works count
         const totalResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
-          search: searchQuery,
-          filter: "type:article|review|preprint",
+          filter: searchFilter,
           per_page: "1",
         });
 
@@ -116,16 +119,14 @@ serve(async (req) => {
 
         // 2. Get works from last 5 years
         const fiveYearResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
-          search: searchQuery,
-          filter: `type:article|review|preprint,from_publication_date:${currentYear - 5}-01-01`,
+          filter: `${searchFilter},from_publication_date:${currentYear - 5}-01-01`,
           per_page: "1",
         });
         const worksLast5y = fiveYearResult.meta.count;
 
         // 3. Get works from last 2 years
         const twoYearResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
-          search: searchQuery,
-          filter: `type:article|review|preprint,from_publication_date:${currentYear - 2}-01-01`,
+          filter: `${searchFilter},from_publication_date:${currentYear - 2}-01-01`,
           per_page: "1",
         });
         const worksLast2y = twoYearResult.meta.count;
