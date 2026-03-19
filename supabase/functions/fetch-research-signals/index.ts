@@ -149,8 +149,7 @@ serve(async (req) => {
 
         // 5. Get top papers (most cited recent works)
         const topPapersResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
-          search: searchQuery,
-          filter: `type:article|review|preprint,from_publication_date:${currentYear - 3}-01-01`,
+          filter: `${searchFilter},from_publication_date:${currentYear - 3}-01-01`,
           sort: "cited_by_count:desc",
           per_page: "5",
         });
