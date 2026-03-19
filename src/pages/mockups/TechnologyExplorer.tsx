@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { Search, TrendingUp, TrendingDown, Minus, FileText, Coins, Users, Calendar, Building2, Newspaper, ExternalLink, Target, Globe, Tag, Star, RefreshCw, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -276,7 +277,9 @@ export default function TechnologyExplorer() {
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
                         {isHub && <Star className="h-4 w-4 text-primary fill-primary/30 shrink-0" />}
-                        <h3 className="font-semibold text-foreground">{tech.name}</h3>
+                        <Link to={`/technology/${tech.keyword?.keyword || tech.keywordId}`} className="font-semibold text-foreground hover:text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+                          {tech.name}
+                        </Link>
                       </div>
                       <div className="flex items-center gap-2">
                         {isHub && (
@@ -380,7 +383,9 @@ export default function TechnologyExplorer() {
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-3">
-                  <span className="text-2xl text-foreground">{liveSelectedTech.name}</span>
+                  <Link to={`/technology/${liveSelectedTech.keyword?.keyword || liveSelectedTech.keywordId}`} className="text-2xl text-foreground hover:text-primary hover:underline">
+                    {liveSelectedTech.name}
+                  </Link>
                   <Badge 
                     variant="outline" 
                     className={`${getScoreColor(liveSelectedTech.compositeScore)} border-current text-lg px-3 py-1`}

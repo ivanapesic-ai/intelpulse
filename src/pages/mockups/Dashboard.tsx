@@ -218,7 +218,7 @@ export default function Dashboard() {
                         <TechnologyCard 
                           technology={tech} 
                           compact 
-                          onClick={() => navigate('/explorer')}
+                          onClick={() => navigate(`/technology/${tech.keyword?.keyword || tech.keywordId}`)}
                         />
                       </div>
                     ))}
