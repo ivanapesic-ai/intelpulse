@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { TrendingUp, TrendingDown, Minus, ChevronRight, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Technology, formatFundingEur, getCompositeScoreLabel } from "@/types/database";
