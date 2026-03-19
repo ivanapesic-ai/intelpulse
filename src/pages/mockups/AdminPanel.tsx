@@ -262,6 +262,11 @@ export default function AdminPanel() {
             {dataSubTab === "news" && (
               <RssNewsPanel />
             )}
+
+            {/* Research Sub-tab */}
+            {dataSubTab === "research" && (
+              <ResearchSignalsPanel />
+            )}
           </TabsContent>
 
           {/* ===== ONTOLOGY TAB ===== */}
