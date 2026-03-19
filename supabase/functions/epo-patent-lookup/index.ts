@@ -249,9 +249,9 @@ async function searchByIPC(
 ): Promise<{ patents: PatentResult[]; totalCount: number }> {
   let query = `ic="${ipcCode}"`;
   if (recentOnly) {
-    const twoYearsAgo = new Date();
-    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-    const dateStr = twoYearsAgo.toISOString().slice(0, 10).replace(/-/g, "");
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    const dateStr = oneYearAgo.toISOString().slice(0, 10).replace(/-/g, "");
     query += ` AND pd>=${dateStr}`;
   }
   const url = `https://ops.epo.org/3.2/rest-services/published-data/search?q=${encodeURIComponent(query)}&Range=1-${maxResults}`;
