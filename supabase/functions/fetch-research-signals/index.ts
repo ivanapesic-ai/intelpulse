@@ -9,7 +9,7 @@ const corsHeaders = {
 
 const OPENALEX_BASE = "https://api.openalex.org";
 const POLITE_EMAIL = "intelligence@pulse11.com";
-const MIN_ALIAS_LENGTH = 3;
+const MIN_ALIAS_LENGTH = 4;
 
 interface OpenAlexWork {
   id: string;
@@ -36,14 +36,34 @@ function stripHtml(text: string): string {
 }
 
 function buildSearchQuery(keyword: string, displayName: string, aliases: string[] = []): string {
-  const terms = new Set<string>();
-  terms.add(displayName);
-  const cleaned = keyword.replace(/[_-]/g, " ");
-  if (cleaned !== displayName) terms.add(cleaned);
+  // Use a case-insensitive set to deduplicate terms
+  const seen = new Set<string>();
+  const terms: string[] = [];
+
+  const addTerm = (t: string) => {
+    const lower = t.toLowerCase().trim();
+    if (lower && !seen.has(lower)) {
+      seen.add(lower);
+      terms.push(t.trim());
+    }
+  };
+
+  // Always include the display name — it's the most meaningful term
+  addTerm(displayName);
+
+  // Skip the raw `keyword` field entirely — it's a slug like "sdv" or "av_software"
+  // that matches unrelated domains (Sparse Dynamic Volume, etc.)
+
   for (const alias of aliases) {
-    if (alias && alias.length >= MIN_ALIAS_LENGTH) terms.add(alias);
+    if (!alias) continue;
+    // Skip short aliases (< 4 chars) — they're ambiguous ("sdv", "ems", "ev")
+    if (alias.length < MIN_ALIAS_LENGTH) continue;
+    // Skip hyphenated slug-format aliases — they're duplicates of the display name
+    if (alias.includes("-")) continue;
+    addTerm(alias);
   }
-  return [...terms].map(t => `"${t}"`).join(" OR ");
+
+  return terms.map(t => `"${t}"`).join(" OR ");
 }
 
 async function fetchOpenAlex(
@@ -97,6 +117,7 @@ serve(async (req) => {
       errors: [] as string[],
       details: [] as Array<{
         keyword: string;
+        searchQuery: string;
         totalWorks: number;
         worksLast5y: number;
         citations: number;
@@ -108,9 +129,10 @@ serve(async (req) => {
     for (const kw of keywords || []) {
       try {
         const searchQuery = buildSearchQuery(kw.keyword, kw.display_name, kw.aliases || []);
-        console.log(`OpenAlex search: ${kw.display_name} → ${searchQuery.substring(0, 80)}`);
+        console.log(`OpenAlex search: ${kw.display_name} → ${searchQuery.substring(0, 120)}`);
 
-        const baseFilter = "type:article|review|preprint";
+        // Base filter: English-language articles/reviews/preprints only
+        const baseFilter = "type:article|review|preprint,language:en";
 
         // 1. Total works count (no year filter)
         const totalResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
@@ -152,11 +174,13 @@ serve(async (req) => {
         const lastYear = yearCounts[currentYear - 1] || 0;
         const growthRate = prevYear > 0 ? ((lastYear - prevYear) / prevYear) * 100 : 0;
 
-        // 5. Top papers — current + previous year, sorted by recency
+        // 5. Top papers — recent years, sorted by RELEVANCE (not date!)
+        // OpenAlex's default sort uses relevance_score when a search query is present.
+        // Sorting by publication_date:desc destroys relevance and surfaces off-topic papers.
         const topPapersResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
           search: searchQuery,
           filter: `${baseFilter},publication_year:${currentYear - 1}-${currentYear}`,
-          sort: "publication_date:desc",
+          // No sort parameter — let OpenAlex rank by relevance
           per_page: "5",
         });
 
@@ -263,6 +287,7 @@ serve(async (req) => {
         results.totalWorks += totalWorks;
         results.details.push({
           keyword: kw.display_name,
+          searchQuery: searchQuery.substring(0, 100),
           totalWorks,
           worksLast5y,
           citations: citationCount,
