@@ -20,7 +20,7 @@ const ringColors: Record<MaturityRing, string> = {
 };
 
 interface TechnologyCardProps {
-  technology: Technology;
+  technology: Technology & { keyword?: { keyword: string } };
   onClick?: () => void;
   compact?: boolean;
 }
