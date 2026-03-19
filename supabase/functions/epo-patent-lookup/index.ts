@@ -659,28 +659,22 @@ serve(async (req) => {
           const normalizedKw = normalize(kw.keyword);
           const normalizedDn = normalize(kw.display_name);
 
-          // Find matching IPC codes
+          // Find matching IPC codes — EXACT match only (no substring matching)
           let matchedIpc: string[] = [];
           for (const [mapKey, codes] of Object.entries(IPC_MAP)) {
             const normalizedMapKey = normalize(mapKey);
-            if (
-              normalizedKw === normalizedMapKey ||
-              normalizedDn === normalizedMapKey ||
-              normalizedKw.includes(normalizedMapKey) ||
-              normalizedMapKey.includes(normalizedKw) ||
-              normalizedDn.includes(normalizedMapKey) ||
-              normalizedMapKey.includes(normalizedDn)
-            ) {
+            if (normalizedKw === normalizedMapKey || normalizedDn === normalizedMapKey) {
               matchedIpc = [...new Set([...matchedIpc, ...codes])];
             }
           }
 
           if (matchedIpc.length === 0) continue;
 
+          // Count recent patents only (last 5 years) for meaningful signal
           let totalPatents = 0;
           for (const code of matchedIpc.slice(0, 3)) {
             try {
-              const { totalCount } = await searchByIPC(token, code, 1);
+              const { totalCount } = await searchByIPC(token, code, 1, true);
               totalPatents += totalCount || 0;
             } catch (e) {
               console.error(`IPC count failed for ${code}:`, e);
@@ -688,7 +682,8 @@ serve(async (req) => {
             await new Promise((r) => setTimeout(r, 400));
           }
 
-          const patentsScore = totalPatents >= 100 ? 2 : totalPatents >= 20 ? 1 : 0;
+          // Adjusted thresholds for subclass-level IPC + recent-only counts
+          const patentsScore = totalPatents >= 500 ? 2 : totalPatents >= 50 ? 1 : 0;
 
           await admin
             .from("technologies")

@@ -211,8 +211,9 @@ serve(async (req) => {
           if (sortedCitations[i] >= i + 1) hIndex = i + 1;
         }
 
-        // Score: 0 = limited (<100 works), 1 = moderate (100-1000), 2 = strong (>1000 recent works)
-        const researchScore = worksLast5y >= 1000 ? 2 : worksLast5y >= 100 ? 1 : 0;
+        // Scoring: calibrated for title_and_abstract search precision
+        // 0 = emerging (<500 papers/5yr), 1 = moderate (500-5000), 2 = strong (>5000)
+        const researchScore = worksLast5y >= 5000 ? 2 : worksLast5y >= 500 ? 1 : 0;
 
         // Upsert research signal
         const { error: upsertErr } = await supabase
