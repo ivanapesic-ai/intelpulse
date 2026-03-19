@@ -1,11 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, TrendingUp, Users, FileText, Eye, Cpu, Newspaper, Shield, Microscope, Building2, Globe, ExternalLink, Loader2 } from "lucide-react";
+import { ArrowLeft, TrendingUp, Users, FileText, Eye, Cpu, Newspaper, Shield, Microscope, Building2, Globe, ExternalLink, Loader2, AlertTriangle, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { PlatformHeader } from "@/components/mockups/PlatformHeader";
+import { SignalBreakdown } from "@/components/intelligence/SignalBreakdown";
 import { useTechnologyBySlug } from "@/hooks/useTechnologyBySlug";
 import { useCompaniesForTechnology } from "@/hooks/useCompaniesForTechnology";
 import { useResearchSignalForKeyword } from "@/hooks/useResearchSignals";
@@ -30,6 +32,8 @@ function scoreLabel(score: number) {
   return "Challenging";
 }
 
+type RegionFilter = "all" | "eu" | "us" | "china";
+
 function classifyRegion(country: string | undefined): "EU" | "US" | "China" | "Other" {
   if (!country) return "Other";
   const eu = ["Germany","France","Netherlands","Belgium","Spain","Italy","Sweden","Finland","Denmark","Ireland","Austria","Poland","Portugal","Czech Republic","Czechia","Hungary","Romania","Bulgaria","Greece","Slovakia","Croatia","Slovenia","Lithuania","Latvia","Estonia","Luxembourg","Malta","Cyprus","Norway","Switzerland"];
@@ -44,6 +48,19 @@ const regionColors: Record<string, string> = {
   US: "bg-accent-secondary",
   China: "bg-amber-500",
   Other: "bg-muted-foreground/50",
+};
+
+// C-O label configs
+const CHALLENGE_LABELS: Record<number, { label: string; color: string; description: string }> = {
+  0: { label: "High Barriers", color: "border-red-500/50 bg-red-500/10", description: "Significant adoption challenges" },
+  1: { label: "Moderate Barriers", color: "border-amber-500/50 bg-amber-500/10", description: "Some challenges to overcome" },
+  2: { label: "Few Barriers", color: "border-emerald-500/50 bg-emerald-500/10", description: "Ready for adoption" },
+};
+
+const OPPORTUNITY_LABELS: Record<number, { label: string; color: string; description: string }> = {
+  0: { label: "Limited Opportunity", color: "border-red-500/50 bg-red-500/10", description: "Niche or saturated market" },
+  1: { label: "Moderate Opportunity", color: "border-amber-500/50 bg-amber-500/10", description: "Growing market potential" },
+  2: { label: "High Opportunity", color: "border-emerald-500/50 bg-emerald-500/10", description: "Strong market potential" },
 };
 
 // ── Score Card ──────────────────────────────────────────
@@ -99,6 +116,8 @@ export default function TechnologyDeepDive() {
   const { data: cooccurrences } = useCooccurrences(tech?.keywordId);
   const { data: docMentions } = useDocumentMentions(tech?.keywordId);
 
+  const [companyRegionFilter, setCompanyRegionFilter] = useState<RegionFilter>("all");
+
   const patentSearch = useEpoKeywordSearch();
 
   // Fire patent search on mount (v1 — live API, no caching)
@@ -109,13 +128,58 @@ export default function TechnologyDeepDive() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tech?.keyword]);
 
-  // Region breakdown
+  // Region breakdown + filtering
   const regionCounts = (companies || []).reduce((acc, c) => {
     const r = classifyRegion(c.hqCountry);
     acc[r] = (acc[r] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
   const totalCompanies = companies?.length || 0;
+
+  const filteredCompanies = useMemo(() => {
+    if (!companies) return [];
+    if (companyRegionFilter === "all") return companies;
+    const regionMap: Record<RegionFilter, string> = { all: "", eu: "EU", us: "US", china: "China" };
+    const target = regionMap[companyRegionFilter];
+    return companies.filter(c => classifyRegion(c.hqCountry) === target);
+  }, [companies, companyRegionFilter]);
+
+  // Build a TechnologyIntelligence-like object for SignalBreakdown
+  const techIntelligence = useMemo(() => {
+    if (!tech) return null;
+    return {
+      id: tech.keywordId,
+      name: tech.displayName,
+      description: tech.description || "",
+      keywordId: tech.keywordId,
+      investmentScore: tech.investmentScore as 0 | 1 | 2,
+      employeesScore: tech.employeesScore as 0 | 1 | 2,
+      trlScore: tech.trlScore as 0 | 1 | 2,
+      visibilityScore: tech.visibilityScore as 0 | 1 | 2,
+      patentsScore: tech.patentsScore as 0 | 1 | 2,
+      euAlignmentScore: 0 as 0 | 1 | 2,
+      compositeScore: tech.compositeScore,
+      trend: tech.trend as any,
+      totalPatents: tech.totalPatents,
+      totalFundingEur: tech.totalFundingEur,
+      totalEmployees: tech.totalEmployees,
+      dealroomCompanyCount: tech.dealroomCompanyCount,
+      documentMentionCount: tech.documentMentionCount,
+      policyMentionCount: 0,
+      avgTrlMentioned: tech.avgTrlMentioned,
+      newsMentionCount: tech.newsMentionCount,
+      researchScore: tech.researchScore as 0 | 1 | 2,
+      recentNews: [],
+      keyPlayers: [],
+      lastUpdated: "",
+      createdAt: "",
+      challengeScore: tech.challengeScore,
+      opportunityScore: tech.opportunityScore,
+      sectorTags: [],
+      marketSignals: {},
+      documentInsights: {},
+    };
+  }, [tech]);
 
   if (isLoading) {
     return (
@@ -142,6 +206,9 @@ export default function TechnologyDeepDive() {
       </div>
     );
   }
+
+  const challengeConfig = CHALLENGE_LABELS[tech.challengeScore ?? 0];
+  const opportunityConfig = OPPORTUNITY_LABELS[tech.opportunityScore ?? 0];
 
   return (
     <div className="min-h-screen bg-background">
@@ -178,6 +245,41 @@ export default function TechnologyDeepDive() {
           <ScoreCard label="Patents" score={tech.patentsScore} raw={`${tech.totalPatents} patents`} icon={FileText} />
           <ScoreCard label="TRL" score={tech.trlScore} raw={tech.avgTrlMentioned ? `TRL ${tech.avgTrlMentioned.toFixed(1)}` : "N/A"} icon={Cpu} />
           <ScoreCard label="Visibility" score={tech.visibilityScore} raw={`${tech.newsMentionCount + tech.documentMentionCount} mentions`} icon={Eye} />
+        </div>
+
+        <Separator className="mb-10" />
+
+        {/* ── Challenge-Opportunity Assessment ── */}
+        <h2 className="text-xl font-bold text-foreground mb-6">Strategic Assessment</h2>
+        <div className="grid lg:grid-cols-2 gap-6 mb-10">
+          {/* C-O Summary */}
+          <div className="grid grid-cols-2 gap-4">
+            <Card className={cn("border-2", challengeConfig?.color || "border-border")}>
+              <CardContent className="p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertTriangle className="h-5 w-5" />
+                  <span className="text-sm font-semibold">Challenge</span>
+                </div>
+                <p className="text-xl font-bold">{challengeConfig?.label || "Not assessed"}</p>
+                <p className="text-xs text-muted-foreground mt-2">{challengeConfig?.description || "Parse documents to assess"}</p>
+              </CardContent>
+            </Card>
+            <Card className={cn("border-2", opportunityConfig?.color || "border-border")}>
+              <CardContent className="p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <Lightbulb className="h-5 w-5" />
+                  <span className="text-sm font-semibold">Opportunity</span>
+                </div>
+                <p className="text-xl font-bold">{opportunityConfig?.label || "Not assessed"}</p>
+                <p className="text-xs text-muted-foreground mt-2">{opportunityConfig?.description || "Parse documents to assess"}</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Signal Breakdown */}
+          {techIntelligence && (
+            <SignalBreakdown technology={techIntelligence as any} />
+          )}
         </div>
 
         <Separator className="mb-10" />
@@ -307,10 +409,32 @@ export default function TechnologyDeepDive() {
         <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
           <Building2 className="h-5 w-5 text-primary" /> Company Landscape
         </h2>
+
+        {/* Region filter for companies */}
+        <div className="flex items-center gap-3 mb-4">
+          <span className="text-sm text-muted-foreground">Region:</span>
+          <ToggleGroup
+            type="single"
+            value={companyRegionFilter}
+            onValueChange={(v) => v && setCompanyRegionFilter(v as RegionFilter)}
+            size="sm"
+          >
+            <ToggleGroupItem value="all" aria-label="All">
+              <Globe className="h-4 w-4 mr-1" /> All
+            </ToggleGroupItem>
+            <ToggleGroupItem value="eu" aria-label="EU">🇪🇺 EU</ToggleGroupItem>
+            <ToggleGroupItem value="us" aria-label="US">🇺🇸 US</ToggleGroupItem>
+            <ToggleGroupItem value="china" aria-label="China">🇨🇳 China</ToggleGroupItem>
+          </ToggleGroup>
+          <span className="text-xs text-muted-foreground ml-auto">
+            {filteredCompanies.length} of {totalCompanies} companies
+          </span>
+        </div>
+
         <div className="grid lg:grid-cols-3 gap-6 mb-10">
           <div className="lg:col-span-2">
-            {totalCompanies === 0 ? (
-              <p className="text-sm text-muted-foreground">No companies mapped to this technology.</p>
+            {filteredCompanies.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No companies {companyRegionFilter !== "all" ? "in this region" : "mapped to this technology"}.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -323,7 +447,7 @@ export default function TechnologyDeepDive() {
                     </tr>
                   </thead>
                   <tbody>
-                    {(companies || []).slice(0, 15).map(c => (
+                    {filteredCompanies.slice(0, 15).map(c => (
                       <tr key={c.id} className="border-b border-border/50 hover:bg-muted/30">
                         <td className="py-2 text-foreground font-medium">
                           {c.website ? (
