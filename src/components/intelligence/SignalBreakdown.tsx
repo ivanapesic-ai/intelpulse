@@ -81,7 +81,7 @@ export function SignalBreakdown({ technology }: SignalBreakdownProps) {
     {
       key: "patents",
       ...SIGNAL_DEFINITIONS.patents,
-      score: technology.totalPatents >= 100 ? 2 : technology.totalPatents >= 20 ? 1 : 0,
+      score: technology.totalPatents >= 2000 ? 2 : technology.totalPatents >= 200 ? 1 : 0,
       maxScore: 2,
       icon: FileText,
       color: "bg-blue-500",

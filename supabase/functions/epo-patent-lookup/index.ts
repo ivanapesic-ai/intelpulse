@@ -240,12 +240,20 @@ async function getPatentDetails(
 }
 
 // Search by IPC code (for technology-level lookups)
+// Uses a 2-year date window for recent-only mode to stay under EPO's 10k result cap
 async function searchByIPC(
   token: string,
   ipcCode: string,
-  maxResults: number = 50
+  maxResults: number = 50,
+  recentOnly: boolean = false
 ): Promise<{ patents: PatentResult[]; totalCount: number }> {
-  const query = `ic="${ipcCode}"`;
+  let query = `ic="${ipcCode}"`;
+  if (recentOnly) {
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    const dateStr = oneYearAgo.toISOString().slice(0, 10).replace(/-/g, "");
+    query += ` AND pd>=${dateStr}`;
+  }
   const url = `https://ops.epo.org/3.2/rest-services/published-data/search?q=${encodeURIComponent(query)}&Range=1-${maxResults}`;
 
   const response = await fetch(url, {
@@ -505,7 +513,7 @@ serve(async (req) => {
 
         for (const code of ipcCodes.slice(0, 3)) {
           try {
-            const { totalCount } = await searchByIPC(token, code, 1);
+            const { totalCount } = await searchByIPC(token, code, 1, true);
             perIpc.push({ ipcCode: code, totalCount });
             totalPatents += totalCount || 0;
           } catch (e) {
@@ -516,7 +524,7 @@ serve(async (req) => {
           await new Promise((r) => setTimeout(r, 400));
         }
 
-        const patentsScore = totalPatents >= 100 ? 2 : totalPatents >= 20 ? 1 : 0;
+        const patentsScore = totalPatents >= 500 ? 2 : totalPatents >= 50 ? 1 : 0;
 
         const { error: updateError } = await admin
           .from("technologies")
@@ -539,99 +547,97 @@ serve(async (req) => {
         if (!admin) throw new Error("Backend configuration missing");
 
         // Server-side IPC mapping (mirrors frontend KEYWORD_TO_IPC_MAP)
+        // IPC codes at SUBCLASS level for automotive-specific precision
+        // Using specific subclass codes (e.g., G01S13/93 for vehicle radar)
+        // instead of broad class codes (G01S13 = ALL radar worldwide)
         const IPC_MAP: Record<string, string[]> = {
-          "lidar": ["G01S17"],
-          "radar": ["G01S13"],
-          "av radar": ["G01S13", "G01S7"],
-          "av camera": ["G06V20", "H04N7", "G06T7"],
-          "camera": ["G06V", "H04N"],
-          "sensor fusion": ["G01S", "G06V", "G05D"],
-          "autonomous driving": ["B60W60", "G05D1", "B60W30"],
-          "adas": ["B60W30", "B60W50", "G08G1"],
-          "path planning": ["G05D1", "G01C21"],
-          "slam": ["G01C21", "G06T7"],
-          "electric vehicle": ["B60L", "B60K1"],
-          "ev battery": ["H01M10", "H01M50", "H01M4"],
-          "battery management": ["H01M10/42", "H02J7", "G01R31"],
-          "battery recycling": ["H01M10/54", "C22B7", "B09B3"],
+          "lidar": ["G01S17/93", "G01S17/89"],       // vehicle lidar specifically
+          "radar": ["G01S13/93"],                      // vehicle radar
+          "av radar": ["G01S13/93", "G01S7/41"],
+          "av camera": ["G06V20/56", "G06V20/58"],     // vehicle-mounted cameras
+          "camera": ["G06V20/56", "H04N7/18"],
+          "sensor fusion": ["G01S13/86", "G05D1/02"],  // multi-sensor fusion for vehicles
+          "autonomous driving": ["B60W60/00", "G05D1/02"],
+          "adas": ["B60W30/00", "B60W50/00"],
+          "path planning": ["G05D1/02", "G01C21/34"],
+          "slam": ["G01C21/20", "G06T7/246"],
+          "electric vehicle": ["B60L50/60", "B60K1/00"],
+          "ev battery": ["H01M10/0525", "H01M50/20"],
+          "battery management": ["H01M10/42", "H02J7/00"],
+          "battery recycling": ["H01M10/54", "C22B7/00"],
           "solid state battery": ["H01M10/052", "H01M10/056"],
-          "ev charging": ["H02J7", "B60L53"],
-          "wireless charging": ["H02J50", "B60L53/12"],
-          "fast charging": ["H02J7/00", "B60L53/20"],
-          "v2x": ["H04W4", "H04L67"],
-          "connected vehicle": ["H04W4", "B60W50"],
-          "vehicle to grid": ["H02J3/38", "B60L55"],
-          "5g automotive": ["H04W4", "H04B7"],
-          "over the air updates": ["G06F8/65", "H04L67"],
-          "automotive ethernet": ["H04L12", "H04L49"],
-          "can bus": ["H04L12/40", "B60R16"],
-          "autosar": ["G06F9/44", "G06F8"],
-          "vehicle os": ["G06F9", "B60W50"],
-          "automotive middleware": ["G06F9/46", "G06F9/54"],
-          "digital twin": ["G06F30", "G06T19"],
+          "ev charging": ["H02J7/00", "B60L53/10"],
+          "wireless charging": ["H02J50/10", "B60L53/12"],
+          "fast charging": ["B60L53/20", "H02J7/02"],
+          "v2x": ["H04W4/46", "H04W4/44"],            // vehicle-specific V2X
+          "connected vehicle": ["H04W4/46", "B60W50/14"],
+          "vehicle to grid": ["H02J3/38", "B60L55/00"],
+          "5g automotive": ["H04W4/46", "H04B7/185"],
+          "over the air updates": ["G06F8/65", "B60W50/04"],
+          "automotive ethernet": ["H04L12/46", "B60R16/023"],
+          "can bus": ["H04L12/40", "B60R16/02"],
+          "autosar": ["G06F9/44", "B60W50/04"],
+          "vehicle os": ["G06F9/4401", "B60W50/04"],
+          "automotive middleware": ["G06F9/46", "B60W50/04"],
+          "digital twin": ["G06F30/20", "G06T19/00"],
           "simulation": ["G06F30/20", "G06F30/27"],
-          "hd mapping": ["G01C21", "G09B29"],
-          "ai chip": ["G06F17", "G06N3"],
+          "hd mapping": ["G01C21/32", "G09B29/00"],
+          "ai chip": ["G06N3/063", "G06F17/16"],
           "edge computing": ["G06F9/50", "H04L67/10"],
-          "automotive cybersecurity": ["H04L63", "G06F21"],
-          "functional safety": ["G05B9", "B60W50"],
-          "fleet management": ["G06Q10", "G08G1"],
-          "ride hailing": ["G06Q50", "G06Q30"],
-          "micro mobility": ["B62K", "B62M"],
-          "hydrogen fuel cell": ["H01M8", "B60L50/70"],
-          "power electronics": ["H02M", "H02P"],
-          "motor control": ["H02P", "H02K"],
-          "thermal management": ["F01P", "H01M10/60"],
-          "lightweight materials": ["B62D29", "C22C"],
-          "vehicle to everything": ["H04W4", "H04L67"],
-          "smart city": ["G08G1", "H04L67", "G06Q50"],
-          "smart grid": ["H02J3", "H02J13", "G05F1"],
-          "logistics tech": ["G06Q10/08", "G06Q50"],
-          "supply chain management": ["G06Q10", "G06Q30", "G06Q50"],
-          "predictive maintenance": ["G05B23", "G06Q10"],
-          "in vehicle infotainment": ["B60K35", "G06F3"],
-          "hmi automotive": ["B60K35", "G06F3"],
-          "ar hud": ["G02B27/01", "B60K35"],
-          "telematics": ["G07C5", "G08G1"],
-          "vehicle tracking": ["G01S19", "G08G1"],
-          "parking tech": ["G08G1/14", "E04H6"],
-          "traffic management": ["G08G1", "G06Q50"],
-          "autonomous trucking": ["B60W60", "G05D1", "B62D"],
-          "last mile delivery": ["G06Q10/08", "B60L"],
-          "robotaxi": ["B60W60", "G05D1", "G06Q50"],
-          "platooning": ["G08G1/16", "B60W30"],
-          "v2i": ["H04W4/44", "G08G1"],
-          // Energy & storage
-          "energy management systems": ["H02J3", "G05F1", "H02J7"],
-          "ems": ["H02J3", "G05F1", "H02J7"],
-          "micro grid": ["H02J3/38", "H02J13"],
-          "renewable energy sources": ["H02S", "F03D", "H02J3"],
-          "residential energy management": ["H02J3", "G05F1", "F24F11"],
-          "self adaptive energy": ["H02J3", "G05B13"],
-          "solar energy system": ["H02S", "H01L31"],
-          "ses solar energy system": ["H02S", "H01L31"],
-          "stationary energy storage": ["H01M10", "H02J3/28"],
-          "ses stationary energy storage": ["H01M10", "H02J3/28"],
-          "shared energy storage": ["H01M10", "H02J3/28", "G06Q50"],
-          "storage battery systems": ["H01M10", "H02J7"],
-          "sbs": ["H01M10", "H02J7"],
-          "mobile energy storage units": ["H01M10", "B60L50"],
-          "mesu": ["H01M10", "B60L50"],
-          "uninterrupted power supply": ["H02J9", "H02J7"],
-          "ups": ["H02J9", "H02J7"],
-          // Vehicles
-          "bidirectional charging": ["H02J3/38", "B60L55", "H02J7"],
-          "ev motor": ["H02K", "B60L50", "H02P"],
-          "ev services": ["B60L53", "G06Q50", "H02J7"],
-          "vehicle safety": ["B60R21", "B60W50", "B60T"],
-          "micromobility": ["B62K", "B62M", "B62J"],
-          // Data & AI
-          "av labeling": ["G06V10", "G06F18", "G06N3"],
-          // Logistics
-          "logistics robots": ["B25J9", "G05D1", "B65G"],
-          // Sustainability
-          "sustainability measurement": ["G06Q50", "G01N"],
-          "smart cities": ["G08G1", "H04L67", "G06Q50"],
+          "automotive cybersecurity": ["H04L63/14", "B60R25/10"],
+          "functional safety": ["G05B9/02", "B60W50/02"],
+          "fleet management": ["G06Q10/06", "G08G1/123"],
+          "ride hailing": ["G06Q50/30", "G06Q30/02"],
+          "micro mobility": ["B62K3/00", "B62M6/00"],
+          "hydrogen fuel cell": ["H01M8/04", "B60L50/70"],
+          "power electronics": ["H02M7/00", "H02P27/00"],
+          "motor control": ["H02P27/04", "H02K7/00"],
+          "thermal management": ["F01P7/16", "H01M10/613"],
+          "lightweight materials": ["B62D29/00", "C22C21/00"],
+          "vehicle to everything": ["H04W4/46", "H04W4/44"],
+          "smart city": ["G08G1/01", "G06Q50/26"],
+          "smart grid": ["H02J13/00", "H02J3/14"],
+          "logistics tech": ["G06Q10/08", "G06Q50/28"],
+          "supply chain management": ["G06Q10/087", "G06Q30/018"],
+          "predictive maintenance": ["G05B23/02", "G06Q10/04"],
+          "in vehicle infotainment": ["B60K35/00", "G06F3/01"],
+          "hmi automotive": ["B60K35/00", "G06F3/01"],
+          "ar hud": ["G02B27/01", "B60K35/00"],
+          "telematics": ["G07C5/08", "G08G1/127"],
+          "vehicle tracking": ["G01S19/13", "G08G1/123"],
+          "parking tech": ["G08G1/14", "E04H6/42"],
+          "traffic management": ["G08G1/01", "G06Q50/30"],
+          "autonomous trucking": ["B60W60/00", "B62D63/04"],
+          "last mile delivery": ["G06Q10/08", "B60L50/60"],
+          "robotaxi": ["B60W60/00", "G06Q50/30"],
+          "platooning": ["G08G1/16", "B60W30/165"],
+          "v2i": ["H04W4/44", "G08G1/09"],
+          "energy management systems": ["H02J3/14", "H02J7/35"],
+          "ems": ["H02J3/14", "H02J7/35"],
+          "micro grid": ["H02J3/38", "H02J13/00"],
+          "renewable energy sources": ["H02S40/00", "F03D9/25"],
+          "residential energy management": ["H02J3/14", "F24F11/46"],
+          "self adaptive energy": ["H02J3/14", "G05B13/02"],
+          "solar energy system": ["H02S20/00", "H01L31/042"],
+          "ses solar energy system": ["H02S20/00", "H01L31/042"],
+          "stationary energy storage": ["H01M10/44", "H02J3/28"],
+          "ses stationary energy storage": ["H01M10/44", "H02J3/28"],
+          "shared energy storage": ["H01M10/44", "H02J3/28"],
+          "storage battery systems": ["H01M10/44", "H02J7/34"],
+          "sbs": ["H01M10/44", "H02J7/34"],
+          "mobile energy storage units": ["H01M10/44", "B60L50/64"],
+          "mesu": ["H01M10/44", "B60L50/64"],
+          "uninterrupted power supply": ["H02J9/06", "H02J7/34"],
+          "ups": ["H02J9/06", "H02J7/34"],
+          "bidirectional charging": ["H02J3/38", "B60L55/00"],
+          "ev motor": ["H02K7/006", "B60L50/51"],
+          "ev services": ["B60L53/30", "G06Q50/06"],
+          "vehicle safety": ["B60R21/01", "B60W50/02"],
+          "micromobility": ["B62K3/00", "B62M6/00"],
+          "av labeling": ["G06V10/776", "G06N3/084"],
+          "logistics robots": ["B25J9/16", "G05D1/02"],
+          "sustainability measurement": ["G06Q50/06", "G01N33/00"],
+          "smart cities": ["G08G1/01", "G06Q50/26"],
         };
 
         const normalize = (s: string) => s.toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
@@ -652,36 +658,31 @@ serve(async (req) => {
           const normalizedKw = normalize(kw.keyword);
           const normalizedDn = normalize(kw.display_name);
 
-          // Find matching IPC codes
+          // Find matching IPC codes — EXACT match only (no substring matching)
           let matchedIpc: string[] = [];
           for (const [mapKey, codes] of Object.entries(IPC_MAP)) {
             const normalizedMapKey = normalize(mapKey);
-            if (
-              normalizedKw === normalizedMapKey ||
-              normalizedDn === normalizedMapKey ||
-              normalizedKw.includes(normalizedMapKey) ||
-              normalizedMapKey.includes(normalizedKw) ||
-              normalizedDn.includes(normalizedMapKey) ||
-              normalizedMapKey.includes(normalizedDn)
-            ) {
+            if (normalizedKw === normalizedMapKey || normalizedDn === normalizedMapKey) {
               matchedIpc = [...new Set([...matchedIpc, ...codes])];
             }
           }
 
           if (matchedIpc.length === 0) continue;
 
+          // Use only the FIRST (most specific) IPC code to avoid inflating by summing broad classes
+          // Date filter: last 1 year to stay under EPO's 10k result cap
           let totalPatents = 0;
-          for (const code of matchedIpc.slice(0, 3)) {
-            try {
-              const { totalCount } = await searchByIPC(token, code, 1);
-              totalPatents += totalCount || 0;
-            } catch (e) {
-              console.error(`IPC count failed for ${code}:`, e);
-            }
-            await new Promise((r) => setTimeout(r, 400));
+          const primaryCode = matchedIpc[0];
+          try {
+            const { totalCount } = await searchByIPC(token, primaryCode, 1, true);
+            totalPatents = totalCount || 0;
+          } catch (e) {
+            console.error(`IPC count failed for ${primaryCode}:`, e);
           }
+          await new Promise((r) => setTimeout(r, 400));
 
-          const patentsScore = totalPatents >= 100 ? 2 : totalPatents >= 20 ? 1 : 0;
+          // Thresholds for 1-year, single-IPC-subclass counts
+          const patentsScore = totalPatents >= 2000 ? 2 : totalPatents >= 200 ? 1 : 0;
 
           await admin
             .from("technologies")
