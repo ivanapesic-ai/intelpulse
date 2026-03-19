@@ -26,25 +26,35 @@ interface SignalBreakdownProps {
   technology: TechnologyIntelligence;
 }
 
-// Tender-aligned 3-signal model
+// Tender-aligned 4-signal model with Horizons
 const SIGNAL_DEFINITIONS = {
   investment: {
     name: "Signal 1: Investment",
+    horizon: "H2",
     indicator: "Investment",
     source: "Market Data",
     description: "Venture capital funding, growth stage, and capital raised by ecosystem companies",
   },
   patents: {
     name: "Signal 2: Patents",
+    horizon: "H2",
     indicator: "Patent – granted? Applied for?",
     source: "PATSTAT / EPO",
     description: "Patent filings, grants, and innovation activity tracked via European Patent Office",
   },
   media: {
     name: "Signal 3: Market Response",
+    horizon: "H1",
     indicator: "Market/media response",
     source: "Tech coverage",
     description: "Document mentions, news coverage, and market visibility from CEI sources",
+  },
+  research: {
+    name: "Signal 4: Research",
+    horizon: "H3",
+    indicator: "Academic research intensity",
+    source: "OpenAlex",
+    description: "Scholarly publications, citation velocity, and research growth from 250M+ academic works",
   },
 };
 
