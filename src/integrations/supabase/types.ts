@@ -3012,6 +3012,7 @@ export type Database = {
           quality_companies_used: number
         }[]
       }
+      recalculate_signal_percentiles: { Args: never; Returns: Json }
       refresh_log_composite_scores: {
         Args: never
         Returns: {

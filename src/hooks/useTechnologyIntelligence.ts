@@ -17,6 +17,7 @@ export interface TechnologyIntelligence {
   compositeScore: number;
   trend: TrendDirection;
   totalPatents: number;
+  patentsScore: MaturityScore;
   totalFundingEur: number;
   totalEmployees: number;
   dealroomCompanyCount: number;
@@ -24,6 +25,7 @@ export interface TechnologyIntelligence {
   policyMentionCount: number;
   avgTrlMentioned: number | null;
   newsMentionCount: number;
+  researchScore: MaturityScore;
   recentNews: NewsItem[];
   keyPlayers: string[];
   lastUpdated: string;
@@ -152,6 +154,7 @@ export function useTechnologyIntelligence() {
           compositeScore: Number(row.composite_score) || 0,
           trend: (row.trend || "stable") as TrendDirection,
           totalPatents: row.total_patents ?? 0,
+          patentsScore: (row.patents_score ?? 0) as MaturityScore,
           totalFundingEur: Number(row.total_funding_eur) || 0,
           totalEmployees: row.total_employees ?? 0,
           dealroomCompanyCount: row.dealroom_company_count ?? 0,
@@ -165,6 +168,7 @@ export function useTechnologyIntelligence() {
           avgTrlMentioned: row.avg_trl_mentioned ? Number(row.avg_trl_mentioned) : null,
           policyMentionCount: row.policy_mention_count ?? 0,
           newsMentionCount: row.news_mention_count ?? 0,
+          researchScore: (row.research_score ?? 0) as MaturityScore,
           recentNews: (Array.isArray(row.recent_news) ? row.recent_news : []) as unknown as NewsItem[],
           avgSemanticScore: row.avg_semantic_score ? Number(row.avg_semantic_score) : undefined,
           networkCentrality: row.network_centrality ? Number(row.network_centrality) : undefined,
@@ -237,6 +241,7 @@ export function useSingleTechnologyIntelligence(keywordId: string | null) {
         compositeScore: Number(row.composite_score) || 0,
         trend: (row.trend || "stable") as TrendDirection,
         totalPatents: row.total_patents ?? 0,
+        patentsScore: (row.patents_score ?? 0) as MaturityScore,
         totalFundingEur: Number(row.total_funding_eur) || 0,
         totalEmployees: row.total_employees ?? 0,
         dealroomCompanyCount: row.dealroom_company_count ?? 0,
@@ -250,6 +255,7 @@ export function useSingleTechnologyIntelligence(keywordId: string | null) {
         avgTrlMentioned: row.avg_trl_mentioned ? Number(row.avg_trl_mentioned) : null,
         policyMentionCount: row.policy_mention_count ?? 0,
         newsMentionCount: row.news_mention_count ?? 0,
+        researchScore: (row.research_score ?? 0) as MaturityScore,
         recentNews: (Array.isArray(row.recent_news) ? row.recent_news : []) as unknown as NewsItem[],
         avgSemanticScore: row.avg_semantic_score ? Number(row.avg_semantic_score) : undefined,
         networkCentrality: row.network_centrality ? Number(row.network_centrality) : undefined,

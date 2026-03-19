@@ -61,7 +61,7 @@ const SIGNAL_DEFINITIONS = {
 export function SignalBreakdown({ technology }: SignalBreakdownProps) {
   const { data: researchSignal } = useResearchSignalForKeyword(technology.keywordId);
 
-  // Calculate signal scores (0-2 scale for internal use)
+  // Use percentile-ranked scores from DB directly (not hardcoded thresholds)
   const signals = [
     {
       key: "investment",
@@ -81,7 +81,7 @@ export function SignalBreakdown({ technology }: SignalBreakdownProps) {
     {
       key: "patents",
       ...SIGNAL_DEFINITIONS.patents,
-      score: technology.totalPatents >= 2000 ? 2 : technology.totalPatents >= 200 ? 1 : 0,
+      score: technology.patentsScore ?? 0,
       maxScore: 2,
       icon: FileText,
       color: "bg-blue-500",
@@ -109,7 +109,7 @@ export function SignalBreakdown({ technology }: SignalBreakdownProps) {
     {
       key: "research",
       ...SIGNAL_DEFINITIONS.research,
-      score: researchSignal?.researchScore ?? 0,
+      score: technology.researchScore ?? researchSignal?.researchScore ?? 0,
       maxScore: 2,
       icon: BookOpen,
       color: "bg-violet-500",
