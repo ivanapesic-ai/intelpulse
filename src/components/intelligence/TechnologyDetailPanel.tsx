@@ -196,8 +196,61 @@ export function TechnologyDetailPanel({ technology, onClose }: TechnologyDetailP
                </div>
              )}
  
-              {/* International Standards */}
-              <StandardsSection keywordId={technology.keywordId} aliases={technology.aliases} />
+               {/* International Standards */}
+               <StandardsSection keywordId={technology.keywordId} aliases={technology.aliases} />
+
+               {/* Research Signal (H3) */}
+               {researchSignal && (
+                 <div>
+                   <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                     <BookOpen className="h-4 w-4 text-violet-500" />
+                     Research Signal (H3 — Vision)
+                     <Badge variant="outline" className="text-[10px] ml-auto">
+                       {researchSignal.researchScore === 2 ? "Strong" : researchSignal.researchScore === 1 ? "Moderate" : "Emerging"}
+                     </Badge>
+                   </h3>
+                   <div className="grid grid-cols-3 gap-2 mb-3">
+                     <div className="text-center p-2 rounded-lg bg-violet-500/10">
+                       <p className="text-sm font-bold text-foreground">
+                         {researchSignal.worksLast5y >= 1_000_000
+                           ? `${(researchSignal.worksLast5y / 1_000_000).toFixed(1)}M`
+                           : researchSignal.worksLast5y >= 1_000
+                           ? `${(researchSignal.worksLast5y / 1_000).toFixed(1)}K`
+                           : researchSignal.worksLast5y}
+                       </p>
+                       <p className="text-[10px] text-muted-foreground">Papers (5yr)</p>
+                     </div>
+                     <div className="text-center p-2 rounded-lg bg-violet-500/10">
+                       <p className="text-sm font-bold text-foreground">{researchSignal.citationCount.toLocaleString()}</p>
+                       <p className="text-[10px] text-muted-foreground">Citations</p>
+                     </div>
+                     <div className="text-center p-2 rounded-lg bg-violet-500/10">
+                       <p className={cn("text-sm font-bold", researchSignal.growthRateYoy >= 0 ? "text-emerald-500" : "text-red-500")}>
+                         {researchSignal.growthRateYoy >= 0 ? "+" : ""}{researchSignal.growthRateYoy}%
+                       </p>
+                       <p className="text-[10px] text-muted-foreground">YoY Growth</p>
+                     </div>
+                   </div>
+                   {/* Top papers */}
+                   {researchSignal.topPapers.length > 0 && (
+                     <div className="space-y-1.5">
+                       {researchSignal.topPapers.slice(0, 3).map((paper, i) => (
+                         <div key={i} className="p-2 rounded bg-muted/30 border border-border">
+                           <p className="text-xs font-medium text-foreground line-clamp-1">{paper.title}</p>
+                           <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-muted-foreground">
+                             <span>{paper.year}</span>
+                             <span>·</span>
+                             <span className="text-blue-500">{paper.citations} cited</span>
+                             {paper.authors[0] && <span>· {paper.authors[0]}</span>}
+                           </div>
+                         </div>
+                       ))}
+                     </div>
+                   )}
+                 </div>
+               )}
+
+               <Separator />
 
               {/* Key Players */}
               {technology.keyPlayers && technology.keyPlayers.length > 0 && (
