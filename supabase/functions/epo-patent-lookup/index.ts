@@ -240,12 +240,21 @@ async function getPatentDetails(
 }
 
 // Search by IPC code (for technology-level lookups)
+// Uses date filter to count only recent patents (last 5 years) for more meaningful signals
 async function searchByIPC(
   token: string,
   ipcCode: string,
-  maxResults: number = 50
+  maxResults: number = 50,
+  recentOnly: boolean = false
 ): Promise<{ patents: PatentResult[]; totalCount: number }> {
-  const query = `ic="${ipcCode}"`;
+  // Use subclass-level query for precision; add date filter for recent-only counts
+  let query = `ic="${ipcCode}"`;
+  if (recentOnly) {
+    const fiveYearsAgo = new Date();
+    fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
+    const dateStr = fiveYearsAgo.toISOString().slice(0, 10).replace(/-/g, "");
+    query += ` AND pd>=${dateStr}`;
+  }
   const url = `https://ops.epo.org/3.2/rest-services/published-data/search?q=${encodeURIComponent(query)}&Range=1-${maxResults}`;
 
   const response = await fetch(url, {
