@@ -31,10 +31,21 @@ export function ResearchSignalsPanel() {
   const handleEnrich = async () => {
     setIsEnriching(true);
     try {
-      const { error } = await supabase.functions.invoke("fetch-research-signals", { body: {} });
+      const { data, error } = await supabase.functions.invoke("fetch-research-signals", { body: {} });
       if (error) throw error;
-      toast.success("Research enrichment started — results will appear shortly");
-      setTimeout(() => refetch(), 5000);
+      if (data?.status === "processing") {
+        toast.success(`Enriching ${data.keywordCount} keywords in the background — refresh in ~2 minutes`);
+        // Poll for results over time
+        const pollInterval = setInterval(() => refetch(), 15000);
+        setTimeout(() => {
+          clearInterval(pollInterval);
+          refetch();
+          setIsEnriching(false);
+        }, 150000); // Stop polling after 2.5 min
+        return;
+      }
+      toast.success("Research enrichment complete");
+      refetch();
     } catch (err) {
       console.error("Research enrichment error:", err);
       toast.error("Failed to start research enrichment");
