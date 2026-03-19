@@ -17,6 +17,7 @@ export interface TechnologyIntelligence {
   compositeScore: number;
   trend: TrendDirection;
   totalPatents: number;
+  patentsScore: MaturityScore;
   totalFundingEur: number;
   totalEmployees: number;
   dealroomCompanyCount: number;
