@@ -1574,6 +1574,86 @@ export type Database = {
         }
         Relationships: []
       }
+      research_signals: {
+        Row: {
+          citation_count: number | null
+          co_author_network: Json | null
+          created_at: string
+          growth_rate_yoy: number | null
+          h_index: number | null
+          id: string
+          keyword_id: string
+          research_score: number | null
+          snapshot_date: string
+          top_institutions: Json | null
+          top_papers: Json | null
+          total_works: number | null
+          works_last_2y: number | null
+          works_last_5y: number | null
+        }
+        Insert: {
+          citation_count?: number | null
+          co_author_network?: Json | null
+          created_at?: string
+          growth_rate_yoy?: number | null
+          h_index?: number | null
+          id?: string
+          keyword_id: string
+          research_score?: number | null
+          snapshot_date?: string
+          top_institutions?: Json | null
+          top_papers?: Json | null
+          total_works?: number | null
+          works_last_2y?: number | null
+          works_last_5y?: number | null
+        }
+        Update: {
+          citation_count?: number | null
+          co_author_network?: Json | null
+          created_at?: string
+          growth_rate_yoy?: number | null
+          h_index?: number | null
+          id?: string
+          keyword_id?: string
+          research_score?: number | null
+          snapshot_date?: string
+          top_institutions?: Json | null
+          top_papers?: Json | null
+          total_works?: number | null
+          works_last_2y?: number | null
+          works_last_5y?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_signals_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "research_signals_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_mapping_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "research_signals_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_overview"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "research_signals_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rss_feed_sources: {
         Row: {
           created_at: string
@@ -1676,10 +1756,14 @@ export type Database = {
           patents_score: number | null
           policy_mention_count: number | null
           recent_news: Json | null
+          research_citations: number | null
+          research_growth_rate: number | null
+          research_score: number | null
           sector_tags: string[] | null
           total_employees: number | null
           total_funding_eur: number | null
           total_patents: number | null
+          total_research_works: number | null
           trend: Database["public"]["Enums"]["trend_direction"] | null
           trl_score: number | null
           visibility_score: number | null
@@ -1714,10 +1798,14 @@ export type Database = {
           patents_score?: number | null
           policy_mention_count?: number | null
           recent_news?: Json | null
+          research_citations?: number | null
+          research_growth_rate?: number | null
+          research_score?: number | null
           sector_tags?: string[] | null
           total_employees?: number | null
           total_funding_eur?: number | null
           total_patents?: number | null
+          total_research_works?: number | null
           trend?: Database["public"]["Enums"]["trend_direction"] | null
           trl_score?: number | null
           visibility_score?: number | null
@@ -1752,10 +1840,14 @@ export type Database = {
           patents_score?: number | null
           policy_mention_count?: number | null
           recent_news?: Json | null
+          research_citations?: number | null
+          research_growth_rate?: number | null
+          research_score?: number | null
           sector_tags?: string[] | null
           total_employees?: number | null
           total_funding_eur?: number | null
           total_patents?: number | null
+          total_research_works?: number | null
           trend?: Database["public"]["Enums"]["trend_direction"] | null
           trl_score?: number | null
           visibility_score?: number | null

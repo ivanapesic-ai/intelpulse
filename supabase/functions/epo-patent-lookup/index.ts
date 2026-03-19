@@ -601,6 +601,37 @@ serve(async (req) => {
           "robotaxi": ["B60W60", "G05D1", "G06Q50"],
           "platooning": ["G08G1/16", "B60W30"],
           "v2i": ["H04W4/44", "G08G1"],
+          // Energy & storage
+          "energy management systems": ["H02J3", "G05F1", "H02J7"],
+          "ems": ["H02J3", "G05F1", "H02J7"],
+          "micro grid": ["H02J3/38", "H02J13"],
+          "renewable energy sources": ["H02S", "F03D", "H02J3"],
+          "residential energy management": ["H02J3", "G05F1", "F24F11"],
+          "self adaptive energy": ["H02J3", "G05B13"],
+          "solar energy system": ["H02S", "H01L31"],
+          "ses solar energy system": ["H02S", "H01L31"],
+          "stationary energy storage": ["H01M10", "H02J3/28"],
+          "ses stationary energy storage": ["H01M10", "H02J3/28"],
+          "shared energy storage": ["H01M10", "H02J3/28", "G06Q50"],
+          "storage battery systems": ["H01M10", "H02J7"],
+          "sbs": ["H01M10", "H02J7"],
+          "mobile energy storage units": ["H01M10", "B60L50"],
+          "mesu": ["H01M10", "B60L50"],
+          "uninterrupted power supply": ["H02J9", "H02J7"],
+          "ups": ["H02J9", "H02J7"],
+          // Vehicles
+          "bidirectional charging": ["H02J3/38", "B60L55", "H02J7"],
+          "ev motor": ["H02K", "B60L50", "H02P"],
+          "ev services": ["B60L53", "G06Q50", "H02J7"],
+          "vehicle safety": ["B60R21", "B60W50", "B60T"],
+          "micromobility": ["B62K", "B62M", "B62J"],
+          // Data & AI
+          "av labeling": ["G06V10", "G06F18", "G06N3"],
+          // Logistics
+          "logistics robots": ["B25J9", "G05D1", "B65G"],
+          // Sustainability
+          "sustainability measurement": ["G06Q50", "G01N"],
+          "smart cities": ["G08G1", "H04L67", "G06Q50"],
         };
 
         const normalize = (s: string) => s.toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
