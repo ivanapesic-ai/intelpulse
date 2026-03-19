@@ -231,10 +231,12 @@ export function TechnologyDetailPanel({ technology, onClose }: TechnologyDetailP
                        <p className="text-[10px] text-muted-foreground">YoY Growth</p>
                      </div>
                    </div>
-                   {/* Top papers */}
-                   {researchSignal.topPapers.length > 0 && (
-                     <div className="space-y-1.5">
-                        {researchSignal.topPapers.slice(0, 5).map((paper, i) => {
+                    <h4 className="text-xs font-semibold flex items-center gap-1.5 text-foreground">
+                      <FileText className="h-3.5 w-3.5" /> Latest Papers
+                    </h4>
+                    {researchSignal.topPapers.length > 0 && (
+                      <div className="space-y-1.5">
+                        {researchSignal.topPapers.slice(0, 3).map((paper, i) => {
                           const paperUrl = paper.doi
                             ? `https://doi.org/${paper.doi.replace("https://doi.org/", "")}`
                             : paper.id?.startsWith("https://openalex.org/")
