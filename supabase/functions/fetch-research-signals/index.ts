@@ -135,8 +135,7 @@ serve(async (req) => {
         const yearCounts: Record<number, number> = {};
         for (let y = currentYear - 3; y <= currentYear - 1; y++) {
           const yearResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
-            search: searchQuery,
-            filter: `type:article|review|preprint,from_publication_date:${y}-01-01,to_publication_date:${y}-12-31`,
+            filter: `${searchFilter},from_publication_date:${y}-01-01,to_publication_date:${y}-12-31`,
             per_page: "1",
           });
           yearCounts[y] = yearResult.meta.count;
