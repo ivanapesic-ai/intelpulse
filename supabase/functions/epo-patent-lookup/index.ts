@@ -514,7 +514,7 @@ serve(async (req) => {
 
         for (const code of ipcCodes.slice(0, 3)) {
           try {
-            const { totalCount } = await searchByIPC(token, code, 1);
+            const { totalCount } = await searchByIPC(token, code, 1, true);
             perIpc.push({ ipcCode: code, totalCount });
             totalPatents += totalCount || 0;
           } catch (e) {
@@ -525,7 +525,7 @@ serve(async (req) => {
           await new Promise((r) => setTimeout(r, 400));
         }
 
-        const patentsScore = totalPatents >= 100 ? 2 : totalPatents >= 20 ? 1 : 0;
+        const patentsScore = totalPatents >= 500 ? 2 : totalPatents >= 50 ? 1 : 0;
 
         const { error: updateError } = await admin
           .from("technologies")
