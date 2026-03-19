@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Database, FileText, Globe, Network, Layers, Upload, CheckCircle, FileSpreadsheet, BarChart, RefreshCw, Zap, Rss } from "lucide-react";
+import { ArrowLeft, Database, FileText, Globe, Network, Layers, Upload, CheckCircle, FileSpreadsheet, BarChart, RefreshCw, Zap, Rss, BookOpen } from "lucide-react";
 import { useDataPipelineSync } from "@/hooks/useDataPipeline";
 import { useAdminDataSync } from "@/hooks/useDataSync";
 import { Link } from "react-router-dom";
