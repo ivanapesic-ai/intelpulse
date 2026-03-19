@@ -255,6 +255,7 @@ export function useSingleTechnologyIntelligence(keywordId: string | null) {
         avgTrlMentioned: row.avg_trl_mentioned ? Number(row.avg_trl_mentioned) : null,
         policyMentionCount: row.policy_mention_count ?? 0,
         newsMentionCount: row.news_mention_count ?? 0,
+        researchScore: (row.research_score ?? 0) as MaturityScore,
         recentNews: (Array.isArray(row.recent_news) ? row.recent_news : []) as unknown as NewsItem[],
         avgSemanticScore: row.avg_semantic_score ? Number(row.avg_semantic_score) : undefined,
         networkCentrality: row.network_centrality ? Number(row.network_centrality) : undefined,
