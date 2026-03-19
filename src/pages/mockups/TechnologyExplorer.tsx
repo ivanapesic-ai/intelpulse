@@ -1,25 +1,18 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Search, TrendingUp, TrendingDown, Minus, FileText, Coins, Users, Calendar, Building2, Newspaper, ExternalLink, Target, Globe, Tag, Star, RefreshCw, ChevronRight } from "lucide-react";
+import { Search, TrendingUp, TrendingDown, Minus, Coins, Users, Building2, Globe, Star, RefreshCw, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { PlatformHeader } from "@/components/mockups/PlatformHeader";
-import { MarketIntelligence } from "@/components/mockups/MarketIntelligence";
 import { useTechnologies } from "@/hooks/useTechnologies";
 import { useTechnologyRegionStats, getRegionStats } from "@/hooks/useTechnologyRegionStats";
-import { useNewsForKeyword } from "@/hooks/useNews";
 import { formatFundingEur, formatNumber, MATURITY_SCORE_CONFIG, type Technology, type TechnologyKeyword } from "@/types/database";
-import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from "recharts";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { isCentralEcosystem } from "@/lib/taxonomy-filters";
-import { StandardsSection } from "@/components/intelligence/StandardsSection";
 
 type SortOption = "composite" | "funding" | "employees" | "companies";
 type RegionFilter = "all" | "europe" | "usa";
@@ -48,23 +41,17 @@ export default function TechnologyExplorer() {
 
   const isFetching = isRefreshing || isFetchingTechnologies || isFetchingRegionStats;
 
-  // Helper to get display values based on region filter
   const getDisplayStats = (tech: Technology) => {
-    // "all" in UI is "Both" (Europe + USA). Use aggregated region stats when available.
     if (regionFilter === "all") {
       if (regionStats) {
         return getRegionStats(regionStats, tech.keywordId, "all");
       }
-
-      // Fallback while region stats are loading
       return {
         companyCount: tech.dealroomCompanyCount,
         funding: tech.totalFundingEur,
         employees: tech.totalEmployees,
       };
     }
-
-    // Region-specific views come from per-company aggregation
     return getRegionStats(regionStats, tech.keywordId, regionFilter);
   };
 
@@ -77,12 +64,10 @@ export default function TechnologyExplorer() {
           tech.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           tech.description.toLowerCase().includes(searchQuery.toLowerCase());
         
-        // Hide technologies with zero companies globally
         if (tech.dealroomCompanyCount === 0 && !tech.totalFundingEur) {
           return false;
         }
         
-        // Always filter by currently displayed regional scope once stats are loaded
         if (regionStats) {
           const stats = getRegionStats(regionStats, tech.keywordId, regionFilter);
           if (stats.companyCount === 0) return false;
@@ -112,17 +97,10 @@ export default function TechnologyExplorer() {
     setDetailOpen(true);
   };
 
-  // Get LIVE data for the selected technology from the query results
-  // This ensures the dialog always shows current data, not a stale snapshot
   const liveSelectedTech = useMemo(() => {
     if (!selectedTech || !technologies) return selectedTech;
     return technologies.find(t => t.id === selectedTech.id) || selectedTech;
   }, [selectedTech, technologies]);
-
-  // Fetch live RSS news for the selected technology
-  const { data: liveNews, isLoading: newsLoading } = useNewsForKeyword(liveSelectedTech?.keywordId ?? null);
-  const { data: allLiveNews } = useNewsForKeyword(liveSelectedTech?.keywordId ?? null, { limit: 200, deduplicate: false });
-  const [showAllNews, setShowAllNews] = useState(false);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -133,25 +111,10 @@ export default function TechnologyExplorer() {
     }
   };
 
-  // 3-Dimension scoring: Investment, Employees, TRL
-  const radarData = liveSelectedTech
-    ? [
-        { dimension: "Investment", value: liveSelectedTech.investmentScore, fullMark: 2 },
-        { dimension: "Employees", value: liveSelectedTech.employeesScore, fullMark: 2 },
-        { dimension: "TRL", value: liveSelectedTech.trlScore, fullMark: 2 },
-      ]
-    : [];
-
   const getScoreColor = (score: number) => {
     if (score >= 1.5) return "text-emerald-500";
     if (score >= 0.5) return "text-amber-500";
     return "text-red-500";
-  };
-
-  const getScoreBgColor = (score: number) => {
-    if (score >= 1.5) return "bg-emerald-500";
-    if (score >= 0.5) return "bg-amber-500";
-    return "bg-red-500";
   };
 
   return (
@@ -246,9 +209,9 @@ export default function TechnologyExplorer() {
             {[...Array(6)].map((_, i) => (
               <Card key={i}>
                 <CardContent className="pt-6">
-                  <Skeleton className="h-6 w-3/4 mb-4" />
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-2/3" />
+                  <div className="h-6 w-3/4 mb-4 bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-full mb-2 bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-2/3 bg-muted animate-pulse rounded" />
                 </CardContent>
               </Card>
             ))}
@@ -376,383 +339,74 @@ export default function TechnologyExplorer() {
         )}
       </div>
 
-      {/* Detail Dialog */}
+      {/* Compact Detail Dialog */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-md">
           {liveSelectedTech && (
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-3">
-                  <Link to={`/technology/${liveSelectedTech.keyword?.keyword || liveSelectedTech.keywordId}`} className="text-2xl text-foreground hover:text-primary hover:underline">
-                    {liveSelectedTech.name}
-                  </Link>
+                  <span className="text-xl text-foreground">{liveSelectedTech.name}</span>
                   <Badge 
                     variant="outline" 
-                    className={`${getScoreColor(liveSelectedTech.compositeScore)} border-current text-lg px-3 py-1`}
+                    className={`${getScoreColor(liveSelectedTech.compositeScore)} border-current`}
                   >
                     {liveSelectedTech.compositeScore.toFixed(2)}/2
                   </Badge>
                 </DialogTitle>
               </DialogHeader>
 
-              <Tabs defaultValue="overview" className="mt-4">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="market-intel" className="flex items-center gap-1.5">
-                    <Target className="h-3.5 w-3.5" />
-                    Market Intelligence
-                  </TabsTrigger>
-                </TabsList>
+              <div className="space-y-4 mt-2">
+                {liveSelectedTech.description && (
+                  <p className="text-sm text-muted-foreground line-clamp-3">{liveSelectedTech.description}</p>
+                )}
 
-                <TabsContent value="overview" className="mt-4">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {/* Left Column */}
-                    <div className="space-y-6">
-                      <div>
-                        {/* Show description if exists, otherwise show alias explanation */}
-                        {liveSelectedTech.description ? (
-                          <p className="text-muted-foreground mb-3">{liveSelectedTech.description}</p>
-                        ) : liveSelectedTech.keyword?.aliases && liveSelectedTech.keyword.aliases.length > 0 ? (
-                          <div className="flex items-start gap-2 mb-3 p-3 rounded-lg bg-muted/50 border border-border">
-                            <Tag className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                            <p className="text-sm text-muted-foreground">
-                              <span className="font-medium text-foreground">Company metrics include: </span>
-                              {liveSelectedTech.keyword.aliases.slice(0, 5).join(", ")}
-                              {liveSelectedTech.keyword.aliases.length > 5 && ` +${liveSelectedTech.keyword.aliases.length - 5} more`}
-                            </p>
-                          </div>
-                        ) : null}
-                        
-                        {/* If has description AND aliases, show aliases as secondary info */}
-                        {liveSelectedTech.description && liveSelectedTech.keyword?.aliases && liveSelectedTech.keyword.aliases.length > 0 && (
-                          <div className="flex items-start gap-2 mb-3 p-3 rounded-lg bg-muted/50 border border-border">
-                            <Tag className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                            <p className="text-sm text-muted-foreground">
-                              <span className="font-medium text-foreground">Company metrics include: </span>
-                              {liveSelectedTech.keyword.aliases.slice(0, 5).join(", ")}
-                              {liveSelectedTech.keyword.aliases.length > 5 && ` +${liveSelectedTech.keyword.aliases.length - 5} more`}
-                            </p>
-                          </div>
-                        )}
-                        
-                      </div>
-
-                      {/* Radar Chart */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-sm text-foreground">Score Breakdown (0-2 Scale)</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="h-48">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <RadarChart data={radarData}>
-                                <PolarGrid stroke="hsl(var(--border))" />
-                                <PolarAngleAxis dataKey="dimension" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                                <PolarRadiusAxis domain={[0, 2]} tick={false} axisLine={false} />
-                                <Radar name="Score" dataKey="value" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
-                              </RadarChart>
-                            </ResponsiveContainer>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* International Standards */}
-                      <Card>
-                        <CardContent className="pt-4">
-                          <StandardsSection 
-                            keywordId={liveSelectedTech.keywordId} 
-                            aliases={liveSelectedTech.keyword?.aliases} 
-                          />
-                        </CardContent>
-                      </Card>
-
-                      {/* Key Players */}
-                      {liveSelectedTech.keyPlayers && liveSelectedTech.keyPlayers.length > 0 && (
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="text-sm text-foreground flex items-center gap-2">
-                              <Users className="h-4 w-4" />
-                              Key Players
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="flex flex-wrap gap-2">
-                              {liveSelectedTech.keyPlayers.map((player) => (
-                                <Badge key={player} variant="secondary">
-                                  {player}
-                                </Badge>
-                              ))}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
-                    </div>
-
-                    {/* Right Column */}
-                    <div className="space-y-6">
-                      {/* Metrics - use region-aware stats to match cards */}
-                      {(() => {
-                        const detailStats = getDisplayStats(liveSelectedTech);
-                        const regionLabel = regionFilter === "europe" ? "Europe" : regionFilter === "usa" ? "US" : "";
-                        return (
-                          <div className="grid grid-cols-2 gap-4">
-                            <Card>
-                              <CardContent className="pt-4">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-sm text-muted-foreground">{regionLabel ? `${regionLabel} Companies` : "Companies"}</span>
-                                </div>
-                                <p className="text-2xl font-bold text-foreground">{detailStats.companyCount}</p>
-                              </CardContent>
-                            </Card>
-                            <Card>
-                              <CardContent className="pt-4">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <Coins className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-sm text-muted-foreground">{regionLabel ? `Funding in ${regionLabel}` : "Funding"}</span>
-                                </div>
-                                <p className="text-2xl font-bold text-foreground">{formatFundingEur(detailStats.funding)}</p>
-                              </CardContent>
-                            </Card>
-                            <Card>
-                              <CardContent className="pt-4">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <Users className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-sm text-muted-foreground">{regionLabel ? `${regionLabel} Employees` : "Employees"}</span>
-                                </div>
-                                <p className="text-2xl font-bold text-foreground">{formatNumber(detailStats.employees)}</p>
-                              </CardContent>
-                            </Card>
-                            <Card>
-                              <CardContent className="pt-4">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <FileText className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-sm text-muted-foreground">Patents</span>
-                                </div>
-                                {liveSelectedTech.totalPatents > 0 ? (
-                                  <p className="text-2xl font-bold text-foreground">{formatNumber(liveSelectedTech.totalPatents)}</p>
-                                ) : (
-                                  <p className="text-sm text-muted-foreground italic">No data</p>
-                                )}
-                                <p className="text-xs text-muted-foreground">Patent count</p>
-                              </CardContent>
-                            </Card>
-                          </div>
-                        );
-                      })()}
-
-                      {/* Maturity Scores */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-sm text-foreground">Maturity Assessment (0-2 Scale)</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-3">
-                            {[
-                              { label: "Investment", score: liveSelectedTech.investmentScore, tooltip: "Funding signals" },
-                              { label: "Employees", score: liveSelectedTech.employeesScore, tooltip: "Employee data" },
-                              { label: "TRL (Readiness)", score: liveSelectedTech.trlScore, tooltip: liveSelectedTech.avgTrlMentioned ? `Avg TRL ${liveSelectedTech.avgTrlMentioned.toFixed(1)}` : "No TRL data" },
-                            ].map((item) => {
-                              const config = MATURITY_SCORE_CONFIG[item.score as 0|1|2];
-                              return (
-                                <div key={item.label} className="flex items-center justify-between" title={item.tooltip}>
-                                  <span className="text-sm text-muted-foreground">{item.label}</span>
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                                      <div 
-                                        className={`h-full ${getScoreBgColor(item.score)}`}
-                                        style={{ width: `${(item.score / 2) * 100}%` }}
-                                      />
-                                    </div>
-                                    <Badge variant="outline" className={`${config?.color || ""} min-w-[80px] justify-center`}>
-                                      {config?.label || `Score ${item.score}`}
-                                    </Badge>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                          <div className="flex items-center justify-between text-xs text-muted-foreground pt-3 border-t border-border">
-                            <span>Visibility: {liveSelectedTech.documentMentionCount} doc mentions</span>
-                            {liveSelectedTech.newsMentionCount > 0 && (
-                              <span className="flex items-center gap-1">
-                                <Newspaper className="h-3 w-3" />
-                                {liveSelectedTech.newsMentionCount} news
-                              </span>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* Recent News - Live RSS Feed */}
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm text-foreground flex items-center gap-2">
-                            <Newspaper className="h-4 w-4" />
-                            Recent News
-                            {allLiveNews && allLiveNews.length > 0 && (
-                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                                {allLiveNews.length}
-                              </Badge>
-                            )}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          {newsLoading ? (
-                            <div className="space-y-2">
-                              <Skeleton className="h-12 w-full" />
-                              <Skeleton className="h-12 w-full" />
-                            </div>
-                          ) : liveNews && liveNews.length > 0 ? (
-                            <div className="space-y-2">
-                              {liveNews.slice(0, 3).map((news) => (
-                                <a
-                                  key={news.id}
-                                  href={news.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-start gap-2 p-2 rounded hover:bg-muted/50 transition-colors group"
-                                >
-                                  <ExternalLink className="h-3 w-3 mt-1 text-muted-foreground group-hover:text-primary shrink-0" />
-                                  <div className="min-w-0 flex-1">
-                                    <p className="text-sm text-foreground line-clamp-1 group-hover:text-primary">
-                                      {news.title}
-                                    </p>
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                      <Badge variant="outline" className="text-xs px-1 py-0">
-                                        {news.source_name || "News"}
-                                      </Badge>
-                                      {news.published_at && (
-                                        <span>{new Date(news.published_at).toLocaleDateString()}</span>
-                                      )}
-                                      {'match_confidence' in news && (
-                                        <Badge variant="outline" className={cn(
-                                          "text-[10px] ml-auto",
-                                          (news as any).match_confidence >= 0.9 ? "border-emerald-500/40 text-emerald-600" :
-                                          (news as any).match_confidence >= 0.7 ? "border-amber-500/40 text-amber-600" :
-                                          "border-muted-foreground/30"
-                                        )}>
-                                          {Math.round((news as any).match_confidence * 100)}%
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </div>
-                                </a>
-                              ))}
-                              {allLiveNews && allLiveNews.length > 3 && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="w-full text-xs gap-1 text-muted-foreground hover:text-foreground"
-                                  onClick={() => setShowAllNews(true)}
-                                >
-                                  View all {allLiveNews.length} articles
-                                  <ChevronRight className="h-3 w-3" />
-                                </Button>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="text-center py-4">
-                              <p className="text-sm text-muted-foreground">
-                                No news linked yet
-                              </p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Fetch RSS feeds from Admin panel
-                              </p>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-
-                      {/* All News Dialog */}
-                      <Dialog open={showAllNews} onOpenChange={setShowAllNews}>
-                        <DialogContent className="max-w-lg max-h-[80vh] flex flex-col overflow-hidden">
-                          <DialogHeader className="shrink-0">
-                            <DialogTitle className="flex items-center gap-2">
-                              <Newspaper className="h-4 w-4" />
-                              All News — {liveSelectedTech?.name}
-                              <Badge variant="secondary" className="ml-1">{allLiveNews?.length ?? 0}</Badge>
-                            </DialogTitle>
-                          </DialogHeader>
-                          <ScrollArea className="flex-1 min-h-0 -mx-2 px-2">
-                            <div className="space-y-1">
-                              {allLiveNews?.map((news) => (
-                                <a
-                                  key={news.id}
-                                  href={news.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-start gap-2 p-2 rounded hover:bg-muted/50 transition-colors group"
-                                >
-                                  <ExternalLink className="h-3 w-3 mt-1 text-muted-foreground group-hover:text-primary shrink-0" />
-                                  <div className="min-w-0 flex-1">
-                                    <p className="text-sm text-foreground line-clamp-2 group-hover:text-primary">
-                                      {news.title}
-                                    </p>
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                      <Badge variant="outline" className="text-xs px-1 py-0">
-                                        {news.source_name || "News"}
-                                      </Badge>
-                                      {news.published_at && (
-                                        <span>{new Date(news.published_at).toLocaleDateString()}</span>
-                                      )}
-                                      {'match_confidence' in news && (
-                                        <Badge variant="outline" className={cn(
-                                          "text-[10px] ml-auto",
-                                          (news as any).match_confidence >= 0.9 ? "border-emerald-500/40 text-emerald-600" :
-                                          (news as any).match_confidence >= 0.7 ? "border-amber-500/40 text-amber-600" :
-                                          "border-muted-foreground/30"
-                                        )}>
-                                          {Math.round((news as any).match_confidence * 100)}%
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </div>
-                                </a>
-                              ))}
-                            </div>
-                          </ScrollArea>
-                        </DialogContent>
-                      </Dialog>
-
-                      {/* Last Updated */}
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          Last updated: {liveSelectedTech.lastUpdated ? new Date(liveSelectedTech.lastUpdated).toLocaleDateString() : "N/A"}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          Trend:{" "}
-                          {liveSelectedTech.trend === "up" ? (
-                            <TrendingUp className="h-3 w-3 text-emerald-500" />
-                          ) : liveSelectedTech.trend === "down" ? (
-                            <TrendingDown className="h-3 w-3 text-red-500" />
-                          ) : (
-                            <Minus className="h-3 w-3" />
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-
-              <TabsContent value="market-intel" className="mt-4">
+                {/* Compact metrics */}
                 {(() => {
-                  const marketStats = getDisplayStats(liveSelectedTech);
+                  const detailStats = getDisplayStats(liveSelectedTech);
+                  const regionLabel = regionFilter === "europe" ? "EU" : regionFilter === "usa" ? "US" : "";
                   return (
-                    <MarketIntelligence 
-                      keywordId={liveSelectedTech.keywordId} 
-                      technologyName={liveSelectedTech.name}
-                      summary={{
-                        totalCompanies: marketStats.companyCount,
-                        totalFunding: marketStats.funding,
-                        totalEmployees: marketStats.employees,
-                      }}
-                    />
+                    <div className="grid grid-cols-3 gap-3 text-center">
+                      <div className="p-3 rounded-lg bg-muted/50">
+                        <Building2 className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
+                        <p className="text-lg font-bold text-foreground">{detailStats.companyCount}</p>
+                        <p className="text-xs text-muted-foreground">{regionLabel ? `${regionLabel} Co.` : "Companies"}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/50">
+                        <Coins className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
+                        <p className="text-lg font-bold text-foreground">{formatFundingEur(detailStats.funding)}</p>
+                        <p className="text-xs text-muted-foreground">Funding</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/50">
+                        <Users className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
+                        <p className="text-lg font-bold text-foreground">{formatNumber(detailStats.employees)}</p>
+                        <p className="text-xs text-muted-foreground">Employees</p>
+                      </div>
+                    </div>
                   );
                 })()}
-              </TabsContent>
-            </Tabs>
+
+                {/* Score badges */}
+                <div className="flex gap-2 flex-wrap">
+                  <Badge variant="outline" className={MATURITY_SCORE_CONFIG[liveSelectedTech.investmentScore as 0|1|2]?.color || ""}>
+                    Investment: {liveSelectedTech.investmentScore}
+                  </Badge>
+                  <Badge variant="outline" className={MATURITY_SCORE_CONFIG[liveSelectedTech.employeesScore as 0|1|2]?.color || ""}>
+                    Employees: {liveSelectedTech.employeesScore}
+                  </Badge>
+                  <Badge variant="outline" className={MATURITY_SCORE_CONFIG[liveSelectedTech.trlScore as 0|1|2]?.color || ""}>
+                    TRL: {liveSelectedTech.trlScore}
+                  </Badge>
+                </div>
+
+                {/* Open full view CTA */}
+                <Link to={`/technology/${liveSelectedTech.keyword?.keyword || liveSelectedTech.keywordId}`}>
+                  <Button variant="default" className="w-full gap-2">
+                    Open full view
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
             </>
           )}
         </DialogContent>

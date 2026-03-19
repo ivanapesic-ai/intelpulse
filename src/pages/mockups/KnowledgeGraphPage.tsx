@@ -1,12 +1,13 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { PlatformHeader } from "@/components/mockups/PlatformHeader";
 import { PlatformFooter } from "@/components/mockups/PlatformFooter";
 import { KnowledgeGraph } from "@/components/intelligence/KnowledgeGraph";
 import { GraphNode } from "@/hooks/useKnowledgeGraph";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Coins, FileText, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Building2, Coins, FileText, X, ChevronRight } from "lucide-react";
 import { formatFundingEur } from "@/types/database";
 
 export default function KnowledgeGraphPage() {
@@ -84,6 +85,18 @@ export default function KnowledgeGraphPage() {
                         <p className="text-muted-foreground">Opportunity</p>
                         <p className="font-medium">{selectedNode.metadata.opportunityScore?.toFixed(2) ?? "—"}</p>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Deep-dive link */}
+                  {selectedNode.group === "keyword" && (
+                    <div className="pt-2 border-t">
+                      <Link to={`/technology/${selectedNode.id}`}>
+                        <Button variant="default" size="sm" className="w-full gap-1">
+                          View deep-dive
+                          <ChevronRight className="h-3 w-3" />
+                        </Button>
+                      </Link>
                     </div>
                   )}
                 </CardContent>

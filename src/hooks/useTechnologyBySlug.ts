@@ -15,6 +15,10 @@ export interface TechnologyBySlug {
   trlScore: number;
   visibilityScore: number;
   compositeScore: number;
+  researchScore: number;
+  // C-O scores
+  challengeScore: number | null;
+  opportunityScore: number | null;
   // Raw metrics
   totalFundingEur: number;
   totalEmployees: number;
@@ -78,6 +82,9 @@ export function useTechnologyBySlug(slug: string | undefined) {
         trlScore: (tech as any)?.trl_score || 0,
         visibilityScore: (tech as any)?.visibility_score || 0,
         compositeScore: Number((tech as any)?.log_composite_score) || Number(tech?.composite_score) || 0,
+        researchScore: (tech as any)?.research_score || 0,
+        challengeScore: tech?.challenge_score ?? null,
+        opportunityScore: tech?.opportunity_score ?? null,
         totalFundingEur: Number(tech?.total_funding_eur) || 0,
         totalEmployees: tech?.total_employees || 0,
         totalPatents: tech?.total_patents || 0,
