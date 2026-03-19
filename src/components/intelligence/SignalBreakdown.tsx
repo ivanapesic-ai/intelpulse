@@ -59,6 +59,8 @@ const SIGNAL_DEFINITIONS = {
 };
 
 export function SignalBreakdown({ technology }: SignalBreakdownProps) {
+  const { data: researchSignal } = useResearchSignalForKeyword(technology.keywordId);
+
   // Calculate signal scores (0-2 scale for internal use)
   const signals = [
     {
