@@ -1,94 +1,55 @@
 
 
-## Plan: Strict Keyword Taxonomy & Precise Mapping System
+# Fix Research Paper Relevance in OpenAlex Integration
 
-### Goal
-Update the keyword system to match the approved taxonomy from the Jan 22 meeting, then implement precise AI mapping that prioritizes Dealroom's actual terminology over semantic associations.
+## Problem
+The current implementation uses the **deprecated** `title_and_abstract.search` filter in OpenAlex, which does not properly parse complex boolean queries. The domain context clause (`AND automotive OR vehicle...`) is being ignored, causing completely irrelevant papers (e.g., diabetes studies for "AV Software") to appear. Papers also show raw HTML tags like `<i>` in titles.
 
-### ✅ Phase 1: Sync Keywords to Approved List (COMPLETED)
+## Root Cause
+- `title_and_abstract.search` is deprecated and doesn't support boolean AND/OR operators properly
+- The complex query `("AV Software" OR "ADAS") AND (automotive OR vehicle)` gets partially parsed, matching generic terms like "software" across all domains
 
-**Added missing CEI-SPHERE keywords:**
-- E-Vehicle (alias for EV)
-- Self-driving vehicles
-- Autonomous Vehicle
-- SES - Solar Energy System
-- SES - Stationary Energy Storage (differentiate from Shared Energy Storage)
+## Solution: Two-Layer Precision Filtering
 
-**Added missing Dealroom keywords:**
-- Teledriving
-- Telematics
-- Sustainability Measurement
+### 1. Switch to `search` query parameter (supports boolean)
+Use the recommended `search` parameter which properly handles `AND`, `OR`, `NOT`, and quoted phrases. This is OpenAlex's current recommended approach.
 
-### ✅ Phase 2: Clear Bad Mappings & Improve AI Mapper (COMPLETED)
+### 2. Add OpenAlex Topics domain filter
+Instead of keyword-based domain scoping, use OpenAlex's structured `topics.domain.id` or `topics.field.id` filter to restrict results to Engineering and Computer Science fields. This is a categorical filter that cannot return diabetes papers.
 
-**Cleared existing polluted mappings:**
-```sql
-UPDATE technology_keywords 
-SET dealroom_tags = '{}', 
-    dealroom_industries = '{}', 
-    dealroom_sub_industries = '{}';
+Relevant OpenAlex domain/field IDs to scope to:
+- Engineering domain
+- Computer Science domain  
+- Transportation-related subfields
+
+### 3. Strip HTML from paper titles
+Clean `<i>`, `</i>`, and other HTML tags from paper titles before storing.
+
+## Changes
+
+### `supabase/functions/fetch-research-signals/index.ts`
+- Remove `title_and_abstract.search` from filter string
+- Move search query to the `search` query parameter  
+- Add `topics.domain.id` filter for Engineering + CS domains
+- Keep `type:article|review|preprint` and date filters in the `filter` parameter
+- Add HTML tag stripping for paper titles
+- Simplify `buildSearchFilter` — no need for domain context keywords in the search query itself since Topics filter handles domain scoping
+
+### Example API call (before → after)
+
+**Before** (broken):
+```
+/works?filter=type:article,title_and_abstract.search:("ADAS" OR "AV Software") AND (automotive OR vehicle)
 ```
 
-**Rewrote AI mapper with strict rules:**
-- CRITICAL MATCHING RULES enforcing exact domain matches
-- Programmatic blacklist filter blocking generic terms:
-  - artificial intelligence, machine learning, AI/ML
-  - software, cloud computing, automation
-  - IoT, internet of things
-  - robotics (unless keyword is about robots)
-  - sustainability, cleantech, climate tech (too broad)
-  - automotive, transportation, energy (too broad)
-
-### ✅ Phase 3: Create Semantic Mapping Suggestions (COMPLETED)
-
-Added SUGGESTED_DEALROOM_MAPPINGS constant in KeywordManager:
-
-| CEI Keyword | Suggested Dealroom Terms |
-|-------------|--------------------------|
-| Autonomous Driving | AV Software, AV Simulation, AV Labeling, LiDAR, AV Camera, AV Radar, Teledriving |
-| Battery Electric Vehicle | EV Battery, EV Manufacturing, EV Motor, Electric Mobility, EV Services |
-| Vehicle to Grid | Electric Mobility, EV Charging |
-| Logistics | Logistics Tech, Logistics Robots, Fleet Management, Supply Chain Management |
-| Smart City | Smart Cities |
-| Maritime | Maritime |
-| EV Charging | EV Charging |
-| Supply Chain | Supply Chain Management, Logistics Tech |
-
-### ✅ Phase 4: Update AdminPanel UI (COMPLETED)
-
-Enhanced the Keyword Manager to:
-1. Show Dealroom-source keywords as "verified Dealroom terms" with BadgeCheck icon
-2. Prioritize suggesting Dealroom-source keywords as mappings
-3. Added visual indicator (amber color) for suggested vs. browsed taxonomy mappings
-4. Tooltip explaining what suggested terms are
-
-### Files Modified
-
-| File | Change |
-|------|--------|
-| `supabase/functions/ai-tag-mapper/index.ts` | Rewrote prompts + added blacklist filter |
-| `src/components/admin/KeywordManager.tsx` | Added Dealroom-source keyword suggestions UI |
-| Migration | Added missing keywords + cleared bad mappings |
-
-### Expected Outcome
-
-**Before:**
+**After** (correct):
 ```
-Autonomous Driving -> ['autonomous driving', 'automotive', 'artificial intelligence']
+/works?search="ADAS" OR "Advanced Driver Assistance" OR "AV Software"&filter=type:article|review|preprint,topics.domain.id:domain1|domain2,from_publication_date:2025-03-19
 ```
 
-**After:**
-```
-Autonomous Driving -> 
-  industries: []
-  sub_industries: ['Autonomous vehicles']
-  tags: ['Autonomous driving', 'ADAS', 'LiDAR', 'AV Software', 'AV Simulation']
-```
+### Technical details
+- OpenAlex domain IDs will be looked up (e.g., `https://openalex.org/domains/2` for Engineering, `https://openalex.org/domains/1` for Physical Sciences)
+- The `search` parameter costs $1/1000 calls vs $0.10 for filter-only, but we're already using search-type queries
+- All existing count queries (total, 5yr, 2yr, yearly) will be updated to use the same approach
+- Paper titles will be sanitized with a simple regex to strip HTML tags
 
-This ensures when you search Dealroom for "Autonomous Driving" companies, you get actual autonomous driving companies - not every AI startup in the world.
-
-### Next Steps
-
-1. **Run Auto-map**: Go to Admin Panel > Keyword Management and click "Auto-map Missing" to re-run AI mapping with strict rules
-2. **Review mappings**: Verify the new mappings are domain-specific
-3. **Run Dealroom sync**: After mapping, sync with Dealroom to pull company data with the precise tags
