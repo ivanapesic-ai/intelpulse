@@ -234,7 +234,7 @@ export function SignalBreakdown({ technology }: SignalBreakdownProps) {
             className="h-3"
           />
           <p className="text-xs text-muted-foreground mt-2">
-            Composite of Investment, Patents, and Market Response signals
+            Composite of Investment, Patents, Market Response, and Research signals
           </p>
         </div>
       </CardContent>
