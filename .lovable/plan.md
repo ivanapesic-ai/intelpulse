@@ -1,31 +1,94 @@
 
 
-# Comparison: Uploaded Plan File vs Currently Deployed Code
+## Plan: Strict Keyword Taxonomy & Precise Mapping System
 
-The uploaded file represents the **intended fixes from the last approved plan**. The currently deployed `supabase/functions/fetch-research-signals/index.ts` is **still the old version** — none of the plan's changes were applied. Here are the specific differences:
+### Goal
+Update the keyword system to match the approved taxonomy from the Jan 22 meeting, then implement precise AI mapping that prioritizes Dealroom's actual terminology over semantic associations.
 
-| Area | Deployed (Current) | Uploaded (Plan Target) |
-|------|-------------------|----------------------|
-| `MIN_ALIAS_LENGTH` | 3 | **4** |
-| `buildSearchQuery` — raw keyword slug | Included (e.g., "sdv", "ems") | **Skipped entirely** — slugs match unrelated domains |
-| `buildSearchQuery` — hyphenated aliases | Included | **Skipped** — they're slug-format duplicates |
-| `buildSearchQuery` — deduplication | Simple `Set<string>` (case-sensitive) | **Case-insensitive** dedup via `seen` set |
-| `baseFilter` | `type:article\|review\|preprint` | **+ `language:en`** |
-| Top papers sort | `sort: "publication_date:desc"` | **No sort** — uses OpenAlex default relevance ranking |
-| Results details | No `searchQuery` field | **Includes `searchQuery`** for debugging |
-| Console log | 80 char substring | 120 char substring |
+### ✅ Phase 1: Sync Keywords to Approved List (COMPLETED)
 
-## Plan: Apply the Uploaded Version
+**Added missing CEI-SPHERE keywords:**
+- E-Vehicle (alias for EV)
+- Self-driving vehicles
+- Autonomous Vehicle
+- SES - Solar Energy System
+- SES - Stationary Energy Storage (differentiate from Shared Energy Storage)
 
-The fix is straightforward — replace the deployed file with the uploaded version. All changes align with the previously approved plan:
+**Added missing Dealroom keywords:**
+- Teledriving
+- Telematics
+- Sustainability Measurement
 
-1. Skip raw keyword slugs to prevent "sdv" matching "Sparse Dynamic Volume"
-2. Increase alias minimum length to 4 to filter "ems", "sdv", etc.
-3. Skip hyphenated aliases (redundant slug duplicates)
-4. Add `language:en` filter
-5. Remove explicit date sort so OpenAlex relevance ranking works properly
-6. Add `searchQuery` to response details for easier debugging
+### ✅ Phase 2: Clear Bad Mappings & Improve AI Mapper (COMPLETED)
 
-### File to modify
-- `supabase/functions/fetch-research-signals/index.ts` — replace with the uploaded version
+**Cleared existing polluted mappings:**
+```sql
+UPDATE technology_keywords 
+SET dealroom_tags = '{}', 
+    dealroom_industries = '{}', 
+    dealroom_sub_industries = '{}';
+```
 
+**Rewrote AI mapper with strict rules:**
+- CRITICAL MATCHING RULES enforcing exact domain matches
+- Programmatic blacklist filter blocking generic terms:
+  - artificial intelligence, machine learning, AI/ML
+  - software, cloud computing, automation
+  - IoT, internet of things
+  - robotics (unless keyword is about robots)
+  - sustainability, cleantech, climate tech (too broad)
+  - automotive, transportation, energy (too broad)
+
+### ✅ Phase 3: Create Semantic Mapping Suggestions (COMPLETED)
+
+Added SUGGESTED_DEALROOM_MAPPINGS constant in KeywordManager:
+
+| CEI Keyword | Suggested Dealroom Terms |
+|-------------|--------------------------|
+| Autonomous Driving | AV Software, AV Simulation, AV Labeling, LiDAR, AV Camera, AV Radar, Teledriving |
+| Battery Electric Vehicle | EV Battery, EV Manufacturing, EV Motor, Electric Mobility, EV Services |
+| Vehicle to Grid | Electric Mobility, EV Charging |
+| Logistics | Logistics Tech, Logistics Robots, Fleet Management, Supply Chain Management |
+| Smart City | Smart Cities |
+| Maritime | Maritime |
+| EV Charging | EV Charging |
+| Supply Chain | Supply Chain Management, Logistics Tech |
+
+### ✅ Phase 4: Update AdminPanel UI (COMPLETED)
+
+Enhanced the Keyword Manager to:
+1. Show Dealroom-source keywords as "verified Dealroom terms" with BadgeCheck icon
+2. Prioritize suggesting Dealroom-source keywords as mappings
+3. Added visual indicator (amber color) for suggested vs. browsed taxonomy mappings
+4. Tooltip explaining what suggested terms are
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `supabase/functions/ai-tag-mapper/index.ts` | Rewrote prompts + added blacklist filter |
+| `src/components/admin/KeywordManager.tsx` | Added Dealroom-source keyword suggestions UI |
+| Migration | Added missing keywords + cleared bad mappings |
+
+### Expected Outcome
+
+**Before:**
+```
+Autonomous Driving -> ['autonomous driving', 'automotive', 'artificial intelligence']
+```
+
+**After:**
+```
+Autonomous Driving -> 
+  industries: []
+  sub_industries: ['Autonomous vehicles']
+  tags: ['Autonomous driving', 'ADAS', 'LiDAR', 'AV Software', 'AV Simulation']
+```
+
+This ensures when you search Dealroom for "Autonomous Driving" companies, you get actual autonomous driving companies - not every AI startup in the world.
+
+### Next Steps
+
+1. **Run Auto-map**: Go to Admin Panel > Keyword Management and click "Auto-map Missing" to re-run AI mapping with strict rules
+2. **Review mappings**: Verify the new mappings are domain-specific
+3. **Run Dealroom sync**: After mapping, sync with Dealroom to pull company data with the precise tags
