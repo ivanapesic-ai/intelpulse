@@ -81,6 +81,173 @@ async function fetchOpenAlex(
   return response.json();
 }
 
+async function processKeywords(supabase: any, keywords: any[], currentYear: number) {
+  const results = {
+    enriched: 0,
+    skipped: 0,
+    totalWorks: 0,
+    errors: [] as string[],
+    details: [] as Array<{
+      keyword: string;
+      searchQuery: string;
+      totalWorks: number;
+      worksLast5y: number;
+      citations: number;
+      score: number;
+      growthRate: number;
+    }>,
+  };
+
+  for (const kw of keywords) {
+    try {
+      const searchQuery = buildSearchQuery(kw.keyword, kw.display_name, kw.aliases || []);
+      console.log(`OpenAlex search: ${kw.display_name} → ${searchQuery.substring(0, 120)}`);
+
+      const baseFilter = "type:article|review|preprint,language:en";
+
+      // 1. Total works count
+      const totalResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
+        search: searchQuery, filter: baseFilter, per_page: "1",
+      });
+      const totalWorks = totalResult.meta.count;
+
+      // 2. Works last 5 years
+      const fiveYearResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
+        search: searchQuery, filter: `${baseFilter},publication_year:${currentYear - 5}-${currentYear}`, per_page: "1",
+      });
+      const worksLast5y = fiveYearResult.meta.count;
+
+      // 3. Works last 2 years
+      const twoYearResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
+        search: searchQuery, filter: `${baseFilter},publication_year:${currentYear - 2}-${currentYear}`, per_page: "1",
+      });
+      const worksLast2y = twoYearResult.meta.count;
+
+      // 4. Year-by-year counts for growth rate
+      const yearCounts: Record<number, number> = {};
+      for (let y = currentYear - 3; y <= currentYear - 1; y++) {
+        const yearResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
+          search: searchQuery, filter: `${baseFilter},publication_year:${y}`, per_page: "1",
+        });
+        yearCounts[y] = yearResult.meta.count;
+        await new Promise(r => setTimeout(r, 150));
+      }
+
+      const prevYear = yearCounts[currentYear - 2] || 0;
+      const lastYear = yearCounts[currentYear - 1] || 0;
+      const growthRate = prevYear > 0 ? ((lastYear - prevYear) / prevYear) * 100 : 0;
+
+      // 5. Top papers — relevance-ranked
+      const topPapersResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
+        search: searchQuery,
+        filter: `${baseFilter},publication_year:${currentYear - 1}-${currentYear}`,
+        per_page: "5",
+      });
+
+      const topPapers = topPapersResult.results.map(w => ({
+        id: w.id, title: stripHtml(w.title), year: w.publication_year,
+        citations: w.cited_by_count, doi: w.doi,
+        source: w.primary_location?.source?.display_name || null,
+        authors: w.authorships.slice(0, 3).map(a => a.author.display_name),
+      }));
+
+      const citationCount = topPapersResult.results.reduce(
+        (sum, w) => sum + (w.cited_by_count || 0), 0
+      );
+
+      // 6. Top institutions
+      const institutionMap: Record<string, { name: string; country: string; count: number }> = {};
+      for (const paper of topPapersResult.results) {
+        for (const authorship of paper.authorships) {
+          for (const inst of authorship.institutions) {
+            if (!institutionMap[inst.id]) {
+              institutionMap[inst.id] = { name: inst.display_name, country: inst.country_code, count: 0 };
+            }
+            institutionMap[inst.id].count++;
+          }
+        }
+      }
+      const topInstitutions = Object.values(institutionMap)
+        .sort((a, b) => b.count - a.count).slice(0, 10);
+
+      // 7. Co-author network
+      const coAuthorEdges: Record<string, { from: string; to: string; weight: number }> = {};
+      for (const paper of topPapersResult.results) {
+        const authors = paper.authorships.slice(0, 5).map(a => a.author.display_name);
+        for (let i = 0; i < authors.length; i++) {
+          for (let j = i + 1; j < authors.length; j++) {
+            const key = [authors[i], authors[j]].sort().join("|||");
+            if (!coAuthorEdges[key]) {
+              coAuthorEdges[key] = { from: authors[i], to: authors[j], weight: 0 };
+            }
+            coAuthorEdges[key].weight++;
+          }
+        }
+      }
+      const coAuthorNetwork = {
+        nodes: [...new Set(topPapersResult.results.flatMap(
+          p => p.authorships.slice(0, 5).map(a => a.author.display_name)
+        ))],
+        edges: Object.values(coAuthorEdges).slice(0, 30),
+      };
+
+      // H-index approximation
+      const sortedCitations = topPapersResult.results
+        .map(w => w.cited_by_count).sort((a, b) => b - a);
+      let hIndex = 0;
+      for (let i = 0; i < sortedCitations.length; i++) {
+        if (sortedCitations[i] >= i + 1) hIndex = i + 1;
+      }
+
+      const researchScore = worksLast5y >= 5000 ? 2 : worksLast5y >= 500 ? 1 : 0;
+
+      // Upsert research signal
+      const { error: upsertErr } = await supabase
+        .from("research_signals")
+        .upsert({
+          keyword_id: kw.id, snapshot_date: new Date().toISOString().split("T")[0],
+          total_works: totalWorks, works_last_5y: worksLast5y, works_last_2y: worksLast2y,
+          citation_count: citationCount, h_index: hIndex,
+          growth_rate_yoy: Math.round(growthRate * 100) / 100,
+          top_institutions: topInstitutions, top_papers: topPapers,
+          co_author_network: coAuthorNetwork, research_score: researchScore,
+        }, { onConflict: "keyword_id,snapshot_date" });
+
+      if (upsertErr) {
+        console.error(`Upsert failed for ${kw.display_name}:`, upsertErr);
+        results.errors.push(`${kw.display_name}: ${upsertErr.message}`);
+        continue;
+      }
+
+      // Update technologies table
+      await supabase.from("technologies").update({
+        research_score: researchScore, total_research_works: worksLast5y,
+        research_growth_rate: Math.round(growthRate * 100) / 100,
+        research_citations: citationCount, last_updated: new Date().toISOString(),
+      }).eq("keyword_id", kw.id);
+
+      results.enriched++;
+      results.totalWorks += totalWorks;
+      results.details.push({
+        keyword: kw.display_name, searchQuery: searchQuery.substring(0, 100),
+        totalWorks, worksLast5y, citations: citationCount,
+        score: researchScore, growthRate: Math.round(growthRate * 100) / 100,
+      });
+
+      console.log(`✓ ${kw.display_name}: ${totalWorks} total, ${worksLast5y} recent, score=${researchScore}, growth=${growthRate.toFixed(1)}%`);
+      await new Promise(r => setTimeout(r, 200));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      console.error(`Error for ${kw.display_name}:`, msg);
+      results.errors.push(`${kw.display_name}: ${msg}`);
+      results.skipped++;
+    }
+  }
+
+  console.log(`Background enrichment complete: ${results.enriched} enriched, ${results.skipped} skipped, ${results.errors.length} errors`);
+  return results;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -110,203 +277,29 @@ serve(async (req) => {
     if (kwErr) throw kwErr;
 
     const currentYear = new Date().getFullYear();
-    const results = {
-      enriched: 0,
-      skipped: 0,
-      totalWorks: 0,
-      errors: [] as string[],
-      details: [] as Array<{
-        keyword: string;
-        searchQuery: string;
-        totalWorks: number;
-        worksLast5y: number;
-        citations: number;
-        score: number;
-        growthRate: number;
-      }>,
-    };
+    const keywordCount = keywords?.length || 0;
 
-    for (const kw of keywords || []) {
-      try {
-        const searchQuery = buildSearchQuery(kw.keyword, kw.display_name, kw.aliases || []);
-        console.log(`OpenAlex search: ${kw.display_name} → ${searchQuery.substring(0, 120)}`);
-
-        // Base filter: English-language articles/reviews/preprints only
-        const baseFilter = "type:article|review|preprint,language:en";
-
-        // 1. Total works count (no year filter)
-        const totalResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
-          search: searchQuery,
-          filter: baseFilter,
-          per_page: "1",
-        });
-        const totalWorks = totalResult.meta.count;
-
-        // 2. Works last 5 years
-        const fiveYearResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
-          search: searchQuery,
-          filter: `${baseFilter},publication_year:${currentYear - 5}-${currentYear}`,
-          per_page: "1",
-        });
-        const worksLast5y = fiveYearResult.meta.count;
-
-        // 3. Works last 2 years
-        const twoYearResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
-          search: searchQuery,
-          filter: `${baseFilter},publication_year:${currentYear - 2}-${currentYear}`,
-          per_page: "1",
-        });
-        const worksLast2y = twoYearResult.meta.count;
-
-        // 4. Year-by-year counts for growth rate (last 3 years)
-        const yearCounts: Record<number, number> = {};
-        for (let y = currentYear - 3; y <= currentYear - 1; y++) {
-          const yearResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
-            search: searchQuery,
-            filter: `${baseFilter},publication_year:${y}`,
-            per_page: "1",
-          });
-          yearCounts[y] = yearResult.meta.count;
-          await new Promise(r => setTimeout(r, 150));
-        }
-
-        const prevYear = yearCounts[currentYear - 2] || 0;
-        const lastYear = yearCounts[currentYear - 1] || 0;
-        const growthRate = prevYear > 0 ? ((lastYear - prevYear) / prevYear) * 100 : 0;
-
-        // 5. Top papers — recent years, sorted by RELEVANCE (not date!)
-        // OpenAlex's default sort uses relevance_score when a search query is present.
-        // Sorting by publication_date:desc destroys relevance and surfaces off-topic papers.
-        const topPapersResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
-          search: searchQuery,
-          filter: `${baseFilter},publication_year:${currentYear - 1}-${currentYear}`,
-          // No sort parameter — let OpenAlex rank by relevance
-          per_page: "5",
-        });
-
-        const topPapers = topPapersResult.results.map(w => ({
-          id: w.id,
-          title: stripHtml(w.title),
-          year: w.publication_year,
-          citations: w.cited_by_count,
-          doi: w.doi,
-          source: w.primary_location?.source?.display_name || null,
-          authors: w.authorships.slice(0, 3).map(a => a.author.display_name),
-        }));
-
-        const citationCount = topPapersResult.results.reduce(
-          (sum, w) => sum + (w.cited_by_count || 0), 0
-        );
-
-        // 6. Top institutions from top papers
-        const institutionMap: Record<string, { name: string; country: string; count: number }> = {};
-        for (const paper of topPapersResult.results) {
-          for (const authorship of paper.authorships) {
-            for (const inst of authorship.institutions) {
-              if (!institutionMap[inst.id]) {
-                institutionMap[inst.id] = { name: inst.display_name, country: inst.country_code, count: 0 };
-              }
-              institutionMap[inst.id].count++;
-            }
-          }
-        }
-        const topInstitutions = Object.values(institutionMap)
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 10);
-
-        // 7. Co-author network
-        const coAuthorEdges: Record<string, { from: string; to: string; weight: number }> = {};
-        for (const paper of topPapersResult.results) {
-          const authors = paper.authorships.slice(0, 5).map(a => a.author.display_name);
-          for (let i = 0; i < authors.length; i++) {
-            for (let j = i + 1; j < authors.length; j++) {
-              const key = [authors[i], authors[j]].sort().join("|||");
-              if (!coAuthorEdges[key]) {
-                coAuthorEdges[key] = { from: authors[i], to: authors[j], weight: 0 };
-              }
-              coAuthorEdges[key].weight++;
-            }
-          }
-        }
-        const coAuthorNetwork = {
-          nodes: [...new Set(topPapersResult.results.flatMap(
-            p => p.authorships.slice(0, 5).map(a => a.author.display_name)
-          ))],
-          edges: Object.values(coAuthorEdges).slice(0, 30),
-        };
-
-        // H-index approximation
-        const sortedCitations = topPapersResult.results
-          .map(w => w.cited_by_count)
-          .sort((a, b) => b - a);
-        let hIndex = 0;
-        for (let i = 0; i < sortedCitations.length; i++) {
-          if (sortedCitations[i] >= i + 1) hIndex = i + 1;
-        }
-
-        // Score: 0=emerging, 1=moderate, 2=strong
-        const researchScore = worksLast5y >= 5000 ? 2 : worksLast5y >= 500 ? 1 : 0;
-
-        // Upsert research signal
-        const { error: upsertErr } = await supabase
-          .from("research_signals")
-          .upsert({
-            keyword_id: kw.id,
-            snapshot_date: new Date().toISOString().split("T")[0],
-            total_works: totalWorks,
-            works_last_5y: worksLast5y,
-            works_last_2y: worksLast2y,
-            citation_count: citationCount,
-            h_index: hIndex,
-            growth_rate_yoy: Math.round(growthRate * 100) / 100,
-            top_institutions: topInstitutions,
-            top_papers: topPapers,
-            co_author_network: coAuthorNetwork,
-            research_score: researchScore,
-          }, { onConflict: "keyword_id,snapshot_date" });
-
-        if (upsertErr) {
-          console.error(`Upsert failed for ${kw.display_name}:`, upsertErr);
-          results.errors.push(`${kw.display_name}: ${upsertErr.message}`);
-          continue;
-        }
-
-        // Update technologies table
-        await supabase
-          .from("technologies")
-          .update({
-            research_score: researchScore,
-            total_research_works: worksLast5y,
-            research_growth_rate: Math.round(growthRate * 100) / 100,
-            research_citations: citationCount,
-            last_updated: new Date().toISOString(),
-          })
-          .eq("keyword_id", kw.id);
-
-        results.enriched++;
-        results.totalWorks += totalWorks;
-        results.details.push({
-          keyword: kw.display_name,
-          searchQuery: searchQuery.substring(0, 100),
-          totalWorks,
-          worksLast5y,
-          citations: citationCount,
-          score: researchScore,
-          growthRate: Math.round(growthRate * 100) / 100,
-        });
-
-        console.log(`✓ ${kw.display_name}: ${totalWorks} total, ${worksLast5y} recent, score=${researchScore}, growth=${growthRate.toFixed(1)}%`);
-
-        await new Promise(r => setTimeout(r, 200));
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Unknown error";
-        console.error(`Error for ${kw.display_name}:`, msg);
-        results.errors.push(`${kw.display_name}: ${msg}`);
-        results.skipped++;
-      }
+    // For single keyword, process synchronously
+    if (targetKeywordId && keywordCount === 1) {
+      const results = await processKeywords(supabase, keywords!, currentYear);
+      return new Response(JSON.stringify(results), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    return new Response(JSON.stringify(results), {
+    // For bulk enrichment, process in background to avoid client timeout
+    // @ts-ignore - EdgeRuntime.waitUntil is available in Supabase Edge Functions
+    EdgeRuntime.waitUntil(
+      processKeywords(supabase, keywords || [], currentYear).catch((error) => {
+        console.error("Background enrichment failed:", error);
+      })
+    );
+
+    return new Response(JSON.stringify({
+      status: "processing",
+      message: `Enriching ${keywordCount} keywords in the background`,
+      keywordCount,
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
