@@ -234,17 +234,38 @@ export function TechnologyDetailPanel({ technology, onClose }: TechnologyDetailP
                    {/* Top papers */}
                    {researchSignal.topPapers.length > 0 && (
                      <div className="space-y-1.5">
-                       {researchSignal.topPapers.slice(0, 3).map((paper, i) => (
-                         <div key={i} className="p-2 rounded bg-muted/30 border border-border">
-                           <p className="text-xs font-medium text-foreground line-clamp-1">{paper.title}</p>
-                           <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-muted-foreground">
-                             <span>{paper.year}</span>
-                             <span>·</span>
-                             <span className="text-blue-500">{paper.citations} cited</span>
-                             {paper.authors[0] && <span>· {paper.authors[0]}</span>}
-                           </div>
-                         </div>
-                       ))}
+                        {researchSignal.topPapers.slice(0, 5).map((paper, i) => {
+                          const paperUrl = paper.doi
+                            ? `https://doi.org/${paper.doi.replace("https://doi.org/", "")}`
+                            : paper.id?.startsWith("https://openalex.org/")
+                              ? paper.id.replace("https://openalex.org/", "https://openalex.org/works/")
+                              : null;
+                          return (
+                            <a
+                              key={i}
+                              href={paperUrl || "#"}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={cn(
+                                "block p-2 rounded bg-muted/30 border border-border transition-colors",
+                                paperUrl && "hover:bg-muted/60 hover:border-primary/30 cursor-pointer"
+                              )}
+                              onClick={(e) => !paperUrl && e.preventDefault()}
+                            >
+                              <p className="text-xs font-medium text-foreground line-clamp-2">{paper.title}</p>
+                              <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-muted-foreground">
+                                <span>{paper.authors.slice(0, 2).join(", ")}{paper.authors.length > 2 ? " et al." : ""}</span>
+                                <span>·</span>
+                                <span>{paper.year}</span>
+                                <span>·</span>
+                                <Badge variant="outline" className="text-[9px] px-1 py-0 text-emerald-500 border-emerald-500/30">
+                                  {paper.citations} citations
+                                </Badge>
+                                {paper.source && <span className="truncate max-w-[120px]">{paper.source}</span>}
+                              </div>
+                            </a>
+                          );
+                        })}
                      </div>
                    )}
                  </div>

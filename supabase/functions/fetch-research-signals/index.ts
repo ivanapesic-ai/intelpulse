@@ -44,14 +44,18 @@ async function fetchOpenAlex(path: string, params: Record<string, string> = {}):
   return response.json();
 }
 
-// Build search filter for a keyword
+// Automotive/SDV domain context terms — appended as AND to narrow results
+const DOMAIN_CONTEXT = "automotive OR vehicle OR vehicular OR \"self-driving\" OR \"connected car\" OR mobility";
+
+// Build search filter for a keyword, scoped to automotive domain
 function buildSearchFilter(keyword: string, displayName: string, aliases: string[] = []): string {
   const terms = [displayName, keyword.replace(/[_-]/g, " ")];
   for (const alias of aliases) {
     if (alias && !terms.includes(alias)) terms.push(alias);
   }
-  // Use OpenAlex search with OR logic
-  return terms.map(t => `"${t}"`).join(" OR ");
+  // Primary terms OR'd together, then AND'd with domain context
+  const primaryQuery = terms.map(t => `"${t}"`).join(" OR ");
+  return `(${primaryQuery}) AND (${DOMAIN_CONTEXT})`;
 }
 
 serve(async (req) => {
