@@ -25,7 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export default function AdminPanel() {
-  const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "scraping" | "documents" | "news">("crunchbase");
+  const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "scraping" | "documents" | "news" | "research">("crunchbase");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Data hooks
