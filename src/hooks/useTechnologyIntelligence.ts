@@ -32,6 +32,8 @@ export interface TechnologyIntelligence {
   createdAt: string;
   // Aliases/synonyms from taxonomy
   aliases?: string[];
+  // Keyword slug for deep-dive links
+  keyword?: string;
   // H11 scores
   avgSemanticScore?: number;
   networkCentrality?: number;
