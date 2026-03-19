@@ -15,6 +15,10 @@ export interface TechnologyBySlug {
   trlScore: number;
   visibilityScore: number;
   compositeScore: number;
+  researchScore: number;
+  // C-O scores
+  challengeScore: number | null;
+  opportunityScore: number | null;
   // Raw metrics
   totalFundingEur: number;
   totalEmployees: number;
