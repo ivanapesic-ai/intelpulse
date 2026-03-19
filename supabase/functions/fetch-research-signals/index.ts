@@ -151,10 +151,11 @@ serve(async (req) => {
         const lastYear = yearCounts[currentYear - 1] || 0;
         const growthRate = prevYear > 0 ? ((lastYear - prevYear) / prevYear) * 100 : 0;
 
-        // 5. Get top papers (most cited recent works)
+        // 5. Get top papers — most RECENT works (last 2 years, sorted by date)
+        // Shows what's happening now rather than historically most-cited
         const topPapersResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
-          filter: `${searchFilter},from_publication_date:${currentYear - 3}-01-01`,
-          sort: "cited_by_count:desc",
+          filter: `${searchFilter},from_publication_date:${currentYear - 2}-01-01`,
+          sort: "publication_date:desc",
           per_page: "5",
         });
 
