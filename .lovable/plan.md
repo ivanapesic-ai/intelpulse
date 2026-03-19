@@ -1,38 +1,94 @@
 
 
-# Fix Research Paper Relevance and Recency
+## Plan: Strict Keyword Taxonomy & Precise Mapping System
 
-## Problems Identified
+### Goal
+Update the keyword system to match the approved taxonomy from the Jan 22 meeting, then implement precise AI mapping that prioritizes Dealroom's actual terminology over semantic associations.
 
-1. **Stale data in DB**: Papers showing 2023-2024 dates because the enrichment hasn't been re-run since the last code fix
-2. **Irrelevant results**: "Brain tumor segmentation" and "deep learning in insurance" appearing for Software Defined Vehicle. The `topics.domain.id:1` (Physical Sciences) filter is far too broad — it covers all of physics, math, chemistry, etc.
-3. **Year filtering**: Using `from_publication_date` with a rolling 12-month window still picks up old papers. The OpenAlex API supports cleaner `publication_year` range filters
+### ✅ Phase 1: Sync Keywords to Approved List (COMPLETED)
 
-## Evidence from User's OpenAlex Search
+**Added missing CEI-SPHERE keywords:**
+- E-Vehicle (alias for EV)
+- Self-driving vehicles
+- Autonomous Vehicle
+- SES - Solar Energy System
+- SES - Stationary Energy Storage (differentiate from Shared Energy Storage)
 
-Searching "software defined vehicle" with "Since 2025" filter on OpenAlex directly returns 937 highly relevant works like "Software-Defined Vehicles: The Future of Automobile Industry" (2025). Our function is returning brain tumor papers instead.
+**Added missing Dealroom keywords:**
+- Teledriving
+- Telematics
+- Sustainability Measurement
 
-## Solution
+### ✅ Phase 2: Clear Bad Mappings & Improve AI Mapper (COMPLETED)
 
-### `supabase/functions/fetch-research-signals/index.ts`
+**Cleared existing polluted mappings:**
+```sql
+UPDATE technology_keywords 
+SET dealroom_tags = '{}', 
+    dealroom_industries = '{}', 
+    dealroom_sub_industries = '{}';
+```
 
-1. **Remove `topics.domain.id:1` filter entirely** — it is too broad and counterproductive. The search query with quoted automotive terms already provides sufficient domain scoping. OpenAlex's `search` parameter does relevance ranking natively.
+**Rewrote AI mapper with strict rules:**
+- CRITICAL MATCHING RULES enforcing exact domain matches
+- Programmatic blacklist filter blocking generic terms:
+  - artificial intelligence, machine learning, AI/ML
+  - software, cloud computing, automation
+  - IoT, internet of things
+  - robotics (unless keyword is about robots)
+  - sustainability, cleantech, climate tech (too broad)
+  - automotive, transportation, energy (too broad)
 
-2. **Use `publication_year` filter** instead of `from_publication_date` for cleaner filtering:
-   - Total works: no year filter
-   - 5-year: `publication_year:2021-2026`
-   - 2-year: `publication_year:2024-2026`
-   - Top papers: `publication_year:2025-2026` (current + previous year), sorted by `publication_date:desc`
-   - Growth rate: use `publication_year:YYYY` for each year
+### ✅ Phase 3: Create Semantic Mapping Suggestions (COMPLETED)
 
-3. **Reduce alias noise** — skip aliases that are too generic (less than 3 chars) or overlap with other technology keywords (e.g., "ADAS" as alias for AV Software causes cross-contamination). Add a minimum term length filter.
+Added SUGGESTED_DEALROOM_MAPPINGS constant in KeywordManager:
 
-4. **Keep HTML stripping** for paper titles
+| CEI Keyword | Suggested Dealroom Terms |
+|-------------|--------------------------|
+| Autonomous Driving | AV Software, AV Simulation, AV Labeling, LiDAR, AV Camera, AV Radar, Teledriving |
+| Battery Electric Vehicle | EV Battery, EV Manufacturing, EV Motor, Electric Mobility, EV Services |
+| Vehicle to Grid | Electric Mobility, EV Charging |
+| Logistics | Logistics Tech, Logistics Robots, Fleet Management, Supply Chain Management |
+| Smart City | Smart Cities |
+| Maritime | Maritime |
+| EV Charging | EV Charging |
+| Supply Chain | Supply Chain Management, Logistics Tech |
+
+### ✅ Phase 4: Update AdminPanel UI (COMPLETED)
+
+Enhanced the Keyword Manager to:
+1. Show Dealroom-source keywords as "verified Dealroom terms" with BadgeCheck icon
+2. Prioritize suggesting Dealroom-source keywords as mappings
+3. Added visual indicator (amber color) for suggested vs. browsed taxonomy mappings
+4. Tooltip explaining what suggested terms are
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `supabase/functions/ai-tag-mapper/index.ts` | Rewrote prompts + added blacklist filter |
+| `src/components/admin/KeywordManager.tsx` | Added Dealroom-source keyword suggestions UI |
+| Migration | Added missing keywords + cleared bad mappings |
 
 ### Expected Outcome
 
-After deploying and re-running enrichment:
-- SDV will show papers like "Software-Defined Vehicles: The Future of Automobile Industry" (2025)
-- No more medical/insurance papers
-- Only 2025+ papers in the "Latest Papers" cards
+**Before:**
+```
+Autonomous Driving -> ['autonomous driving', 'automotive', 'artificial intelligence']
+```
 
+**After:**
+```
+Autonomous Driving -> 
+  industries: []
+  sub_industries: ['Autonomous vehicles']
+  tags: ['Autonomous driving', 'ADAS', 'LiDAR', 'AV Software', 'AV Simulation']
+```
+
+This ensures when you search Dealroom for "Autonomous Driving" companies, you get actual autonomous driving companies - not every AI startup in the world.
+
+### Next Steps
+
+1. **Run Auto-map**: Go to Admin Panel > Keyword Management and click "Auto-map Missing" to re-run AI mapping with strict rules
+2. **Review mappings**: Verify the new mappings are domain-specific
+3. **Run Dealroom sync**: After mapping, sync with Dealroom to pull company data with the precise tags
