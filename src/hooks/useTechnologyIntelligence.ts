@@ -25,6 +25,7 @@ export interface TechnologyIntelligence {
   policyMentionCount: number;
   avgTrlMentioned: number | null;
   newsMentionCount: number;
+  researchScore: MaturityScore;
   recentNews: NewsItem[];
   keyPlayers: string[];
   lastUpdated: string;
