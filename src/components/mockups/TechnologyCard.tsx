@@ -91,7 +91,7 @@ export function TechnologyCard({ technology, onClick, compact = false }: Technol
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             {isHub && <Star className="h-4 w-4 text-primary fill-primary/30 shrink-0" />}
-            <h3 className="font-semibold truncate group-hover:text-primary transition-colors text-foreground">{technology.name}</h3>
+            <Link to={`/technology/${technology.keyword?.keyword || technology.name.toLowerCase().replace(/\s+/g, '_')}`} className="font-semibold truncate group-hover:text-primary transition-colors text-foreground" onClick={e => e.stopPropagation()}>{technology.name}</Link>
           </div>
           <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{technology.description}</p>
         </div>
