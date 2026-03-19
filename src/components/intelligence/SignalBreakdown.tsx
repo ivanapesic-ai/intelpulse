@@ -106,6 +106,23 @@ export function SignalBreakdown({ technology }: SignalBreakdownProps) {
       rawLabel: "Mentions",
       secondaryValue: technology.documentMentionCount > 0 ? `${technology.documentMentionCount} documents` : null,
     },
+    {
+      key: "research",
+      ...SIGNAL_DEFINITIONS.research,
+      score: researchSignal?.researchScore ?? 0,
+      maxScore: 2,
+      icon: BookOpen,
+      color: "bg-violet-500",
+      lightColor: "bg-violet-500/20",
+      textColor: "text-violet-500",
+      rawValue: researchSignal
+        ? formatCompactNumber(researchSignal.worksLast5y)
+        : "—",
+      rawLabel: "Papers (5yr)",
+      secondaryValue: researchSignal && researchSignal.growthRateYoy !== 0
+        ? `${researchSignal.growthRateYoy >= 0 ? "+" : ""}${researchSignal.growthRateYoy}% YoY growth`
+        : null,
+    },
   ];
 
   const getScoreLabel = (score: number) => {
