@@ -60,6 +60,11 @@ const App = () => (
                   <MySignals />
                 </ProtectedRoute>
               } />
+              <Route path="/horizons" element={
+                <ProtectedRoute>
+                  <HorizonsPage />
+                </ProtectedRoute>
+              } />
               
               {/* Admin Only */}
               <Route path="/admin" element={
