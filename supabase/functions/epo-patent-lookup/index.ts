@@ -240,19 +240,18 @@ async function getPatentDetails(
 }
 
 // Search by IPC code (for technology-level lookups)
-// Uses date filter to count only recent patents (last 5 years) for more meaningful signals
+// Uses a 2-year date window for recent-only mode to stay under EPO's 10k result cap
 async function searchByIPC(
   token: string,
   ipcCode: string,
   maxResults: number = 50,
   recentOnly: boolean = false
 ): Promise<{ patents: PatentResult[]; totalCount: number }> {
-  // Use subclass-level query for precision; add date filter for recent-only counts
   let query = `ic="${ipcCode}"`;
   if (recentOnly) {
-    const fiveYearsAgo = new Date();
-    fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
-    const dateStr = fiveYearsAgo.toISOString().slice(0, 10).replace(/-/g, "");
+    const twoYearsAgo = new Date();
+    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+    const dateStr = twoYearsAgo.toISOString().slice(0, 10).replace(/-/g, "");
     query += ` AND pd>=${dateStr}`;
   }
   const url = `https://ops.epo.org/3.2/rest-services/published-data/search?q=${encodeURIComponent(query)}&Range=1-${maxResults}`;
