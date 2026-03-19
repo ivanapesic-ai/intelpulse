@@ -1,11 +1,12 @@
 import { motion } from "framer-motion";
-import { TrendingUp, FileText, Newspaper, Info } from "lucide-react";
+import { TrendingUp, FileText, Newspaper, Info, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { TechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
+import { useResearchSignalForKeyword } from "@/hooks/useResearchSignals";
 
 // Format large numbers compactly (e.g., 88839900000 -> €88.8B)
 function formatCompactNumber(value: number, prefix = ""): string {
