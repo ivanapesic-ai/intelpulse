@@ -225,6 +225,14 @@ export default function AdminPanel() {
                 <Rss className="h-4 w-4 mr-1.5" />
                 News/RSS
               </Button>
+              <Button
+                variant={dataSubTab === "research" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setDataSubTab("research")}
+              >
+                <BookOpen className="h-4 w-4 mr-1.5" />
+                Research
+              </Button>
             </div>
 
             {/* Crunchbase Sub-tab */}
