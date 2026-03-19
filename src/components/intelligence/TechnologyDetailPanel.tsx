@@ -52,7 +52,7 @@ export function TechnologyDetailPanel({ technology, onClose }: TechnologyDetailP
         <div className="flex items-start justify-between p-6 border-b border-border">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <Link to={`/technology/${technology.keyword || technology.name.toLowerCase().replace(/\s+/g, '_')}`} className="text-xl font-bold text-foreground mb-2 hover:text-primary transition-colors">{technology.name}</Link>
+              <Link to={`/technology/${technology.name.toLowerCase().replace(/[\s/]+/g, '_')}`} className="text-xl font-bold text-foreground mb-2 hover:text-primary transition-colors">{technology.name}</Link>
               <WatchToggle keywordId={technology.keywordId} />
             </div>
             
