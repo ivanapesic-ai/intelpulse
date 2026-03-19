@@ -153,6 +153,7 @@ export function useTechnologyIntelligence() {
           compositeScore: Number(row.composite_score) || 0,
           trend: (row.trend || "stable") as TrendDirection,
           totalPatents: row.total_patents ?? 0,
+          patentsScore: (row.patents_score ?? 0) as MaturityScore,
           totalFundingEur: Number(row.total_funding_eur) || 0,
           totalEmployees: row.total_employees ?? 0,
           dealroomCompanyCount: row.dealroom_company_count ?? 0,
