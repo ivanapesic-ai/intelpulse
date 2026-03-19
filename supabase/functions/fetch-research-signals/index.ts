@@ -9,11 +9,7 @@ const corsHeaders = {
 
 const OPENALEX_BASE = "https://api.openalex.org";
 const POLITE_EMAIL = "intelligence@pulse11.com";
-
-// OpenAlex domain IDs (highest level of topic hierarchy)
-// Domain 1 = Physical Sciences (includes Engineering, CS, Math, Physics)
-// We restrict to this domain to exclude Health Sciences, Life Sciences, Social Sciences
-const DOMAIN_FILTER = "topics.domain.id:1";
+const MIN_ALIAS_LENGTH = 3;
 
 interface OpenAlexWork {
   id: string;
@@ -39,23 +35,15 @@ function stripHtml(text: string): string {
   return text.replace(/<[^>]*>/g, "").trim();
 }
 
-// Build search query from keyword + aliases (no domain context needed — handled by topics filter)
 function buildSearchQuery(keyword: string, displayName: string, aliases: string[] = []): string {
   const terms = new Set<string>();
   terms.add(displayName);
   const cleaned = keyword.replace(/[_-]/g, " ");
   if (cleaned !== displayName) terms.add(cleaned);
   for (const alias of aliases) {
-    if (alias) terms.add(alias);
+    if (alias && alias.length >= MIN_ALIAS_LENGTH) terms.add(alias);
   }
   return [...terms].map(t => `"${t}"`).join(" OR ");
-}
-
-// Build filter string (type + domain + optional date range)
-function buildFilter(dateFilter?: string): string {
-  const parts = [`type:article|review|preprint`, DOMAIN_FILTER];
-  if (dateFilter) parts.push(dateFilter);
-  return parts.join(",");
 }
 
 async function fetchOpenAlex(
@@ -122,10 +110,12 @@ serve(async (req) => {
         const searchQuery = buildSearchQuery(kw.keyword, kw.display_name, kw.aliases || []);
         console.log(`OpenAlex search: ${kw.display_name} → ${searchQuery.substring(0, 80)}`);
 
-        // 1. Total works count
+        const baseFilter = "type:article|review|preprint";
+
+        // 1. Total works count (no year filter)
         const totalResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
           search: searchQuery,
-          filter: buildFilter(),
+          filter: baseFilter,
           per_page: "1",
         });
         const totalWorks = totalResult.meta.count;
@@ -133,7 +123,7 @@ serve(async (req) => {
         // 2. Works last 5 years
         const fiveYearResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
           search: searchQuery,
-          filter: buildFilter(`from_publication_date:${currentYear - 5}-01-01`),
+          filter: `${baseFilter},publication_year:${currentYear - 5}-${currentYear}`,
           per_page: "1",
         });
         const worksLast5y = fiveYearResult.meta.count;
@@ -141,7 +131,7 @@ serve(async (req) => {
         // 3. Works last 2 years
         const twoYearResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
           search: searchQuery,
-          filter: buildFilter(`from_publication_date:${currentYear - 2}-01-01`),
+          filter: `${baseFilter},publication_year:${currentYear - 2}-${currentYear}`,
           per_page: "1",
         });
         const worksLast2y = twoYearResult.meta.count;
@@ -151,7 +141,7 @@ serve(async (req) => {
         for (let y = currentYear - 3; y <= currentYear - 1; y++) {
           const yearResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
             search: searchQuery,
-            filter: buildFilter(`from_publication_date:${y}-01-01,to_publication_date:${y}-12-31`),
+            filter: `${baseFilter},publication_year:${y}`,
             per_page: "1",
           });
           yearCounts[y] = yearResult.meta.count;
@@ -162,14 +152,10 @@ serve(async (req) => {
         const lastYear = yearCounts[currentYear - 1] || 0;
         const growthRate = prevYear > 0 ? ((lastYear - prevYear) / prevYear) * 100 : 0;
 
-        // 5. Top papers — last 12 months, sorted by recency
-        const twelveMonthsAgo = new Date();
-        twelveMonthsAgo.setFullYear(twelveMonthsAgo.getFullYear() - 1);
-        const recentDateStr = twelveMonthsAgo.toISOString().split("T")[0];
-
+        // 5. Top papers — current + previous year, sorted by recency
         const topPapersResult: OpenAlexSearchResult = await fetchOpenAlex("/works", {
           search: searchQuery,
-          filter: buildFilter(`from_publication_date:${recentDateStr}`),
+          filter: `${baseFilter},publication_year:${currentYear - 1}-${currentYear}`,
           sort: "publication_date:desc",
           per_page: "5",
         });
