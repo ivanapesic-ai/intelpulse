@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { X, ExternalLink, AlertTriangle, Lightbulb, FileText, Building2, TrendingUp, Users, Zap, Tag, Newspaper, ChevronRight } from "lucide-react";
+import { X, ExternalLink, AlertTriangle, Lightbulb, FileText, Building2, TrendingUp, Users, Zap, Tag, Newspaper, ChevronRight, BookOpen } from "lucide-react";
 import { WatchToggle } from "./WatchToggle";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import {
 import { formatFundingEur, formatNumber } from "@/types/database";
 import { SignalBreakdown } from "./SignalBreakdown";
 import { useNewsForKeyword } from "@/hooks/useNews";
+import { useResearchSignalForKeyword } from "@/hooks/useResearchSignals";
 import { NewsTimelineChart } from "./NewsTimelineChart";
 import { StandardsSection } from "./StandardsSection";
 
