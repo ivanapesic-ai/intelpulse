@@ -66,6 +66,11 @@ const App = () => (
                   <HorizonsPage />
                 </ProtectedRoute>
               } />
+              <Route path="/technology/:slug" element={
+                <ProtectedRoute>
+                  <TechnologyDeepDive />
+                </ProtectedRoute>
+              } />
               
               {/* Admin Only */}
               <Route path="/admin" element={
