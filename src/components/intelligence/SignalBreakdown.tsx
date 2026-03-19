@@ -109,7 +109,7 @@ export function SignalBreakdown({ technology }: SignalBreakdownProps) {
     {
       key: "research",
       ...SIGNAL_DEFINITIONS.research,
-      score: researchSignal?.researchScore ?? (technology as any).researchScore ?? 0,
+      score: technology.researchScore ?? researchSignal?.researchScore ?? 0,
       maxScore: 2,
       icon: BookOpen,
       color: "bg-violet-500",
