@@ -272,7 +272,9 @@ export default function HeatmapMatrix() {
                                 <div className="flex items-center gap-2">
                                   <div className="w-3 h-3 rounded-full" style={{ background: ringColors[maturityRing] }} />
                                   <div>
-                                    <p className="font-medium text-foreground">{tech.name}</p>
+                                    <Link to={`/technology/${tech.keyword?.keyword || tech.keywordId}`} className="font-medium text-foreground hover:text-primary hover:underline">
+                                      {tech.name}
+                                    </Link>
                                     <p className="text-xs text-muted-foreground">{maturityRing} • {formatFundingEur(tech.totalFundingEur || 0)}</p>
                                   </div>
                                 </div>

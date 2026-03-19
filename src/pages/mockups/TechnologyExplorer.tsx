@@ -383,7 +383,9 @@ export default function TechnologyExplorer() {
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-3">
-                  <span className="text-2xl text-foreground">{liveSelectedTech.name}</span>
+                  <Link to={`/technology/${liveSelectedTech.keyword?.keyword || liveSelectedTech.keywordId}`} className="text-2xl text-foreground hover:text-primary hover:underline">
+                    {liveSelectedTech.name}
+                  </Link>
                   <Badge 
                     variant="outline" 
                     className={`${getScoreColor(liveSelectedTech.compositeScore)} border-current text-lg px-3 py-1`}
