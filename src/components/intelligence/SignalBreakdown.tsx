@@ -1,11 +1,12 @@
 import { motion } from "framer-motion";
-import { TrendingUp, FileText, Newspaper, Info } from "lucide-react";
+import { TrendingUp, FileText, Newspaper, Info, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { TechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
+import { useResearchSignalForKeyword } from "@/hooks/useResearchSignals";
 
 // Format large numbers compactly (e.g., 88839900000 -> €88.8B)
 function formatCompactNumber(value: number, prefix = ""): string {
@@ -25,29 +26,41 @@ interface SignalBreakdownProps {
   technology: TechnologyIntelligence;
 }
 
-// Tender-aligned 3-signal model
+// Tender-aligned 4-signal model with Horizons
 const SIGNAL_DEFINITIONS = {
   investment: {
     name: "Signal 1: Investment",
+    horizon: "H2",
     indicator: "Investment",
     source: "Market Data",
     description: "Venture capital funding, growth stage, and capital raised by ecosystem companies",
   },
   patents: {
     name: "Signal 2: Patents",
+    horizon: "H2",
     indicator: "Patent – granted? Applied for?",
     source: "PATSTAT / EPO",
     description: "Patent filings, grants, and innovation activity tracked via European Patent Office",
   },
   media: {
     name: "Signal 3: Market Response",
+    horizon: "H1",
     indicator: "Market/media response",
     source: "Tech coverage",
     description: "Document mentions, news coverage, and market visibility from CEI sources",
   },
+  research: {
+    name: "Signal 4: Research",
+    horizon: "H3",
+    indicator: "Academic research intensity",
+    source: "OpenAlex",
+    description: "Scholarly publications, citation velocity, and research growth from 250M+ academic works",
+  },
 };
 
 export function SignalBreakdown({ technology }: SignalBreakdownProps) {
+  const { data: researchSignal } = useResearchSignalForKeyword(technology.keywordId);
+
   // Calculate signal scores (0-2 scale for internal use)
   const signals = [
     {
@@ -93,6 +106,23 @@ export function SignalBreakdown({ technology }: SignalBreakdownProps) {
       rawLabel: "Mentions",
       secondaryValue: technology.documentMentionCount > 0 ? `${technology.documentMentionCount} documents` : null,
     },
+    {
+      key: "research",
+      ...SIGNAL_DEFINITIONS.research,
+      score: researchSignal?.researchScore ?? 0,
+      maxScore: 2,
+      icon: BookOpen,
+      color: "bg-violet-500",
+      lightColor: "bg-violet-500/20",
+      textColor: "text-violet-500",
+      rawValue: researchSignal
+        ? formatCompactNumber(researchSignal.worksLast5y)
+        : "—",
+      rawLabel: "Papers (5yr)",
+      secondaryValue: researchSignal && researchSignal.growthRateYoy !== 0
+        ? `${researchSignal.growthRateYoy >= 0 ? "+" : ""}${researchSignal.growthRateYoy}% YoY growth`
+        : null,
+    },
   ];
 
   const getScoreLabel = (score: number) => {
@@ -118,7 +148,7 @@ export function SignalBreakdown({ technology }: SignalBreakdownProps) {
           Early Indicators of New Technologies
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          3-signal model for technology maturity assessment
+          4-signal model: H1 Now · H2 Emerging · H3 Vision
         </p>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -139,6 +169,7 @@ export function SignalBreakdown({ technology }: SignalBreakdownProps) {
                   </div>
                   <div>
                     <span className="text-sm font-semibold">{signal.name}</span>
+                    <Badge variant="outline" className="text-[9px] ml-1 px-1 py-0">{signal.horizon}</Badge>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Info className="inline h-3 w-3 ml-1.5 text-muted-foreground cursor-help" />
@@ -203,7 +234,7 @@ export function SignalBreakdown({ technology }: SignalBreakdownProps) {
             className="h-3"
           />
           <p className="text-xs text-muted-foreground mt-2">
-            Composite of Investment, Patents, and Market Response signals
+            Composite of Investment, Patents, Market Response, and Research signals
           </p>
         </div>
       </CardContent>

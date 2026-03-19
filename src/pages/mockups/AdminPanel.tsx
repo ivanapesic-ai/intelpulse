@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Database, FileText, Globe, Network, Layers, Upload, CheckCircle, FileSpreadsheet, BarChart, RefreshCw, Zap, Rss } from "lucide-react";
+import { ArrowLeft, Database, FileText, Globe, Network, Layers, Upload, CheckCircle, FileSpreadsheet, BarChart, RefreshCw, Zap, Rss, BookOpen } from "lucide-react";
 import { useDataPipelineSync } from "@/hooks/useDataPipeline";
 import { useAdminDataSync } from "@/hooks/useDataSync";
 import { Link } from "react-router-dom";
@@ -18,13 +18,14 @@ import { CrunchbaseImportPanel } from "@/components/admin/CrunchbaseImportPanel"
 import { EpoPatentPanel } from "@/components/admin/EpoPatentPanel";
 import { DocumentUploadPanel } from "@/components/admin/DocumentUploadPanel";
 import { RssNewsPanel } from "@/components/admin/RssNewsPanel";
+import { ResearchSignalsPanel } from "@/components/admin/ResearchSignalsPanel";
 import { StandardsManagerPanel } from "@/components/admin/StandardsManagerPanel";
 import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export default function AdminPanel() {
-  const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "scraping" | "documents" | "news">("crunchbase");
+  const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "scraping" | "documents" | "news" | "research">("crunchbase");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Data hooks
@@ -224,6 +225,14 @@ export default function AdminPanel() {
                 <Rss className="h-4 w-4 mr-1.5" />
                 News/RSS
               </Button>
+              <Button
+                variant={dataSubTab === "research" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setDataSubTab("research")}
+              >
+                <BookOpen className="h-4 w-4 mr-1.5" />
+                Research
+              </Button>
             </div>
 
             {/* Crunchbase Sub-tab */}
@@ -252,6 +261,11 @@ export default function AdminPanel() {
             {/* News/RSS Sub-tab */}
             {dataSubTab === "news" && (
               <RssNewsPanel />
+            )}
+
+            {/* Research Sub-tab */}
+            {dataSubTab === "research" && (
+              <ResearchSignalsPanel />
             )}
           </TabsContent>
 
