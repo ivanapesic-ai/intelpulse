@@ -47,7 +47,7 @@ export function TechnologyCard({ technology, onClick, compact = false }: Technol
         <div className="flex items-center gap-3 min-w-0">
           {isHub && <Star className="h-4 w-4 text-primary fill-primary/30 shrink-0" />}
           <div className="flex flex-col min-w-0">
-            <span className="font-medium truncate text-foreground">{technology.name}</span>
+            <Link to={`/technology/${technology.keyword?.keyword || technology.name.toLowerCase().replace(/\s+/g, '_')}`} className="font-medium truncate text-foreground hover:text-primary transition-colors" onClick={e => e.stopPropagation()}>{technology.name}</Link>
             <div className="flex gap-2 mt-1">
               {isHub && (
                 <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
