@@ -18,6 +18,7 @@ import { CrunchbaseImportPanel } from "@/components/admin/CrunchbaseImportPanel"
 import { EpoPatentPanel } from "@/components/admin/EpoPatentPanel";
 import { DocumentUploadPanel } from "@/components/admin/DocumentUploadPanel";
 import { RssNewsPanel } from "@/components/admin/RssNewsPanel";
+import { ResearchSignalsPanel } from "@/components/admin/ResearchSignalsPanel";
 import { StandardsManagerPanel } from "@/components/admin/StandardsManagerPanel";
 import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
 import { supabase } from "@/integrations/supabase/client";
