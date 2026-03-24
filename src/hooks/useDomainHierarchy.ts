@@ -66,41 +66,83 @@ export const MATURITY_CONFIG: Record<string, { color: string; label: string }> =
   "Declining": { color: "text-orange-600 bg-orange-500/10", label: "Declining" },
 };
 
+function getQuadrant(challenge: number, opportunity: number): string {
+  if (challenge >= 1.5 && opportunity >= 1.5) return "Strategic Investment";
+  if (challenge < 0.5 && opportunity >= 1.5) return "High-Risk High-Reward";
+  if (challenge >= 1.5 && opportunity < 0.5) return "Mature Low-Growth";
+  return "Monitor";
+}
+
+function getMaturityStage(score: number): string {
+  if (score >= 1.5) return "Mature";
+  if (score >= 1.0) return "Growth";
+  return "Emerging";
+}
+
+// Domain overview aggregated from technology_intelligence
 export function useDomainOverview() {
   return useQuery({
-    queryKey: ["domain-overview"],
+    queryKey: ["technology-intelligence", "domains"],
     queryFn: async (): Promise<DomainOverview[]> => {
       const { data, error } = await supabase
-        .from("domain_overview")
-        .select("*")
-        .order("company_count", { ascending: false });
+        .from("technology_intelligence")
+        .select("*");
 
       if (error) throw error;
 
-      return (data || []).map((row) => ({
-        id: row.id,
-        name: row.name,
-        description: row.description,
-        challengeScore: Number(row.challenge_score) || 0,
-        opportunityScore: Number(row.opportunity_score) || 0,
-        maturityStage: row.maturity_stage || "Emerging",
-        companyCount: row.company_count || 0,
-        euCompanyCount: row.eu_company_count || 0,
-        totalFundingUsd: Number(row.total_funding_usd) || 0,
-        totalPatents: row.total_patents || 0,
-        displayOrder: row.display_order || 0,
-        strategicQuadrant: row.strategic_quadrant || "Monitor",
-      }));
+      // Group by domain
+      const domainMap = new Map<number, {
+        name: string;
+        rows: any[];
+      }>();
+
+      for (const row of data || []) {
+        const domainId = row.domain_id;
+        if (!domainId) continue;
+        
+        if (!domainMap.has(domainId)) {
+          domainMap.set(domainId, { name: row.domain_name || "Unknown", rows: [] });
+        }
+        domainMap.get(domainId)!.rows.push(row);
+      }
+
+      const domains: DomainOverview[] = [];
+      for (const [id, { name, rows }] of domainMap) {
+        const totalCompanies = rows.reduce((s, r) => s + (r.company_count || 0), 0);
+        const totalFunding = rows.reduce((s, r) => s + (Number(r.total_funding_eur) || 0), 0);
+        const totalPatents = rows.reduce((s, r) => s + (r.total_patents || 0), 0);
+        const avgChallenge = rows.reduce((s, r) => s + (Number(r.challenge_score) || 0), 0) / rows.length;
+        const avgOpportunity = rows.reduce((s, r) => s + (Number(r.opportunity_score) || 0), 0) / rows.length;
+        const avgMaturity = rows.reduce((s, r) => s + (Number(r.maturity_score) || 0), 0) / rows.length;
+
+        domains.push({
+          id,
+          name,
+          description: null,
+          challengeScore: avgChallenge,
+          opportunityScore: avgOpportunity,
+          maturityStage: getMaturityStage(avgMaturity),
+          companyCount: totalCompanies,
+          euCompanyCount: 0,
+          totalFundingUsd: totalFunding,
+          totalPatents,
+          displayOrder: 0,
+          strategicQuadrant: getQuadrant(avgChallenge, avgOpportunity),
+        });
+      }
+
+      return domains.sort((a, b) => b.companyCount - a.companyCount);
     },
   });
 }
 
+// Keyword overview from technology_intelligence — each row IS a keyword
 export function useKeywordOverview(domainId?: number) {
   return useQuery({
-    queryKey: ["keyword-overview", domainId],
+    queryKey: ["technology-intelligence", "keywords", domainId],
     queryFn: async (): Promise<KeywordOverview[]> => {
       let query = supabase
-        .from("keyword_overview")
+        .from("technology_intelligence")
         .select("*")
         .order("company_count", { ascending: false });
 
@@ -112,18 +154,18 @@ export function useKeywordOverview(domainId?: number) {
 
       if (error) throw error;
 
-      return (data || []).map((row) => ({
+      return (data || []).map((row: any) => ({
         keywordId: row.keyword_id,
-        keyword: row.keyword,
-        displayName: row.display_name,
-        description: row.description,
+        keyword: row.slug,
+        displayName: row.name,
+        description: row.tech_description,
         aliases: row.aliases || [],
         domainId: row.domain_id,
-        domainName: row.domain_name,
-        domainChallenge: Number(row.domain_challenge) || 0,
-        domainOpportunity: Number(row.domain_opportunity) || 0,
+        domainName: row.domain_name || "Unknown",
+        domainChallenge: Number(row.challenge_score) || 0,
+        domainOpportunity: Number(row.opportunity_score) || 0,
         companyCount: row.company_count || 0,
-        totalFundingUsd: Number(row.total_funding_usd) || 0,
+        totalFundingUsd: Number(row.total_funding_eur) || 0,
         totalPatents: row.total_patents || 0,
       }));
     },

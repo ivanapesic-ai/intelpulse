@@ -1,9 +1,10 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
  * C-O Scoring Engine Hook
- * Implements the Challenge-Opportunity scoring from challenge_opportunity_scorer.py
+ * Simplified — client-side scoring functions removed in favor of canonical SQL functions.
+ * All score reads now come from the technology_intelligence materialized view.
  */
 
 export interface ScoredTechnology {
@@ -48,34 +49,18 @@ export const QUADRANT_CONFIG = {
   },
 } as const;
 
-// Fetch all scored technologies
-export function useScoredTechnologies() {
-  return useQuery({
-    queryKey: ["co-scored-technologies"],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("score_all_technologies");
-
-      if (error) throw error;
-
-      return (data || []) as ScoredTechnology[];
-    },
-  });
-}
-
-// Apply C-O scores to technologies table
+// Apply C-O scores to technologies table, then refresh materialized view
 export function useApplyCOScores() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
-      // Call the scoring function and update technologies
       const { data: scores, error: scoreError } = await supabase.rpc(
         "score_all_technologies"
       );
 
       if (scoreError) throw scoreError;
 
-      // Update each technology with its scores
       let updated = 0;
       for (const score of scores || []) {
         const { error: updateError } = await supabase
@@ -90,6 +75,9 @@ export function useApplyCOScores() {
         if (!updateError) updated++;
       }
 
+      // Refresh the materialized view so all consumers get updated data
+      await supabase.rpc("refresh_technology_intelligence");
+
       return {
         processed: updated,
         total: (scores || []).length,
@@ -97,114 +85,8 @@ export function useApplyCOScores() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["technology-intelligence"] });
-      queryClient.invalidateQueries({ queryKey: ["technologies"] });
-      queryClient.invalidateQueries({ queryKey: ["co-scored-technologies"] });
     },
   });
-}
-
-// Get quadrant distribution for analytics
-export function useQuadrantDistribution() {
-  return useQuery({
-    queryKey: ["quadrant-distribution"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("technologies")
-        .select("challenge_score, opportunity_score, name")
-        .not("challenge_score", "is", null)
-        .not("opportunity_score", "is", null);
-
-      if (error) throw error;
-
-      const distribution = {
-        "Strategic Investment": [] as string[],
-        "High-Risk High-Reward": [] as string[],
-        "Mature Low-Growth": [] as string[],
-        Monitor: [] as string[],
-      };
-
-      for (const tech of data || []) {
-        const c = tech.challenge_score ?? 0;
-        const o = tech.opportunity_score ?? 0;
-
-        let quadrant: keyof typeof distribution;
-        if (c >= 1.5 && o >= 1.5) {
-          quadrant = "Strategic Investment";
-        } else if (c < 0.5 && o >= 1.5) {
-          quadrant = "High-Risk High-Reward";
-        } else if (c >= 1.5 && o < 0.5) {
-          quadrant = "Mature Low-Growth";
-        } else {
-          quadrant = "Monitor";
-        }
-
-        distribution[quadrant].push(tech.name);
-      }
-
-      return distribution;
-    },
-  });
-}
-
-// Calculate challenge score client-side (for preview/simulation)
-export function calculateChallengeScore(factors: ScoringFactors): number {
-  let base = 2.0;
-
-  // Maturity impact
-  if (factors.maturity === "Emerging") base -= 0.8;
-  else if (factors.maturity === "Early Adoption") base -= 0.4;
-
-  // Regulatory impact
-  if (factors.regulatory === "Major gaps") base -= 0.6;
-  else if (factors.regulatory === "Some gaps") base -= 0.3;
-
-  // Skills impact
-  if (factors.skills_gap === "Severe") base -= 0.4;
-  else if (factors.skills_gap === "Moderate") base -= 0.2;
-
-  // Integration impact
-  if (factors.integration === "High") base -= 0.4;
-  else if (factors.integration === "Moderate") base -= 0.2;
-
-  // ROI impact
-  if (factors.roi_clarity === "Unclear") base -= 0.4;
-  else if (factors.roi_clarity === "Moderate") base -= 0.2;
-
-  return Math.max(0, Math.min(2, Math.round(base * 10) / 10));
-}
-
-// Calculate opportunity score client-side (for preview/simulation)
-export function calculateOpportunityScore(
-  marketSizeEur: number,
-  growthRateYoy: number,
-  strategicAlignment: number,
-  companyCount: number
-): number {
-  let base = 0;
-
-  // Market size impact
-  if (marketSizeEur > 50_000_000_000) base += 0.7;
-  else if (marketSizeEur > 10_000_000_000) base += 0.5;
-  else if (marketSizeEur > 1_000_000_000) base += 0.3;
-  else base += 0.1;
-
-  // Growth rate impact
-  if (growthRateYoy > 20) base += 0.7;
-  else if (growthRateYoy > 10) base += 0.5;
-  else if (growthRateYoy > 5) base += 0.3;
-  else base += 0.1;
-
-  // Strategic alignment impact
-  if (strategicAlignment >= 3) base += 0.6;
-  else if (strategicAlignment === 2) base += 0.4;
-  else if (strategicAlignment === 1) base += 0.2;
-
-  // Ecosystem readiness impact
-  if (companyCount > 200) base += 0.5;
-  else if (companyCount > 50) base += 0.3;
-  else if (companyCount > 10) base += 0.1;
-
-  return Math.max(0, Math.min(2, Math.round(base * 10) / 10));
 }
 
 // Get quadrant name from scores

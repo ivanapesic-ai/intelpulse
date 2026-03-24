@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { TechnologyKeyword, Technology, KeywordSource } from "@/types/database";
 import { toast } from "@/hooks/use-toast";
-import { isSDVRelevant } from "@/lib/taxonomy-filters";
 
 // AI-powered tag mapping
 export function useAITagMapping() {
@@ -40,6 +39,7 @@ export function useAITagMapping() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["keywords"] });
+      queryClient.invalidateQueries({ queryKey: ["technology-intelligence"] });
       toast({
         title: "AI mapping complete",
          description: `Successfully mapped ${data.updated}/${data.processed} keywords.`,
@@ -86,7 +86,6 @@ export function useKeywords(source?: KeywordSource) {
         parentKeywordId: row.parent_keyword_id || undefined,
         aliases: row.aliases || undefined,
         dealroomTags: row.dealroom_tags || [],
-        // Include new structured mapping columns
         dealroomIndustries: (row as any).dealroom_industries || [],
         dealroomSubIndustries: (row as any).dealroom_sub_industries || [],
         isActive: row.is_active,
@@ -118,6 +117,7 @@ export function useUpdateKeywordTags() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["keywords"] });
+      queryClient.invalidateQueries({ queryKey: ["technology-intelligence"] });
       toast({
         title: "Tags updated",
          description: "Keyword aliases have been saved successfully.",
@@ -133,142 +133,107 @@ export function useUpdateKeywordTags() {
   });
 }
 
-// Fetch all technologies with their keyword info (filtering out excluded keywords)
+// Fetch all technologies from the technology_intelligence materialized view
 export function useTechnologies() {
   return useQuery({
-    queryKey: ["technologies"],
+    queryKey: ["technology-intelligence"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("technologies")
-        .select(`
-          *,
-          technology_keywords!inner (
-            id,
-            keyword,
-            source,
-            display_name,
-            excluded_from_sdv,
-            is_active,
-            aliases
-          )
-        `)
-        // IMPORTANT: only include active taxonomy keywords in all SDV views
-        .eq("technology_keywords.is_active", true)
+        .from("technology_intelligence")
+        .select("*")
         .order("log_composite_score", { ascending: false, nullsFirst: false });
 
       if (error) throw error;
 
-      // Use unified SDV taxonomy filter
-      const filtered = (data || []).filter((row) => {
-        const displayName = row.technology_keywords?.display_name || row.name;
-        const isActive = row.technology_keywords?.is_active !== false;
-        const isExcludedFromSdv = row.technology_keywords?.excluded_from_sdv === true;
-
-        if (!isActive) return false;
-        return isSDVRelevant(displayName, isExcludedFromSdv);
-      });
-
-      return filtered.map((row): Technology & { keyword?: TechnologyKeyword } => {
-        const rowAny = row as Record<string, unknown>;
-        return {
-          id: row.id,
-          keywordId: row.keyword_id,
-          name: row.name,
-          description: row.description || "",
-          investmentScore: (row.investment_score || 0) as 0 | 1 | 2,
-          employeesScore: (row.employees_score || 0) as 0 | 1 | 2,
-          trlScore: ((rowAny.trl_score as number) || 0) as 0 | 1 | 2,
-          euAlignmentScore: ((rowAny.eu_alignment_score as number) || 0) as 0 | 1 | 2,
-          visibilityScore: ((rowAny.visibility_score as number) || 0) as 0 | 1 | 2,
-          // Use log_composite_score for better differentiation, fallback to composite_score
-          compositeScore: Number(rowAny.log_composite_score) || Number(row.composite_score) || 0,
-          avgTrlMentioned: (rowAny.avg_trl_mentioned as number) || undefined,
-          policyMentionCount: ((rowAny.policy_mention_count as number) || 0),
-          // News aggregation
-          newsMentionCount: ((rowAny.news_mention_count as number) || 0),
-          recentNews: ((rowAny.recent_news as Array<{ title: string; url: string; date: string; source: string }>) || []),
-          // H11 Hybrid Scoring (KeyBERT + TextRank + TF-IDF + Position)
-          avgSemanticScore: Number(rowAny.avg_semantic_score) || undefined,
-          networkCentrality: Number(rowAny.network_centrality) || undefined,
-          corpusRarityScore: Number(rowAny.corpus_rarity_score) || undefined,
-          weightedFrequencyScore: Number(rowAny.weighted_frequency_score) || 0,
-          avgRelevanceScore: Number(rowAny.avg_relevance_score) || 0,
-          documentDiversity: (rowAny.document_diversity as number) || 0,
-          trend: (row.trend || "stable") as "up" | "down" | "stable",
-          keyPlayers: row.key_players || [],
-          totalPatents: row.total_patents || 0,
-          totalFundingEur: Number(row.total_funding_eur) || 0,
-          totalEmployees: row.total_employees || 0,
-          dealroomCompanyCount: row.dealroom_company_count || 0,
-          documentMentionCount: row.document_mention_count || 0,
-          lastUpdated: row.last_updated,
-          createdAt: row.created_at,
-          keyword: row.technology_keywords ? {
-            id: row.technology_keywords.id,
-            keyword: row.technology_keywords.keyword,
-            source: row.technology_keywords.source as KeywordSource,
-            displayName: row.technology_keywords.display_name,
-            aliases: row.technology_keywords.aliases || [],
-            isActive: true,
-            createdAt: "",
-            updatedAt: "",
-          } : undefined,
-        };
-      });
+      return (data || []).map((row: any): Technology & { keyword?: TechnologyKeyword } => ({
+        id: row.technology_id,
+        keywordId: row.keyword_id,
+        name: row.name,
+        description: row.tech_description || "",
+        investmentScore: (row.investment_score || 0) as 0 | 1 | 2,
+        employeesScore: (row.employees_score || 0) as 0 | 1 | 2,
+        trlScore: (row.trl_score || 0) as 0 | 1 | 2,
+        euAlignmentScore: (row.eu_alignment_score || 0) as 0 | 1 | 2,
+        visibilityScore: (row.visibility_score || 0) as 0 | 1 | 2,
+        compositeScore: Number(row.log_composite_score) || Number(row.composite_score) || 0,
+        avgTrlMentioned: row.avg_trl_mentioned ? Number(row.avg_trl_mentioned) : undefined,
+        policyMentionCount: row.policy_mention_count || 0,
+        newsMentionCount: row.news_mention_count || 0,
+        recentNews: (Array.isArray(row.recent_news) ? row.recent_news : []) as Array<{ title: string; url: string; date: string; source: string }>,
+        avgSemanticScore: row.avg_semantic_score ? Number(row.avg_semantic_score) : undefined,
+        networkCentrality: row.network_centrality ? Number(row.network_centrality) : undefined,
+        corpusRarityScore: row.corpus_rarity_score ? Number(row.corpus_rarity_score) : undefined,
+        weightedFrequencyScore: Number(row.weighted_frequency_score) || 0,
+        avgRelevanceScore: Number(row.avg_relevance_score) || 0,
+        documentDiversity: row.document_diversity || 0,
+        trend: (row.trend || "stable") as "up" | "down" | "stable",
+        keyPlayers: row.key_players || [],
+        totalPatents: row.total_patents || 0,
+        totalFundingEur: Number(row.total_funding_eur) || 0,
+        totalEmployees: row.total_employees || 0,
+        dealroomCompanyCount: row.company_count || 0,
+        documentMentionCount: row.document_mention_count || 0,
+        lastUpdated: row.refreshed_at,
+        createdAt: row.refreshed_at,
+        keyword: {
+          id: row.keyword_id,
+          keyword: row.slug,
+          source: "cei_sphere" as KeywordSource,
+          displayName: row.name,
+          aliases: row.aliases || [],
+          isActive: true,
+          createdAt: "",
+          updatedAt: "",
+        },
+      }));
     },
   });
 }
 
-// Get technology by ID
+// Get technology by ID — reads from technology_intelligence
 export function useTechnology(id: string) {
   return useQuery({
-    queryKey: ["technology", id],
+    queryKey: ["technology-intelligence", "single", id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("technologies")
-        .select(`
-          *,
-          technology_keywords (*)
-        `)
-        .eq("id", id)
+        .from("technology_intelligence")
+        .select("*")
+        .eq("technology_id", id)
         .single();
 
       if (error) throw error;
 
-      const dataAny = data as Record<string, unknown>;
+      const row = data as any;
       return {
-        id: data.id,
-        keywordId: data.keyword_id,
-        name: data.name,
-        description: data.description || "",
-        investmentScore: (data.investment_score || 0) as 0 | 1 | 2,
-        employeesScore: (data.employees_score || 0) as 0 | 1 | 2,
-        trlScore: ((dataAny.trl_score as number) || 0) as 0 | 1 | 2,
-        euAlignmentScore: ((dataAny.eu_alignment_score as number) || 0) as 0 | 1 | 2,
-        visibilityScore: ((dataAny.visibility_score as number) || 0) as 0 | 1 | 2,
-        // Use log_composite_score for better differentiation, fallback to composite_score
-        compositeScore: Number(dataAny.log_composite_score) || Number(data.composite_score) || 0,
-        avgTrlMentioned: (dataAny.avg_trl_mentioned as number) || undefined,
-        policyMentionCount: ((dataAny.policy_mention_count as number) || 0),
-        // News aggregation
-        newsMentionCount: ((dataAny.news_mention_count as number) || 0),
-        recentNews: ((dataAny.recent_news as Array<{ title: string; url: string; date: string; source: string }>) || []),
-        // H11 Hybrid Scoring (KeyBERT + TextRank + Position)
-        avgSemanticScore: Number(dataAny.avg_semantic_score) || undefined,
-        networkCentrality: Number(dataAny.network_centrality) || undefined,
-        corpusRarityScore: Number(dataAny.corpus_rarity_score) || undefined,
-        weightedFrequencyScore: Number(dataAny.weighted_frequency_score) || 0,
-        avgRelevanceScore: Number(dataAny.avg_relevance_score) || 0,
-        documentDiversity: (dataAny.document_diversity as number) || 0,
-        trend: (data.trend || "stable") as "up" | "down" | "stable",
-        keyPlayers: data.key_players || [],
-        totalPatents: data.total_patents || 0,
-        totalFundingEur: Number(data.total_funding_eur) || 0,
-        totalEmployees: data.total_employees || 0,
-        dealroomCompanyCount: data.dealroom_company_count || 0,
-        documentMentionCount: data.document_mention_count || 0,
-        lastUpdated: data.last_updated,
-        createdAt: data.created_at,
+        id: row.technology_id,
+        keywordId: row.keyword_id,
+        name: row.name,
+        description: row.tech_description || "",
+        investmentScore: (row.investment_score || 0) as 0 | 1 | 2,
+        employeesScore: (row.employees_score || 0) as 0 | 1 | 2,
+        trlScore: (row.trl_score || 0) as 0 | 1 | 2,
+        euAlignmentScore: (row.eu_alignment_score || 0) as 0 | 1 | 2,
+        visibilityScore: (row.visibility_score || 0) as 0 | 1 | 2,
+        compositeScore: Number(row.log_composite_score) || Number(row.composite_score) || 0,
+        avgTrlMentioned: row.avg_trl_mentioned ? Number(row.avg_trl_mentioned) : undefined,
+        policyMentionCount: row.policy_mention_count || 0,
+        newsMentionCount: row.news_mention_count || 0,
+        recentNews: (Array.isArray(row.recent_news) ? row.recent_news : []) as Array<{ title: string; url: string; date: string; source: string }>,
+        avgSemanticScore: row.avg_semantic_score ? Number(row.avg_semantic_score) : undefined,
+        networkCentrality: row.network_centrality ? Number(row.network_centrality) : undefined,
+        corpusRarityScore: row.corpus_rarity_score ? Number(row.corpus_rarity_score) : undefined,
+        weightedFrequencyScore: Number(row.weighted_frequency_score) || 0,
+        avgRelevanceScore: Number(row.avg_relevance_score) || 0,
+        documentDiversity: row.document_diversity || 0,
+        trend: (row.trend || "stable") as "up" | "down" | "stable",
+        keyPlayers: row.key_players || [],
+        totalPatents: row.total_patents || 0,
+        totalFundingEur: Number(row.total_funding_eur) || 0,
+        totalEmployees: row.total_employees || 0,
+        dealroomCompanyCount: row.company_count || 0,
+        documentMentionCount: row.document_mention_count || 0,
+        lastUpdated: row.refreshed_at,
+        createdAt: row.refreshed_at,
       } as Technology;
     },
     enabled: !!id,
@@ -288,7 +253,7 @@ export function useKeywordStats() {
       if (keywordsError) throw keywordsError;
 
       const { data: technologies, error: techError } = await supabase
-        .from("technologies")
+        .from("technology_intelligence")
         .select("composite_score, total_funding_eur, total_patents, total_employees");
 
       if (techError) throw techError;
@@ -298,11 +263,11 @@ export function useKeywordStats() {
         return acc;
       }, {} as Record<string, number>);
 
-      const totalFunding = (technologies || []).reduce((sum, t) => sum + (Number(t.total_funding_eur) || 0), 0);
-      const totalPatents = (technologies || []).reduce((sum, t) => sum + (t.total_patents || 0), 0);
-      const totalEmployees = (technologies || []).reduce((sum, t) => sum + (t.total_employees || 0), 0);
+      const totalFunding = (technologies || []).reduce((sum, t: any) => sum + (Number(t.total_funding_eur) || 0), 0);
+      const totalPatents = (technologies || []).reduce((sum, t: any) => sum + (t.total_patents || 0), 0);
+      const totalEmployees = (technologies || []).reduce((sum, t: any) => sum + (t.total_employees || 0), 0);
       const avgCompositeScore = technologies?.length
-        ? (technologies || []).reduce((sum, t) => sum + (Number(t.composite_score) || 0), 0) / technologies.length
+        ? (technologies || []).reduce((sum, t: any) => sum + (Number(t.composite_score) || 0), 0) / technologies.length
         : 0;
 
       return {
