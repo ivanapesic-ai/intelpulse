@@ -105,12 +105,19 @@ export default function Dashboard() {
 
   // trendingTechnologies now handled by TrendingTechnologiesWidget
 
-  const aiInsights = [
-    { insight: "Autonomous Vehicle sector leads with €89B aggregate funding across 142 companies", severity: "high" },
-    { insight: "Battery technology patents up 34% YoY - strong innovation signal", severity: "high" },
-    { insight: "V2X and Edge Computing showing convergence patterns in company portfolios", severity: "medium" },
-    { insight: "Software-Defined Vehicle ecosystem expanding with 23 new entrants Q1 2026", severity: "medium" },
-  ];
+  const aiInsights = useMemo(() => {
+    if (!filteredTechnologies.length) return [];
+    const sorted = [...filteredTechnologies].sort((a, b) => (b.totalFundingEur || 0) - (a.totalFundingEur || 0));
+    const top = sorted[0];
+    const topPatent = [...filteredTechnologies].sort((a, b) => (b.totalPatents || 0) - (a.totalPatents || 0))[0];
+    const strongCount = filteredTechnologies.filter(t => (t.compositeScore || 0) >= 1.5).length;
+    return [
+      { insight: `${top?.name} leads with ${formatFundingEur(top?.totalFundingEur || 0)} funding across ${top?.dealroomCompanyCount} companies`, severity: "high" },
+      { insight: `${topPatent?.name} tops patent activity with ${formatNumber(topPatent?.totalPatents || 0)} patents tracked`, severity: "high" },
+      { insight: `${strongCount} of ${filteredTechnologies.length} technologies rated "Strong" maturity`, severity: "medium" },
+      { insight: `${stats.totalTechnologies} active technology categories under continuous monitoring`, severity: "medium" },
+    ];
+  }, [filteredTechnologies, stats.totalTechnologies]);
 
   if (error) {
     return (
