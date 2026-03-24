@@ -128,7 +128,7 @@ export default function TechnologyExplorer() {
             <div>
               <h1 className="text-2xl font-bold text-foreground mb-2">Technology Explorer</h1>
               <p className="text-muted-foreground">
-                Browse and analyze {filteredTechnologies.length} SDV technologies with market intelligence and scoring
+                Browse and analyze SDV technologies with market intelligence and scoring
               </p>
             </div>
 
@@ -197,13 +197,6 @@ export default function TechnologyExplorer() {
           </CardContent>
         </Card>
 
-        {/* Results */}
-        <div className="mb-4 flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            {filteredTechnologies.length} technologies
-          </p>
-        </div>
-
         {isLoading ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
@@ -224,32 +217,20 @@ export default function TechnologyExplorer() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredTechnologies.map((tech) => {
               const displayStats = getDisplayStats(tech);
-              const isHub = isCentralEcosystem(tech.name);
               return (
                 <Card 
                   key={tech.id} 
-                  className={cn(
-                    "cursor-pointer transition-colors",
-                    isHub 
-                      ? "bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/30 ring-1 ring-primary/20 hover:border-primary/50" 
-                      : "hover:border-primary/50"
-                  )}
+                  className="cursor-pointer transition-colors hover:border-primary/50"
                   onClick={() => openDetail(tech)}
                 >
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        {isHub && <Star className="h-4 w-4 text-primary fill-primary/30 shrink-0" />}
+                      <div>
                         <Link to={`/technology/${tech.keyword?.keyword || tech.keywordId}`} className="font-semibold text-foreground hover:text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
                           {tech.name}
                         </Link>
                       </div>
                       <div className="flex items-center gap-2">
-                        {isHub && (
-                          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs">
-                            Hub
-                          </Badge>
-                        )}
                         <Badge 
                           variant="outline" 
                           className={`${getScoreColor(tech.compositeScore)} border-current`}
