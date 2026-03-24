@@ -144,7 +144,7 @@ Identify conceptual links where:
 - A patent is referenced or related to news coverage
 - A research concept appears across multiple signal types
 
-Only return high-confidence links (confidence > 0.6). Each link should explain the relationship in one sentence.
+Only return high-confidence links (confidence > 0.75). Each link should explain the relationship in one sentence. Do NOT include any items with Chinese/CJK characters in titles.
 
 RESEARCH PAPERS:
 ${JSON.stringify(researchItems, null, 2)}
