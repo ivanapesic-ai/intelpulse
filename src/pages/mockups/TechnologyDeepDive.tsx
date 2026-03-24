@@ -455,11 +455,11 @@ export default function TechnologyDeepDive() {
                       </div>
                     </div>
                   )}
-                  {patentSearch.data.patents?.length > 0 && (
+                  {patentSearch.data.recentPatents?.length > 0 && (
                     <div>
                       <p className="text-xs text-muted-foreground font-medium mb-2">Recent Patents</p>
                       <div className="space-y-3">
-                        {patentSearch.data.patents.slice(0, 20).map((p: any, i: number) => (
+                        {patentSearch.data.recentPatents.slice(0, 20).map((p: any, i: number) => (
                           <div key={i} className="border-b border-border pb-2 last:border-0">
                             <p className="text-sm text-foreground">{p.title || p.applicationNumber || `Patent ${i + 1}`}</p>
                             {p.applicant && <p className="text-xs text-muted-foreground mt-0.5">{p.applicant}</p>}
