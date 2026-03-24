@@ -267,7 +267,7 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
                     <circle
                       cx={cx}
                       cy={cy}
-                      r={6}
+                      r={8}
                       fill={LANE_CONFIG[node.type].color}
                       stroke="hsl(var(--background))"
                       strokeWidth={2}

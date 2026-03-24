@@ -113,13 +113,17 @@ async function analyzeKeyword(
           body: { action: "search_ipc_detailed", ipcCode, maxResults: 20 },
         });
         if (epoData?.patents) {
-          patentItems = epoData.patents.slice(0, 20).map((p: any) => ({
-            id: p.publicationNumber || `patent_${Math.random().toString(36).slice(2)}`,
-            title: p.title || "Untitled Patent",
-            applicant: p.applicant || "",
-            filingDate: p.filingDate || null,
-            abstract: (p.abstract || "").slice(0, 200),
-          }));
+          const CJK_REGEX = /[\u4e00-\u9fff\u3400-\u4dbf\u3000-\u303f]/;
+          patentItems = epoData.patents
+            .filter((p: any) => !CJK_REGEX.test(p.title || ""))
+            .slice(0, 20)
+            .map((p: any) => ({
+              id: p.publicationNumber || `patent_${Math.random().toString(36).slice(2)}`,
+              title: p.title || "Untitled Patent",
+              applicant: p.applicant || "",
+              filingDate: p.filingDate || null,
+              abstract: (p.abstract || "").slice(0, 200),
+            }));
         }
       }
     } catch {

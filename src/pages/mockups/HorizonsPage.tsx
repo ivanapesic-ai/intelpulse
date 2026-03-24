@@ -344,8 +344,14 @@ export default function HorizonsPage() {
           <span className="flex items-center gap-1.5">
             <span className="flex gap-0.5"><span className="h-2 w-5 rounded-full bg-emerald-500 inline-block" /><span className="h-2 w-5 rounded-full bg-emerald-500 inline-block" /></span> Strong (2)
           </span>
+          <span className="ml-4 font-medium">Click a row to expand signal lineage</span>
         </div>
       </div>
     </div>
   );
+}
+
+function ExpandedLineage({ keywordId }: { keywordId: string }) {
+  const { data: links, isLoading } = useSignalLineage(keywordId);
+  return <SignalLineageTimeline links={links || []} isLoading={isLoading} />;
 }
