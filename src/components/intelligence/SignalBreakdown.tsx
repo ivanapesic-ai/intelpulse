@@ -74,6 +74,23 @@ export function SignalBreakdown({ technology }: SignalBreakdownProps) {
       secondaryValue: technology.dealroomCompanyCount > 0 ? `${technology.dealroomCompanyCount} companies` : null,
     },
     {
+      key: "research",
+      ...SIGNAL_DEFINITIONS.research,
+      score: technology.researchScore ?? researchSignal?.researchScore ?? 0,
+      maxScore: 2,
+      icon: BookOpen,
+      color: "bg-violet-500",
+      lightColor: "bg-violet-500/20",
+      textColor: "text-violet-500",
+      rawValue: researchSignal
+        ? formatCompactNumber(researchSignal.worksLast5y)
+        : "—",
+      rawLabel: "Papers (5yr)",
+      secondaryValue: researchSignal && researchSignal.growthRateYoy !== 0
+        ? `${researchSignal.growthRateYoy >= 0 ? "+" : ""}${researchSignal.growthRateYoy}% YoY growth`
+        : null,
+    },
+    {
       key: "patents",
       ...SIGNAL_DEFINITIONS.patents,
       score: technology.patentsScore ?? 0,
@@ -100,23 +117,6 @@ export function SignalBreakdown({ technology }: SignalBreakdownProps) {
       rawValue: (technology.documentMentionCount + (technology.newsMentionCount ?? 0)).toString(),
       rawLabel: "Mentions",
       secondaryValue: technology.documentMentionCount > 0 ? `${technology.documentMentionCount} documents` : null,
-    },
-    {
-      key: "research",
-      ...SIGNAL_DEFINITIONS.research,
-      score: technology.researchScore ?? researchSignal?.researchScore ?? 0,
-      maxScore: 2,
-      icon: BookOpen,
-      color: "bg-violet-500",
-      lightColor: "bg-violet-500/20",
-      textColor: "text-violet-500",
-      rawValue: researchSignal
-        ? formatCompactNumber(researchSignal.worksLast5y)
-        : "—",
-      rawLabel: "Papers (5yr)",
-      secondaryValue: researchSignal && researchSignal.growthRateYoy !== 0
-        ? `${researchSignal.growthRateYoy >= 0 ? "+" : ""}${researchSignal.growthRateYoy}% YoY growth`
-        : null,
     },
   ];
 
