@@ -238,7 +238,12 @@ ${JSON.stringify(newsItems, null, 2)}`;
     }
 
     const parsed = JSON.parse(toolCall.function.arguments);
-    const links: LineageLink[] = parsed.links || [];
+    const CJK_OUTPUT_REGEX = /[\u4e00-\u9fff\u3400-\u4dbf\u3000-\u303f]/;
+    const links: LineageLink[] = (parsed.links || []).filter((l: LineageLink) =>
+      l.confidence >= 0.75 &&
+      !CJK_OUTPUT_REGEX.test(l.source_title) &&
+      !CJK_OUTPUT_REGEX.test(l.target_title)
+    );
 
     // 5. Upsert into signal_lineage
     if (links.length > 0) {
