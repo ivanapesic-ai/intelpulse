@@ -226,6 +226,16 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
               return (
                 <Tooltip key={conn.id}>
                   <TooltipTrigger asChild>
+                    {/* Invisible wider hitbox for easier hovering */}
+                    <path
+                      d={`M ${sx} ${sy} C ${midX} ${sy}, ${midX} ${ty}, ${tx} ${ty}`}
+                      fill="none"
+                      stroke="transparent"
+                      strokeWidth={14}
+                      className="cursor-pointer"
+                      onMouseEnter={() => setHoveredLink(conn.id)}
+                      onMouseLeave={() => setHoveredLink(null)}
+                    />
                     <path
                       d={`M ${sx} ${sy} C ${midX} ${sy}, ${midX} ${ty}, ${tx} ${ty}`}
                       fill="none"
@@ -233,9 +243,7 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
                       strokeWidth={isHovered ? 2.5 : 1.5}
                       strokeOpacity={opacity}
                       markerEnd="url(#arrowhead)"
-                      className="cursor-pointer transition-all duration-200"
-                      onMouseEnter={() => setHoveredLink(conn.id)}
-                      onMouseLeave={() => setHoveredLink(null)}
+                      className="pointer-events-none transition-all duration-200"
                     />
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs">
