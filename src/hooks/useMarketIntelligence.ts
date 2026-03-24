@@ -53,31 +53,6 @@
    return ranges[employeeStr] || 0;
  }
  
-// Batch helper: split array into chunks and query in parallel
-async function batchIn<T>(
-  table: string,
-  column: string,
-  ids: string[],
-  select: string,
-  batchSize = 100,
-): Promise<T[]> {
-  const chunks: string[][] = [];
-  for (let i = 0; i < ids.length; i += batchSize) {
-    chunks.push(ids.slice(i, i + batchSize));
-  }
-  const results = await Promise.all(
-    chunks.map(async (chunk) => {
-      const { data, error } = await supabase
-        .from(table)
-        .select(select)
-        .in(column, chunk);
-      if (error) throw error;
-      return (data || []) as T[];
-    }),
-  );
-  return results.flat();
-}
-
 export function useMarketIntelligence(keywordId?: string) {
   return useQuery({
     queryKey: ["market-intelligence", keywordId],
@@ -107,22 +82,22 @@ export function useMarketIntelligence(keywordId?: string) {
       const companyIds = mappings.map(m => m.company_id).filter(Boolean) as string[];
 
       // Fetch Crunchbase company details in batches to avoid URL length limits
-      const companies = await batchIn<{
-        organization_name: string;
-        description: string | null;
-        hq_country: string | null;
-        total_funding_usd: number | null;
-        number_of_employees: string | null;
-        top_5_investors: string[] | null;
-        lead_investors: string[] | null;
-        last_funding_type: string | null;
-        operating_status: string | null;
-      }>(
-        "crunchbase_companies",
-        "id",
-        companyIds,
-        "organization_name, description, hq_country, total_funding_usd, number_of_employees, top_5_investors, lead_investors, last_funding_type, operating_status",
+      const BATCH_SIZE = 100;
+      const chunks: string[][] = [];
+      for (let i = 0; i < companyIds.length; i += BATCH_SIZE) {
+        chunks.push(companyIds.slice(i, i + BATCH_SIZE));
+      }
+      const batchResults = await Promise.all(
+        chunks.map(async (chunk) => {
+          const { data, error } = await supabase
+            .from("crunchbase_companies")
+            .select("organization_name, description, hq_country, total_funding_usd, number_of_employees, top_5_investors, lead_investors, last_funding_type, operating_status")
+            .in("id", chunk);
+          if (error) throw error;
+          return data || [];
+        }),
       );
+      const companies = batchResults.flat();
 
       if (companies.length === 0) return empty;
  
