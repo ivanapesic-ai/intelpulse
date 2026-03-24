@@ -187,7 +187,6 @@ export function useEpoBatchEnrichTechnologies() {
       };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["technologies"] });
       queryClient.invalidateQueries({ queryKey: ["technology-intelligence"] });
     },
   });
