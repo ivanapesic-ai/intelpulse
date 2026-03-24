@@ -38,16 +38,24 @@ export default function Dashboard() {
   
   const { data: technologies, isLoading, error } = useTechnologies();
 
+  const rotatingKeywords = useMemo(() => {
+    if (!technologies?.length) return fallbackKeywords;
+    return [...technologies]
+      .sort((a, b) => (b.compositeScore || 0) - (a.compositeScore || 0))
+      .slice(0, 8)
+      .map(t => t.name);
+  }, [technologies]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setIsAnimating(true);
       setTimeout(() => {
-        setCurrentDomainIndex((prev) => (prev + 1) % rotatingDomains.length);
+        setCurrentDomainIndex((prev) => (prev + 1) % rotatingKeywords.length);
         setIsAnimating(false);
       }, 300);
     }, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [rotatingKeywords.length]);
 
   // Filter to same subset as Explorer (exclude zero-data technologies)
   const filteredTechnologies = useMemo(() => {
