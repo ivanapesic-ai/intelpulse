@@ -14,7 +14,7 @@ import { TrendingTechnologiesWidget } from "@/components/intelligence/TrendingTe
 import logo from "@/assets/logo.svg";
 import BrandName from "@/components/BrandName";
 
-const rotatingDomains = ["Autonomous Vehicles", "Edge Computing", "Electric Mobility", "V2X Communication", "Cloud AI", "Software-Defined Vehicles"];
+const fallbackKeywords = ["Autonomous Driving", "Electric Vehicles", "Software-Defined Vehicles", "V2X Communication", "Edge Computing", "Battery Technology"];
 
 // Maturity labels aligned with platform-wide terminology
 type MaturityRing = "Strong" | "Moderate" | "Emerging";
