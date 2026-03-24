@@ -226,25 +226,27 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
               return (
                 <Tooltip key={conn.id}>
                   <TooltipTrigger asChild>
-                    {/* Invisible wider hitbox for easier hovering */}
-                    <path
-                      d={`M ${sx} ${sy} C ${midX} ${sy}, ${midX} ${ty}, ${tx} ${ty}`}
-                      fill="none"
-                      stroke="transparent"
-                      strokeWidth={14}
+                    <g
                       className="cursor-pointer"
                       onMouseEnter={() => setHoveredLink(conn.id)}
                       onMouseLeave={() => setHoveredLink(null)}
-                    />
-                    <path
-                      d={`M ${sx} ${sy} C ${midX} ${sy}, ${midX} ${ty}, ${tx} ${ty}`}
-                      fill="none"
-                      stroke="hsl(var(--primary))"
-                      strokeWidth={isHovered ? 2.5 : 1.5}
-                      strokeOpacity={opacity}
-                      markerEnd="url(#arrowhead)"
-                      className="pointer-events-none transition-all duration-200"
-                    />
+                    >
+                      <path
+                        d={`M ${sx} ${sy} C ${midX} ${sy}, ${midX} ${ty}, ${tx} ${ty}`}
+                        fill="none"
+                        stroke="transparent"
+                        strokeWidth={14}
+                      />
+                      <path
+                        d={`M ${sx} ${sy} C ${midX} ${sy}, ${midX} ${ty}, ${tx} ${ty}`}
+                        fill="none"
+                        stroke="hsl(var(--primary))"
+                        strokeWidth={isHovered ? 2.5 : 1.5}
+                        strokeOpacity={opacity}
+                        markerEnd="url(#arrowhead)"
+                        className="pointer-events-none transition-all duration-200"
+                      />
+                    </g>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs">
                     <p className="text-xs font-medium">{conn.description}</p>
