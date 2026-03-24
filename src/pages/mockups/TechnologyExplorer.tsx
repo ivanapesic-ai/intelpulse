@@ -18,7 +18,7 @@ type RegionFilter = "all" | "europe" | "usa" | "china";
 
 export default function TechnologyExplorer() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("composite");
+  const [regionFilter, setRegionFilter] = useState<RegionFilter>("all");
   const [regionFilter, setRegionFilter] = useState<RegionFilter>("all");
   const [selectedTech, setSelectedTech] = useState<(Technology & { keyword?: TechnologyKeyword }) | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
