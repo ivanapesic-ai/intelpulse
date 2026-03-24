@@ -551,46 +551,41 @@ function MaturityRadar({
 // ============================================================================
 // MAIN SAMPLER COMPONENT
 // ============================================================================
-// Domain color palette for bubble differentiation
-const domainColorPalette: Record<string, string> = {
-  "Autonomous Driving": "hsl(214 100% 49%)",
-  "Electric Vehicle": "hsl(160 72% 35%)",
-  "Connected Vehicle": "hsl(270 60% 50%)",
-  "Energy & Charging": "hsl(38 92% 50%)",
-  "Mobility Services": "hsl(350 70% 50%)",
-  "Manufacturing": "hsl(190 80% 45%)",
-};
+// Per-technology distinct color palette (no domain grouping)
+const TECH_COLOR_PALETTE = [
+  "hsl(214 100% 49%)",  // blue
+  "hsl(160 72% 35%)",   // green
+  "hsl(350 70% 50%)",   // red
+  "hsl(38 92% 50%)",    // orange
+  "hsl(270 60% 50%)",   // purple
+  "hsl(190 80% 45%)",   // cyan
+  "hsl(330 65% 55%)",   // magenta
+  "hsl(25 90% 48%)",    // burnt orange
+  "hsl(145 60% 40%)",   // forest green
+  "hsl(200 85% 55%)",   // sky blue
+  "hsl(280 55% 60%)",   // lavender
+  "hsl(15 80% 55%)",    // coral
+];
 
-function getDomainColor(techName: string): string {
-  if (techName.match(/autonomous|self.driving|adas|lidar/i)) return domainColorPalette["Autonomous Driving"];
-  if (techName.match(/ev |electric vehicle|battery|v2g|vehicle.to/i)) return domainColorPalette["Electric Vehicle"];
-  if (techName.match(/connected|v2x|telematics|ota/i)) return domainColorPalette["Connected Vehicle"];
-  if (techName.match(/charging|energy|grid|solar/i)) return domainColorPalette["Energy & Charging"];
-  if (techName.match(/mobility|fleet|logistics|sharing/i)) return domainColorPalette["Mobility Services"];
-  if (techName.match(/manufactur|production|digital twin/i)) return domainColorPalette["Manufacturing"];
-  return "hsl(var(--primary))";
+function getTechColorByIndex(index: number): string {
+  return TECH_COLOR_PALETTE[index % TECH_COLOR_PALETTE.length];
 }
 
 function getSmartLabel(name: string): string {
-  // Custom abbreviations for known ambiguous names
   const abbrevMap: Record<string, string> = {
     "EV Charging": "EV Chr",
     "EV Battery": "EV Bat",
     "Vehicle to Grid": "V2G",
     "Vehicle to Everything": "V2X",
-    "Vehicle Software": "V-SW",
     "Autonomous Driving": "AD",
-    "Battery Management System": "BMS",
-    "Connected Vehicle": "ConV",
-    "Digital Twin": "DiTwn",
-    "Smart City": "SmCty",
-    "Shared Energy Storage": "SES-S",
-    "Stationary Energy Storage": "SES-E",
-    "Solar Energy System": "SES-☀",
-    "Self-driving vehicles": "SelfD",
+    "Sensor Fusion": "SenFu",
+    "AV Software": "AV-SW",
+    "Software Defined Vehicle": "SDV",
+    "Energy Management Systems": "EMS",
+    "Battery Management Systems": "BMS",
+    "Electric Vehicle": "EV",
   };
   if (abbrevMap[name]) return abbrevMap[name];
-  // Fallback: take first 5 chars
   return name.substring(0, 5);
 }
 
