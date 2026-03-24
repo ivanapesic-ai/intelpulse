@@ -76,11 +76,30 @@ serve(async (req) => {
 
     if (keywordsError) throw keywordsError;
 
+    // Get company names for mention matching (only names with 4+ chars to avoid false positives)
+    const { data: companies, error: companiesError } = await supabase
+      .from("crunchbase_companies")
+      .select("id, organization_name");
+
+    if (companiesError) {
+      console.error("Failed to load companies for mention matching:", companiesError);
+    }
+
+    // Build efficient lookup: pre-compile regexes for company names
+    const companyMatchers = (companies || [])
+      .filter((c: { organization_name: string }) => c.organization_name && c.organization_name.length >= 4)
+      .map((c: { id: string; organization_name: string }) => ({
+        id: c.id,
+        name: c.organization_name,
+        regex: new RegExp(`\\b${c.organization_name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i'),
+      }));
+
     const results = {
       feedsProcessed: 0,
       itemsFetched: 0,
       itemsInserted: 0,
       matchesCreated: 0,
+      companyMentions: 0,
       errors: [] as string[],
     };
 
@@ -165,6 +184,40 @@ serve(async (req) => {
                 }, { onConflict: "news_id,keyword_id" });
 
               if (!matchError) results.matchesCreated++;
+            }
+          }
+
+          // Match company names in news title/description
+          const matchedKeywordIds = new Set<string>();
+          // Collect keyword IDs already matched for this news item
+          for (const kw of keywords!) {
+            const searchTerms = [
+              kw.keyword.toLowerCase().replace(/[_-]/g, ' '),
+              kw.display_name.toLowerCase(),
+              ...(kw.aliases || []).map((a: string) => a.toLowerCase()),
+            ];
+            if (searchTerms.some(t => combinedText.includes(t))) {
+              matchedKeywordIds.add(kw.id);
+            }
+          }
+
+          for (const cm of companyMatchers) {
+            if (cm.regex.test(combinedText)) {
+              const titleHit = cm.regex.test(titleLower);
+              // Pick first matched keyword for context (if any)
+              const keywordId = matchedKeywordIds.size > 0 ? [...matchedKeywordIds][0] : null;
+              
+              const { error: mentionError } = await supabase
+                .from("news_company_mentions")
+                .upsert({
+                  news_id: newsItem.id,
+                  company_id: cm.id,
+                  keyword_id: keywordId,
+                  match_confidence: titleHit ? 1.0 : 0.7,
+                  match_source: titleHit ? "title_match" : "description_match",
+                }, { onConflict: "news_id,company_id" });
+
+              if (!mentionError) results.companyMentions++;
             }
           }
         }
