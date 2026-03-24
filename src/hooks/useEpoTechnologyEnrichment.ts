@@ -113,7 +113,6 @@ export function useEpoEnrichTechnology() {
       };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["technologies"] });
       queryClient.invalidateQueries({ queryKey: ["technology-intelligence"] });
     },
   });
