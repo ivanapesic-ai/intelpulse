@@ -31,7 +31,7 @@ export function PlatformHeader() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-6">
             <Link to="/dashboard" className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
-              <img src={logo} alt="pulse11" className="h-8 w-auto" />
+              <img src={logo} alt="pulse11" className="w-8 h-8" width={32} height={32} />
               <h1 className="text-2xl leading-none text-foreground"><BrandName /></h1>
             </Link>
 
