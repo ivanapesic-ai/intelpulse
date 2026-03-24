@@ -41,12 +41,12 @@ export function PlatformHeader() {
                 return (
                   <Link key={item.path} to={item.path}>
                     <Button
-                      variant={isActive ? "secondary" : "ghost"}
+                      variant={isActive ? "default" : "ghost"}
                       size="sm"
                       className={cn(
                         "gap-2",
-                        isActive 
-                          ? "bg-primary text-primary-foreground" 
+                        isActive
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90"
                           : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                       )}
                     >
