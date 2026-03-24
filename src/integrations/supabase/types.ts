@@ -1156,6 +1156,107 @@ export type Database = {
           },
         ]
       }
+      news_company_mentions: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          keyword_id: string | null
+          match_confidence: number | null
+          match_source: string | null
+          news_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          keyword_id?: string | null
+          match_confidence?: number | null
+          match_source?: string | null
+          news_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          keyword_id?: string | null
+          match_confidence?: number | null
+          match_source?: string | null
+          news_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_company_mentions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "automotive_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news_company_mentions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news_company_mentions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "crunchbase_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news_company_mentions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "sdv_ecosystem_companies"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "news_company_mentions_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "news_company_mentions_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_mapping_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "news_company_mentions_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_overview"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "news_company_mentions_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_intelligence"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "news_company_mentions_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news_company_mentions_news_id_fkey"
+            columns: ["news_id"]
+            isOneToOne: false
+            referencedRelation: "news_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       news_items: {
         Row: {
           created_at: string
