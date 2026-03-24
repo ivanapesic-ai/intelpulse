@@ -661,40 +661,6 @@ export default function TechnologyDeepDive() {
           </>
         )}
 
-        {/* ── Document Evidence ── */}
-        {docMentions && docMentions.totalMentions > 0 && (
-          <>
-            <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" /> Document Evidence
-            </h2>
-            <div className="grid md:grid-cols-2 gap-6 mb-10">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">TRL Distribution</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <TrlBars dist={docMentions.trlDistribution} />
-                  <p className="text-xs text-muted-foreground mt-3">{docMentions.totalMentions} total mentions across documents</p>
-                </CardContent>
-              </Card>
-
-              {docMentions.policyReferences.length > 0 && (
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Policy References</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-1">
-                      {docMentions.policyReferences.map((ref, i) => (
-                        <li key={i} className="text-sm text-foreground">• {ref}</li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </>
-        )}
       </div>
     </div>
   );
