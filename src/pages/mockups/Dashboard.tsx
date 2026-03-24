@@ -274,9 +274,8 @@ export default function Dashboard() {
                   <div className="p-2 rounded-lg bg-primary/10">
                     <Activity className="h-4 w-4 text-primary" />
                   </div>
-                  AI Insights
+                  Highlights
                 </CardTitle>
-                <CardDescription>Intelligence engine highlights</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 {aiInsights.map((item, i) => (
