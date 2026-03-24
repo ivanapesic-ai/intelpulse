@@ -91,7 +91,7 @@ export default function KnowledgeGraphPage() {
                   {/* Deep-dive link */}
                   {selectedNode.group === "keyword" && (
                     <div className="pt-2 border-t">
-                      <Link to={`/technology/${selectedNode.id}`}>
+                      <Link to={`/technology/${selectedNode.metadata.slug || selectedNode.id}`}>
                         <Button variant="default" size="sm" className="w-full gap-1">
                           View deep-dive
                           <ChevronRight className="h-3 w-3" />
