@@ -127,7 +127,7 @@ export default function MockupsIndex() {
             {[
               { value: stats.totalTechnologies, label: "Technologies" },
               { value: formatNumber(stats.totalPatents), label: "Patents Tracked" },
-              { value: formatFunding(stats.totalFunding), label: "Funding" },
+              { value: formatFunding(stats.totalFunding), label: "Investment" },
               { value: "4", label: "Data Sources" },
             ].map((stat, i) => (
               <div key={i} className="text-center animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>

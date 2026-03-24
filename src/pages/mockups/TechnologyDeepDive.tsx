@@ -441,7 +441,7 @@ export default function TechnologyDeepDive() {
                   <thead>
                     <tr className="border-b border-border text-left">
                       <th className="pb-2 text-muted-foreground font-medium">Company</th>
-                      <th className="pb-2 text-muted-foreground font-medium">Funding</th>
+                      <th className="pb-2 text-muted-foreground font-medium">Investment</th>
                       <th className="pb-2 text-muted-foreground font-medium">Employees</th>
                       <th className="pb-2 text-muted-foreground font-medium">HQ</th>
                     </tr>

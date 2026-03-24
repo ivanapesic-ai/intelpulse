@@ -70,6 +70,7 @@ function SignalCard({
             </div>
             <div>
               <p className="text-xs text-muted-foreground mb-1">Funding</p>
+              <p className="text-xs text-muted-foreground mb-1">Investment</p>
               <p className="text-lg font-semibold text-foreground">
                 {tech.totalFundingEur ? `€${(tech.totalFundingEur / 1e9).toFixed(1)}B` : "–"}
               </p>
