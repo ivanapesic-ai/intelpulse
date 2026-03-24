@@ -95,6 +95,8 @@ async function analyzeKeyword(
     } catch {
       // Patents optional — continue without them
     }
+
+    // Skip if we don't have enough data
     const totalItems = researchItems.length + newsItems.length + patentItems.length;
     if (totalItems < 3) {
       return { keyword: keywordName, links: 0, error: "Insufficient data" };
