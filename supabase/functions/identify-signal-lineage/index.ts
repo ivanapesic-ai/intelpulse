@@ -144,7 +144,7 @@ Identify conceptual links where:
 - A patent is referenced or related to news coverage
 - A research concept appears across multiple signal types
 
-Only return high-confidence links (confidence > 0.6). Each link should explain the relationship in one sentence.
+Only return high-confidence links (confidence > 0.75). Each link should explain the relationship in one sentence. Do NOT include any items with Chinese/CJK characters in titles.
 
 RESEARCH PAPERS:
 ${JSON.stringify(researchItems, null, 2)}
@@ -238,7 +238,12 @@ ${JSON.stringify(newsItems, null, 2)}`;
     }
 
     const parsed = JSON.parse(toolCall.function.arguments);
-    const links: LineageLink[] = parsed.links || [];
+    const CJK_OUTPUT_REGEX = /[\u4e00-\u9fff\u3400-\u4dbf\u3000-\u303f]/;
+    const links: LineageLink[] = (parsed.links || []).filter((l: LineageLink) =>
+      l.confidence >= 0.75 &&
+      !CJK_OUTPUT_REGEX.test(l.source_title) &&
+      !CJK_OUTPUT_REGEX.test(l.target_title)
+    );
 
     // 5. Upsert into signal_lineage
     if (links.length > 0) {
