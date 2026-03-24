@@ -152,7 +152,7 @@ export function useTechnologyRegionStats() {
 export function getRegionStats(
   allStats: TechnologyRegionStats[] | undefined,
   keywordId: string | undefined,
-  region: "all" | "europe" | "usa"
+  region: "all" | "europe" | "usa" | "china"
 ): { companyCount: number; funding: number; employees: number } {
   if (!allStats || !keywordId) {
     return { companyCount: 0, funding: 0, employees: 0 };
@@ -179,10 +179,18 @@ export function getRegionStats(
     };
   }
 
-  // "all" in UI means "Both" (Europe + USA), not worldwide totals.
+  if (region === "china") {
+    return {
+      companyCount: stats.chinaCompanyCount,
+      funding: stats.chinaFunding,
+      employees: stats.chinaEmployees,
+    };
+  }
+
+  // "all" = global totals (all regions)
   return {
-    companyCount: stats.europeCompanyCount + stats.usaCompanyCount,
-    funding: stats.europeFunding + stats.usaFunding,
-    employees: stats.europeEmployees + stats.usaEmployees,
+    companyCount: stats.globalCompanyCount,
+    funding: stats.globalFunding,
+    employees: stats.globalEmployees,
   };
 }
