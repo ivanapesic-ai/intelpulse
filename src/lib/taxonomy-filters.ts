@@ -66,7 +66,7 @@ export const CANONICAL_KEYWORDS = [
   'Software Defined Vehicle',
   'EV Charging',
   'Sensor Fusion',
-  'AV Software Stack',
+  'AV Software',
   'Vehicle to Everything',
   'Vehicle to Grid',
 ];

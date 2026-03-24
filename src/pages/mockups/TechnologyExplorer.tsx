@@ -216,9 +216,6 @@ export default function TechnologyExplorer() {
                       </div>
                     </div>
                     
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                      {tech.description || "Emerging technology area under active monitoring"}
-                    </p>
 
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div className="p-2 rounded bg-muted/50">
