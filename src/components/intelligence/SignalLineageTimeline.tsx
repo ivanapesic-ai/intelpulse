@@ -1,9 +1,14 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { LineageLink } from "@/hooks/useSignalLineage";
 import { Loader2, GitBranch } from "lucide-react";
+
+interface PopoverState {
+  x: number;
+  y: number;
+  content: React.ReactNode;
+}
 
 const LANE_CONFIG = {
   research: { y: 0, label: "Research", color: "hsl(var(--chart-1))", bgClass: "bg-chart-1/10" },
@@ -28,6 +33,23 @@ interface Props {
 
 export function SignalLineageTimeline({ links, isLoading }: Props) {
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
+  const [popover, setPopover] = useState<PopoverState | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  function showPopover(e: React.MouseEvent<SVGElement>, content: React.ReactNode) {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    setPopover({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top - 12,
+      content,
+    });
+  }
+
+  function hidePopover() {
+    setPopover(null);
+  }
 
   const { nodes, connections, dateRange } = useMemo(() => {
     if (!links.length) return { nodes: [], connections: [], dateRange: { min: 0, max: 0 } };
@@ -135,11 +157,13 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0 overflow-x-auto">
-        <TooltipProvider delayDuration={100}>
+        <div className="relative">
           <svg
+            ref={svgRef}
             viewBox={`0 0 ${svgWidth} ${svgHeight}`}
             className="w-full min-w-[600px]"
             style={{ height: "auto", maxHeight: 280 }}
+            onMouseLeave={() => { setHoveredLink(null); hidePopover(); }}
           >
             {/* Arrowhead marker */}
             <defs>
@@ -224,47 +248,46 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
               const opacity = isHovered ? 1 : 0.3 + conn.confidence * 0.4;
 
               return (
-                <Tooltip key={conn.id}>
-                  <TooltipTrigger asChild>
-                    <g
-                      className="cursor-pointer"
-                      onMouseEnter={() => setHoveredLink(conn.id)}
-                      onMouseLeave={() => setHoveredLink(null)}
-                    >
-                      <path
-                        d={`M ${sx} ${sy} C ${midX} ${sy}, ${midX} ${ty}, ${tx} ${ty}`}
-                        fill="none"
-                        stroke="transparent"
-                        strokeWidth={14}
-                      />
-                      <path
-                        d={`M ${sx} ${sy} C ${midX} ${sy}, ${midX} ${ty}, ${tx} ${ty}`}
-                        fill="none"
-                        stroke="hsl(var(--primary))"
-                        strokeWidth={isHovered ? 2.5 : 1.5}
-                        strokeOpacity={opacity}
-                        markerEnd="url(#arrowhead)"
-                        className="pointer-events-none transition-all duration-200"
-                      />
-                    </g>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-sm p-3">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: LANE_CONFIG[nodes.find(n => n.id === conn.sourceKey)?.type as LaneType]?.color }} />
-                        <span className="text-xs font-medium truncate">{nodes.find(n => n.id === conn.sourceKey)?.title}</span>
+                <g
+                  key={conn.id}
+                  className="cursor-pointer"
+                  onMouseEnter={(e) => {
+                    setHoveredLink(conn.id);
+                    showPopover(e, (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: LANE_CONFIG[sourceNode.type]?.color }} />
+                          <span className="text-xs font-medium">{sourceNode.title}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground pl-3">↓ {conn.description}</div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: LANE_CONFIG[targetNode.type]?.color }} />
+                          <span className="text-xs font-medium">{targetNode.title}</span>
+                        </div>
+                        <div className="text-[10px] text-muted-foreground pt-1 border-t border-border mt-1">
+                          Confidence: {Math.round(conn.confidence * 100)}%
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground pl-3">↓ {conn.description}</div>
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: LANE_CONFIG[nodes.find(n => n.id === conn.targetKey)?.type as LaneType]?.color }} />
-                        <span className="text-xs font-medium truncate">{nodes.find(n => n.id === conn.targetKey)?.title}</span>
-                      </div>
-                      <div className="text-[10px] text-muted-foreground pt-1 border-t border-border mt-1">
-                        Confidence: {Math.round(conn.confidence * 100)}%
-                      </div>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
+                    ));
+                  }}
+                  onMouseLeave={() => { setHoveredLink(null); hidePopover(); }}
+                >
+                  <path
+                    d={`M ${sx} ${sy} C ${midX} ${sy}, ${midX} ${ty}, ${tx} ${ty}`}
+                    fill="none"
+                    stroke="transparent"
+                    strokeWidth={14}
+                  />
+                  <path
+                    d={`M ${sx} ${sy} C ${midX} ${sy}, ${midX} ${ty}, ${tx} ${ty}`}
+                    fill="none"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={isHovered ? 2.5 : 1.5}
+                    strokeOpacity={opacity}
+                    markerEnd="url(#arrowhead)"
+                    className="pointer-events-none transition-all duration-200"
+                  />
+                </g>
               );
             })}
 
@@ -274,30 +297,46 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
               const cy = getLaneY(node.type);
 
               return (
-                <Tooltip key={node.id}>
-                  <TooltipTrigger asChild>
-                    <circle
-                      cx={cx}
-                      cy={cy}
-                      r={8}
-                      fill={LANE_CONFIG[node.type].color}
-                      stroke="hsl(var(--background))"
-                      strokeWidth={2}
-                      className="cursor-pointer"
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    <p className="text-xs font-medium">{node.title}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {LANE_CONFIG[node.type].label}
-                      {node.date ? ` · ${new Date(node.date).getFullYear()}` : ""}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
+                <circle
+                  key={node.id}
+                  cx={cx}
+                  cy={cy}
+                  r={8}
+                  fill={LANE_CONFIG[node.type].color}
+                  stroke="hsl(var(--background))"
+                  strokeWidth={2}
+                  className="cursor-pointer"
+                  onMouseEnter={(e) => {
+                    showPopover(e, (
+                      <div>
+                        <p className="text-xs font-medium">{node.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {LANE_CONFIG[node.type].label}
+                          {node.date ? ` · ${new Date(node.date).getFullYear()}` : ""}
+                        </p>
+                      </div>
+                    ));
+                  }}
+                  onMouseLeave={hidePopover}
+                />
               );
             })}
           </svg>
-        </TooltipProvider>
+
+          {/* Custom HTML popover */}
+          {popover && (
+            <div
+              className="absolute z-50 pointer-events-none rounded-md border bg-popover px-3 py-2 text-popover-foreground shadow-md max-w-xs"
+              style={{
+                left: popover.x,
+                top: popover.y,
+                transform: "translate(-50%, -100%)",
+              }}
+            >
+              {popover.content}
+            </div>
+          )}
+        </div>
 
         {/* Legend */}
         <div className="flex items-center gap-4 px-6 pb-4 pt-1">
