@@ -31,7 +31,7 @@ export function PlatformHeader() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-6">
             <Link to="/dashboard" className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
-              <img src={logo} alt="pulse11" className="h-8 w-auto" />
+              <img src={logo} alt="pulse11" className="w-8 h-8" width={32} height={32} />
               <h1 className="text-2xl leading-none text-foreground"><BrandName /></h1>
             </Link>
 
@@ -46,8 +46,8 @@ export function PlatformHeader() {
                       className={cn(
                         "gap-2",
                         isActive 
-                          ? "bg-secondary text-foreground" 
-                          : "text-muted-foreground hover:text-foreground"
+                          ? "bg-primary text-primary-foreground" 
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                       )}
                     >
                       <item.icon className="h-4 w-4" />
