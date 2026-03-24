@@ -281,21 +281,6 @@ export default function AdminPanel() {
             )}
           </TabsContent>
 
-          {/* ===== ONTOLOGY TAB ===== */}
-          <TabsContent value="ontology">
-            <div className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-foreground">Technology Ontology</CardTitle>
-                  <CardDescription>
-                    Technology relationships derived from shared company mappings. 
-                    Connections are weighted by the number of quality companies that operate in both technology areas.
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-              <TechnologyOntology maxEdges={20} />
-            </div>
-          </TabsContent>
 
           {/* ===== STATUS/SETTINGS TAB ===== */}
           <TabsContent value="settings" className="space-y-4">
