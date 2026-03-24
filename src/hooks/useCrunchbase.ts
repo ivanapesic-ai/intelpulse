@@ -348,7 +348,7 @@ export function parseCSV(content: string, filename: string): {
         description: rawRow.description?.trim() || undefined,
         full_description: rawRow.full_description?.trim() || undefined,
         hq_location: rawRow.hq_location?.trim() || undefined,
-        hq_country: extractCountry(rawRow.hq_location),
+        hq_country: rawRow.hq_country?.trim() || extractCountry(rawRow.hq_location),
         founded_date: parseDate(rawRow.founded_date) || undefined,
         operating_status: rawRow.operating_status?.trim() || undefined,
         industries,
