@@ -141,7 +141,7 @@ export function SignalBreakdown({ technology }: SignalBreakdownProps) {
           score: technology.visibilityScore ?? 0,
           rawValue: (technology.documentMentionCount + (technology.newsMentionCount ?? 0)).toString(),
           rawLabel: "Mentions",
-          secondaryValue: technology.documentMentionCount > 0 ? `${technology.documentMentionCount} documents` : null,
+          secondaryValue: null,
         };
       default:
         return null;
