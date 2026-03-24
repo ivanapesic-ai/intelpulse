@@ -111,7 +111,6 @@ export default function TechnologyDeepDive() {
   const { data: news } = useNewsForKeyword(tech?.keywordId ?? null, { limit: 10 });
   const { data: cooccurrences } = useCooccurrences(tech?.keywordId);
   const { watchedKeywordIds } = useWatchlist();
-  const { watchedKeywordIds } = useWatchlist();
   const toggleWatch = useToggleWatch();
 
   const [companyRegionFilter, setCompanyRegionFilter] = useState<RegionFilter>("all");
