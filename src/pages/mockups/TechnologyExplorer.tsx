@@ -155,9 +155,9 @@ export default function TechnologyExplorer() {
                   onValueChange={(value) => value && setRegionFilter(value as RegionFilter)}
                   size="sm"
                 >
-                  <ToggleGroupItem value="all" aria-label="Both">
+                  <ToggleGroupItem value="all" aria-label="All">
                     <Globe className="h-4 w-4 mr-1" />
-                    Both
+                    All
                   </ToggleGroupItem>
                   <ToggleGroupItem value="europe" aria-label="Europe">
                     🇪🇺 Europe
@@ -165,20 +165,10 @@ export default function TechnologyExplorer() {
                   <ToggleGroupItem value="usa" aria-label="USA">
                     🇺🇸 USA
                   </ToggleGroupItem>
+                  <ToggleGroupItem value="china" aria-label="China">
+                    🇨🇳 China
+                  </ToggleGroupItem>
                 </ToggleGroup>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Sort by:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as SortOption)}
-                  className="h-9 text-sm rounded border border-border bg-background px-3 text-foreground"
-                >
-                  <option value="composite">Composite Score</option>
-                  <option value="funding">Investment</option>
-                  <option value="employees">Employees</option>
-                  <option value="companies">Company Count</option>
-                </select>
               </div>
             </div>
           </CardContent>
