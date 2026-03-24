@@ -150,11 +150,6 @@ export default function IntelligenceDashboard() {
                 />
               </div>
 
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>{displayDomainCount} domains</span>
-                <span>•</span>
-                <span>{displayKeywordCount} keywords</span>
-              </div>
             </div>
           </CardContent>
         </Card>
