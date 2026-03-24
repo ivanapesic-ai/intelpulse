@@ -156,18 +156,14 @@ export default function AdminPanel() {
 
         {/* Main Tabs - 4 consolidated */}
         <Tabs defaultValue="taxonomy" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="taxonomy" className="flex items-center gap-2">
               <Layers className="h-4 w-4" />
-              <span className="hidden sm:inline">Taxonomy</span>
+              <span className="hidden sm:inline">Taxonomy & Ontology</span>
             </TabsTrigger>
             <TabsTrigger value="data-sources" className="flex items-center gap-2">
               <Database className="h-4 w-4" />
               <span className="hidden sm:inline">Data Sources</span>
-            </TabsTrigger>
-            <TabsTrigger value="ontology" className="flex items-center gap-2">
-              <Network className="h-4 w-4" />
-              <span className="hidden sm:inline">Ontology</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
                <BarChart className="h-4 w-4" />
