@@ -557,6 +557,7 @@ serve(async (req) => {
           "av camera": ["G06V20/56", "G06V20/58"],     // vehicle-mounted cameras
           "camera": ["G06V20/56", "H04N7/18"],
           "sensor fusion": ["G01S13/86", "G05D1/02"],  // multi-sensor fusion for vehicles
+          "av software": ["G06F8/65", "G05D1/02"],        // AV development tools & software
           "autonomous driving": ["B60W60/00", "G05D1/02"],
           "adas": ["B60W30/00", "B60W50/00"],
           "path planning": ["G05D1/02", "G01C21/34"],
