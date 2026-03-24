@@ -1,67 +1,33 @@
 
 
-## Plan: Technology Deep Dive Page Redesign + Explorer Navigation Fix
+## Plan: Deep Dive Page Fixes
 
-### Summary of Issues (from screenshots and user feedback)
+### Issues Identified
 
-1. **Explorer**: Clicking a technology opens a dialog — should navigate directly to the deep dive page
-2. **Strategic Assessment**: C-O cards are too large with empty space underneath
-3. **Domain badge chip** at top (e.g. "Software Defined Vehicle Ecosystem") — remove it
-4. **Standards section**: Missing from the deep dive page entirely
-5. **Market Intelligence**: Missing Top Strategic Investors, Geographic Concentration, and Funding Stage Distribution — these existed in `MarketIntelligence.tsx` but aren't used on this page
-6. **Region Breakdown**: Replace simple bar chart with the richer Geographic Concentration from MarketIntelligence
-7. **Patents**: Chinese applicant names unreadable; need ability to list actual patents (not just top applicants)
-8. **Research**: Show top papers instead of just top institutions; make horizons expandable to see full lists
-9. **Add to My Signals**: No watchlist toggle on the deep dive page
-10. **Three Horizons cards**: Should show summary numbers in the card headers, and expand into a sheet/dialog with full listings when clicked
+1. **C-O cards too large** — Challenge and Opportunity take 2/3 of the 3-col grid with empty space. Fix: stack them vertically in 1 column, give Signal Breakdown 2 columns.
+2. **Company Landscape showing 0 companies** — The route is `/technology/ev` but the slug lookup uses `technology_keywords.keyword`. The keyword for Electric Vehicle is likely `electric_vehicle`, not `ev`. The `useTechnologyBySlug` hook does `.eq("keyword", slug)` which returns null for `ev`. Need to also check for partial matches or add fallback slug lookup.
+3. **"Error loading market data: Bad Request"** — Since the slug doesn't match, `tech.keywordId` is undefined/null, causing the market intelligence query to fail or return bad request. This is a downstream effect of issue #2.
+4. **Document Evidence section showing "Unknown" TRL** — All 4 mentions have TRL=null. The section currently shows even when all data is unknown/zero. Remove the entire Document Evidence section from the deep dive page as requested.
+5. **Missing Market Intelligence sections** — Top Strategic Investors, Geographic Concentration, Funding Stage Distribution are already rendered via `<MarketIntelligence>` component (line 630), but fail because of the slug mismatch. Once #2 is fixed, these will appear.
 
----
+### Step 1 — Fix slug lookup in `useTechnologyBySlug`
 
-### Step 1 — Explorer: Navigate directly to deep dive
+Add fallback: if `.eq("keyword", slug)` returns null, try `.ilike("keyword", `%${slug}%`)` or look up by `display_name`. Also add a check for common short slugs by querying with `slug` as a case-insensitive prefix match.
 
-Remove the `Dialog` from `TechnologyExplorer.tsx`. Change card `onClick` to navigate to `/technology/:slug` directly using `useNavigate()`. Remove all dialog-related state and markup.
+Better approach: update `useTechnologyBySlug` to first try exact match, then try matching the slug against any `keyword` that starts with the slug, then try `display_name` case-insensitive search.
 
-### Step 2 — Deep Dive header cleanup
+### Step 2 — Redesign Strategic Assessment layout
 
-- Remove the domain badge chip (`tech.domainName` badge)
-- Add watchlist toggle button (eye icon) next to the title, using `useWatchlist` + `useToggleWatch`
+Change from `lg:grid-cols-3` (Challenge | Opportunity | SignalBreakdown) to `lg:grid-cols-3` where Challenge+Opportunity stacked in 1 column (`lg:col-span-1`) and SignalBreakdown takes 2 columns (`lg:col-span-2`).
 
-### Step 3 — Compact Strategic Assessment
+### Step 3 — Remove Document Evidence section
 
-Shrink the C-O cards: reduce padding, make them fixed-height so there's no empty space. Change layout from `lg:grid-cols-2` (2 cards + signal breakdown) to `lg:grid-cols-3` (challenge card + opportunity card + signal breakdown side by side, all same height).
-
-### Step 4 — Add Market Intelligence sections
-
-Import and render `MarketIntelligence` component on the deep dive page after the Company Landscape section. This adds:
-- Top Strategic Investors (with investment counts)
-- Geographic Concentration (country bars with percentages)
-- Funding Stage Distribution (badge chips)
-
-Remove the current simple "Region Breakdown" card since Geographic Concentration replaces it.
-
-### Step 5 — Add Standards section
-
-Import `StandardsSection` and render it after Score Cards (or after Strategic Assessment), passing `keywordId` and `aliases`.
-
-### Step 6 — Three Horizons: expandable with details
-
-Add a `Sheet` (slide-over panel) for each horizon. The card shows summary stats (news count, patent count, research paper count). Clicking a card opens the sheet with:
-- **News**: Full list of news items with links
-- **Patents**: Patent list (titles from `patentSearch.data.patents` if available, plus top applicants)
-- **Research**: Top papers list from `research.topPapers` (title, year, citations, DOI link) + top institutions
-
-### Step 7 — Patent improvements
-
-In the Patents horizon card and sheet:
-- If `patentSearch.data.patents` array exists, show patent titles/abstracts
-- For Chinese applicant names: no data-level fix possible (EPO returns original-language names), but add a note or attempt translation display
-
----
+Delete the entire Document Evidence block (lines 660-693): TRL Distribution bars, Policy References card, and the `useDocumentMentions` hook usage. Remove the `docMentions` variable and the `TrlBars` component.
 
 ### Files Modified
 
 | File | Change |
 |---|---|
-| `src/pages/mockups/TechnologyExplorer.tsx` | Remove dialog, navigate directly to deep dive |
-| `src/pages/mockups/TechnologyDeepDive.tsx` | Major redesign: compact C-O, add watchlist toggle, add MarketIntelligence, add Standards, expandable Three Horizons, remove domain badge |
+| `src/hooks/useTechnologyBySlug.ts` | Add fallback slug matching |
+| `src/pages/mockups/TechnologyDeepDive.tsx` | Redesign C-O layout (stacked + 2-col signal), remove Document Evidence section |
 
