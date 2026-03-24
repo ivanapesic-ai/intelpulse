@@ -149,10 +149,32 @@ export function DataPipelinePanel() {
             break;
           }
           case "analyze_lineage": {
-            const { error } = await supabase.functions.invoke("identify-signal-lineage", {
-              body: { action: "analyze_all" },
-            });
-            if (error) throw error;
+            const { data: keywords, error: keywordsError } = await supabase
+              .from("technology_keywords")
+              .select("id, keyword, display_name")
+              .eq("is_active", true);
+
+            if (keywordsError) throw keywordsError;
+
+            const failures: string[] = [];
+
+            for (const kw of keywords || []) {
+              const { data, error } = await supabase.functions.invoke("identify-signal-lineage", {
+                body: { action: "analyze_keyword", keyword_id: kw.id },
+              });
+
+              if (error || data?.error) {
+                failures.push(data?.keyword || kw.display_name || kw.keyword);
+              }
+
+              await new Promise((resolve) => setTimeout(resolve, 250));
+            }
+
+            if (failures.length > 0) {
+              const preview = failures.slice(0, 4).join(", ");
+              const remainder = failures.length > 4 ? ` +${failures.length - 4} more` : "";
+              throw new Error(`Lineage failed for ${failures.length} keywords: ${preview}${remainder}`);
+            }
             break;
           }
         }
