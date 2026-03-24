@@ -35,14 +35,25 @@ export function useCompaniesForTechnology(keywordId?: string) {
       const companyIds = mappings.map(m => m.company_id).filter(Boolean) as string[];
       const confidenceMap = new Map(mappings.map(m => [m.company_id, m.match_confidence]));
 
-      // Fetch company details from crunchbase_companies
-      const { data: companies, error: companyError } = await supabase
-        .from("crunchbase_companies")
-        .select("*")
-        .in("id", companyIds)
-        .order("total_funding_usd", { ascending: false });
-
-      if (companyError) throw companyError;
+      // Fetch company details in batches to avoid URL length limits
+      const batchSize = 100;
+      const chunks: string[][] = [];
+      for (let i = 0; i < companyIds.length; i += batchSize) {
+        chunks.push(companyIds.slice(i, i + batchSize));
+      }
+      const batchResults = await Promise.all(
+        chunks.map(async (chunk) => {
+          const { data, error } = await supabase
+            .from("crunchbase_companies")
+            .select("*")
+            .in("id", chunk);
+          if (error) throw error;
+          return data || [];
+        }),
+      );
+      const companies = batchResults.flat().sort((a, b) => 
+        (Number(b.total_funding_usd) || 0) - (Number(a.total_funding_usd) || 0)
+      );
 
       return (companies || []).map((row): CompanyForTechnology => ({
         id: row.id,

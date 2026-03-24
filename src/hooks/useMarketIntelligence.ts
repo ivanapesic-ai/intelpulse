@@ -53,64 +53,53 @@
    return ranges[employeeStr] || 0;
  }
  
- export function useMarketIntelligence(keywordId?: string) {
-   return useQuery({
-     queryKey: ["market-intelligence", keywordId],
-     queryFn: async (): Promise<MarketIntelligenceData> => {
-       if (!keywordId) {
-         return {
-           totalCompanies: 0,
-           totalFunding: 0,
-           totalEmployees: 0,
-           euCompanies: 0,
-           euPercentage: 0,
-           topInvestors: [],
-           countryDistribution: [],
-           stageDistribution: [],
-         };
-       }
- 
-       // Get company IDs from Crunchbase keyword mapping
-       const { data: mappings, error: mappingError } = await supabase
-         .from("crunchbase_keyword_mapping")
-         .select("company_id")
-         .eq("keyword_id", keywordId);
- 
-       if (mappingError) throw mappingError;
-       if (!mappings || mappings.length === 0) {
-         return {
-           totalCompanies: 0,
-           totalFunding: 0,
-           totalEmployees: 0,
-           euCompanies: 0,
-           euPercentage: 0,
-           topInvestors: [],
-           countryDistribution: [],
-           stageDistribution: [],
-         };
-       }
- 
-       const companyIds = mappings.map(m => m.company_id).filter(Boolean) as string[];
- 
-       // Fetch Crunchbase company details
-       const { data: companies, error: companyError } = await supabase
-         .from("crunchbase_companies")
-         .select("organization_name, description, hq_country, total_funding_usd, number_of_employees, top_5_investors, lead_investors, last_funding_type, operating_status")
-         .in("id", companyIds);
- 
-       if (companyError) throw companyError;
-       if (!companies || companies.length === 0) {
-         return {
-           totalCompanies: 0,
-           totalFunding: 0,
-           totalEmployees: 0,
-           euCompanies: 0,
-           euPercentage: 0,
-           topInvestors: [],
-           countryDistribution: [],
-           stageDistribution: [],
-         };
-       }
+export function useMarketIntelligence(keywordId?: string) {
+  return useQuery({
+    queryKey: ["market-intelligence", keywordId],
+    queryFn: async (): Promise<MarketIntelligenceData> => {
+      const empty: MarketIntelligenceData = {
+        totalCompanies: 0,
+        totalFunding: 0,
+        totalEmployees: 0,
+        euCompanies: 0,
+        euPercentage: 0,
+        topInvestors: [],
+        countryDistribution: [],
+        stageDistribution: [],
+      };
+
+      if (!keywordId) return empty;
+
+      // Get company IDs from Crunchbase keyword mapping
+      const { data: mappings, error: mappingError } = await supabase
+        .from("crunchbase_keyword_mapping")
+        .select("company_id")
+        .eq("keyword_id", keywordId);
+
+      if (mappingError) throw mappingError;
+      if (!mappings || mappings.length === 0) return empty;
+
+      const companyIds = mappings.map(m => m.company_id).filter(Boolean) as string[];
+
+      // Fetch Crunchbase company details in batches to avoid URL length limits
+      const BATCH_SIZE = 100;
+      const chunks: string[][] = [];
+      for (let i = 0; i < companyIds.length; i += BATCH_SIZE) {
+        chunks.push(companyIds.slice(i, i + BATCH_SIZE));
+      }
+      const batchResults = await Promise.all(
+        chunks.map(async (chunk) => {
+          const { data, error } = await supabase
+            .from("crunchbase_companies")
+            .select("organization_name, description, hq_country, total_funding_usd, number_of_employees, top_5_investors, lead_investors, last_funding_type, operating_status")
+            .in("id", chunk);
+          if (error) throw error;
+          return data || [];
+        }),
+      );
+      const companies = batchResults.flat();
+
+      if (companies.length === 0) return empty;
  
        // Calculate totals
        const totalCompanies = companies.length;
