@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
-import { Newspaper, FileText, BookOpen, TrendingUp, TrendingDown, Search, ArrowRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Newspaper, FileText, BookOpen, TrendingUp, TrendingDown, Search, ChevronDown } from "lucide-react";
 import { PlatformHeader } from "@/components/mockups/PlatformHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,8 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useTechnologyIntelligence, type TechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
 import { useResearchSignals, type ResearchSignal } from "@/hooks/useResearchSignals";
+import { useSignalLineage } from "@/hooks/useSignalLineage";
+import { SignalLineageTimeline } from "@/components/intelligence/SignalLineageTimeline";
 
 function fmt(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
