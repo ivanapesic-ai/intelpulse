@@ -196,16 +196,25 @@ ${JSON.stringify(newsItems, null, 2)}`;
       // Clear previous lineage for this keyword
       await supabase.from("signal_lineage").delete().eq("keyword_id", keywordId);
 
+      const normalizeDate = (d: string | null): string | null => {
+        if (!d) return null;
+        // Year-only like "2025" → "2025-01-01"
+        if (/^\d{4}$/.test(d)) return `${d}-01-01`;
+        // Already ISO-ish date
+        if (/^\d{4}-\d{2}/.test(d)) return d.slice(0, 10);
+        return null;
+      };
+
       const rows = links.map((l) => ({
         keyword_id: keywordId,
         source_type: l.source_type,
         source_id: l.source_id,
         source_title: l.source_title,
-        source_date: l.source_date || null,
+        source_date: normalizeDate(l.source_date),
         target_type: l.target_type,
         target_id: l.target_id,
         target_title: l.target_title,
-        target_date: l.target_date || null,
+        target_date: normalizeDate(l.target_date),
         confidence: l.confidence,
         relationship_description: l.relationship_description,
       }));
