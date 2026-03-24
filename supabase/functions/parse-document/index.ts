@@ -555,6 +555,11 @@ Match technologies from the provided keyword list. Also identify NEW technologie
 3. Pay special attention to market statistics, adoption percentages, and funding amounts
 4. If a technology's challenge/opportunity is not explicitly stated, INFER it from context clues
 5. Always provide reasoning for your scores
+6. IMPORTANT: Always provide a trl_mentioned value (integer 1-9). If the document does not explicitly state a TRL number, INFER it from context:
+   - Technology described as emerging, research-phase, conceptual, early prototype → TRL 2-4
+   - Technology described as piloted, early commercial, initial deployments → TRL 5-7
+   - Technology described as mainstream, widely adopted, mature market → TRL 8-9
+   Never return null for trl_mentioned. Make your best estimate based on the language used.
 
 ## RESPONSE FORMAT
 Return JSON with technology assessments and overall document analysis:

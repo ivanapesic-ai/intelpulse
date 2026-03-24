@@ -292,7 +292,7 @@ export default function AdminPanel() {
                   Recalculate the weighted composite scores for all technologies based on the latest data.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex gap-3 flex-wrap">
                 <Button 
                   onClick={handleRefreshScores} 
                   disabled={isRefreshing}
@@ -301,6 +301,7 @@ export default function AdminPanel() {
                   <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                   {isRefreshing ? "Refreshing..." : "Refresh Composite Scores"}
                 </Button>
+                <RefreshTrlButton />
               </CardContent>
             </Card>
 
