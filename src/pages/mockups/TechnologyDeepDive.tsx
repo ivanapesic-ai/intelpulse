@@ -16,8 +16,6 @@ import { useCompaniesForTechnology } from "@/hooks/useCompaniesForTechnology";
 import { useResearchSignalForKeyword } from "@/hooks/useResearchSignals";
 import { useNewsForKeyword } from "@/hooks/useNews";
 import { useEpoKeywordSearch } from "@/hooks/useEpoPatents";
-import { useSignalLineage } from "@/hooks/useSignalLineage";
-import { SignalLineageTimeline } from "@/components/intelligence/SignalLineageTimeline";
 import { useCooccurrences } from "@/hooks/useCooccurrences";
 import { useWatchlist, useToggleWatch } from "@/hooks/useWatchlist";
 import { formatFundingEur, formatFundingUsd, formatNumber } from "@/types/database";
@@ -112,7 +110,7 @@ export default function TechnologyDeepDive() {
   const { data: research } = useResearchSignalForKeyword(tech?.keywordId ?? null);
   const { data: news } = useNewsForKeyword(tech?.keywordId ?? null, { limit: 10 });
   const { data: cooccurrences } = useCooccurrences(tech?.keywordId);
-  const { data: lineageLinks, isLoading: lineageLoading } = useSignalLineage(tech?.keywordId);
+  
   const { watchedKeywordIds } = useWatchlist();
   const toggleWatch = useToggleWatch();
 
@@ -641,11 +639,6 @@ export default function TechnologyDeepDive() {
             totalEmployees: tech.totalEmployees,
           }}
         />
-
-        <Separator className="my-10" />
-
-        {/* ── Signal Lineage ── */}
-        <SignalLineageTimeline links={lineageLinks || []} isLoading={lineageLoading} />
 
         <Separator className="my-10" />
 
