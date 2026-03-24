@@ -23,7 +23,14 @@ serve(async (req) => {
 
     if (error) throw error;
 
-    return new Response(JSON.stringify({ success: true, result: data }), {
+    // Refresh the technology_intelligence materialized view
+    const { error: refreshError } = await supabase.rpc("refresh_technology_intelligence");
+
+    if (refreshError) {
+      console.error("Warning: materialized view refresh failed:", refreshError);
+    }
+
+    return new Response(JSON.stringify({ success: true, result: data, viewRefreshed: !refreshError }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
