@@ -251,7 +251,7 @@ export default function TechnologyDeepDive() {
 
         {/* ── Standards ── */}
         <div className="mb-10">
-          <StandardsSection keywordId={tech.keywordId} aliases={tech.aliases} />
+          <StandardsSection keywordId={tech.keywordId} />
         </div>
 
         <Separator className="mb-10" />
