@@ -17,7 +17,6 @@ import { useResearchSignalForKeyword } from "@/hooks/useResearchSignals";
 import { useNewsForKeyword } from "@/hooks/useNews";
 import { useEpoKeywordSearch } from "@/hooks/useEpoPatents";
 import { useCooccurrences } from "@/hooks/useCooccurrences";
-import { useDocumentMentions } from "@/hooks/useDocumentMentions";
 import { useWatchlist, useToggleWatch } from "@/hooks/useWatchlist";
 import { formatFundingEur, formatFundingUsd, formatNumber } from "@/types/database";
 import { cn } from "@/lib/utils";
@@ -111,7 +110,6 @@ export default function TechnologyDeepDive() {
   const { data: research } = useResearchSignalForKeyword(tech?.keywordId ?? null);
   const { data: news } = useNewsForKeyword(tech?.keywordId ?? null, { limit: 10 });
   const { data: cooccurrences } = useCooccurrences(tech?.keywordId);
-  const { data: docMentions } = useDocumentMentions(tech?.keywordId);
   const { watchedKeywordIds } = useWatchlist();
   const toggleWatch = useToggleWatch();
 
@@ -256,31 +254,35 @@ export default function TechnologyDeepDive() {
 
         <Separator className="mb-10" />
 
-        {/* ── Strategic Assessment (compact 3-col) ── */}
+        {/* ── Strategic Assessment (stacked C-O + wide signal) ── */}
         <h2 className="text-xl font-bold text-foreground mb-6">Strategic Assessment</h2>
         <div className="grid lg:grid-cols-3 gap-4 mb-10">
-          <Card className={cn("border-2", challengeConfig?.color || "border-border")}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="h-4 w-4" />
-                <span className="text-sm font-semibold">Challenge</span>
-              </div>
-              <p className="text-lg font-bold">{challengeConfig?.label || "Not assessed"}</p>
-              <p className="text-xs text-muted-foreground mt-1">{challengeConfig?.description || "Parse documents to assess"}</p>
-            </CardContent>
-          </Card>
-          <Card className={cn("border-2", opportunityConfig?.color || "border-border")}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Lightbulb className="h-4 w-4" />
-                <span className="text-sm font-semibold">Opportunity</span>
-              </div>
-              <p className="text-lg font-bold">{opportunityConfig?.label || "Not assessed"}</p>
-              <p className="text-xs text-muted-foreground mt-1">{opportunityConfig?.description || "Parse documents to assess"}</p>
-            </CardContent>
-          </Card>
+          <div className="lg:col-span-1 flex flex-col gap-4">
+            <Card className={cn("border-2 flex-1", challengeConfig?.color || "border-border")}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span className="text-sm font-semibold">Challenge</span>
+                </div>
+                <p className="text-base font-bold">{challengeConfig?.label || "Not assessed"}</p>
+                <p className="text-xs text-muted-foreground">{challengeConfig?.description || "Parse documents to assess"}</p>
+              </CardContent>
+            </Card>
+            <Card className={cn("border-2 flex-1", opportunityConfig?.color || "border-border")}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Lightbulb className="h-4 w-4" />
+                  <span className="text-sm font-semibold">Opportunity</span>
+                </div>
+                <p className="text-base font-bold">{opportunityConfig?.label || "Not assessed"}</p>
+                <p className="text-xs text-muted-foreground">{opportunityConfig?.description || "Parse documents to assess"}</p>
+              </CardContent>
+            </Card>
+          </div>
           {techIntelligence && (
-            <SignalBreakdown technology={techIntelligence as any} />
+            <div className="lg:col-span-2">
+              <SignalBreakdown technology={techIntelligence as any} />
+            </div>
           )}
         </div>
 
@@ -657,40 +659,6 @@ export default function TechnologyDeepDive() {
           </>
         )}
 
-        {/* ── Document Evidence ── */}
-        {docMentions && docMentions.totalMentions > 0 && (
-          <>
-            <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" /> Document Evidence
-            </h2>
-            <div className="grid md:grid-cols-2 gap-6 mb-10">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">TRL Distribution</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <TrlBars dist={docMentions.trlDistribution} />
-                  <p className="text-xs text-muted-foreground mt-3">{docMentions.totalMentions} total mentions across documents</p>
-                </CardContent>
-              </Card>
-
-              {docMentions.policyReferences.length > 0 && (
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Policy References</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-1">
-                      {docMentions.policyReferences.map((ref, i) => (
-                        <li key={i} className="text-sm text-foreground">• {ref}</li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </>
-        )}
       </div>
     </div>
   );

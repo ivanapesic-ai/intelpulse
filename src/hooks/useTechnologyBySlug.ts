@@ -36,14 +36,39 @@ export function useTechnologyBySlug(slug: string | undefined) {
     queryFn: async (): Promise<TechnologyBySlug | null> => {
       if (!slug) return null;
 
-      // Get keyword by slug
-      const { data: keyword, error: kwError } = await supabase
+      // Try exact match first
+      let { data: keyword, error: kwError } = await supabase
         .from("technology_keywords")
         .select("id, keyword, display_name, description, ontology_concept_id")
         .eq("keyword", slug)
         .maybeSingle();
 
       if (kwError) throw kwError;
+
+      // Fallback: try display_name case-insensitive match
+      if (!keyword) {
+        const { data: fallback, error: fbError } = await supabase
+          .from("technology_keywords")
+          .select("id, keyword, display_name, description, ontology_concept_id")
+          .ilike("display_name", `%${slug}%`)
+          .limit(1)
+          .maybeSingle();
+        if (fbError) throw fbError;
+        keyword = fallback;
+      }
+
+      // Fallback: try keyword contains slug
+      if (!keyword) {
+        const { data: fallback2, error: fb2Error } = await supabase
+          .from("technology_keywords")
+          .select("id, keyword, display_name, description, ontology_concept_id")
+          .ilike("keyword", `%${slug}%`)
+          .limit(1)
+          .maybeSingle();
+        if (fb2Error) throw fb2Error;
+        keyword = fallback2;
+      }
+
       if (!keyword) return null;
 
       // Get technology scores
