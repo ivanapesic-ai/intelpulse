@@ -680,9 +680,9 @@ function HybridRadarQuadrantLabeled({
 
       <TooltipProvider>
         {positioned.map(({ tech, x, y }, i) => {
-          const size = 32 + Math.min(tech.totalFundingEur / 50_000_000, 1) * 16;
+          const size = 44 + Math.min(tech.totalFundingEur / 50_000_000, 1) * 20;
           const isSelected = selectedId === tech.id;
-          const color = getDomainColor(tech.name);
+          const color = getTechColorByIndex(i);
           const label = getSmartLabel(tech.name);
           
           return (
@@ -693,7 +693,7 @@ function HybridRadarQuadrantLabeled({
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: i * 0.03 }}
                   className={cn(
-                    "absolute cursor-pointer rounded-full flex items-center justify-center text-[7px] font-bold text-white shadow-md hover:scale-110 transition-transform",
+                    "absolute cursor-pointer rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-md hover:scale-110 transition-transform",
                     isSelected && "ring-2 ring-white scale-125 z-20"
                   )}
                   style={{
