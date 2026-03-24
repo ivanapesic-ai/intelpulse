@@ -75,21 +75,9 @@ export default function TechnologyExplorer() {
         return matchesSearch;
       })
       .sort((a, b) => {
-        const statsA = getDisplayStats(a);
-        const statsB = getDisplayStats(b);
-        
-        switch (sortBy) {
-          case "funding":
-            return statsB.funding - statsA.funding;
-          case "employees":
-            return statsB.employees - statsA.employees;
-          case "companies":
-            return statsB.companyCount - statsA.companyCount;
-          default:
-            return b.compositeScore - a.compositeScore;
-        }
+        return b.compositeScore - a.compositeScore;
       });
-  }, [technologies, searchQuery, sortBy, regionFilter, regionStats]);
+  }, [technologies, searchQuery, regionFilter, regionStats]);
 
   const openDetail = (tech: Technology) => {
     setSelectedTech(tech);
