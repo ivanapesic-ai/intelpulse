@@ -225,18 +225,18 @@ export default function TechnologyExplorer() {
                         <Building2 className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
                         <p className="text-sm font-medium text-foreground">{displayStats.companyCount}</p>
                         <p className="text-xs text-muted-foreground">
-                          {regionFilter === "europe" ? "EU Co." : regionFilter === "usa" ? "US Co." : "Companies"}
+                          {regionFilter === "europe" ? "EU Co." : regionFilter === "usa" ? "US Co." : regionFilter === "china" ? "CN Co." : "Companies"}
                         </p>
                       </div>
                       <div className="p-2 rounded bg-muted/50">
                         <Coins className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
                         <p className="text-sm font-medium text-foreground">{formatFundingEur(displayStats.funding)}</p>
-                        <p className="text-xs text-muted-foreground">{regionFilter === "europe" ? "EU Investment" : regionFilter === "usa" ? "US Investment" : "Investment"}</p>
+                        <p className="text-xs text-muted-foreground">{regionFilter === "europe" ? "EU Investment" : regionFilter === "usa" ? "US Investment" : regionFilter === "china" ? "CN Investment" : "Investment"}</p>
                       </div>
                       <div className="p-2 rounded bg-muted/50">
                         <Users className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
                         <p className="text-sm font-medium text-foreground">{formatNumber(displayStats.employees)}</p>
-                        <p className="text-xs text-muted-foreground">{regionFilter === "europe" ? "EU Emp." : regionFilter === "usa" ? "US Emp." : "Employees"}</p>
+                        <p className="text-xs text-muted-foreground">{regionFilter === "europe" ? "EU Emp." : regionFilter === "usa" ? "US Emp." : regionFilter === "china" ? "CN Emp." : "Employees"}</p>
                       </div>
                     </div>
 
