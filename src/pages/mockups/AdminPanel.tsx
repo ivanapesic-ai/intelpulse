@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Database, FileText, Globe, Network, Layers, Upload, CheckCircle, FileSpreadsheet, BarChart, RefreshCw, Zap, Rss, BookOpen } from "lucide-react";
+import { ArrowLeft, Database, FileText, Globe, Layers, Upload, CheckCircle, FileSpreadsheet, BarChart, RefreshCw, Zap, Rss, BookOpen } from "lucide-react";
 import { useDataPipelineSync } from "@/hooks/useDataPipeline";
 import { useAdminDataSync } from "@/hooks/useDataSync";
 import { Link } from "react-router-dom";
@@ -156,18 +156,14 @@ export default function AdminPanel() {
 
         {/* Main Tabs - 4 consolidated */}
         <Tabs defaultValue="taxonomy" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="taxonomy" className="flex items-center gap-2">
               <Layers className="h-4 w-4" />
-              <span className="hidden sm:inline">Taxonomy</span>
+              <span className="hidden sm:inline">Taxonomy & Ontology</span>
             </TabsTrigger>
             <TabsTrigger value="data-sources" className="flex items-center gap-2">
               <Database className="h-4 w-4" />
               <span className="hidden sm:inline">Data Sources</span>
-            </TabsTrigger>
-            <TabsTrigger value="ontology" className="flex items-center gap-2">
-              <Network className="h-4 w-4" />
-              <span className="hidden sm:inline">Ontology</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
                <BarChart className="h-4 w-4" />
@@ -175,10 +171,26 @@ export default function AdminPanel() {
             </TabsTrigger>
           </TabsList>
 
-          {/* ===== TAXONOMY TAB ===== */}
+          {/* ===== TAXONOMY & ONTOLOGY TAB ===== */}
           <TabsContent value="taxonomy" className="space-y-4">
-             <KeywordManager />
-             <StandardsManagerPanel />
+            <div className="grid lg:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <KeywordManager />
+                <StandardsManagerPanel />
+              </div>
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-foreground">Technology Ontology</CardTitle>
+                    <CardDescription>
+                      Technology relationships derived from shared company mappings.
+                      Connections weighted by quality companies operating in both areas.
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+                <TechnologyOntology maxEdges={20} />
+              </div>
+            </div>
           </TabsContent>
 
           {/* ===== DATA SOURCES TAB ===== */}
@@ -269,21 +281,6 @@ export default function AdminPanel() {
             )}
           </TabsContent>
 
-          {/* ===== ONTOLOGY TAB ===== */}
-          <TabsContent value="ontology">
-            <div className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-foreground">Technology Ontology</CardTitle>
-                  <CardDescription>
-                    Technology relationships derived from shared company mappings. 
-                    Connections are weighted by the number of quality companies that operate in both technology areas.
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-              <TechnologyOntology maxEdges={20} />
-            </div>
-          </TabsContent>
 
           {/* ===== STATUS/SETTINGS TAB ===== */}
           <TabsContent value="settings" className="space-y-4">
