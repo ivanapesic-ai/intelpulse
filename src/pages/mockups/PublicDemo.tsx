@@ -125,7 +125,7 @@ export default function PublicDemo() {
             </h1>
             
             <p className="text-base text-muted-foreground mb-6 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-              Real-time maturity tracking powered by market signals, document analysis, and H11 hybrid scoring model.
+              Real-time maturity tracking powered by market signals, document analysis, and hybrid scoring model.
             </p>
 
             {/* Demo Notice */}
