@@ -186,6 +186,40 @@ serve(async (req) => {
               if (!matchError) results.matchesCreated++;
             }
           }
+
+          // Match company names in news title/description
+          const matchedKeywordIds = new Set<string>();
+          // Collect keyword IDs already matched for this news item
+          for (const kw of keywords!) {
+            const searchTerms = [
+              kw.keyword.toLowerCase().replace(/[_-]/g, ' '),
+              kw.display_name.toLowerCase(),
+              ...(kw.aliases || []).map((a: string) => a.toLowerCase()),
+            ];
+            if (searchTerms.some(t => combinedText.includes(t))) {
+              matchedKeywordIds.add(kw.id);
+            }
+          }
+
+          for (const cm of companyMatchers) {
+            if (cm.regex.test(combinedText)) {
+              const titleHit = cm.regex.test(titleLower);
+              // Pick first matched keyword for context (if any)
+              const keywordId = matchedKeywordIds.size > 0 ? [...matchedKeywordIds][0] : null;
+              
+              const { error: mentionError } = await supabase
+                .from("news_company_mentions")
+                .upsert({
+                  news_id: newsItem.id,
+                  company_id: cm.id,
+                  keyword_id: keywordId,
+                  match_confidence: titleHit ? 1.0 : 0.7,
+                  match_source: titleHit ? "title_match" : "description_match",
+                }, { onConflict: "news_id,company_id" });
+
+              if (!mentionError) results.companyMentions++;
+            }
+          }
         }
 
         // Update last_fetched_at
