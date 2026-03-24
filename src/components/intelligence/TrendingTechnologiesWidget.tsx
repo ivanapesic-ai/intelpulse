@@ -1,18 +1,10 @@
-import { useState } from "react";
 import { TrendingUp, TrendingDown, Minus, Flame, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useNewsTrends, TimeWindow } from "@/hooks/useNewsTrends";
+import { useNewsTrends } from "@/hooks/useNewsTrends";
 import { cn } from "@/lib/utils";
-
-const WINDOW_OPTIONS: { value: TimeWindow; label: string }[] = [
-  { value: 7, label: "7d" },
-  { value: 30, label: "30d" },
-  { value: 90, label: "90d" },
-];
 
 const directionConfig = {
   rising: { icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10" },
@@ -21,36 +13,22 @@ const directionConfig = {
 };
 
 export function TrendingTechnologiesWidget() {
-  const [window, setWindow] = useState<TimeWindow>(30);
-  const { data: trends, isLoading } = useNewsTrends(window, 8);
+  const { data: trends, isLoading } = useNewsTrends(7, 20);
 
   return (
     <Card className="card-hover">
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader>
         <div>
           <CardTitle className="font-display flex items-center gap-2 text-foreground">
             <Flame className="h-5 w-5 text-orange-500" />
             News Momentum
           </CardTitle>
-          <CardDescription>Technologies by mention velocity</CardDescription>
-        </div>
-        <div className="flex gap-1">
-          {WINDOW_OPTIONS.map((opt) => (
-            <Button
-              key={opt.value}
-              variant={window === opt.value ? "default" : "ghost"}
-              size="sm"
-              className="h-7 px-2.5 text-xs"
-              onClick={() => setWindow(opt.value)}
-            >
-              {opt.label}
-            </Button>
-          ))}
+          <CardDescription>Technologies by mention frequency (7 days)</CardDescription>
         </div>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-2 max-h-[340px] overflow-y-auto">
         {isLoading ? (
-          Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14" />)
+          Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-14" />)
         ) : trends && trends.length > 0 ? (
           trends.map((trend, i) => {
             const config = directionConfig[trend.trend_direction] || directionConfig.stable;
