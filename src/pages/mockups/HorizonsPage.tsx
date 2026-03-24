@@ -230,76 +230,101 @@ export default function HorizonsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {horizonData.map((tech, idx) => (
-                      <motion.tr
-                        key={tech.keywordId}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: idx * 0.02 }}
-                        className="border-b border-border/50 hover:bg-muted/30 transition-colors"
-                      >
-                        <td className="p-4">
-                          <span className="font-medium text-foreground">{tech.name}</span>
-                        </td>
-                        {/* H1 */}
-                        <td className="p-4 text-center">
-                          <div className="flex flex-col items-center gap-1">
-                            <div className="flex gap-0.5">
-                              {[0, 1].map(i => (
-                                <div key={i} className={cn("h-2 w-5 rounded-full", i < tech.h1Score ? "bg-amber-500" : "bg-muted")} />
-                              ))}
-                            </div>
-                            <span className="text-[10px] text-muted-foreground">{tech.h1Value}</span>
-                          </div>
-                        </td>
-                        {/* H2 */}
-                        <td className="p-4 text-center">
-                          <div className="flex flex-col items-center gap-1">
-                            <div className="flex gap-0.5">
-                              {[0, 1].map(i => (
-                                <div key={i} className={cn("h-2 w-5 rounded-full", i < tech.h2Score ? "bg-blue-500" : "bg-muted")} />
-                              ))}
-                            </div>
-                            <span className="text-[10px] text-muted-foreground">{tech.h2Value}</span>
-                          </div>
-                        </td>
-                        {/* H3 */}
-                        <td className="p-4 text-center">
-                          <div className="flex flex-col items-center gap-1">
-                            <div className="flex gap-0.5">
-                              {[0, 1].map(i => (
-                                <div key={i} className={cn("h-2 w-5 rounded-full", i < tech.h3Score ? "bg-violet-500" : "bg-muted")} />
-                              ))}
-                            </div>
-                            <span className="text-[10px] text-muted-foreground">{tech.h3Value}</span>
-                          </div>
-                        </td>
-                        {/* Growth */}
-                        <td className="p-4 text-center">
-                          {tech.h3Growth !== 0 ? (
-                            <span className={cn(
-                              "inline-flex items-center gap-0.5 text-xs font-medium",
-                              tech.h3Growth >= 0 ? "text-emerald-500" : "text-red-500"
-                            )}>
-                              {tech.h3Growth >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                              {Math.abs(tech.h3Growth).toFixed(1)}%
-                            </span>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">—</span>
+                    {horizonData.map((tech, idx) => {
+                      const isExpanded = expandedKeywordId === tech.keywordId;
+                      return (
+                        <React.Fragment key={tech.keywordId}>
+                          <motion.tr
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: idx * 0.02 }}
+                            className={cn(
+                              "border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer",
+                              isExpanded && "bg-muted/20"
+                            )}
+                            onClick={() => setExpandedKeywordId(isExpanded ? null : tech.keywordId)}
+                          >
+                            <td className="p-4">
+                              <div className="flex items-center gap-2">
+                                <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", isExpanded && "rotate-180")} />
+                                <span className="font-medium text-foreground">{tech.name}</span>
+                              </div>
+                            </td>
+                            {/* H1 */}
+                            <td className="p-4 text-center">
+                              <div className="flex flex-col items-center gap-1">
+                                <div className="flex gap-0.5">
+                                  {[0, 1].map(i => (
+                                    <div key={i} className={cn("h-2 w-5 rounded-full", i < tech.h1Score ? "bg-amber-500" : "bg-muted")} />
+                                  ))}
+                                </div>
+                                <span className="text-[10px] text-muted-foreground">{tech.h1Value}</span>
+                              </div>
+                            </td>
+                            {/* H2 */}
+                            <td className="p-4 text-center">
+                              <div className="flex flex-col items-center gap-1">
+                                <div className="flex gap-0.5">
+                                  {[0, 1].map(i => (
+                                    <div key={i} className={cn("h-2 w-5 rounded-full", i < tech.h2Score ? "bg-blue-500" : "bg-muted")} />
+                                  ))}
+                                </div>
+                                <span className="text-[10px] text-muted-foreground">{tech.h2Value}</span>
+                              </div>
+                            </td>
+                            {/* H3 */}
+                            <td className="p-4 text-center">
+                              <div className="flex flex-col items-center gap-1">
+                                <div className="flex gap-0.5">
+                                  {[0, 1].map(i => (
+                                    <div key={i} className={cn("h-2 w-5 rounded-full", i < tech.h3Score ? "bg-violet-500" : "bg-muted")} />
+                                  ))}
+                                </div>
+                                <span className="text-[10px] text-muted-foreground">{tech.h3Value}</span>
+                              </div>
+                            </td>
+                            {/* Growth */}
+                            <td className="p-4 text-center">
+                              {tech.h3Growth !== 0 ? (
+                                <span className={cn(
+                                  "inline-flex items-center gap-0.5 text-xs font-medium",
+                                  tech.h3Growth >= 0 ? "text-emerald-500" : "text-red-500"
+                                )}>
+                                  {tech.h3Growth >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                                  {Math.abs(tech.h3Growth).toFixed(1)}%
+                                </span>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
+                            </td>
+                            {/* Dominant */}
+                            <td className="p-4 text-center">
+                              <Badge variant="outline" className={cn("text-[10px]",
+                                tech.dominantHorizon === "h1" ? "text-amber-500 border-amber-500/40" :
+                                tech.dominantHorizon === "h2" ? "text-blue-500 border-blue-500/40" :
+                                "text-violet-500 border-violet-500/40"
+                              )}>
+                                {tech.dominantHorizon === "h1" ? "Now" : tech.dominantHorizon === "h2" ? "Emerging" : "Vision"}
+                              </Badge>
+                            </td>
+                          </motion.tr>
+                          {isExpanded && (
+                            <tr>
+                              <td colSpan={6} className="p-0">
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: "auto" }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  className="px-4 py-4 bg-muted/10 border-b border-border"
+                                >
+                                  <ExpandedLineage keywordId={tech.keywordId} />
+                                </motion.div>
+                              </td>
+                            </tr>
                           )}
-                        </td>
-                        {/* Dominant */}
-                        <td className="p-4 text-center">
-                          <Badge variant="outline" className={cn("text-[10px]",
-                            tech.dominantHorizon === "h1" ? "text-amber-500 border-amber-500/40" :
-                            tech.dominantHorizon === "h2" ? "text-blue-500 border-blue-500/40" :
-                            "text-violet-500 border-violet-500/40"
-                          )}>
-                            {tech.dominantHorizon === "h1" ? "Now" : tech.dominantHorizon === "h2" ? "Emerging" : "Vision"}
-                          </Badge>
-                        </td>
-                      </motion.tr>
-                    ))}
+                        </React.Fragment>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
