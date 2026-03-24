@@ -162,21 +162,18 @@ export default function Dashboard() {
               <StatCard
                 title="Technologies Tracked"
                 value={stats.totalTechnologies}
-                subtitle="Active technology keywords"
                 icon={Database}
                 trend={{ value: 12, label: "vs last quarter" }}
               />
               <StatCard
                 title="Patents"
                 value={formatNumber(stats.totalPatents)}
-                subtitle="Aggregated from EPO & Crunchbase"
                 icon={FileText}
                 trend={{ value: 8, label: "YoY growth" }}
               />
               <StatCard
                 title="Funding"
                 value={formatFundingEur(stats.totalFunding)}
-                subtitle="Crunchbase company data"
                 icon={TrendingUp}
                 trend={{ value: 15, label: "vs 2024" }}
               />
