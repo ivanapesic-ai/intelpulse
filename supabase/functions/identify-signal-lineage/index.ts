@@ -62,19 +62,22 @@ async function analyzeKeyword(
       source: m.news_items.source_name || "",
     }));
 
-    // 3. Fetch patents via EPO IPC search
+    // 3. Fetch patents via EPO IPC search using keyword name mapping
     let patentItems: any[] = [];
     try {
-      // Look up IPC codes for this keyword from the technology_keywords table
-      const { data: kwRow } = await supabase
-        .from("technology_keywords")
-        .select("ipc_codes")
-        .eq("id", keywordId)
-        .single();
-
-      const ipcCodes: string[] = kwRow?.ipc_codes || [];
-      const ipcCode = ipcCodes[0]; // Use first IPC code
-
+      // Hardcoded IPC map (subset matching epo-patent-lookup)
+      const IPC_MAP: Record<string, string> = {
+        "lidar": "G01S17/93", "sensor fusion": "G01S13/86",
+        "autonomous driving": "B60W60/00", "av software": "G06F8/65",
+        "electric vehicle": "B60L50/60", "ev battery": "H01M10/0525",
+        "battery management systems": "H01M10/42", "ev charging": "H02J7/00",
+        "vehicle to grid": "H02J3/38", "vehicle to everything": "H04W4/46",
+        "bidirectional charging": "H02J3/38", "smart grid": "H02J13/00",
+        "smart city": "G08G1/01", "fleet management": "G06Q10/06",
+        "telematics": "G07C5/08", "ev motor": "H02K7/00",
+        "micro grid": "H02J3/38", "energy management systems": "H02J3/14",
+      };
+      const ipcCode = IPC_MAP[keywordName.toLowerCase()];
       if (ipcCode) {
         const { data: epoData } = await supabase.functions.invoke("epo-patent-lookup", {
           body: { action: "search_ipc_detailed", ipcCode, maxResults: 20 },
@@ -92,8 +95,6 @@ async function analyzeKeyword(
     } catch {
       // Patents optional — continue without them
     }
-
-    // Skip if we don't have enough data
     const totalItems = researchItems.length + newsItems.length + patentItems.length;
     if (totalItems < 3) {
       return { keyword: keywordName, links: 0, error: "Insufficient data" };
