@@ -76,11 +76,30 @@ serve(async (req) => {
 
     if (keywordsError) throw keywordsError;
 
+    // Get company names for mention matching (only names with 4+ chars to avoid false positives)
+    const { data: companies, error: companiesError } = await supabase
+      .from("crunchbase_companies")
+      .select("id, organization_name");
+
+    if (companiesError) {
+      console.error("Failed to load companies for mention matching:", companiesError);
+    }
+
+    // Build efficient lookup: pre-compile regexes for company names
+    const companyMatchers = (companies || [])
+      .filter((c: { organization_name: string }) => c.organization_name && c.organization_name.length >= 4)
+      .map((c: { id: string; organization_name: string }) => ({
+        id: c.id,
+        name: c.organization_name,
+        regex: new RegExp(`\\b${c.organization_name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i'),
+      }));
+
     const results = {
       feedsProcessed: 0,
       itemsFetched: 0,
       itemsInserted: 0,
       matchesCreated: 0,
+      companyMentions: 0,
       errors: [] as string[],
     };
 
