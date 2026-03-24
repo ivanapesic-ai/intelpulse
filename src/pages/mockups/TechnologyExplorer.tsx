@@ -14,12 +14,10 @@ import { formatFundingEur, formatNumber, MATURITY_SCORE_CONFIG, type Technology,
 import { cn } from "@/lib/utils";
 import { isCentralEcosystem } from "@/lib/taxonomy-filters";
 
-type SortOption = "composite" | "funding" | "employees" | "companies";
-type RegionFilter = "all" | "europe" | "usa";
+type RegionFilter = "all" | "europe" | "usa" | "china";
 
 export default function TechnologyExplorer() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("composite");
   const [regionFilter, setRegionFilter] = useState<RegionFilter>("all");
   const [selectedTech, setSelectedTech] = useState<(Technology & { keyword?: TechnologyKeyword }) | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -76,21 +74,9 @@ export default function TechnologyExplorer() {
         return matchesSearch;
       })
       .sort((a, b) => {
-        const statsA = getDisplayStats(a);
-        const statsB = getDisplayStats(b);
-        
-        switch (sortBy) {
-          case "funding":
-            return statsB.funding - statsA.funding;
-          case "employees":
-            return statsB.employees - statsA.employees;
-          case "companies":
-            return statsB.companyCount - statsA.companyCount;
-          default:
-            return b.compositeScore - a.compositeScore;
-        }
+        return b.compositeScore - a.compositeScore;
       });
-  }, [technologies, searchQuery, sortBy, regionFilter, regionStats]);
+  }, [technologies, searchQuery, regionFilter, regionStats]);
 
   const openDetail = (tech: Technology) => {
     setSelectedTech(tech);
@@ -168,9 +154,9 @@ export default function TechnologyExplorer() {
                   onValueChange={(value) => value && setRegionFilter(value as RegionFilter)}
                   size="sm"
                 >
-                  <ToggleGroupItem value="all" aria-label="Both">
+                  <ToggleGroupItem value="all" aria-label="All">
                     <Globe className="h-4 w-4 mr-1" />
-                    Both
+                    All
                   </ToggleGroupItem>
                   <ToggleGroupItem value="europe" aria-label="Europe">
                     🇪🇺 Europe
@@ -178,20 +164,10 @@ export default function TechnologyExplorer() {
                   <ToggleGroupItem value="usa" aria-label="USA">
                     🇺🇸 USA
                   </ToggleGroupItem>
+                  <ToggleGroupItem value="china" aria-label="China">
+                    🇨🇳 China
+                  </ToggleGroupItem>
                 </ToggleGroup>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Sort by:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as SortOption)}
-                  className="h-9 text-sm rounded border border-border bg-background px-3 text-foreground"
-                >
-                  <option value="composite">Composite Score</option>
-                  <option value="funding">Investment</option>
-                  <option value="employees">Employees</option>
-                  <option value="companies">Company Count</option>
-                </select>
               </div>
             </div>
           </CardContent>
@@ -249,18 +225,18 @@ export default function TechnologyExplorer() {
                         <Building2 className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
                         <p className="text-sm font-medium text-foreground">{displayStats.companyCount}</p>
                         <p className="text-xs text-muted-foreground">
-                          {regionFilter === "europe" ? "EU Co." : regionFilter === "usa" ? "US Co." : "Companies"}
+                          {regionFilter === "europe" ? "EU Co." : regionFilter === "usa" ? "US Co." : regionFilter === "china" ? "CN Co." : "Companies"}
                         </p>
                       </div>
                       <div className="p-2 rounded bg-muted/50">
                         <Coins className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
                         <p className="text-sm font-medium text-foreground">{formatFundingEur(displayStats.funding)}</p>
-                        <p className="text-xs text-muted-foreground">{regionFilter === "europe" ? "EU Investment" : regionFilter === "usa" ? "US Investment" : "Investment"}</p>
+                        <p className="text-xs text-muted-foreground">{regionFilter === "europe" ? "EU Investment" : regionFilter === "usa" ? "US Investment" : regionFilter === "china" ? "CN Investment" : "Investment"}</p>
                       </div>
                       <div className="p-2 rounded bg-muted/50">
                         <Users className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
                         <p className="text-sm font-medium text-foreground">{formatNumber(displayStats.employees)}</p>
-                        <p className="text-xs text-muted-foreground">{regionFilter === "europe" ? "EU Emp." : regionFilter === "usa" ? "US Emp." : "Employees"}</p>
+                        <p className="text-xs text-muted-foreground">{regionFilter === "europe" ? "EU Emp." : regionFilter === "usa" ? "US Emp." : regionFilter === "china" ? "CN Emp." : "Employees"}</p>
                       </div>
                     </div>
 
@@ -345,7 +321,7 @@ export default function TechnologyExplorer() {
                 {/* Compact metrics */}
                 {(() => {
                   const detailStats = getDisplayStats(liveSelectedTech);
-                  const regionLabel = regionFilter === "europe" ? "EU" : regionFilter === "usa" ? "US" : "";
+                  const regionLabel = regionFilter === "europe" ? "EU" : regionFilter === "usa" ? "US" : regionFilter === "china" ? "CN" : "";
                   return (
                     <div className="grid grid-cols-3 gap-3 text-center">
                       <div className="p-3 rounded-lg bg-muted/50">

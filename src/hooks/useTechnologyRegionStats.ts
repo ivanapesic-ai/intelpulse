@@ -12,6 +12,8 @@ const EUROPE_COUNTRIES = [
 
 const USA_COUNTRIES = ["United States", "USA", "US"];
 
+const CHINA_COUNTRIES = ["China", "People's Republic of China", "PRC", "Hong Kong", "Macau"];
+
 interface TechnologyRegionStats {
   keywordId: string;
   europeCompanyCount: number;
@@ -20,6 +22,9 @@ interface TechnologyRegionStats {
   usaCompanyCount: number;
   usaFunding: number;
   usaEmployees: number;
+  chinaCompanyCount: number;
+  chinaFunding: number;
+  chinaEmployees: number;
   globalCompanyCount: number;
   globalFunding: number;
   globalEmployees: number;
@@ -88,6 +93,9 @@ export function useTechnologyRegionStats() {
         const isUSA = USA_COUNTRIES.some(c => 
           country.toLowerCase() === c.toLowerCase()
         );
+        const isChina = CHINA_COUNTRIES.some(c => 
+          country.toLowerCase() === c.toLowerCase()
+        );
 
         // Get or create stats entry
         let stats = statsMap.get(mapping.keyword_id);
@@ -100,6 +108,9 @@ export function useTechnologyRegionStats() {
             usaCompanyCount: 0,
             usaFunding: 0,
             usaEmployees: 0,
+            chinaCompanyCount: 0,
+            chinaFunding: 0,
+            chinaEmployees: 0,
             globalCompanyCount: 0,
             globalFunding: 0,
             globalEmployees: 0,
@@ -123,6 +134,12 @@ export function useTechnologyRegionStats() {
           stats.usaFunding += fundingEur;
           stats.usaEmployees += employees;
         }
+
+        if (isChina) {
+          stats.chinaCompanyCount++;
+          stats.chinaFunding += fundingEur;
+          stats.chinaEmployees += employees;
+        }
       }
 
       return Array.from(statsMap.values());
@@ -135,7 +152,7 @@ export function useTechnologyRegionStats() {
 export function getRegionStats(
   allStats: TechnologyRegionStats[] | undefined,
   keywordId: string | undefined,
-  region: "all" | "europe" | "usa"
+  region: "all" | "europe" | "usa" | "china"
 ): { companyCount: number; funding: number; employees: number } {
   if (!allStats || !keywordId) {
     return { companyCount: 0, funding: 0, employees: 0 };
@@ -162,10 +179,18 @@ export function getRegionStats(
     };
   }
 
-  // "all" in UI means "Both" (Europe + USA), not worldwide totals.
+  if (region === "china") {
+    return {
+      companyCount: stats.chinaCompanyCount,
+      funding: stats.chinaFunding,
+      employees: stats.chinaEmployees,
+    };
+  }
+
+  // "all" = global totals (all regions)
   return {
-    companyCount: stats.europeCompanyCount + stats.usaCompanyCount,
-    funding: stats.europeFunding + stats.usaFunding,
-    employees: stats.europeEmployees + stats.usaEmployees,
+    companyCount: stats.globalCompanyCount,
+    funding: stats.globalFunding,
+    employees: stats.globalEmployees,
   };
 }
