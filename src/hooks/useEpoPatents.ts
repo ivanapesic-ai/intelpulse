@@ -341,7 +341,7 @@ export function useAggregatePatentScores() {
       };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["technologies"] });
+      queryClient.invalidateQueries({ queryKey: ["technology-intelligence"] });
     },
   });
 }
@@ -370,7 +370,6 @@ export function useAggregateCrunchbaseSignals() {
       };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["technologies"] });
       queryClient.invalidateQueries({ queryKey: ["technology-intelligence"] });
     },
   });

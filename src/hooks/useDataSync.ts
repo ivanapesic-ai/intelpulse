@@ -4,15 +4,12 @@ import { useCallback } from "react";
 /**
  * Unified Data Sync Hook
  * 
- * Provides a single source of truth for invalidating all related queries
- * after data mutations. This ensures radars, dashboards, explorers, and cards
- * all reflect the latest data consistently.
+ * All technology/scoring data reads from the technology_intelligence materialized view.
+ * A single query key prefix "technology-intelligence" covers all consumers.
  */
 
 // All query keys that should be invalidated together
 const TECHNOLOGY_QUERY_KEYS = [
-  "technologies",
-  "technology",
   "technology-intelligence",
   "technology-region-stats",
   "keyword-stats",
@@ -34,8 +31,7 @@ const DOCUMENT_QUERY_KEYS = [
 ] as const;
 
 const SCORING_QUERY_KEYS = [
-  "domain-hierarchy",
-  "co-scoring",
+  "technology-intelligence",
   "concept-scoring",
 ] as const;
 
@@ -53,18 +49,13 @@ export type SyncScope =
   | "patents";
 
 interface SyncOptions {
-  /** Which data scope to invalidate */
   scope?: SyncScope | SyncScope[];
-  /** Optional callback after sync completes */
   onComplete?: () => void;
 }
 
 export function useDataSync() {
   const queryClient = useQueryClient();
 
-  /**
-   * Invalidate queries by scope
-   */
   const invalidateByScope = useCallback(
     async (scope: SyncScope) => {
       const invalidations: Promise<void>[] = [];
@@ -111,7 +102,6 @@ export function useDataSync() {
           break;
 
         case "all":
-          // Invalidate everything
           for (const key of [
             ...TECHNOLOGY_QUERY_KEYS,
             ...COMPANY_QUERY_KEYS,
@@ -131,10 +121,6 @@ export function useDataSync() {
     [queryClient]
   );
 
-  /**
-   * Full sync - invalidates all related queries
-   * Use after major data operations (imports, reprocessing, etc.)
-   */
   const syncAll = useCallback(
     async (options?: { onComplete?: () => void }) => {
       await invalidateByScope("all");
@@ -143,10 +129,6 @@ export function useDataSync() {
     [invalidateByScope]
   );
 
-  /**
-   * Scoped sync - invalidates specific data domains
-   * Use after targeted operations
-   */
   const sync = useCallback(
     async (options: SyncOptions) => {
       const scopes = Array.isArray(options.scope)
@@ -162,10 +144,6 @@ export function useDataSync() {
     [invalidateByScope]
   );
 
-  /**
-   * Technology sync - invalidates all technology-related queries
-   * Use after keyword updates, score recalculations, etc.
-   */
   const syncTechnologies = useCallback(
     async (options?: { onComplete?: () => void }) => {
       await invalidateByScope("technologies");
@@ -175,50 +153,34 @@ export function useDataSync() {
     [invalidateByScope]
   );
 
-  /**
-   * Company sync - invalidates company and market intelligence queries
-   * Use after Crunchbase imports, keyword mappings, etc.
-   */
   const syncCompanies = useCallback(
     async (options?: { onComplete?: () => void }) => {
       await invalidateByScope("companies");
-      await invalidateByScope("technologies"); // Companies affect tech scores
+      await invalidateByScope("technologies");
       options?.onComplete?.();
     },
     [invalidateByScope]
   );
 
-  /**
-   * Patent sync - invalidates patent and technology queries
-   * Use after EPO enrichment
-   */
   const syncPatents = useCallback(
     async (options?: { onComplete?: () => void }) => {
       await invalidateByScope("patents");
-      await invalidateByScope("technologies"); // Patents affect tech scores
-      await invalidateByScope("companies"); // Patents update company records
+      await invalidateByScope("technologies");
+      await invalidateByScope("companies");
       options?.onComplete?.();
     },
     [invalidateByScope]
   );
 
-  /**
-   * Document sync - invalidates document and technology queries
-   * Use after document parsing
-   */
   const syncDocuments = useCallback(
     async (options?: { onComplete?: () => void }) => {
       await invalidateByScope("documents");
-      await invalidateByScope("technologies"); // Documents affect TRL/visibility scores
+      await invalidateByScope("technologies");
       options?.onComplete?.();
     },
     [invalidateByScope]
   );
 
-  /**
-   * Refetch active queries (more aggressive than invalidate)
-   * Use when you need immediate UI update
-   */
   const refetchActive = useCallback(async () => {
     await queryClient.refetchQueries({ type: "active" });
   }, [queryClient]);
@@ -235,29 +197,15 @@ export function useDataSync() {
   };
 }
 
-/**
- * Hook for Admin Panel operations that need comprehensive sync
- */
 export function useAdminDataSync() {
   const { syncAll, syncTechnologies, syncCompanies, syncPatents, syncDocuments } = useDataSync();
 
   return {
-    /** After Crunchbase import or reprocessing */
     afterCrunchbaseImport: syncCompanies,
-    
-    /** After EPO enrichment */
     afterEpoEnrichment: syncPatents,
-    
-    /** After document parsing */
     afterDocumentParse: syncDocuments,
-    
-    /** After score recalculation */
     afterScoreRefresh: syncTechnologies,
-    
-    /** After keyword taxonomy changes */
     afterKeywordChange: syncAll,
-    
-    /** Full data pipeline sync */
     afterPipelineSync: syncAll,
   };
 }

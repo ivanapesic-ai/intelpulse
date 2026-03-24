@@ -123,7 +123,7 @@ export function useParseDocument() {
       toast.success(`Document parsed: ${data.mentionsCreated} mentions found`);
       queryClient.invalidateQueries({ queryKey: ["documents"] });
       queryClient.invalidateQueries({ queryKey: ["document-mentions"] });
-      queryClient.invalidateQueries({ queryKey: ["technologies"] });
+      queryClient.invalidateQueries({ queryKey: ["technology-intelligence"] });
     },
     onError: (error) => {
       toast.error(`Parsing failed: ${error.message}`);
