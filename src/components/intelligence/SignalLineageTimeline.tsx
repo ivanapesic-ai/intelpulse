@@ -33,6 +33,23 @@ interface Props {
 
 export function SignalLineageTimeline({ links, isLoading }: Props) {
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
+  const [popover, setPopover] = useState<PopoverState | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  function showPopover(e: React.MouseEvent<SVGElement>, content: React.ReactNode) {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    setPopover({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top - 12,
+      content,
+    });
+  }
+
+  function hidePopover() {
+    setPopover(null);
+  }
 
   const { nodes, connections, dateRange } = useMemo(() => {
     if (!links.length) return { nodes: [], connections: [], dateRange: { min: 0, max: 0 } };
