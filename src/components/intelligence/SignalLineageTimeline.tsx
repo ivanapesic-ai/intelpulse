@@ -156,8 +156,8 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
           </Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-0 overflow-x-auto">
-        <div className="relative">
+      <CardContent className="p-0 overflow-visible">
+        <div className="relative overflow-x-auto">
           <svg
             ref={svgRef}
             viewBox={`0 0 ${svgWidth} ${svgHeight}`}
