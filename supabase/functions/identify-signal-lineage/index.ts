@@ -62,20 +62,32 @@ async function analyzeKeyword(
       source: m.news_items.source_name || "",
     }));
 
-    // 3. Fetch patents via EPO edge function (cached or fresh)
+    // 3. Fetch patents via EPO IPC search
     let patentItems: any[] = [];
     try {
-      const { data: epoData } = await supabase.functions.invoke("epo-patent-lookup", {
-        body: { action: "keyword_search", keyword: keywordName },
-      });
-      if (epoData?.patents) {
-        patentItems = epoData.patents.slice(0, 20).map((p: any) => ({
-          id: p.publicationNumber || `patent_${Math.random().toString(36).slice(2)}`,
-          title: p.title || "Untitled Patent",
-          applicant: p.applicant || "",
-          filingDate: p.filingDate || null,
-          abstract: (p.abstract || "").slice(0, 200),
-        }));
+      // Look up IPC codes for this keyword from the technology_keywords table
+      const { data: kwRow } = await supabase
+        .from("technology_keywords")
+        .select("ipc_codes")
+        .eq("id", keywordId)
+        .single();
+
+      const ipcCodes: string[] = kwRow?.ipc_codes || [];
+      const ipcCode = ipcCodes[0]; // Use first IPC code
+
+      if (ipcCode) {
+        const { data: epoData } = await supabase.functions.invoke("epo-patent-lookup", {
+          body: { action: "search_ipc_detailed", ipcCode, maxResults: 20 },
+        });
+        if (epoData?.patents) {
+          patentItems = epoData.patents.slice(0, 20).map((p: any) => ({
+            id: p.publicationNumber || `patent_${Math.random().toString(36).slice(2)}`,
+            title: p.title || "Untitled Patent",
+            applicant: p.applicant || "",
+            filingDate: p.filingDate || null,
+            abstract: (p.abstract || "").slice(0, 200),
+          }));
+        }
       }
     } catch {
       // Patents optional — continue without them
