@@ -24,6 +24,51 @@ import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+function RefreshTrlButton() {
+  const [isRefreshingTrl, setIsRefreshingTrl] = useState(false);
+
+  const handleRefreshTrl = async () => {
+    setIsRefreshingTrl(true);
+    try {
+      // Get all active keywords
+      const { data: keywords, error: kwError } = await supabase
+        .from("technology_keywords")
+        .select("id")
+        .eq("is_active", true);
+
+      if (kwError) throw kwError;
+
+      let updated = 0;
+      for (const kw of keywords || []) {
+        const { error } = await supabase.rpc("aggregate_document_insights", { p_keyword_id: kw.id });
+        if (!error) updated++;
+      }
+
+      // Refresh the materialized view
+      await supabase.rpc("refresh_technology_intelligence");
+
+      toast.success(`TRL scores refreshed for ${updated} keywords`);
+    } catch (err) {
+      console.error("Error refreshing TRL scores:", err);
+      toast.error("Failed to refresh TRL scores");
+    } finally {
+      setIsRefreshingTrl(false);
+    }
+  };
+
+  return (
+    <Button
+      onClick={handleRefreshTrl}
+      disabled={isRefreshingTrl}
+      variant="outline"
+      className="gap-2"
+    >
+      <RefreshCw className={`h-4 w-4 ${isRefreshingTrl ? 'animate-spin' : ''}`} />
+      {isRefreshingTrl ? "Refreshing TRL..." : "Refresh TRL Scores"}
+    </Button>
+  );
+}
+
 export default function AdminPanel() {
   const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "scraping" | "documents" | "news" | "research">("crunchbase");
   const [isRefreshing, setIsRefreshing] = useState(false);
