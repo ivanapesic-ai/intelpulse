@@ -37,11 +37,34 @@ const premiumFeatures = [
   "API access for integrations",
 ];
 
+const fallbackKeywords = ["Autonomous Driving", "Electric Vehicles", "Software-Defined Vehicles", "V2X Communication", "Edge Computing", "Battery Technology"];
+
 export default function PublicDemo() {
   const [showAccessDialog, setShowAccessDialog] = useState(false);
+  const [currentKeywordIndex, setCurrentKeywordIndex] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
   const navigate = useNavigate();
 
   const { data: technologies, isLoading } = useTechnologies();
+
+  const rotatingKeywords = useMemo(() => {
+    if (!technologies?.length) return fallbackKeywords;
+    return [...technologies]
+      .sort((a, b) => (b.compositeScore || 0) - (a.compositeScore || 0))
+      .slice(0, 8)
+      .map(t => t.name);
+  }, [technologies]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsAnimating(true);
+      setTimeout(() => {
+        setCurrentKeywordIndex((prev) => (prev + 1) % rotatingKeywords.length);
+        setIsAnimating(false);
+      }, 300);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [rotatingKeywords.length]);
 
   // Get top 5 technologies for demo display
   const demoTechnologies = useMemo(() => {
