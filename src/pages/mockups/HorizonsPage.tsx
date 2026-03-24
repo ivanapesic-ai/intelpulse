@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Newspaper, FileText, BookOpen, TrendingUp, TrendingDown, Search, ChevronDown } from "lucide-react";
 import { PlatformHeader } from "@/components/mockups/PlatformHeader";
