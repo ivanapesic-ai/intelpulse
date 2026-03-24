@@ -1,10 +1,9 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Search, RefreshCw } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { PlatformHeader } from "@/components/mockups/PlatformHeader";
 import { TechnologyDetailPanel } from "@/components/intelligence/TechnologyDetailPanel";
 import { HierarchyKPICards } from "@/components/intelligence/HierarchyKPICards";
