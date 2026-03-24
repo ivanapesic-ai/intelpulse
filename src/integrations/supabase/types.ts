@@ -2973,9 +2973,15 @@ export type Database = {
       technology_intelligence: {
         Row: {
           aliases: string[] | null
+          avg_relevance_score: number | null
+          avg_semantic_score: number | null
           avg_trl_mentioned: number | null
           challenge_score: number | null
           company_count: number | null
+          composite_score: number | null
+          corpus_rarity_score: number | null
+          document_diversity: number | null
+          document_insights: Json | null
           document_mention_count: number | null
           domain_id: number | null
           domain_name: string | null
@@ -2986,8 +2992,10 @@ export type Database = {
           key_players: string[] | null
           keyword_id: string | null
           log_composite_score: number | null
+          market_signals: Json | null
           maturity_score: number | null
           name: string | null
+          network_centrality: number | null
           news_mention_count: number | null
           opportunity_score: number | null
           patents_score: number | null
@@ -3001,6 +3009,7 @@ export type Database = {
           sector_tags: string[] | null
           slug: string | null
           tech_description: string | null
+          technology_id: string | null
           total_employees: number | null
           total_funding_eur: number | null
           total_patents: number | null
@@ -3008,6 +3017,7 @@ export type Database = {
           trend: Database["public"]["Enums"]["trend_direction"] | null
           trl_score: number | null
           visibility_score: number | null
+          weighted_frequency_score: number | null
         }
         Relationships: []
       }
