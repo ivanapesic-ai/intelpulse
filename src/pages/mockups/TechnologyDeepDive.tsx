@@ -16,6 +16,8 @@ import { useCompaniesForTechnology } from "@/hooks/useCompaniesForTechnology";
 import { useResearchSignalForKeyword } from "@/hooks/useResearchSignals";
 import { useNewsForKeyword } from "@/hooks/useNews";
 import { useEpoKeywordSearch } from "@/hooks/useEpoPatents";
+import { useSignalLineage } from "@/hooks/useSignalLineage";
+import { SignalLineageTimeline } from "@/components/intelligence/SignalLineageTimeline";
 import { useCooccurrences } from "@/hooks/useCooccurrences";
 import { useWatchlist, useToggleWatch } from "@/hooks/useWatchlist";
 import { formatFundingEur, formatFundingUsd, formatNumber } from "@/types/database";
