@@ -1538,6 +1538,27 @@ export type Database = {
           },
         ]
       }
+      platform_config: {
+        Row: {
+          description: string | null
+          key: string
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          updated_at?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       processing_jobs: {
         Row: {
           created_at: string
@@ -1726,6 +1747,42 @@ export type Database = {
         }
         Relationships: []
       }
+      signal_definitions: {
+        Row: {
+          created_at: string | null
+          display_order: number
+          id: number
+          is_composite_input: boolean | null
+          label: string
+          score_function: string
+          scoring_weight: number
+          signal_key: string
+          source_tables: string[]
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number
+          id?: number
+          is_composite_input?: boolean | null
+          label: string
+          score_function: string
+          scoring_weight?: number
+          signal_key: string
+          source_tables?: string[]
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number
+          id?: number
+          is_composite_input?: boolean | null
+          label?: string
+          score_function?: string
+          scoring_weight?: number
+          signal_key?: string
+          source_tables?: string[]
+        }
+        Relationships: []
+      }
       technologies: {
         Row: {
           avg_relevance_score: number | null
@@ -1742,6 +1799,7 @@ export type Database = {
           document_mention_count: number | null
           employees_score: number | null
           eu_alignment_score: number | null
+          growth_rate_pct: number | null
           id: string
           investment_score: number | null
           key_players: string[] | null
@@ -1756,6 +1814,7 @@ export type Database = {
           patents_score: number | null
           policy_mention_count: number | null
           recent_news: Json | null
+          regulatory_status: string | null
           research_citations: number | null
           research_growth_rate: number | null
           research_score: number | null
@@ -1784,6 +1843,7 @@ export type Database = {
           document_mention_count?: number | null
           employees_score?: number | null
           eu_alignment_score?: number | null
+          growth_rate_pct?: number | null
           id?: string
           investment_score?: number | null
           key_players?: string[] | null
@@ -1798,6 +1858,7 @@ export type Database = {
           patents_score?: number | null
           policy_mention_count?: number | null
           recent_news?: Json | null
+          regulatory_status?: string | null
           research_citations?: number | null
           research_growth_rate?: number | null
           research_score?: number | null
@@ -1826,6 +1887,7 @@ export type Database = {
           document_mention_count?: number | null
           employees_score?: number | null
           eu_alignment_score?: number | null
+          growth_rate_pct?: number | null
           id?: string
           investment_score?: number | null
           key_players?: string[] | null
@@ -1840,6 +1902,7 @@ export type Database = {
           patents_score?: number | null
           policy_mention_count?: number | null
           recent_news?: Json | null
+          regulatory_status?: string | null
           research_citations?: number | null
           research_growth_rate?: number | null
           research_score?: number | null
@@ -2948,6 +3011,7 @@ export type Database = {
           total_funding_eur: number
         }[]
       }
+      get_company_count: { Args: { p_keyword_id: string }; Returns: number }
       get_concept_top_companies: {
         Args: { p_concept_id: number; p_limit?: number }
         Returns: {
@@ -2960,6 +3024,9 @@ export type Database = {
           total_funding_eur: number
         }[]
       }
+      get_employees_score: { Args: { p_keyword_id: string }; Returns: number }
+      get_investment_score: { Args: { p_keyword_id: string }; Returns: number }
+      get_maturity_score: { Args: { p_keyword_id: string }; Returns: number }
       get_news_timeline: {
         Args: { p_keyword_id: string; p_weeks?: number }
         Returns: {
@@ -2979,14 +3046,18 @@ export type Database = {
           trend_velocity: number
         }[]
       }
+      get_patents_score: { Args: { p_keyword_id: string }; Returns: number }
+      get_research_score: { Args: { p_keyword_id: string }; Returns: number }
       get_strategic_quadrant: {
         Args: { p_challenge_score: number; p_opportunity_score: number }
         Returns: string
       }
+      get_total_funding: { Args: { p_keyword_id: string }; Returns: number }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_visibility_score: { Args: { p_keyword_id: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
