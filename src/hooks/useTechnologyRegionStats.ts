@@ -12,6 +12,8 @@ const EUROPE_COUNTRIES = [
 
 const USA_COUNTRIES = ["United States", "USA", "US"];
 
+const CHINA_COUNTRIES = ["China", "People's Republic of China", "PRC", "Hong Kong", "Macau"];
+
 interface TechnologyRegionStats {
   keywordId: string;
   europeCompanyCount: number;
@@ -20,6 +22,9 @@ interface TechnologyRegionStats {
   usaCompanyCount: number;
   usaFunding: number;
   usaEmployees: number;
+  chinaCompanyCount: number;
+  chinaFunding: number;
+  chinaEmployees: number;
   globalCompanyCount: number;
   globalFunding: number;
   globalEmployees: number;
