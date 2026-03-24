@@ -148,6 +148,13 @@ export function DataPipelinePanel() {
             if (error) throw error;
             break;
           }
+          case "analyze_lineage": {
+            const { error } = await supabase.functions.invoke("identify-signal-lineage", {
+              body: { action: "analyze_all" },
+            });
+            if (error) throw error;
+            break;
+          }
         }
         updateStep(step.id, {
           status: "done",
