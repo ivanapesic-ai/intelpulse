@@ -256,31 +256,35 @@ export default function TechnologyDeepDive() {
 
         <Separator className="mb-10" />
 
-        {/* ── Strategic Assessment (compact 3-col) ── */}
+        {/* ── Strategic Assessment (stacked C-O + wide signal) ── */}
         <h2 className="text-xl font-bold text-foreground mb-6">Strategic Assessment</h2>
         <div className="grid lg:grid-cols-3 gap-4 mb-10">
-          <Card className={cn("border-2", challengeConfig?.color || "border-border")}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="h-4 w-4" />
-                <span className="text-sm font-semibold">Challenge</span>
-              </div>
-              <p className="text-lg font-bold">{challengeConfig?.label || "Not assessed"}</p>
-              <p className="text-xs text-muted-foreground mt-1">{challengeConfig?.description || "Parse documents to assess"}</p>
-            </CardContent>
-          </Card>
-          <Card className={cn("border-2", opportunityConfig?.color || "border-border")}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Lightbulb className="h-4 w-4" />
-                <span className="text-sm font-semibold">Opportunity</span>
-              </div>
-              <p className="text-lg font-bold">{opportunityConfig?.label || "Not assessed"}</p>
-              <p className="text-xs text-muted-foreground mt-1">{opportunityConfig?.description || "Parse documents to assess"}</p>
-            </CardContent>
-          </Card>
+          <div className="lg:col-span-1 flex flex-col gap-4">
+            <Card className={cn("border-2 flex-1", challengeConfig?.color || "border-border")}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span className="text-sm font-semibold">Challenge</span>
+                </div>
+                <p className="text-base font-bold">{challengeConfig?.label || "Not assessed"}</p>
+                <p className="text-xs text-muted-foreground">{challengeConfig?.description || "Parse documents to assess"}</p>
+              </CardContent>
+            </Card>
+            <Card className={cn("border-2 flex-1", opportunityConfig?.color || "border-border")}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Lightbulb className="h-4 w-4" />
+                  <span className="text-sm font-semibold">Opportunity</span>
+                </div>
+                <p className="text-base font-bold">{opportunityConfig?.label || "Not assessed"}</p>
+                <p className="text-xs text-muted-foreground">{opportunityConfig?.description || "Parse documents to assess"}</p>
+              </CardContent>
+            </Card>
+          </div>
           {techIntelligence && (
-            <SignalBreakdown technology={techIntelligence as any} />
+            <div className="lg:col-span-2">
+              <SignalBreakdown technology={techIntelligence as any} />
+            </div>
           )}
         </div>
 
