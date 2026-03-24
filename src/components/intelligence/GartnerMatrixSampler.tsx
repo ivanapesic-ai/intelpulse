@@ -551,86 +551,55 @@ function MaturityRadar({
 // ============================================================================
 // MAIN SAMPLER COMPONENT
 // ============================================================================
-// Domain color palette for bubble differentiation
-const domainColorPalette: Record<string, string> = {
-  "Autonomous Driving": "hsl(214 100% 49%)",
-  "Electric Vehicle": "hsl(160 72% 35%)",
-  "Connected Vehicle": "hsl(270 60% 50%)",
-  "Energy & Charging": "hsl(38 92% 50%)",
-  "Mobility Services": "hsl(350 70% 50%)",
-  "Manufacturing": "hsl(190 80% 45%)",
-};
+// Per-technology distinct color palette (no domain grouping)
+const TECH_COLOR_PALETTE = [
+  "hsl(214 100% 49%)",  // blue
+  "hsl(160 72% 35%)",   // green
+  "hsl(350 70% 50%)",   // red
+  "hsl(38 92% 50%)",    // orange
+  "hsl(270 60% 50%)",   // purple
+  "hsl(190 80% 45%)",   // cyan
+  "hsl(330 65% 55%)",   // magenta
+  "hsl(25 90% 48%)",    // burnt orange
+  "hsl(145 60% 40%)",   // forest green
+  "hsl(200 85% 55%)",   // sky blue
+  "hsl(280 55% 60%)",   // lavender
+  "hsl(15 80% 55%)",    // coral
+];
 
-function getDomainColor(techName: string): string {
-  if (techName.match(/autonomous|self.driving|adas|lidar/i)) return domainColorPalette["Autonomous Driving"];
-  if (techName.match(/ev |electric vehicle|battery|v2g|vehicle.to/i)) return domainColorPalette["Electric Vehicle"];
-  if (techName.match(/connected|v2x|telematics|ota/i)) return domainColorPalette["Connected Vehicle"];
-  if (techName.match(/charging|energy|grid|solar/i)) return domainColorPalette["Energy & Charging"];
-  if (techName.match(/mobility|fleet|logistics|sharing/i)) return domainColorPalette["Mobility Services"];
-  if (techName.match(/manufactur|production|digital twin/i)) return domainColorPalette["Manufacturing"];
-  return "hsl(var(--primary))";
+function getTechColorByIndex(index: number): string {
+  return TECH_COLOR_PALETTE[index % TECH_COLOR_PALETTE.length];
 }
 
 function getSmartLabel(name: string): string {
-  // Custom abbreviations for known ambiguous names
   const abbrevMap: Record<string, string> = {
     "EV Charging": "EV Chr",
     "EV Battery": "EV Bat",
     "Vehicle to Grid": "V2G",
     "Vehicle to Everything": "V2X",
-    "Vehicle Software": "V-SW",
     "Autonomous Driving": "AD",
-    "Battery Management System": "BMS",
-    "Connected Vehicle": "ConV",
-    "Digital Twin": "DiTwn",
-    "Smart City": "SmCty",
-    "Shared Energy Storage": "SES-S",
-    "Stationary Energy Storage": "SES-E",
-    "Solar Energy System": "SES-☀",
-    "Self-driving vehicles": "SelfD",
+    "Sensor Fusion": "SenFu",
+    "AV Software": "AV-SW",
+    "Software Defined Vehicle": "SDV",
+    "Energy Management Systems": "EMS",
+    "Battery Management Systems": "BMS",
+    "Electric Vehicle": "EV",
   };
   if (abbrevMap[name]) return abbrevMap[name];
-  // Fallback: take first 5 chars
   return name.substring(0, 5);
 }
 
 export function GartnerMatrixSampler(props: GartnerMatrixSamplerProps) {
-  // Collect domains present for legend
-  const domainLegend = useMemo(() => {
-    const filtered = props.technologies.filter(filterSDV);
-    const domains = new Map<string, string>();
-    filtered.forEach(tech => {
-      const color = getDomainColor(tech.name);
-      for (const [domain, c] of Object.entries(domainColorPalette)) {
-        if (c === color) { domains.set(domain, c); break; }
-      }
-    });
-    return Array.from(domains.entries());
-  }, [props.technologies]);
-
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-lg">Strategy Matrix</CardTitle>
+        <p className="text-xs text-muted-foreground">
+          Maturity rings with strategic positioning overlay
+        </p>
       </CardHeader>
       <CardContent>
-        <div className="text-center mb-4">
-          <Badge variant="outline">Radar + Quadrant Fusion</Badge>
-          <p className="text-xs text-muted-foreground mt-1">
-            Maturity rings with strategic positioning overlay
-          </p>
-        </div>
         <HybridRadarQuadrantLabeled {...props} />
-        
-        {/* Domain color legend */}
-        <div className="flex flex-wrap items-center justify-center gap-3 mt-4 pt-3 border-t border-border/50">
-          {domainLegend.map(([domain, color]) => (
-            <div key={domain} className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
-              <span className="text-[10px] text-muted-foreground">{domain}</span>
-            </div>
-          ))}
-        </div>
       </CardContent>
     </Card>
   );
@@ -683,7 +652,7 @@ function HybridRadarQuadrantLabeled({
   ];
 
   return (
-    <div className="relative w-full aspect-square max-w-xl mx-auto">
+    <div className="relative w-full aspect-square max-w-3xl mx-auto">
       <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
         <path d="M50,50 L50,5 A45,45 0 0,0 5,50 Z" fill="rgba(250, 204, 21, 0.2)" />
         <path d="M50,50 L95,50 A45,45 0 0,0 50,5 Z" fill="rgba(236, 72, 153, 0.15)" />
@@ -711,9 +680,9 @@ function HybridRadarQuadrantLabeled({
 
       <TooltipProvider>
         {positioned.map(({ tech, x, y }, i) => {
-          const size = 32 + Math.min(tech.totalFundingEur / 50_000_000, 1) * 16;
+          const size = 44 + Math.min(tech.totalFundingEur / 50_000_000, 1) * 20;
           const isSelected = selectedId === tech.id;
-          const color = getDomainColor(tech.name);
+          const color = getTechColorByIndex(i);
           const label = getSmartLabel(tech.name);
           
           return (
@@ -724,7 +693,7 @@ function HybridRadarQuadrantLabeled({
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: i * 0.03 }}
                   className={cn(
-                    "absolute cursor-pointer rounded-full flex items-center justify-center text-[7px] font-bold text-white shadow-md hover:scale-110 transition-transform",
+                    "absolute cursor-pointer rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-md hover:scale-110 transition-transform",
                     isSelected && "ring-2 ring-white scale-125 z-20"
                   )}
                   style={{

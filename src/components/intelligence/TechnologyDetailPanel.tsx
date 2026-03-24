@@ -44,21 +44,6 @@ export function TechnologyDetailPanel({ technology, onClose }: TechnologyDetailP
               <WatchToggle keywordId={technology.keywordId} />
             </div>
             
-            <div className="flex flex-wrap gap-1.5">
-              {technology.sectorTags.length > 0 ? technology.sectorTags.map(sector => (
-                <Badge 
-                  key={sector} 
-                  variant="outline" 
-                  className={cn("text-xs capitalize", SECTOR_COLORS[sector] || SECTOR_COLORS.general)}
-                >
-                  {sector}
-                </Badge>
-              )) : (
-                <Badge variant="outline" className="text-xs text-muted-foreground">
-                  No sector assigned
-                </Badge>
-              )}
-            </div>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-5 w-5" />

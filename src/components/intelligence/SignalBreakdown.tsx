@@ -26,35 +26,30 @@ interface SignalBreakdownProps {
   technology: TechnologyIntelligence;
 }
 
-// Tender-aligned 4-signal model with Horizons
 const SIGNAL_DEFINITIONS = {
   investment: {
-    name: "Signal 1: Investment",
-    horizon: "H2",
+    name: "Investment",
     indicator: "Investment",
     source: "Market Data",
     description: "Venture capital funding, growth stage, and capital raised by ecosystem companies",
   },
+  research: {
+    name: "Research",
+    indicator: "Academic research intensity",
+    source: "OpenAlex",
+    description: "Scholarly publications, citation velocity, and research growth from 250M+ academic works",
+  },
   patents: {
-    name: "Signal 2: Patents",
-    horizon: "H2",
+    name: "Patents",
     indicator: "Patent – granted? Applied for?",
     source: "PATSTAT / EPO",
     description: "Patent filings, grants, and innovation activity tracked via European Patent Office",
   },
   media: {
-    name: "Signal 3: Market Response",
-    horizon: "H1",
+    name: "Market Response",
     indicator: "Market/media response",
     source: "Tech coverage",
     description: "Document mentions, news coverage, and market visibility from CEI sources",
-  },
-  research: {
-    name: "Signal 4: Research",
-    horizon: "H3",
-    indicator: "Academic research intensity",
-    source: "OpenAlex",
-    description: "Scholarly publications, citation velocity, and research growth from 250M+ academic works",
   },
 };
 
@@ -77,6 +72,23 @@ export function SignalBreakdown({ technology }: SignalBreakdownProps) {
         : "—",
       rawLabel: "Total Raised",
       secondaryValue: technology.dealroomCompanyCount > 0 ? `${technology.dealroomCompanyCount} companies` : null,
+    },
+    {
+      key: "research",
+      ...SIGNAL_DEFINITIONS.research,
+      score: technology.researchScore ?? researchSignal?.researchScore ?? 0,
+      maxScore: 2,
+      icon: BookOpen,
+      color: "bg-violet-500",
+      lightColor: "bg-violet-500/20",
+      textColor: "text-violet-500",
+      rawValue: researchSignal
+        ? formatCompactNumber(researchSignal.worksLast5y)
+        : "—",
+      rawLabel: "Papers (5yr)",
+      secondaryValue: researchSignal && researchSignal.growthRateYoy !== 0
+        ? `${researchSignal.growthRateYoy >= 0 ? "+" : ""}${researchSignal.growthRateYoy}% YoY growth`
+        : null,
     },
     {
       key: "patents",
@@ -106,23 +118,6 @@ export function SignalBreakdown({ technology }: SignalBreakdownProps) {
       rawLabel: "Mentions",
       secondaryValue: technology.documentMentionCount > 0 ? `${technology.documentMentionCount} documents` : null,
     },
-    {
-      key: "research",
-      ...SIGNAL_DEFINITIONS.research,
-      score: technology.researchScore ?? researchSignal?.researchScore ?? 0,
-      maxScore: 2,
-      icon: BookOpen,
-      color: "bg-violet-500",
-      lightColor: "bg-violet-500/20",
-      textColor: "text-violet-500",
-      rawValue: researchSignal
-        ? formatCompactNumber(researchSignal.worksLast5y)
-        : "—",
-      rawLabel: "Papers (5yr)",
-      secondaryValue: researchSignal && researchSignal.growthRateYoy !== 0
-        ? `${researchSignal.growthRateYoy >= 0 ? "+" : ""}${researchSignal.growthRateYoy}% YoY growth`
-        : null,
-    },
   ];
 
   const getScoreLabel = (score: number) => {
@@ -145,11 +140,8 @@ export function SignalBreakdown({ technology }: SignalBreakdownProps) {
       <CardHeader className="pb-2">
         <CardTitle className="text-lg flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-primary" />
-          Early Indicators of New Technologies
+          Signal Breakdown
         </CardTitle>
-        <p className="text-xs text-muted-foreground">
-          4-signal model: H1 Now · H2 Emerging · H3 Vision
-        </p>
       </CardHeader>
       <CardContent className="space-y-5">
         <TooltipProvider>
@@ -169,7 +161,6 @@ export function SignalBreakdown({ technology }: SignalBreakdownProps) {
                   </div>
                   <div>
                     <span className="text-sm font-semibold">{signal.name}</span>
-                    <Badge variant="outline" className="text-[9px] ml-1 px-1 py-0">{signal.horizon}</Badge>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Info className="inline h-3 w-3 ml-1.5 text-muted-foreground cursor-help" />
