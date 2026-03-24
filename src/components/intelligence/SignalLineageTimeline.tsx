@@ -248,11 +248,21 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
                       />
                     </g>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    <p className="text-xs font-medium">{conn.description}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Confidence: {Math.round(conn.confidence * 100)}%
-                    </p>
+                  <TooltipContent side="top" className="max-w-sm p-3">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: LANE_CONFIG[nodes.find(n => n.id === conn.sourceKey)?.type as LaneType]?.color }} />
+                        <span className="text-xs font-medium truncate">{nodes.find(n => n.id === conn.sourceKey)?.title}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground pl-3">↓ {conn.description}</div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: LANE_CONFIG[nodes.find(n => n.id === conn.targetKey)?.type as LaneType]?.color }} />
+                        <span className="text-xs font-medium truncate">{nodes.find(n => n.id === conn.targetKey)?.title}</span>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground pt-1 border-t border-border mt-1">
+                        Confidence: {Math.round(conn.confidence * 100)}%
+                      </div>
+                    </div>
                   </TooltipContent>
                 </Tooltip>
               );
@@ -302,49 +312,6 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
           ))}
         </div>
 
-        {/* Connections detail list */}
-        <div className="px-6 pb-5 space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Connection Details</p>
-          {links.map((l) => (
-            <div
-              key={l.id}
-              className="flex items-start gap-3 p-3 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors"
-              onMouseEnter={() => setHoveredLink(l.id)}
-              onMouseLeave={() => setHoveredLink(null)}
-            >
-              <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: LANE_CONFIG[l.source_type as LaneType]?.color }} />
-                <span className="text-xs text-muted-foreground">→</span>
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: LANE_CONFIG[l.target_type as LaneType]?.color }} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                    {LANE_CONFIG[l.source_type as LaneType]?.label}
-                  </Badge>
-                  <span className="text-xs font-medium truncate max-w-[200px]" title={l.source_title}>
-                    {l.source_title}
-                  </span>
-                  <span className="text-xs text-muted-foreground">→</span>
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                    {LANE_CONFIG[l.target_type as LaneType]?.label}
-                  </Badge>
-                  <span className="text-xs font-medium truncate max-w-[200px]" title={l.target_title}>
-                    {l.target_title}
-                  </span>
-                </div>
-                {l.relationship_description && (
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                    {l.relationship_description}
-                  </p>
-                )}
-              </div>
-              <Badge variant="secondary" className="text-[10px] shrink-0">
-                {Math.round(l.confidence * 100)}%
-              </Badge>
-            </div>
-          ))}
-        </div>
       </CardContent>
     </Card>
   );
