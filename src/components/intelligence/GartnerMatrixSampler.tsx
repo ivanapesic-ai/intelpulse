@@ -568,9 +568,8 @@ export function GartnerMatrixSampler(props: GartnerMatrixSamplerProps) {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="classic" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="classic">Strategy Matrix</TabsTrigger>
-            <TabsTrigger value="radar">Maturity Radar</TabsTrigger>
             <TabsTrigger value="hybrid">Hybrid View</TabsTrigger>
           </TabsList>
           
@@ -582,16 +581,6 @@ export function GartnerMatrixSampler(props: GartnerMatrixSamplerProps) {
               </p>
             </div>
             <Classic2x2Quadrant {...props} />
-          </TabsContent>
-          
-          <TabsContent value="radar" className="mt-0">
-            <div className="text-center mb-4">
-              <Badge variant="outline">Maturity Rings</Badge>
-              <p className="text-xs text-muted-foreground mt-1">
-                Technologies grouped by composite score maturity
-              </p>
-            </div>
-            <MaturityRadar {...props} />
           </TabsContent>
           
           <TabsContent value="hybrid" className="mt-0">

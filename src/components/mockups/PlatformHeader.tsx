@@ -11,7 +11,6 @@ const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { path: "/explorer", label: "Explorer", icon: Compass },
   { path: "/intelligence", label: "Intelligence", icon: Brain },
-  { path: "/knowledge-graph", label: "Graph", icon: Network },
   { path: "/my-signals", label: "My Signals", icon: Eye },
   { path: "/horizons", label: "Horizons", icon: Layers },
 ];
