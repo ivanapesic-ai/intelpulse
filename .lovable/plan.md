@@ -1,47 +1,51 @@
 
 
-## Plan: Signal Lineage — LLM-based Concept Linking
+## Plan: Signal Lineage UX Improvements + Data Pipeline Fixes
 
-Same plan as previously approved, with one visual refinement:
+### Summary of Changes
 
-### Steps 1–5 — Unchanged
+1. **Move Signal Lineage from Deep Dive to Horizons page** — Each technology row in the Horizons table becomes expandable, revealing the lineage timeline inline. Remove lineage from TechnologyDeepDive.
+2. **Filter out Chinese-language patent titles** — In the `identify-signal-lineage` edge function, skip patents where the title contains CJK characters.
+3. **Expand OpenAlex to fetch papers from 2022+** — Currently fetches only last 1-2 years of top papers. Widen the `publication_year` filter to `2022-{currentYear}` and increase `per_page` to 10 for richer lineage data.
+4. **Tooltips already exist** — The current `SignalLineageTimeline` already has SVG `<Tooltip>` on both nodes and connections showing titles and descriptions. The issue is that SVG circles are small (r=6) and paths are thin. Fix: increase node radius to 8, increase path hover hitbox with an invisible wider stroke underneath.
 
-1. Migration: Create `signal_lineage` table with RLS
-2. Edge function: `identify-signal-lineage` — Gemini Flash matching per keyword
-3. Config: Add function entry to `supabase/config.toml`
-4. Frontend: Lineage timeline + hook on Deep-Dive page
-5. Admin: Add "Analyze Signal Lineage" as pipeline step 7
+### Step 1 — Move lineage to Horizons page (expandable rows)
 
-### Visual refinement: Bezier curve arrows
+**`src/pages/mockups/HorizonsPage.tsx`**:
+- Import `useSignalLineage`, `SignalLineageTimeline`, `Collapsible` components
+- Make each table row expandable: clicking a row toggles a collapsible area below showing `SignalLineageTimeline` for that technology's `keywordId`
+- Track expanded state as `expandedKeywordId: string | null`
+- Only fetch lineage data for the currently expanded row (conditional query)
 
-In `SignalLineageTimeline.tsx`, all connecting arrows between swim lanes use **cubic bezier SVG paths** instead of straight lines:
+**`src/pages/mockups/TechnologyDeepDive.tsx`**:
+- Remove the `SignalLineageTimeline` import, `useSignalLineage` hook call, and the lineage section (lines 645-650)
 
-```text
-  Research  ●─────────╮
-                       ╰──────── ●  Patent
-  Patent    ●────╮
-                  ╰─────────────── ●  News
-```
+### Step 2 — Filter Chinese patents in lineage function
 
-Implementation: each connection rendered as an SVG `<path>` with cubic bezier control points:
+**`supabase/functions/identify-signal-lineage/index.ts`**:
+- After fetching `patentItems`, filter out any where `title` matches CJK unicode range (`/[\u4e00-\u9fff\u3400-\u4dbf]/`)
+- This keeps only patents with readable Latin-script titles
 
-```tsx
-// sourceY/targetY = swim lane Y positions, sourceX/targetX = date positions
-const midX = (sourceX + targetX) / 2;
-const d = `M ${sourceX} ${sourceY} C ${midX} ${sourceY}, ${midX} ${targetY}, ${targetX} ${targetY}`;
-```
+### Step 3 — Widen OpenAlex paper window for lineage
 
-This produces smooth S-curves that remain readable even when multiple connections cross between lanes. Arrows get a small arrowhead marker at the target end and use opacity scaled by confidence (0.6–1.0).
+**`supabase/functions/identify-signal-lineage/index.ts`**:
+- Currently the research data comes from `research_signals.top_papers` which only stores 5 recent papers
+- To get historical depth, add a direct OpenAlex API call in the lineage function fetching top 10 papers from 2022 onwards, sorted by relevance
+- This gives the LLM older research to link against newer patents/news
+
+### Step 4 — Improve tooltip hover targets
+
+**`src/components/intelligence/SignalLineageTimeline.tsx`**:
+- Increase node circle radius from 6 to 8
+- Add invisible wider stroke (strokeWidth=12, opacity=0) behind each bezier path as a hover target
+- This makes tooltips much easier to trigger on both nodes and connections
 
 ### Files Modified
 
 | File | Change |
 |---|---|
-| New migration SQL | Create `signal_lineage` table |
-| `supabase/functions/identify-signal-lineage/index.ts` | New edge function |
-| `supabase/config.toml` | Add function config |
-| `src/hooks/useSignalLineage.ts` | New query hook |
-| `src/components/intelligence/SignalLineageTimeline.tsx` | Swim-lane timeline with bezier arrows |
-| `src/pages/mockups/TechnologyDeepDive.tsx` | Add lineage section |
-| `src/components/admin/DataPipelinePanel.tsx` | Add pipeline step 7 |
+| `src/pages/mockups/HorizonsPage.tsx` | Add expandable lineage rows per technology |
+| `src/pages/mockups/TechnologyDeepDive.tsx` | Remove lineage section |
+| `src/components/intelligence/SignalLineageTimeline.tsx` | Larger hover targets |
+| `supabase/functions/identify-signal-lineage/index.ts` | Filter CJK patents, fetch OpenAlex 2022+ papers directly |
 
