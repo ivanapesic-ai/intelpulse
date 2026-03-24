@@ -1,10 +1,8 @@
 import { useState } from "react";
-import { ArrowLeft, Database, FileText, Globe, Layers, Upload, CheckCircle, FileSpreadsheet, BarChart, RefreshCw, Zap, Rss, BookOpen } from "lucide-react";
-import { useDataPipelineSync } from "@/hooks/useDataPipeline";
-import { useAdminDataSync } from "@/hooks/useDataSync";
+import { ArrowLeft, Database, FileText, Globe, Layers, Upload, CheckCircle, FileSpreadsheet, BarChart, Rss, BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDocumentStats } from "@/hooks/useDocuments";
@@ -20,86 +18,19 @@ import { DocumentUploadPanel } from "@/components/admin/DocumentUploadPanel";
 import { RssNewsPanel } from "@/components/admin/RssNewsPanel";
 import { ResearchSignalsPanel } from "@/components/admin/ResearchSignalsPanel";
 import { StandardsManagerPanel } from "@/components/admin/StandardsManagerPanel";
+import { DataPipelinePanel } from "@/components/admin/DataPipelinePanel";
 import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-
-function RefreshTrlButton() {
-  const [isRefreshingTrl, setIsRefreshingTrl] = useState(false);
-
-  const handleRefreshTrl = async () => {
-    setIsRefreshingTrl(true);
-    try {
-      // Get all active keywords
-      const { data: keywords, error: kwError } = await supabase
-        .from("technology_keywords")
-        .select("id")
-        .eq("is_active", true);
-
-      if (kwError) throw kwError;
-
-      let updated = 0;
-      for (const kw of keywords || []) {
-        const { error } = await supabase.rpc("aggregate_document_insights", { tech_keyword_id: kw.id });
-        if (!error) updated++;
-      }
-
-      // Refresh the materialized view
-      await supabase.rpc("refresh_technology_intelligence");
-
-      toast.success(`TRL scores refreshed for ${updated} keywords`);
-    } catch (err) {
-      console.error("Error refreshing TRL scores:", err);
-      toast.error("Failed to refresh TRL scores");
-    } finally {
-      setIsRefreshingTrl(false);
-    }
-  };
-
-  return (
-    <Button
-      onClick={handleRefreshTrl}
-      disabled={isRefreshingTrl}
-      variant="outline"
-      className="gap-2"
-    >
-      <RefreshCw className={`h-4 w-4 ${isRefreshingTrl ? 'animate-spin' : ''}`} />
-      {isRefreshingTrl ? "Refreshing TRL..." : "Refresh TRL Scores"}
-    </Button>
-  );
-}
 
 export default function AdminPanel() {
   const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "scraping" | "documents" | "news" | "research">("crunchbase");
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Data hooks
   const { data: crunchbaseStats } = useCrunchbaseStats();
   const { data: documentStats } = useDocumentStats();
   const { data: keywordStats } = useKeywordStats();
-  const pipelineSync = useDataPipelineSync();
-  const { afterScoreRefresh } = useAdminDataSync();
 
   const totalCompanies = crunchbaseStats?.totalCompanies || 0;
   const totalKeywords = keywordStats?.totalKeywords || 0;
-
-  const handleRefreshScores = async () => {
-    setIsRefreshing(true);
-    try {
-      const { error } = await supabase.rpc("refresh_log_composite_scores");
-      if (error) throw error;
-
-      // Unified routine: make sure all charts/cards refetch
-      await afterScoreRefresh();
-
-      toast.success("Composite scores refreshed successfully!");
-    } catch (err) {
-      console.error("Error refreshing scores:", err);
-      toast.error("Failed to refresh scores");
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -116,19 +47,9 @@ export default function AdminPanel() {
               <p className="text-sm text-muted-foreground">Staff Portal</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              onClick={() => pipelineSync.mutate()}
-              disabled={pipelineSync.isPending}
-              className="gap-2"
-            >
-              <Zap className={`h-4 w-4 ${pipelineSync.isPending ? 'animate-pulse' : ''}`} />
-              {pipelineSync.isPending ? "Syncing..." : "Sync All Data"}
-            </Button>
-            <Badge variant="outline" className="text-primary border-primary">
-              Admin Access
-            </Badge>
-          </div>
+          <Badge variant="outline" className="text-primary border-primary">
+            Admin Access
+          </Badge>
         </div>
       </header>
 
@@ -159,8 +80,8 @@ export default function AdminPanel() {
                   <p className="text-3xl font-bold text-foreground">{totalCompanies}</p>
                    <p className="text-xs text-muted-foreground mt-1">from Crunchbase</p>
                 </div>
-                <div className="p-3 rounded-full bg-purple-500/10">
-                  <Database className="h-6 w-6 text-purple-500" />
+                <div className="p-3 rounded-full bg-primary/10">
+                  <Database className="h-6 w-6 text-primary" />
                 </div>
               </div>
             </CardContent>
@@ -175,8 +96,8 @@ export default function AdminPanel() {
                     {documentStats?.totalMentions || 0} mentions
                   </p>
                 </div>
-                <div className="p-3 rounded-full bg-blue-500/10">
-                  <FileText className="h-6 w-6 text-blue-500" />
+                <div className="p-3 rounded-full bg-primary/10">
+                  <FileText className="h-6 w-6 text-primary" />
                 </div>
               </div>
             </CardContent>
@@ -191,15 +112,20 @@ export default function AdminPanel() {
                    </p>
                    <p className="text-xs text-muted-foreground mt-1">Crunchbase investment</p>
                 </div>
-                 <div className="p-3 rounded-full bg-success/10">
-                   <Database className="h-6 w-6 text-success" />
+                 <div className="p-3 rounded-full bg-primary/10">
+                   <Database className="h-6 w-6 text-primary" />
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Main Tabs - 4 consolidated */}
+        {/* Pipeline Panel - always visible above tabs */}
+        <div className="mb-6">
+          <DataPipelinePanel />
+        </div>
+
+        {/* Main Tabs */}
         <Tabs defaultValue="taxonomy" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="taxonomy" className="flex items-center gap-2">
@@ -227,10 +153,6 @@ export default function AdminPanel() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-foreground">Technology Ontology</CardTitle>
-                    <CardDescription>
-                      Technology relationships derived from shared company mappings.
-                      Connections weighted by quality companies operating in both areas.
-                    </CardDescription>
                   </CardHeader>
                 </Card>
                 <TechnologyOntology maxEdges={20} />
@@ -240,117 +162,42 @@ export default function AdminPanel() {
 
           {/* ===== DATA SOURCES TAB ===== */}
           <TabsContent value="data-sources" className="space-y-4">
-            {/* Sub-navigation */}
             <div className="flex gap-2 border-b border-border pb-3 flex-wrap">
-              <Button
-                variant={dataSubTab === "crunchbase" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setDataSubTab("crunchbase")}
-              >
-                <Upload className="h-4 w-4 mr-1.5" />
-                Crunchbase
+              <Button variant={dataSubTab === "crunchbase" ? "secondary" : "ghost"} size="sm" onClick={() => setDataSubTab("crunchbase")}>
+                <Upload className="h-4 w-4 mr-1.5" /> Crunchbase
               </Button>
-              <Button
-                variant={dataSubTab === "patents" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setDataSubTab("patents")}
-              >
-                <FileSpreadsheet className="h-4 w-4 mr-1.5" />
-                EPO Patents
+              <Button variant={dataSubTab === "patents" ? "secondary" : "ghost"} size="sm" onClick={() => setDataSubTab("patents")}>
+                <FileSpreadsheet className="h-4 w-4 mr-1.5" /> EPO Patents
               </Button>
-              <Button
-                variant={dataSubTab === "scraping" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setDataSubTab("scraping")}
-              >
-                <Globe className="h-4 w-4 mr-1.5" />
-                Web Scraping
+              <Button variant={dataSubTab === "scraping" ? "secondary" : "ghost"} size="sm" onClick={() => setDataSubTab("scraping")}>
+                <Globe className="h-4 w-4 mr-1.5" /> Web Scraping
               </Button>
-              <Button
-                variant={dataSubTab === "documents" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setDataSubTab("documents")}
-              >
-                <FileText className="h-4 w-4 mr-1.5" />
-                Documents
+              <Button variant={dataSubTab === "documents" ? "secondary" : "ghost"} size="sm" onClick={() => setDataSubTab("documents")}>
+                <FileText className="h-4 w-4 mr-1.5" /> Documents
               </Button>
-              <Button
-                variant={dataSubTab === "news" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setDataSubTab("news")}
-              >
-                <Rss className="h-4 w-4 mr-1.5" />
-                News/RSS
+              <Button variant={dataSubTab === "news" ? "secondary" : "ghost"} size="sm" onClick={() => setDataSubTab("news")}>
+                <Rss className="h-4 w-4 mr-1.5" /> News/RSS
               </Button>
-              <Button
-                variant={dataSubTab === "research" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setDataSubTab("research")}
-              >
-                <BookOpen className="h-4 w-4 mr-1.5" />
-                Research
+              <Button variant={dataSubTab === "research" ? "secondary" : "ghost"} size="sm" onClick={() => setDataSubTab("research")}>
+                <BookOpen className="h-4 w-4 mr-1.5" /> Research
               </Button>
             </div>
 
-            {/* Crunchbase Sub-tab */}
-            {dataSubTab === "crunchbase" && (
-              <CrunchbaseImportPanel />
-            )}
-
-            {/* EPO Patents Sub-tab */}
-            {dataSubTab === "patents" && (
-              <EpoPatentPanel />
-            )}
-
-            {/* Web Scraping Sub-tab */}
+            {dataSubTab === "crunchbase" && <CrunchbaseImportPanel />}
+            {dataSubTab === "patents" && <EpoPatentPanel />}
             {dataSubTab === "scraping" && (
               <div className="space-y-6">
                 <WebScrapingPanel />
                 <PdfQueuePanel />
               </div>
             )}
-
-            {/* Documents Sub-tab */}
-            {dataSubTab === "documents" && (
-              <DocumentUploadPanel />
-            )}
-
-            {/* News/RSS Sub-tab */}
-            {dataSubTab === "news" && (
-              <RssNewsPanel />
-            )}
-
-            {/* Research Sub-tab */}
-            {dataSubTab === "research" && (
-              <ResearchSignalsPanel />
-            )}
+            {dataSubTab === "documents" && <DocumentUploadPanel />}
+            {dataSubTab === "news" && <RssNewsPanel />}
+            {dataSubTab === "research" && <ResearchSignalsPanel />}
           </TabsContent>
 
-
-          {/* ===== STATUS/SETTINGS TAB ===== */}
+          {/* ===== STATUS TAB ===== */}
           <TabsContent value="settings" className="space-y-4">
-            {/* Refresh Scores Action */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-foreground">Score Recalculation</CardTitle>
-                <CardDescription>
-                  Recalculate the weighted composite scores for all technologies based on the latest data.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex gap-3 flex-wrap">
-                <Button 
-                  onClick={handleRefreshScores} 
-                  disabled={isRefreshing}
-                  className="gap-2"
-                >
-                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  {isRefreshing ? "Refreshing..." : "Refresh Composite Scores"}
-                </Button>
-                <RefreshTrlButton />
-              </CardContent>
-            </Card>
-
-            {/* Data Overview */}
             <div className="grid md:grid-cols-2 gap-4">
               <Card>
                 <CardHeader>
@@ -383,7 +230,7 @@ export default function AdminPanel() {
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <CheckCircle className="h-5 w-5 text-success" />
+                      <CheckCircle className="h-5 w-5 text-primary" />
                       <span className="font-medium text-foreground">Data Loaded</span>
                     </div>
                     <div className="text-sm text-muted-foreground space-y-1">
