@@ -119,7 +119,9 @@ export default function PublicDemo() {
             
             <h1 className="text-3xl md:text-4xl font-bold font-display leading-tight mb-4 text-foreground animate-fade-in-up">
               Technology Maturity Intelligence for<br />
-              <span className="text-primary">Software-Defined Vehicles</span>
+              <span className={`text-primary inline-block transition-all duration-300 ${isAnimating ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"}`}>
+                {rotatingKeywords[currentKeywordIndex % rotatingKeywords.length]}
+              </span>
             </h1>
             
             <p className="text-base text-muted-foreground mb-6 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
