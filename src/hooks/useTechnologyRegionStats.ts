@@ -93,6 +93,9 @@ export function useTechnologyRegionStats() {
         const isUSA = USA_COUNTRIES.some(c => 
           country.toLowerCase() === c.toLowerCase()
         );
+        const isChina = CHINA_COUNTRIES.some(c => 
+          country.toLowerCase() === c.toLowerCase()
+        );
 
         // Get or create stats entry
         let stats = statsMap.get(mapping.keyword_id);
@@ -105,6 +108,9 @@ export function useTechnologyRegionStats() {
             usaCompanyCount: 0,
             usaFunding: 0,
             usaEmployees: 0,
+            chinaCompanyCount: 0,
+            chinaFunding: 0,
+            chinaEmployees: 0,
             globalCompanyCount: 0,
             globalFunding: 0,
             globalEmployees: 0,
@@ -127,6 +133,12 @@ export function useTechnologyRegionStats() {
           stats.usaCompanyCount++;
           stats.usaFunding += fundingEur;
           stats.usaEmployees += employees;
+        }
+
+        if (isChina) {
+          stats.chinaCompanyCount++;
+          stats.chinaFunding += fundingEur;
+          stats.chinaEmployees += employees;
         }
       }
 
