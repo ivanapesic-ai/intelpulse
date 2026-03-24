@@ -349,13 +349,29 @@ export function useCrunchbaseReprocess() {
     }: {
       onProgress?: (progress: ReprocessProgress) => void;
     }): Promise<ReprocessSummary> => {
-      // Fetch all companies
-      const { data: companies, error } = await supabase
-        .from('crunchbase_companies')
-        .select('id, organization_name, description, full_description, industries, industry_groups, technology_keywords, total_funding_usd, top_5_investors, lead_investors, founded_date');
+      // Fetch ALL companies using pagination to bypass 1000-row limit
+      const companies: any[] = [];
+      const PAGE_SIZE = 1000;
+      let page = 0;
+      let hasMore = true;
       
-      if (error) throw error;
-      if (!companies) throw new Error('No companies found');
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('crunchbase_companies')
+          .select('id, organization_name, description, full_description, industries, industry_groups, technology_keywords, total_funding_usd, top_5_investors, lead_investors, founded_date')
+          .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+        
+        if (error) throw error;
+        if (!data || data.length === 0) {
+          hasMore = false;
+        } else {
+          companies.push(...data);
+          if (data.length < PAGE_SIZE) hasMore = false;
+          page++;
+        }
+      }
+      
+      if (companies.length === 0) throw new Error('No companies found');
       
       // Fetch all active keywords for mapping
       const { data: keywords, error: keywordsError } = await supabase
