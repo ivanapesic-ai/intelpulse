@@ -239,7 +239,7 @@ import logo from '@/assets/logo.svg';
        {/* Footer */}
         <footer className="py-6 z-10 text-center">
          <p className="text-xs text-foreground-tertiary">
-            Powered by House11
+            A BluSpecs Platform · Powered by House11
          </p>
        </footer>
      </div>

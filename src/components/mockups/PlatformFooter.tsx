@@ -13,7 +13,7 @@ export function PlatformFooter() {
            CEI-Sphere Intelligence Platform
          </p>
          <p className="text-xs text-muted-foreground/70">
-            Last updated: February 2026 • Powered by House11
+            A BluSpecs Platform · Powered by House11
           </p>
        </div>
      </footer>
