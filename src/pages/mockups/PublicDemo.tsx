@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Lock, ArrowRight, Check, TrendingUp, Database, FileText, Activity } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -37,11 +37,34 @@ const premiumFeatures = [
   "API access for integrations",
 ];
 
+const fallbackKeywords = ["Autonomous Driving", "Electric Vehicles", "Software-Defined Vehicles", "V2X Communication", "Edge Computing", "Battery Technology"];
+
 export default function PublicDemo() {
   const [showAccessDialog, setShowAccessDialog] = useState(false);
+  const [currentKeywordIndex, setCurrentKeywordIndex] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
   const navigate = useNavigate();
 
   const { data: technologies, isLoading } = useTechnologies();
+
+  const rotatingKeywords = useMemo(() => {
+    if (!technologies?.length) return fallbackKeywords;
+    return [...technologies]
+      .sort((a, b) => (b.compositeScore || 0) - (a.compositeScore || 0))
+      .slice(0, 8)
+      .map(t => t.name);
+  }, [technologies]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsAnimating(true);
+      setTimeout(() => {
+        setCurrentKeywordIndex((prev) => (prev + 1) % rotatingKeywords.length);
+        setIsAnimating(false);
+      }, 300);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [rotatingKeywords.length]);
 
   // Get top 5 technologies for demo display
   const demoTechnologies = useMemo(() => {
@@ -96,7 +119,9 @@ export default function PublicDemo() {
             
             <h1 className="text-3xl md:text-4xl font-bold font-display leading-tight mb-4 text-foreground animate-fade-in-up">
               Technology Maturity Intelligence for<br />
-              <span className="text-primary">Software-Defined Vehicles</span>
+              <span className={`text-primary inline-block transition-all duration-300 ${isAnimating ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"}`}>
+                {rotatingKeywords[currentKeywordIndex % rotatingKeywords.length]}
+              </span>
             </h1>
             
             <p className="text-base text-muted-foreground mb-6 animate-fade-in-up" style={{ animationDelay: '100ms' }}>

@@ -14,7 +14,7 @@ import { TrendingTechnologiesWidget } from "@/components/intelligence/TrendingTe
 import logo from "@/assets/logo.svg";
 import BrandName from "@/components/BrandName";
 
-const rotatingDomains = ["Autonomous Vehicles", "Edge Computing", "Electric Mobility", "V2X Communication", "Cloud AI", "Software-Defined Vehicles"];
+const fallbackKeywords = ["Autonomous Driving", "Electric Vehicles", "Software-Defined Vehicles", "V2X Communication", "Edge Computing", "Battery Technology"];
 
 // Maturity labels aligned with platform-wide terminology
 type MaturityRing = "Strong" | "Moderate" | "Emerging";
@@ -38,16 +38,24 @@ export default function Dashboard() {
   
   const { data: technologies, isLoading, error } = useTechnologies();
 
+  const rotatingKeywords = useMemo(() => {
+    if (!technologies?.length) return fallbackKeywords;
+    return [...technologies]
+      .sort((a, b) => (b.compositeScore || 0) - (a.compositeScore || 0))
+      .slice(0, 8)
+      .map(t => t.name);
+  }, [technologies]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setIsAnimating(true);
       setTimeout(() => {
-        setCurrentDomainIndex((prev) => (prev + 1) % rotatingDomains.length);
+        setCurrentDomainIndex((prev) => (prev + 1) % rotatingKeywords.length);
         setIsAnimating(false);
       }, 300);
     }, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [rotatingKeywords.length]);
 
   // Filter to same subset as Explorer (exclude zero-data technologies)
   const filteredTechnologies = useMemo(() => {
@@ -128,7 +136,7 @@ export default function Dashboard() {
             <h1 className="text-3xl md:text-4xl font-bold font-display leading-tight mb-4 text-foreground animate-fade-in-up">
               Technology Intelligence for<br />
               <span className={`text-primary inline-block transition-all duration-300 ${isAnimating ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"}`}>
-                {rotatingDomains[currentDomainIndex]}
+                {rotatingKeywords[currentDomainIndex % rotatingKeywords.length]}
               </span>
             </h1>
             
