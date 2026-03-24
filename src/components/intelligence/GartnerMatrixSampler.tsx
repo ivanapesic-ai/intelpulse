@@ -590,42 +590,16 @@ function getSmartLabel(name: string): string {
 }
 
 export function GartnerMatrixSampler(props: GartnerMatrixSamplerProps) {
-  // Collect domains present for legend
-  const domainLegend = useMemo(() => {
-    const filtered = props.technologies.filter(filterSDV);
-    const domains = new Map<string, string>();
-    filtered.forEach(tech => {
-      const color = getDomainColor(tech.name);
-      for (const [domain, c] of Object.entries(domainColorPalette)) {
-        if (c === color) { domains.set(domain, c); break; }
-      }
-    });
-    return Array.from(domains.entries());
-  }, [props.technologies]);
-
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-lg">Strategy Matrix</CardTitle>
+        <p className="text-xs text-muted-foreground">
+          Maturity rings with strategic positioning overlay
+        </p>
       </CardHeader>
       <CardContent>
-        <div className="text-center mb-4">
-          <Badge variant="outline">Radar + Quadrant Fusion</Badge>
-          <p className="text-xs text-muted-foreground mt-1">
-            Maturity rings with strategic positioning overlay
-          </p>
-        </div>
         <HybridRadarQuadrantLabeled {...props} />
-        
-        {/* Domain color legend */}
-        <div className="flex flex-wrap items-center justify-center gap-3 mt-4 pt-3 border-t border-border/50">
-          {domainLegend.map(([domain, color]) => (
-            <div key={domain} className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
-              <span className="text-[10px] text-muted-foreground">{domain}</span>
-            </div>
-          ))}
-        </div>
       </CardContent>
     </Card>
   );
