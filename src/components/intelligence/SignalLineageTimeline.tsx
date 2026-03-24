@@ -248,11 +248,21 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
                       />
                     </g>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    <p className="text-xs font-medium">{conn.description}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Confidence: {Math.round(conn.confidence * 100)}%
-                    </p>
+                  <TooltipContent side="top" className="max-w-sm p-3">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: LANE_CONFIG[nodes.find(n => n.id === conn.sourceKey)?.type as LaneType]?.color }} />
+                        <span className="text-xs font-medium truncate">{nodes.find(n => n.id === conn.sourceKey)?.title}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground pl-3">↓ {conn.description}</div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: LANE_CONFIG[nodes.find(n => n.id === conn.targetKey)?.type as LaneType]?.color }} />
+                        <span className="text-xs font-medium truncate">{nodes.find(n => n.id === conn.targetKey)?.title}</span>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground pt-1 border-t border-border mt-1">
+                        Confidence: {Math.round(conn.confidence * 100)}%
+                      </div>
+                    </div>
                   </TooltipContent>
                 </Tooltip>
               );
