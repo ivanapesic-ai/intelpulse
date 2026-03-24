@@ -116,20 +116,20 @@ export function useTechnologyIntelligence() {
       const { data, error } = await supabase
         .from("technology_intelligence")
         .select("*")
-        .order("composite_score", { ascending: false });
+        .order("maturity_score", { ascending: false });
 
       if (error) {
         console.error("Error fetching technology intelligence:", error);
         throw error;
       }
 
-      return (data || []).map((row): TechnologyIntelligence => ({
-        id: row.id,
+      return (data || []).map((row: any): TechnologyIntelligence => ({
+        id: row.keyword_id,
         keywordId: row.keyword_id,
         name: row.name,
-        displayName: row.display_name,
-        keywordDescription: row.keyword_description ?? undefined,
-        dealroomCompanyCount: row.dealroom_company_count || 0,
+        displayName: row.name,
+        keywordDescription: row.tech_description ?? undefined,
+        dealroomCompanyCount: row.company_count || 0,
         totalFundingEur: Number(row.total_funding_eur) || 0,
         totalEmployees: row.total_employees || 0,
         totalPatents: row.total_patents || 0,
@@ -137,22 +137,22 @@ export function useTechnologyIntelligence() {
         documentMentionCount: row.document_mention_count || 0,
         avgTrlMentioned: row.avg_trl_mentioned ? Number(row.avg_trl_mentioned) : undefined,
         policyMentionCount: row.policy_mention_count || 0,
-        documentDiversity: row.document_diversity || 0,
-        compositeScore: Number(row.composite_score) || 0,
-        avgSemanticScore: row.avg_semantic_score ? Number(row.avg_semantic_score) : undefined,
-        networkCentrality: row.network_centrality ? Number(row.network_centrality) : undefined,
-        corpusRarityScore: row.corpus_rarity_score ? Number(row.corpus_rarity_score) : undefined,
-        avgRelevanceScore: row.avg_relevance_score ? Number(row.avg_relevance_score) : undefined,
-        weightedFrequencyScore: row.weighted_frequency_score ? Number(row.weighted_frequency_score) : undefined,
+        documentDiversity: 0,
+        compositeScore: Number(row.maturity_score) || 0,
+        avgSemanticScore: undefined,
+        networkCentrality: undefined,
+        corpusRarityScore: undefined,
+        avgRelevanceScore: undefined,
+        weightedFrequencyScore: undefined,
         visibilityScore: row.visibility_score || 0,
         trlScore: row.trl_score || 0,
         euAlignmentScore: row.eu_alignment_score || 0,
         investmentScore: row.investment_score ?? undefined,
         employeesScore: row.employees_score ?? undefined,
-        companyNames: row.company_names || [],
-        trlDistribution: row.trl_distribution as { low: number; mid: number; high: number; unknown: number } || { low: 0, mid: 0, high: 0, unknown: 0 },
-        evidenceBySource: row.evidence_by_source as { document: number; web: number; dealroom: number } || { document: 0, web: 0, dealroom: 0 },
-        lastUpdated: row.last_updated,
+        companyNames: [],
+        trlDistribution: { low: 0, mid: 0, high: 0, unknown: 0 },
+        evidenceBySource: { document: 0, web: 0, dealroom: 0 },
+        lastUpdated: row.refreshed_at,
         trend: row.trend as 'up' | 'down' | 'stable' || 'stable',
       }));
     },
