@@ -38,13 +38,43 @@ async function analyzeKeyword(
       .limit(1);
 
     const topPapers: any[] = researchRows?.[0]?.top_papers || [];
-    const researchItems = topPapers.slice(0, 20).map((p: any, i: number) => ({
+    let researchItems = topPapers.slice(0, 10).map((p: any, i: number) => ({
       id: p.doi || `research_${i}`,
       title: p.title || "Untitled",
       year: p.publication_year || p.year || null,
       authors: p.authors || [],
       citations: p.cited_by_count || p.citations || 0,
     }));
+
+    // Fetch historical papers from OpenAlex (2022+) for richer lineage
+    try {
+      const searchTerm = encodeURIComponent(`"${keywordName}"`);
+      const currentYear = new Date().getFullYear();
+      const oaUrl = `https://api.openalex.org/works?search=${searchTerm}&filter=publication_year:2022-${currentYear},language:en&sort=relevance_score:desc&per_page=10&select=doi,title,publication_year,authorships,cited_by_count`;
+      const oaResp = await fetch(oaUrl, { headers: { "User-Agent": "IntelPulse/1.0" } });
+      if (oaResp.ok) {
+        const oaData = await oaResp.json();
+        const oaPapers = (oaData.results || []).map((w: any, i: number) => ({
+          id: w.doi || `oa_research_${i}`,
+          title: (w.title || "Untitled").replace(/<[^>]*>/g, ""),
+          year: w.publication_year || null,
+          authors: (w.authorships || []).slice(0, 3).map((a: any) => a.author?.display_name).filter(Boolean),
+          citations: w.cited_by_count || 0,
+        }));
+        // Merge, deduplicate by title
+        const existingTitles = new Set(researchItems.map(r => r.title.toLowerCase()));
+        for (const p of oaPapers) {
+          if (!existingTitles.has(p.title.toLowerCase())) {
+            researchItems.push(p);
+            existingTitles.add(p.title.toLowerCase());
+          }
+        }
+      }
+    } catch {
+      // OpenAlex optional — continue
+    }
+
+    researchItems = researchItems.slice(0, 20);
 
     // 2. Fetch news articles
     const { data: newsMatches } = await supabase
