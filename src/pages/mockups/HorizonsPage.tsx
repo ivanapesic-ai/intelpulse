@@ -67,6 +67,7 @@ interface HorizonTech {
 
 export default function HorizonsPage() {
   const [search, setSearch] = useState("");
+  const [expandedKeywordId, setExpandedKeywordId] = useState<string | null>(null);
   const { data: technologies, isLoading: techLoading } = useTechnologyIntelligence();
   const { data: researchSignals, isLoading: researchLoading } = useResearchSignals();
 
