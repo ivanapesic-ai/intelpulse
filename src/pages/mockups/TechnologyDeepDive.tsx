@@ -462,7 +462,12 @@ export default function TechnologyDeepDive() {
                     <div>
                       <p className="text-xs text-muted-foreground font-medium mb-2">Recent Patents</p>
                       <div className="space-y-3">
-                        {patentSearch.data.recentPatents.slice(0, 20).map((p: any, i: number) => (
+                        {patentSearch.data.recentPatents
+                          .filter((p: any) => {
+                            const text = (p.title || '') + (p.applicant || '');
+                            return !/[\u4e00-\u9fff\u3400-\u4dbf\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]/.test(text);
+                          })
+                          .slice(0, 20).map((p: any, i: number) => (
                           <div key={i} className="border-b border-border pb-2 last:border-0">
                             <p className="text-sm text-foreground">{p.title || p.applicationNumber || `Patent ${i + 1}`}</p>
                             {p.applicant && <p className="text-xs text-muted-foreground mt-0.5">{p.applicant}</p>}
@@ -476,7 +481,9 @@ export default function TechnologyDeepDive() {
                     <div>
                       <p className="text-xs text-muted-foreground font-medium mb-2">Top Applicants</p>
                       <div className="space-y-1.5">
-                        {patentSearch.data.topApplicants.map((a: any) => (
+                        {patentSearch.data.topApplicants
+                          .filter((a: any) => !/[\u4e00-\u9fff\u3400-\u4dbf\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]/.test(a.name || ''))
+                          .map((a: any) => (
                           <div key={a.name} className="flex justify-between text-sm">
                             <span className="text-foreground truncate">{a.name}</span>
                             <span className="text-muted-foreground font-mono">{a.count}</span>
