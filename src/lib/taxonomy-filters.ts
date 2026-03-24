@@ -43,6 +43,20 @@ export const DUPLICATE_KEYWORDS: Record<string, string> = {
   // Vehicle to Grid consolidation
   'micro grid': 'Vehicle to Grid',
   'bidirectional charging': 'Vehicle to Grid',
+
+  // Sensor Fusion consolidation (formerly AV Radar + LiDAR + AV Camera)
+  'lidar': 'Sensor Fusion',
+  'av camera': 'Sensor Fusion',
+
+  // AV Software Stack consolidation (formerly AV Software + AV Simulation + AV Labeling)
+  'av simulation': 'AV Software Stack',
+  'av labeling': 'AV Software Stack',
+
+  // SDV absorbs Vehicle as Software
+  'vehicle as software': 'Software Defined Vehicle',
+
+  // Hidden niche category
+  'teledriving': 'Teledriving',
 };
 
 // Canonical keywords that should always be shown (even if they match patterns)
@@ -51,8 +65,8 @@ export const CANONICAL_KEYWORDS = [
   'Autonomous Driving',
   'Software Defined Vehicle',
   'EV Charging',
-  'Bidirectional Charging',
-  'LiDAR',
+  'Sensor Fusion',
+  'AV Software Stack',
   'Vehicle to Everything',
   'Vehicle to Grid',
 ];
