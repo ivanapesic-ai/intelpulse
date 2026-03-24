@@ -1,9 +1,8 @@
 import { Link } from "react-router-dom";
-import { TrendingUp, TrendingDown, Minus, ChevronRight, Star } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Technology, formatFundingEur, getCompositeScoreLabel } from "@/types/database";
 import { cn } from "@/lib/utils";
-import { isCentralEcosystem } from "@/lib/taxonomy-filters";
 
 type MaturityRing = "Strong" | "Moderate" | "Challenging";
 
@@ -30,7 +29,6 @@ export function TechnologyCard({ technology, onClick, compact = false }: Technol
   const trendColor = technology.trend === "up" ? "text-success" : technology.trend === "down" ? "text-destructive" : "text-muted-foreground";
   const maturityRing = getMaturityRing(technology.compositeScore || 0);
   const { color: scoreColor } = getCompositeScoreLabel(technology.compositeScore || 0);
-  const isHub = isCentralEcosystem(technology.name);
 
   if (compact) {
     return (
@@ -38,22 +36,14 @@ export function TechnologyCard({ technology, onClick, compact = false }: Technol
         onClick={onClick}
         className={cn(
           "flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer group",
-          isHub 
-            ? "bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-primary/30 ring-1 ring-primary/20" 
-            : "bg-card border-border hover:border-primary/30",
+          "bg-card border-border hover:border-primary/30",
           onClick && "hover:bg-muted/50"
         )}
       >
         <div className="flex items-center gap-3 min-w-0">
-          {isHub && <Star className="h-4 w-4 text-primary fill-primary/30 shrink-0" />}
           <div className="flex flex-col min-w-0">
             <Link to={`/technology/${technology.keyword?.keyword || technology.name.toLowerCase().replace(/\s+/g, '_')}`} className="font-medium truncate text-foreground hover:text-primary transition-colors" onClick={e => e.stopPropagation()}>{technology.name}</Link>
             <div className="flex gap-2 mt-1">
-              {isHub && (
-                <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
-                  Hub
-                </Badge>
-              )}
               <Badge variant="outline" className={cn("text-xs", ringColors[maturityRing])}>
                 {maturityRing}
               </Badge>
@@ -81,18 +71,13 @@ export function TechnologyCard({ technology, onClick, compact = false }: Technol
       onClick={onClick}
       className={cn(
         "p-4 rounded-lg border transition-all cursor-pointer group",
-        isHub 
-          ? "bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/30 ring-1 ring-primary/20" 
-          : "bg-card border-border hover:border-primary/30",
+        "bg-card border-border hover:border-primary/30",
         onClick && "hover:bg-muted/50 hover:shadow-subtle"
       )}
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            {isHub && <Star className="h-4 w-4 text-primary fill-primary/30 shrink-0" />}
-            <Link to={`/technology/${technology.keyword?.keyword || technology.name.toLowerCase().replace(/\s+/g, '_')}`} className="font-semibold truncate group-hover:text-primary transition-colors text-foreground" onClick={e => e.stopPropagation()}>{technology.name}</Link>
-          </div>
+          <Link to={`/technology/${technology.keyword?.keyword || technology.name.toLowerCase().replace(/\s+/g, '_')}`} className="font-semibold truncate group-hover:text-primary transition-colors text-foreground" onClick={e => e.stopPropagation()}>{technology.name}</Link>
           <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{technology.description}</p>
         </div>
         <div className="text-right ml-4 shrink-0">
@@ -107,11 +92,6 @@ export function TechnologyCard({ technology, onClick, compact = false }: Technol
       </div>
 
       <div className="flex gap-2 mb-3">
-        {isHub && (
-          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
-            Hub
-          </Badge>
-        )}
         <Badge variant="outline" className={cn(ringColors[maturityRing])}>
           {maturityRing}
         </Badge>
