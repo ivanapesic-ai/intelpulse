@@ -1860,6 +1860,90 @@ export type Database = {
         }
         Relationships: []
       }
+      signal_lineage: {
+        Row: {
+          confidence: number | null
+          created_at: string | null
+          id: string
+          keyword_id: string
+          relationship_description: string | null
+          source_date: string | null
+          source_id: string
+          source_title: string
+          source_type: string
+          target_date: string | null
+          target_id: string
+          target_title: string
+          target_type: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string | null
+          id?: string
+          keyword_id: string
+          relationship_description?: string | null
+          source_date?: string | null
+          source_id: string
+          source_title: string
+          source_type: string
+          target_date?: string | null
+          target_id: string
+          target_title: string
+          target_type: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string | null
+          id?: string
+          keyword_id?: string
+          relationship_description?: string | null
+          source_date?: string | null
+          source_id?: string
+          source_title?: string
+          source_type?: string
+          target_date?: string | null
+          target_id?: string
+          target_title?: string
+          target_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signal_lineage_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "signal_lineage_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_mapping_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "signal_lineage_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_overview"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "signal_lineage_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_intelligence"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "signal_lineage_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       technologies: {
         Row: {
           avg_relevance_score: number | null

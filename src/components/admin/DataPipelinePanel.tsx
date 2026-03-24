@@ -56,6 +56,12 @@ const DEFAULT_STEPS: Omit<PipelineStep, "status">[] = [
     description: "Rebuild the materialized view that powers all dashboards",
     enabled: true,
   },
+  {
+    id: "analyze_lineage",
+    label: "Analyze Signal Lineage",
+    description: "Use AI to identify conceptual links between research, patents & news",
+    enabled: false,
+  },
 ];
 
 export function DataPipelinePanel() {
@@ -139,6 +145,13 @@ export function DataPipelinePanel() {
           }
           case "refresh_view": {
             const { error } = await supabase.rpc("refresh_technology_intelligence");
+            if (error) throw error;
+            break;
+          }
+          case "analyze_lineage": {
+            const { error } = await supabase.functions.invoke("identify-signal-lineage", {
+              body: { action: "analyze_all" },
+            });
             if (error) throw error;
             break;
           }

@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.enrich-standards]
 verify_jwt = false
+
+[functions.identify-signal-lineage]
+verify_jwt = false
