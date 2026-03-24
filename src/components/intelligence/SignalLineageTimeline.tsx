@@ -1,9 +1,14 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { LineageLink } from "@/hooks/useSignalLineage";
 import { Loader2, GitBranch } from "lucide-react";
+
+interface PopoverState {
+  x: number;
+  y: number;
+  content: React.ReactNode;
+}
 
 const LANE_CONFIG = {
   research: { y: 0, label: "Research", color: "hsl(var(--chart-1))", bgClass: "bg-chart-1/10" },
