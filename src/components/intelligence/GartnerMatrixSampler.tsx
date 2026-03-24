@@ -21,11 +21,6 @@ function filterSDV(tech: TechnologyIntelligence): boolean {
   return hasData && isSDVRelevant(tech.name, false);
 }
 
-interface GartnerMatrixSamplerProps {
-  technologies: TechnologyIntelligence[];
-  onSelectTechnology?: (tech: TechnologyIntelligence) => void;
-  selectedId?: string | null;
-}
 
 // Get scores - use database values or derive from signals
 function getScores(tech: TechnologyIntelligence): { challenge: number; opportunity: number } {
