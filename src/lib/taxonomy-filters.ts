@@ -49,8 +49,8 @@ export const DUPLICATE_KEYWORDS: Record<string, string> = {
   'av camera': 'Sensor Fusion',
 
   // AV Software Stack consolidation (formerly AV Software + AV Simulation + AV Labeling)
-  'av simulation': 'AV Software Stack',
-  'av labeling': 'AV Software Stack',
+  'av simulation': 'AV Software',
+  'av labeling': 'AV Software',
 
   // SDV absorbs Vehicle as Software
   'vehicle as software': 'Software Defined Vehicle',
