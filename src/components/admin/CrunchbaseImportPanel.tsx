@@ -8,8 +8,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { parseCSV, useCrunchbaseImport, useCrunchbaseStats, useCrunchbaseImportLogs, ImportProgress, ImportSummary } from "@/hooks/useCrunchbase";
 import { useCrunchbaseReprocess, ReprocessProgress, ReprocessSummary } from "@/hooks/useCrunchbaseReprocess";
+import { useDataPipelineSync } from "@/hooks/useDataPipeline";
 import { formatFundingEur } from "@/types/database";
-import { useAdminDataSync } from "@/hooks/useDataSync";
 
 export function CrunchbaseImportPanel() {
   const [isDragging, setIsDragging] = useState(false);
@@ -25,8 +25,7 @@ export function CrunchbaseImportPanel() {
   const { data: importLogs } = useCrunchbaseImportLogs(5);
   const importMutation = useCrunchbaseImport();
   const reprocessMutation = useCrunchbaseReprocess();
-  
-  const { afterCrunchbaseImport } = useAdminDataSync();
+  const pipelineSyncMutation = useDataPipelineSync();
   
   const handleReprocessKeywords = async () => {
     setReprocessProgress({ current: 0, total: 0, currentCompany: '', updated: 0, unchanged: 0 });
@@ -39,14 +38,14 @@ export function CrunchbaseImportPanel() {
       
       setReprocessSummary(summary);
       setReprocessProgress(null);
-      // Unified sync - updates radars, dashboards, cards
-      await afterCrunchbaseImport();
-      toast.success(`Updated ${summary.updated} companies with new keywords! All views synced.`);
+      await pipelineSyncMutation.mutateAsync();
+      toast.success(`Updated ${summary.updated} companies with refreshed keyword mappings.`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Reprocess failed');
       setReprocessProgress(null);
     }
   };
+
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
@@ -104,15 +103,14 @@ export function CrunchbaseImportPanel() {
       
       setImportSummary(summary);
       setImportProgress(null);
-      // Unified sync - updates radars, dashboards, cards
-      await afterCrunchbaseImport();
-      toast.success(`Successfully imported ${summary.importedRows} companies! All views synced.`);
+      await pipelineSyncMutation.mutateAsync();
+      toast.success(`Imported ${summary.importedRows} companies and refreshed technology totals.`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Import failed');
       setImportProgress(null);
     }
   };
-  
+
   const resetImport = () => {
     setSelectedFile(null);
     setParseResult(null);
