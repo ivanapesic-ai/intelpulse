@@ -46,8 +46,8 @@ export function PlatformHeader() {
                       className={cn(
                         "gap-2",
                         isActive 
-                          ? "bg-secondary text-foreground" 
-                          : "text-muted-foreground hover:text-foreground"
+                          ? "bg-primary text-primary-foreground" 
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                       )}
                     >
                       <item.icon className="h-4 w-4" />
