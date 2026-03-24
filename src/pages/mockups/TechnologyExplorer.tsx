@@ -113,9 +113,6 @@ export default function TechnologyExplorer() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-foreground mb-2">Technology Explorer</h1>
-              <p className="text-muted-foreground">
-                Browse and analyze SDV technologies with market intelligence and scoring
-              </p>
             </div>
 
             <Button
