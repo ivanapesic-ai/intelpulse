@@ -1,15 +1,19 @@
-import { useMemo } from "react";
-import { Eye, TrendingUp, TrendingDown, Minus, Activity, ArrowRight, Sparkles } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Eye, TrendingUp, TrendingDown, Activity, ArrowRight, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+} from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlatformHeader } from "@/components/mockups/PlatformHeader";
 import { WatchToggle } from "@/components/intelligence/WatchToggle";
+import { NewsTimelineChart } from "@/components/intelligence/NewsTimelineChart";
 import { useWatchlist } from "@/hooks/useWatchlist";
-import { useSignalSnapshots, computeDeltas, type SignalDelta } from "@/hooks/useSignalSnapshots";
+import { useSignalSnapshots, computeDeltas, type SignalSnapshot, type SignalDelta } from "@/hooks/useSignalSnapshots";
 import { useTechnologyIntelligence, type TechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
 import { cn } from "@/lib/utils";
 
@@ -31,14 +35,69 @@ function DeltaBadge({ value, suffix = "" }: { value: number | null; suffix?: str
   );
 }
 
+function buildChartData(snapshots: SignalSnapshot[]) {
+  return snapshots.map((s) => ({
+    date: new Date(s.snapshot_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short" }),
+    composite: Number(s.composite_score) || 0,
+    companies: s.company_count || 0,
+    patents: s.total_patents || 0,
+    news: s.news_mention_count || 0,
+  }));
+}
+
+function SignalHistoryChart({ snapshots }: { snapshots: SignalSnapshot[] }) {
+  const data = useMemo(() => buildChartData(snapshots), [snapshots]);
+
+  if (data.length < 2) {
+    return (
+      <p className="text-xs text-muted-foreground italic text-center py-4">
+        Not enough snapshots yet — historical chart appears after 2+ data points.
+      </p>
+    );
+  }
+
+  return (
+    <div className="h-48">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+          <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+          <YAxis yAxisId="left" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+          <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} domain={[0, 'auto']} />
+          <Tooltip
+            contentStyle={{
+              background: "hsl(var(--card))",
+              border: "1px solid hsl(var(--border))",
+              borderRadius: 8,
+              fontSize: 12,
+            }}
+          />
+          <Line yAxisId="right" type="monotone" dataKey="composite" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} name="Composite" />
+          <Line yAxisId="left" type="monotone" dataKey="companies" stroke="hsl(var(--chart-2))" strokeWidth={1.5} dot={false} name="Companies" />
+          <Line yAxisId="left" type="monotone" dataKey="patents" stroke="hsl(var(--chart-3))" strokeWidth={1.5} dot={false} name="Patents" />
+          <Line yAxisId="left" type="monotone" dataKey="news" stroke="hsl(var(--chart-4))" strokeWidth={1.5} dot={false} name="News" />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 function SignalCard({
   tech,
   delta,
+  snapshots,
 }: {
   tech: TechnologyIntelligence;
   delta: SignalDelta | undefined;
+  snapshots: SignalSnapshot[];
 }) {
+  const [expanded, setExpanded] = useState(true);
   const d = delta?.deltas;
+  const keywordSnapshots = useMemo(
+    () => snapshots.filter((s) => s.keyword_id === tech.keywordId).sort((a, b) => a.snapshot_date.localeCompare(b.snapshot_date)),
+    [snapshots, tech.keywordId]
+  );
+
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
       <Card className="card-hover">
@@ -54,7 +113,12 @@ function SignalCard({
               )}
             </CardDescription>
           </div>
-          <WatchToggle keywordId={tech.keywordId} />
+          <div className="flex items-center gap-1">
+            <WatchToggle keywordId={tech.keywordId} />
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setExpanded(!expanded)}>
+              {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -81,24 +145,49 @@ function SignalCard({
               <DeltaBadge value={d?.news ?? null} />
             </div>
           </div>
-          {/* Signal scores bar */}
-          <div className="mt-4 flex gap-2">
-            {[
-              { label: "Investment", score: tech.investmentScore },
-              { label: "Patents", score: tech.trlScore },
-              { label: "Visibility", score: tech.visibilityScore },
-            ].map((s) => (
-              <div key={s.label} className="flex-1">
-                <p className="text-[10px] text-muted-foreground mb-1">{s.label}</p>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full transition-all"
-                    style={{ width: `${((s.score ?? 0) / 2) * 100}%` }}
-                  />
+
+          <AnimatePresence>
+            {expanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                {/* Signal scores bar */}
+                <div className="mt-4 flex gap-2">
+                  {[
+                    { label: "Investment", score: tech.investmentScore },
+                    { label: "Patents", score: tech.trlScore },
+                    { label: "Visibility", score: tech.visibilityScore },
+                  ].map((s) => (
+                    <div key={s.label} className="flex-1">
+                      <p className="text-[10px] text-muted-foreground mb-1">{s.label}</p>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary rounded-full transition-all"
+                          style={{ width: `${((s.score ?? 0) / 2) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            ))}
-          </div>
+
+                {/* Historical signal chart */}
+                <div className="mt-4">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Signal History</p>
+                  <SignalHistoryChart snapshots={keywordSnapshots} />
+                </div>
+
+                {/* News timeline */}
+                <div className="mt-4">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">News Activity (weekly)</p>
+                  <NewsTimelineChart keywordId={tech.keywordId} />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </CardContent>
       </Card>
     </motion.div>
@@ -108,7 +197,7 @@ function SignalCard({
 export default function MySignals() {
   const { watchedKeywordIds, isLoading: watchLoading } = useWatchlist();
   const { data: technologies, isLoading: techLoading } = useTechnologyIntelligence();
-  const { data: snapshots, isLoading: snapLoading } = useSignalSnapshots(watchedKeywordIds, 6);
+  const { data: snapshots, isLoading: snapLoading } = useSignalSnapshots(watchedKeywordIds, 12);
 
   const isLoading = watchLoading || techLoading;
 
@@ -134,8 +223,8 @@ export default function MySignals() {
                 My Signals
               </h1>
               <p className="text-muted-foreground mt-2 max-w-xl">
-                Your personalised watchlist of technology keywords with quarterly signal tracking.
-                Deltas show changes since the previous snapshot.
+                Your personalised watchlist with historical signal tracking.
+                Charts show how each technology's metrics evolve over time.
               </p>
             </div>
             <Link to="/intelligence">
@@ -175,6 +264,7 @@ export default function MySignals() {
                 key={tech.id}
                 tech={tech}
                 delta={deltas.find((d) => d.keywordId === tech.keywordId)}
+                snapshots={snapshots || []}
               />
             ))}
           </div>
