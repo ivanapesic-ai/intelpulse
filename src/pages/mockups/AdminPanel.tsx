@@ -171,10 +171,26 @@ export default function AdminPanel() {
             </TabsTrigger>
           </TabsList>
 
-          {/* ===== TAXONOMY TAB ===== */}
+          {/* ===== TAXONOMY & ONTOLOGY TAB ===== */}
           <TabsContent value="taxonomy" className="space-y-4">
-             <KeywordManager />
-             <StandardsManagerPanel />
+            <div className="grid lg:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <KeywordManager />
+                <StandardsManagerPanel />
+              </div>
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-foreground">Technology Ontology</CardTitle>
+                    <CardDescription>
+                      Technology relationships derived from shared company mappings.
+                      Connections weighted by quality companies operating in both areas.
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+                <TechnologyOntology maxEdges={20} />
+              </div>
+            </div>
           </TabsContent>
 
           {/* ===== DATA SOURCES TAB ===== */}
