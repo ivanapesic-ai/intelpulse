@@ -53,64 +53,78 @@
    return ranges[employeeStr] || 0;
  }
  
- export function useMarketIntelligence(keywordId?: string) {
-   return useQuery({
-     queryKey: ["market-intelligence", keywordId],
-     queryFn: async (): Promise<MarketIntelligenceData> => {
-       if (!keywordId) {
-         return {
-           totalCompanies: 0,
-           totalFunding: 0,
-           totalEmployees: 0,
-           euCompanies: 0,
-           euPercentage: 0,
-           topInvestors: [],
-           countryDistribution: [],
-           stageDistribution: [],
-         };
-       }
- 
-       // Get company IDs from Crunchbase keyword mapping
-       const { data: mappings, error: mappingError } = await supabase
-         .from("crunchbase_keyword_mapping")
-         .select("company_id")
-         .eq("keyword_id", keywordId);
- 
-       if (mappingError) throw mappingError;
-       if (!mappings || mappings.length === 0) {
-         return {
-           totalCompanies: 0,
-           totalFunding: 0,
-           totalEmployees: 0,
-           euCompanies: 0,
-           euPercentage: 0,
-           topInvestors: [],
-           countryDistribution: [],
-           stageDistribution: [],
-         };
-       }
- 
-       const companyIds = mappings.map(m => m.company_id).filter(Boolean) as string[];
- 
-       // Fetch Crunchbase company details
-       const { data: companies, error: companyError } = await supabase
-         .from("crunchbase_companies")
-         .select("organization_name, description, hq_country, total_funding_usd, number_of_employees, top_5_investors, lead_investors, last_funding_type, operating_status")
-         .in("id", companyIds);
- 
-       if (companyError) throw companyError;
-       if (!companies || companies.length === 0) {
-         return {
-           totalCompanies: 0,
-           totalFunding: 0,
-           totalEmployees: 0,
-           euCompanies: 0,
-           euPercentage: 0,
-           topInvestors: [],
-           countryDistribution: [],
-           stageDistribution: [],
-         };
-       }
+// Batch helper: split array into chunks and query in parallel
+async function batchIn<T>(
+  table: string,
+  column: string,
+  ids: string[],
+  select: string,
+  batchSize = 100,
+): Promise<T[]> {
+  const chunks: string[][] = [];
+  for (let i = 0; i < ids.length; i += batchSize) {
+    chunks.push(ids.slice(i, i + batchSize));
+  }
+  const results = await Promise.all(
+    chunks.map(async (chunk) => {
+      const { data, error } = await supabase
+        .from(table)
+        .select(select)
+        .in(column, chunk);
+      if (error) throw error;
+      return (data || []) as T[];
+    }),
+  );
+  return results.flat();
+}
+
+export function useMarketIntelligence(keywordId?: string) {
+  return useQuery({
+    queryKey: ["market-intelligence", keywordId],
+    queryFn: async (): Promise<MarketIntelligenceData> => {
+      const empty: MarketIntelligenceData = {
+        totalCompanies: 0,
+        totalFunding: 0,
+        totalEmployees: 0,
+        euCompanies: 0,
+        euPercentage: 0,
+        topInvestors: [],
+        countryDistribution: [],
+        stageDistribution: [],
+      };
+
+      if (!keywordId) return empty;
+
+      // Get company IDs from Crunchbase keyword mapping
+      const { data: mappings, error: mappingError } = await supabase
+        .from("crunchbase_keyword_mapping")
+        .select("company_id")
+        .eq("keyword_id", keywordId);
+
+      if (mappingError) throw mappingError;
+      if (!mappings || mappings.length === 0) return empty;
+
+      const companyIds = mappings.map(m => m.company_id).filter(Boolean) as string[];
+
+      // Fetch Crunchbase company details in batches to avoid URL length limits
+      const companies = await batchIn<{
+        organization_name: string;
+        description: string | null;
+        hq_country: string | null;
+        total_funding_usd: number | null;
+        number_of_employees: string | null;
+        top_5_investors: string[] | null;
+        lead_investors: string[] | null;
+        last_funding_type: string | null;
+        operating_status: string | null;
+      }>(
+        "crunchbase_companies",
+        "id",
+        companyIds,
+        "organization_name, description, hq_country, total_funding_usd, number_of_employees, top_5_investors, lead_investors, last_funding_type, operating_status",
+      );
+
+      if (companies.length === 0) return empty;
  
        // Calculate totals
        const totalCompanies = companies.length;
