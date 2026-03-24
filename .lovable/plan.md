@@ -1,33 +1,45 @@
 
 
-## Plan: Deep Dive Page Fixes
+## Plan: Admin Taxonomy + Ontology Alignment & My Signals Historical View
 
-### Issues Identified
+### Part 1 — Admin: Merge Taxonomy & Ontology into side-by-side truth
 
-1. **C-O cards too large** — Challenge and Opportunity take 2/3 of the 3-col grid with empty space. Fix: stack them vertically in 1 column, give Signal Breakdown 2 columns.
-2. **Company Landscape showing 0 companies** — The route is `/technology/ev` but the slug lookup uses `technology_keywords.keyword`. The keyword for Electric Vehicle is likely `electric_vehicle`, not `ev`. The `useTechnologyBySlug` hook does `.eq("keyword", slug)` which returns null for `ev`. Need to also check for partial matches or add fallback slug lookup.
-3. **"Error loading market data: Bad Request"** — Since the slug doesn't match, `tech.keywordId` is undefined/null, causing the market intelligence query to fail or return bad request. This is a downstream effect of issue #2.
-4. **Document Evidence section showing "Unknown" TRL** — All 4 mentions have TRL=null. The section currently shows even when all data is unknown/zero. Remove the entire Document Evidence section from the deep dive page as requested.
-5. **Missing Market Intelligence sections** — Top Strategic Investors, Geographic Concentration, Funding Stage Distribution are already rendered via `<MarketIntelligence>` component (line 630), but fail because of the slug mismatch. Once #2 is fixed, these will appear.
+Currently the admin panel has two separate tabs: **Taxonomy** (KeywordManager showing keywords, aliases, mappings) and **Ontology** (TechnologyOntology showing co-occurrence clusters). The user wants them side-by-side to see how they relate.
 
-### Step 1 — Fix slug lookup in `useTechnologyBySlug`
+**Change:** Replace the two separate tabs with a single **"Taxonomy & Ontology"** tab that uses a 2-column layout:
+- **Left column**: KeywordManager (the keyword list with aliases, sources, mapping status)
+- **Right column**: TechnologyOntology (clusters and connections derived from shared companies)
 
-Add fallback: if `.eq("keyword", slug)` returns null, try `.ilike("keyword", `%${slug}%`)` or look up by `display_name`. Also add a check for common short slugs by querying with `slug` as a case-insensitive prefix match.
+Both already read from `technology_keywords` — displaying them together lets the admin see which keywords map to which ontology clusters. Update the tab grid from 4 to 3 tabs (merge taxonomy+ontology, keep Data Sources, keep Status).
 
-Better approach: update `useTechnologyBySlug` to first try exact match, then try matching the slug against any `keyword` that starts with the slug, then try `display_name` case-insensitive search.
+### Part 2 — My Signals: Historical signal timeline
 
-### Step 2 — Redesign Strategic Assessment layout
+Currently My Signals shows a snapshot card per watched technology with delta badges (current vs previous snapshot). The user wants to see **historical movement over time** — how signals have changed day by day since they started watching.
 
-Change from `lg:grid-cols-3` (Challenge | Opportunity | SignalBreakdown) to `lg:grid-cols-3` where Challenge+Opportunity stacked in 1 column (`lg:col-span-1`) and SignalBreakdown takes 2 columns (`lg:col-span-2`).
+**Changes to MySignals page:**
 
-### Step 3 — Remove Document Evidence section
+1. **Add a time-series chart per watched technology** using the existing `keyword_signal_snapshots` table (which has daily snapshots of company_count, total_funding_usd, total_patents, total_employees, news_mention_count, composite_score).
 
-Delete the entire Document Evidence block (lines 660-693): TRL Distribution bars, Policy References card, and the `useDocumentMentions` hook usage. Remove the `docMentions` variable and the `TrlBars` component.
+2. **For each SignalCard**, add an expandable area (or always-visible chart below the stats) showing a multi-line chart (Recharts `LineChart`) with:
+   - X-axis: snapshot dates
+   - Lines for: composite score, company count, patents, news mentions
+   - Time range: all snapshots available (the `useSignalSnapshots` hook already fetches by date range — increase default from 6 months to 12 months or use "all")
+
+3. **Add a news timeline** per technology using the existing `NewsTimelineChart` component (weekly bar chart of news mentions) below the signal chart.
+
+4. Update the page subtitle from "quarterly signal tracking" to "historical signal tracking".
 
 ### Files Modified
 
 | File | Change |
 |---|---|
-| `src/hooks/useTechnologyBySlug.ts` | Add fallback slug matching |
-| `src/pages/mockups/TechnologyDeepDive.tsx` | Redesign C-O layout (stacked + 2-col signal), remove Document Evidence section |
+| `src/pages/mockups/AdminPanel.tsx` | Merge Taxonomy + Ontology into one tab, reduce to 3 tabs |
+| `src/pages/mockups/MySignals.tsx` | Add historical line charts per watched technology, expand snapshot window |
+| `src/hooks/useSignalSnapshots.ts` | No change needed — already supports variable month ranges |
+
+### Technical Details
+
+**Signal chart**: Use Recharts `LineChart` with `ResponsiveContainer`. Each snapshot row becomes a data point. Normalize values for multi-axis display (composite is 0-1 scale, companies/patents are absolute numbers) — use dual Y-axis or normalize to percentage change from first snapshot.
+
+**Data availability**: `keyword_signal_snapshots` is populated daily by the `daily-signal-snapshots` cron job (08:00 UTC). So historical data exists for any technology that's been tracked since the pipeline was set up.
 
