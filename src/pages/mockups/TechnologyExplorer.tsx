@@ -1,27 +1,24 @@
 import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
-import { Search, TrendingUp, TrendingDown, Minus, Coins, Users, Building2, Globe, Star, RefreshCw, ChevronRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Search, TrendingUp, TrendingDown, Minus, Coins, Users, Building2, Globe, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { PlatformHeader } from "@/components/mockups/PlatformHeader";
 import { useTechnologies } from "@/hooks/useTechnologies";
 import { useTechnologyRegionStats, getRegionStats } from "@/hooks/useTechnologyRegionStats";
-import { formatFundingEur, formatNumber, MATURITY_SCORE_CONFIG, type Technology, type TechnologyKeyword } from "@/types/database";
+import { formatFundingEur, formatNumber, MATURITY_SCORE_CONFIG } from "@/types/database";
 import { cn } from "@/lib/utils";
-import { isCentralEcosystem } from "@/lib/taxonomy-filters";
 
 type RegionFilter = "all" | "europe" | "usa" | "china";
 
 export default function TechnologyExplorer() {
   const [searchQuery, setSearchQuery] = useState("");
   const [regionFilter, setRegionFilter] = useState<RegionFilter>("all");
-  const [selectedTech, setSelectedTech] = useState<(Technology & { keyword?: TechnologyKeyword }) | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const navigate = useNavigate();
 
   const {
     data: technologies,
@@ -39,7 +36,7 @@ export default function TechnologyExplorer() {
 
   const isFetching = isRefreshing || isFetchingTechnologies || isFetchingRegionStats;
 
-  const getDisplayStats = (tech: Technology) => {
+  const getDisplayStats = (tech: any) => {
     if (regionFilter === "all") {
       if (regionStats) {
         return getRegionStats(regionStats, tech.keywordId, "all");
@@ -73,20 +70,8 @@ export default function TechnologyExplorer() {
         
         return matchesSearch;
       })
-      .sort((a, b) => {
-        return b.compositeScore - a.compositeScore;
-      });
+      .sort((a, b) => b.compositeScore - a.compositeScore);
   }, [technologies, searchQuery, regionFilter, regionStats]);
-
-  const openDetail = (tech: Technology) => {
-    setSelectedTech(tech);
-    setDetailOpen(true);
-  };
-
-  const liveSelectedTech = useMemo(() => {
-    if (!selectedTech || !technologies) return selectedTech;
-    return technologies.find(t => t.id === selectedTech.id) || selectedTech;
-  }, [selectedTech, technologies]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -194,14 +179,14 @@ export default function TechnologyExplorer() {
                 <Card 
                   key={tech.id} 
                   className="cursor-pointer transition-colors hover:border-primary/50"
-                  onClick={() => openDetail(tech)}
+                  onClick={() => navigate(`/technology/${tech.keyword?.keyword || tech.keywordId}`)}
                 >
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <Link to={`/technology/${tech.keyword?.keyword || tech.keywordId}`} className="font-semibold text-foreground hover:text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+                        <span className="font-semibold text-foreground">
                           {tech.name}
-                        </Link>
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge 
@@ -212,7 +197,6 @@ export default function TechnologyExplorer() {
                         </Badge>
                       </div>
                     </div>
-                    
 
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div className="p-2 rounded bg-muted/50">
@@ -289,79 +273,6 @@ export default function TechnologyExplorer() {
           </div>
         )}
       </div>
-
-      {/* Compact Detail Dialog */}
-      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="max-w-md">
-          {liveSelectedTech && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-3">
-                  <span className="text-xl text-foreground">{liveSelectedTech.name}</span>
-                  <Badge 
-                    variant="outline" 
-                    className={`${getScoreColor(liveSelectedTech.compositeScore)} border-current`}
-                  >
-                    {liveSelectedTech.compositeScore.toFixed(2)}/2
-                  </Badge>
-                </DialogTitle>
-              </DialogHeader>
-
-              <div className="space-y-4 mt-2">
-                {liveSelectedTech.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-3">{liveSelectedTech.description}</p>
-                )}
-
-                {/* Compact metrics */}
-                {(() => {
-                  const detailStats = getDisplayStats(liveSelectedTech);
-                  const regionLabel = regionFilter === "europe" ? "EU" : regionFilter === "usa" ? "US" : regionFilter === "china" ? "CN" : "";
-                  return (
-                    <div className="grid grid-cols-3 gap-3 text-center">
-                      <div className="p-3 rounded-lg bg-muted/50">
-                        <Building2 className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
-                        <p className="text-lg font-bold text-foreground">{detailStats.companyCount}</p>
-                        <p className="text-xs text-muted-foreground">{regionLabel ? `${regionLabel} Co.` : "Companies"}</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-muted/50">
-                        <Coins className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
-                        <p className="text-lg font-bold text-foreground">{formatFundingEur(detailStats.funding)}</p>
-                        <p className="text-xs text-muted-foreground">Investment</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-muted/50">
-                        <Users className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
-                        <p className="text-lg font-bold text-foreground">{formatNumber(detailStats.employees)}</p>
-                        <p className="text-xs text-muted-foreground">Employees</p>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Score badges */}
-                <div className="flex gap-2 flex-wrap">
-                  <Badge variant="outline" className={MATURITY_SCORE_CONFIG[liveSelectedTech.investmentScore as 0|1|2]?.color || ""}>
-                    Investment: {liveSelectedTech.investmentScore}
-                  </Badge>
-                  <Badge variant="outline" className={MATURITY_SCORE_CONFIG[liveSelectedTech.employeesScore as 0|1|2]?.color || ""}>
-                    Employees: {liveSelectedTech.employeesScore}
-                  </Badge>
-                  <Badge variant="outline" className={MATURITY_SCORE_CONFIG[liveSelectedTech.trlScore as 0|1|2]?.color || ""}>
-                    TRL: {liveSelectedTech.trlScore}
-                  </Badge>
-                </div>
-
-                {/* Open full view CTA */}
-                <Link to={`/technology/${liveSelectedTech.keyword?.keyword || liveSelectedTech.keywordId}`}>
-                  <Button variant="default" className="w-full gap-2">
-                    Open full view
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
