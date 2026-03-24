@@ -14,8 +14,7 @@ import { formatFundingEur, formatNumber, MATURITY_SCORE_CONFIG, type Technology,
 import { cn } from "@/lib/utils";
 import { isCentralEcosystem } from "@/lib/taxonomy-filters";
 
-type SortOption = "composite" | "funding" | "employees" | "companies";
-type RegionFilter = "all" | "europe" | "usa";
+type RegionFilter = "all" | "europe" | "usa" | "china";
 
 export default function TechnologyExplorer() {
   const [searchQuery, setSearchQuery] = useState("");
