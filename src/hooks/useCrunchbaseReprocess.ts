@@ -159,6 +159,122 @@ const KEYWORD_MATCHING_RULES: Record<string, KeywordMatchConfig> = {
     required: ['bidirectional', 'bi-directional', 'v2g', 'v2h', 'v2l', 'vehicle-to-grid', 'two-way charging'],
     context: ['charging', 'ev', 'vehicle', 'grid'],
     exclude: []
+  },
+  // Additional active keywords
+  'Vehicle as Software': {
+    required: ['vehicle as software', 'software-defined vehicle', 'vehicle software', 'automotive software platform', 'vehicle os'],
+    context: [],
+    exclude: []
+  },
+  'Smart Logistics': {
+    required: ['smart logistics', 'logistics automation', 'intelligent logistics', 'automated logistics'],
+    context: ['vehicle', 'automotive', 'fleet', 'delivery', 'transport'],
+    exclude: []
+  },
+  'Battery Management Systems': {
+    required: ['battery management', 'bms', 'battery system', 'battery monitoring', 'battery analytics'],
+    context: ['vehicle', 'automotive', 'electric', 'ev'],
+    exclude: ['phone', 'laptop', 'consumer electronics']
+  },
+  'Smart Recharging': {
+    required: ['smart charging', 'intelligent charging', 'smart recharging', 'managed charging', 'optimized charging'],
+    context: ['ev', 'vehicle', 'electric'],
+    exclude: []
+  },
+  'Energy Management Systems': {
+    required: ['energy management', 'ems', 'energy optimization', 'power management'],
+    context: ['vehicle', 'ev', 'grid', 'charging', 'automotive', 'battery'],
+    exclude: ['building only', 'hvac only']
+  },
+  'Autonomous Mobile Robots': {
+    required: ['autonomous mobile robot', 'amr', 'mobile robot', 'delivery robot', 'autonomous robot'],
+    context: ['logistics', 'warehouse', 'delivery', 'transport'],
+    exclude: ['surgical', 'medical']
+  },
+  'Supply Chain Management': {
+    required: ['supply chain management', 'supply chain platform', 'supply chain software'],
+    context: ['automotive', 'vehicle', 'manufacturing', 'logistics'],
+    exclude: []
+  },
+  'EV Battery': {
+    required: ['ev battery', 'electric vehicle battery', 'battery cell', 'battery pack', 'solid state battery', 'lithium', 'li-ion'],
+    context: ['vehicle', 'automotive', 'ev', 'electric', 'mobility'],
+    exclude: ['phone', 'laptop', 'consumer']
+  },
+  'EV Services': {
+    required: ['ev service', 'electric vehicle service', 'ev maintenance', 'ev fleet service'],
+    context: ['vehicle', 'ev', 'electric'],
+    exclude: []
+  },
+  'AV Radar': {
+    required: ['radar', 'automotive radar', 'millimeter wave', 'mmwave'],
+    context: ['automotive', 'vehicle', 'autonomous', 'adas', 'driving'],
+    exclude: ['weather', 'aviation', 'marine']
+  },
+  'AV Software': {
+    required: ['autonomous software', 'av software', 'self-driving software', 'autonomous driving platform', 'adas software', 'perception software'],
+    context: ['vehicle', 'automotive', 'driving'],
+    exclude: []
+  },
+  'Self-driving vehicles': {
+    required: ['self-driving', 'self driving', 'driverless', 'robo-taxi', 'robotaxi', 'unmanned vehicle'],
+    context: [],
+    exclude: ['drone', 'uav', 'marine']
+  },
+  'Micro Grid': {
+    required: ['microgrid', 'micro grid', 'micro-grid', 'distributed energy'],
+    context: ['ev', 'vehicle', 'charging', 'renewable'],
+    exclude: []
+  },
+  'Teledriving': {
+    required: ['teledriving', 'tele-driving', 'remote driving', 'teleoperation', 'tele-operation'],
+    context: ['vehicle', 'automotive'],
+    exclude: []
+  },
+  'Logistics Tech': {
+    required: ['logistics tech', 'logistics technology', 'freight tech', 'transportation management'],
+    context: ['vehicle', 'fleet', 'delivery', 'truck'],
+    exclude: []
+  },
+  'Supply Chain': {
+    required: ['supply chain', 'procurement platform'],
+    context: ['automotive', 'vehicle', 'manufacturing'],
+    exclude: ['food', 'retail', 'fashion']
+  },
+  'Sustainable Mobility': {
+    required: ['sustainable mobility', 'green mobility', 'clean transport', 'sustainable transport', 'green transport'],
+    context: [],
+    exclude: []
+  },
+  'Vehicle to Everything': {
+    required: ['v2x', 'vehicle to everything', 'vehicle-to-everything', 'v2v', 'v2i', 'c-v2x'],
+    context: [],
+    exclude: []
+  },
+  'Electric Mobility': {
+    required: ['electric mobility', 'e-mobility', 'emobility', 'electromobility'],
+    context: [],
+    exclude: []
+  },
+  'EV Charging': {
+    required: ['ev charging', 'electric vehicle charging', 'charge point', 'charging station', 'charging network'],
+    context: [],
+    exclude: ['phone', 'mobile']
+  },
+  'Smart Grid': {
+    required: ['smart grid', 'grid intelligence', 'grid management', 'intelligent grid'],
+    context: ['energy', 'ev', 'vehicle', 'charging', 'power'],
+    exclude: []
+  },
+  'Storage Battery Systems': {
+    required: ['battery storage', 'energy storage', 'stationary storage', 'battery energy storage'],
+    context: ['ev', 'vehicle', 'grid', 'renewable'],
+    exclude: []
+  },
+  'Smart Cities': {
+    required: ['smart city', 'smart cities', 'urban mobility', 'intelligent transport'],
+    context: [],
+    exclude: []
   }
 };
 
