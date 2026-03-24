@@ -331,7 +331,7 @@ export default function Dashboard() {
             <BrandName className="text-foreground" />
           </div>
           <p className="text-sm text-muted-foreground">CEI-Sphere Intelligence Platform</p>
-          <p className="text-xs text-muted-foreground mt-1">Last updated: February 2026 • Powered by House11</p>
+          <p className="text-xs text-muted-foreground mt-1">A BluSpecs Platform · Powered by House11</p>
         </div>
       </footer>
     </div>
