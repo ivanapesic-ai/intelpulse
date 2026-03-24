@@ -1,10 +1,9 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Search, RefreshCw } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { PlatformHeader } from "@/components/mockups/PlatformHeader";
 import { TechnologyDetailPanel } from "@/components/intelligence/TechnologyDetailPanel";
 import { HierarchyKPICards } from "@/components/intelligence/HierarchyKPICards";
@@ -44,23 +43,6 @@ export default function IntelligenceDashboard() {
       (tech) => !searchQuery || tech.name.toLowerCase().includes(searchQuery.toLowerCase())
     ) || [];
 
-  // Align keyword/domain counters to the SAME dataset driving the matrix
-  const alignedKeywords = useMemo(() => {
-    if (!keywords || !technologies) return [];
-    const ids = new Set(technologies.map((t) => t.keywordId));
-    return keywords.filter((k) => ids.has(k.keywordId));
-  }, [keywords, technologies]);
-
-  const displayKeywordCount = useMemo(() => {
-    if (!technologies) return keywords?.length || 0;
-    return alignedKeywords.length;
-  }, [alignedKeywords.length, keywords?.length, technologies]);
-
-  const displayDomainCount = useMemo(() => {
-    if (!technologies) return domains?.length || 0;
-    const domainIds = new Set(alignedKeywords.map((k) => k.domainId));
-    return domainIds.size || 0;
-  }, [alignedKeywords, domains?.length, technologies]);
 
   const handleRecalculate = async () => {
     try {
@@ -150,11 +132,6 @@ export default function IntelligenceDashboard() {
                 />
               </div>
 
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>{displayDomainCount} domains</span>
-                <span>•</span>
-                <span>{displayKeywordCount} keywords</span>
-              </div>
             </div>
           </CardContent>
         </Card>

@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { TechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -22,11 +21,6 @@ function filterSDV(tech: TechnologyIntelligence): boolean {
   return hasData && isSDVRelevant(tech.name, false);
 }
 
-interface GartnerMatrixSamplerProps {
-  technologies: TechnologyIntelligence[];
-  onSelectTechnology?: (tech: TechnologyIntelligence) => void;
-  selectedId?: string | null;
-}
 
 // Get scores - use database values or derive from signals
 function getScores(tech: TechnologyIntelligence): { challenge: number; opportunity: number } {
@@ -557,43 +551,203 @@ function MaturityRadar({
 // ============================================================================
 // MAIN SAMPLER COMPONENT
 // ============================================================================
+// Domain color palette for bubble differentiation
+const domainColorPalette: Record<string, string> = {
+  "Autonomous Driving": "hsl(214 100% 49%)",
+  "Electric Vehicle": "hsl(160 72% 35%)",
+  "Connected Vehicle": "hsl(270 60% 50%)",
+  "Energy & Charging": "hsl(38 92% 50%)",
+  "Mobility Services": "hsl(350 70% 50%)",
+  "Manufacturing": "hsl(190 80% 45%)",
+};
+
+function getDomainColor(techName: string): string {
+  if (techName.match(/autonomous|self.driving|adas|lidar/i)) return domainColorPalette["Autonomous Driving"];
+  if (techName.match(/ev |electric vehicle|battery|v2g|vehicle.to/i)) return domainColorPalette["Electric Vehicle"];
+  if (techName.match(/connected|v2x|telematics|ota/i)) return domainColorPalette["Connected Vehicle"];
+  if (techName.match(/charging|energy|grid|solar/i)) return domainColorPalette["Energy & Charging"];
+  if (techName.match(/mobility|fleet|logistics|sharing/i)) return domainColorPalette["Mobility Services"];
+  if (techName.match(/manufactur|production|digital twin/i)) return domainColorPalette["Manufacturing"];
+  return "hsl(var(--primary))";
+}
+
+function getSmartLabel(name: string): string {
+  // Custom abbreviations for known ambiguous names
+  const abbrevMap: Record<string, string> = {
+    "EV Charging": "EV Chr",
+    "EV Battery": "EV Bat",
+    "Vehicle to Grid": "V2G",
+    "Vehicle to Everything": "V2X",
+    "Vehicle Software": "V-SW",
+    "Autonomous Driving": "AD",
+    "Battery Management System": "BMS",
+    "Connected Vehicle": "ConV",
+    "Digital Twin": "DiTwn",
+    "Smart City": "SmCty",
+    "Shared Energy Storage": "SES-S",
+    "Stationary Energy Storage": "SES-E",
+    "Solar Energy System": "SES-☀",
+    "Self-driving vehicles": "SelfD",
+  };
+  if (abbrevMap[name]) return abbrevMap[name];
+  // Fallback: take first 5 chars
+  return name.substring(0, 5);
+}
+
 export function GartnerMatrixSampler(props: GartnerMatrixSamplerProps) {
+  // Collect domains present for legend
+  const domainLegend = useMemo(() => {
+    const filtered = props.technologies.filter(filterSDV);
+    const domains = new Map<string, string>();
+    filtered.forEach(tech => {
+      const color = getDomainColor(tech.name);
+      for (const [domain, c] of Object.entries(domainColorPalette)) {
+        if (c === color) { domains.set(domain, c); break; }
+      }
+    });
+    return Array.from(domains.entries());
+  }, [props.technologies]);
+
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Technology Intelligence Views</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Strategic positioning and maturity analysis
-        </p>
+        <CardTitle className="text-lg">Strategy Matrix</CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="classic" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="classic">Strategy Matrix</TabsTrigger>
-            <TabsTrigger value="hybrid">Hybrid View</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="classic" className="mt-0">
-            <div className="text-center mb-4">
-              <Badge variant="outline">Challenge-Opportunity Quadrants</Badge>
-              <p className="text-xs text-muted-foreground mt-1">
-                Strategic positioning based on barriers and market potential
-              </p>
+        <div className="text-center mb-4">
+          <Badge variant="outline">Radar + Quadrant Fusion</Badge>
+          <p className="text-xs text-muted-foreground mt-1">
+            Maturity rings with strategic positioning overlay
+          </p>
+        </div>
+        <HybridRadarQuadrantLabeled {...props} />
+        
+        {/* Domain color legend */}
+        <div className="flex flex-wrap items-center justify-center gap-3 mt-4 pt-3 border-t border-border/50">
+          {domainLegend.map(([domain, color]) => (
+            <div key={domain} className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
+              <span className="text-[10px] text-muted-foreground">{domain}</span>
             </div>
-            <Classic2x2Quadrant {...props} />
-          </TabsContent>
-          
-          <TabsContent value="hybrid" className="mt-0">
-            <div className="text-center mb-4">
-              <Badge variant="outline">Radar + Quadrant Fusion</Badge>
-              <p className="text-xs text-muted-foreground mt-1">
-                Maturity rings with strategic positioning overlay
-              </p>
-            </div>
-            <HybridRadarQuadrant {...props} />
-          </TabsContent>
-        </Tabs>
+          ))}
+        </div>
       </CardContent>
     </Card>
+  );
+}
+
+// Enhanced version of HybridRadarQuadrant with better labels and domain colors
+function HybridRadarQuadrantLabeled({ 
+  technologies, 
+  onSelectTechnology, 
+  selectedId 
+}: GartnerMatrixSamplerProps) {
+  const positioned = useMemo(() => {
+    const filtered = technologies.filter(filterSDV);
+    const centerX = 50;
+    const centerY = 50;
+    
+    return filtered.map((tech, i) => {
+      const { challenge, opportunity } = getScores(tech);
+      const maturityRing = getMaturityRingIndex(tech.compositeScore ?? 0);
+      const investmentSignal = tech.investmentScore ?? 0;
+      const patentSignal = tech.totalPatents >= 100 ? 2 : tech.totalPatents >= 20 ? 1 : 0;
+      const mediaSignal = tech.visibilityScore ?? 0;
+      
+      const quadrantAngle = Math.atan2(
+        opportunity - 1,
+        (2 - challenge) - 1
+      );
+      
+      const baseDistance = 15 + maturityRing * 15;
+      const signalAngleOffset = ((investmentSignal - 1) / 2) * 0.25;
+      const signalDistOffset = ((patentSignal - 1) / 2) * 6;
+      const mediaAngleOffset = ((mediaSignal - 1) / 2) * 0.15;
+      const indexAngleSpread = ((i % 11) - 5) * 0.08;
+      const indexDistSpread = ((i % 5) - 2) * 2;
+      
+      const finalAngle = quadrantAngle + signalAngleOffset + mediaAngleOffset + indexAngleSpread;
+      const finalDist = Math.max(10, Math.min(44, baseDistance + signalDistOffset + indexDistSpread));
+      
+      const x = centerX + Math.cos(finalAngle) * finalDist;
+      const y = centerY - Math.sin(finalAngle) * finalDist;
+      
+      return { tech, x, y, challenge, opportunity, maturityRing };
+    });
+  }, [technologies]);
+
+  const rings = [
+    { r: 15, label: "Strong" },
+    { r: 30, label: "Moderate" },
+    { r: 45, label: "Emerging" },
+  ];
+
+  return (
+    <div className="relative w-full aspect-square max-w-xl mx-auto">
+      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
+        <path d="M50,50 L50,5 A45,45 0 0,0 5,50 Z" fill="rgba(250, 204, 21, 0.2)" />
+        <path d="M50,50 L95,50 A45,45 0 0,0 50,5 Z" fill="rgba(236, 72, 153, 0.15)" />
+        <path d="M50,50 L5,50 A45,45 0 0,0 50,95 Z" fill="rgba(96, 165, 250, 0.15)" />
+        <path d="M50,50 L50,95 A45,45 0 0,0 95,50 Z" fill="rgba(251, 146, 60, 0.15)" />
+        
+        {rings.map(({ r }, i) => (
+          <circle key={i} cx="50" cy="50" r={r} fill="none" stroke="hsl(var(--border))" strokeWidth="0.5" strokeDasharray="2,2" />
+        ))}
+        
+        <line x1="50" y1="5" x2="50" y2="95" stroke="hsl(var(--border))" strokeWidth="0.5" />
+        <line x1="5" y1="50" x2="95" y2="50" stroke="hsl(var(--border))" strokeWidth="0.5" />
+      </svg>
+
+      <div className="absolute top-2 left-4 text-xs font-semibold text-yellow-500 pointer-events-none">Quick Wins</div>
+      <div className="absolute top-2 right-4 text-xs font-semibold text-pink-400 pointer-events-none">Big Bets</div>
+      <div className="absolute bottom-4 left-4 text-xs font-semibold text-blue-400 pointer-events-none">When Time Permits</div>
+      <div className="absolute bottom-4 right-4 text-xs font-semibold text-orange-400 pointer-events-none">Rethink</div>
+
+      {rings.map(({ r, label }, i) => (
+        <div key={i} className="absolute text-[10px] text-muted-foreground/60 pointer-events-none" style={{ left: `${50 + r}%`, top: "48%", transform: "translateX(-50%)" }}>
+          {label}
+        </div>
+      ))}
+
+      <TooltipProvider>
+        {positioned.map(({ tech, x, y }, i) => {
+          const size = 32 + Math.min(tech.totalFundingEur / 50_000_000, 1) * 16;
+          const isSelected = selectedId === tech.id;
+          const color = getDomainColor(tech.name);
+          const label = getSmartLabel(tech.name);
+          
+          return (
+            <Tooltip key={tech.id} delayDuration={0}>
+              <TooltipTrigger asChild>
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: i * 0.03 }}
+                  className={cn(
+                    "absolute cursor-pointer rounded-full flex items-center justify-center text-[7px] font-bold text-white shadow-md hover:scale-110 transition-transform",
+                    isSelected && "ring-2 ring-white scale-125 z-20"
+                  )}
+                  style={{
+                    left: `${x}%`,
+                    top: `${y}%`,
+                    width: size,
+                    height: size,
+                    transform: "translate(-50%, -50%)",
+                    backgroundColor: color,
+                  }}
+                  onClick={() => onSelectTechnology?.(tech)}
+                >
+                  {label}
+                </motion.div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="font-semibold">{tech.name}</p>
+                <p className="text-xs">{formatFundingEur(tech.totalFundingEur)}</p>
+              </TooltipContent>
+            </Tooltip>
+          );
+        })}
+      </TooltipProvider>
+    </div>
   );
 }
