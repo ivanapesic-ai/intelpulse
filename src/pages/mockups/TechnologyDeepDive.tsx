@@ -110,7 +110,7 @@ export default function TechnologyDeepDive() {
   const { data: research } = useResearchSignalForKeyword(tech?.keywordId ?? null);
   const { data: news } = useNewsForKeyword(tech?.keywordId ?? null, { limit: 10 });
   const { data: cooccurrences } = useCooccurrences(tech?.keywordId);
-  const { data: lineageLinks, isLoading: lineageLoading } = useSignalLineage(tech?.keywordId);
+  
   const { watchedKeywordIds } = useWatchlist();
   const toggleWatch = useToggleWatch();
 
