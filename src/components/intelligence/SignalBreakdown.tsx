@@ -161,7 +161,6 @@ export function SignalBreakdown({ technology }: SignalBreakdownProps) {
                   </div>
                   <div>
                     <span className="text-sm font-semibold">{signal.name}</span>
-                    <Badge variant="outline" className="text-[9px] ml-1 px-1 py-0">{signal.horizon}</Badge>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Info className="inline h-3 w-3 ml-1.5 text-muted-foreground cursor-help" />

@@ -52,8 +52,9 @@ export const DUPLICATE_KEYWORDS: Record<string, string> = {
   'av simulation': 'AV Software',
   'av labeling': 'AV Software',
 
-  // SDV absorbs Vehicle as Software
+  // SDV absorbs Vehicle as Software + Telematics
   'vehicle as software': 'Software Defined Vehicle',
+  'telematics': 'Software Defined Vehicle',
 
   // Hidden niche category
   'teledriving': 'Teledriving',
