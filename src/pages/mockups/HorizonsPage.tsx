@@ -46,7 +46,7 @@ const HORIZONS = [
     color: "from-violet-500/20 to-violet-500/5",
     border: "border-violet-500/30",
     badge: "bg-violet-500/10 text-violet-600",
-    description: "Academic research intensity, citation velocity, growth trends",
+    description: "Academic research intensity, growth trends",
   },
 ];
 
