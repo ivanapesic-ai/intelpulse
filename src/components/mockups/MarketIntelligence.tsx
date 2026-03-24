@@ -122,7 +122,7 @@ export function MarketIntelligence({
             </div>
             <div className="text-center p-3 rounded-lg bg-muted/50">
               <p className="text-2xl font-bold text-foreground">{formatFundingEur(displayTotalFunding)}</p>
-              <p className="text-xs text-muted-foreground">Funding</p>
+              <p className="text-xs text-muted-foreground">Investment</p>
             </div>
             <div className="text-center p-3 rounded-lg bg-muted/50">
               <p className="text-2xl font-bold text-foreground">{formatNumber(displayTotalEmployees)}</p>

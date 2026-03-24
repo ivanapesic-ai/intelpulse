@@ -188,7 +188,7 @@ export default function TechnologyExplorer() {
                   className="h-9 text-sm rounded border border-border bg-background px-3 text-foreground"
                 >
                   <option value="composite">Composite Score</option>
-                  <option value="funding">Funding</option>
+                  <option value="funding">Investment</option>
                   <option value="employees">Employees</option>
                   <option value="companies">Company Count</option>
                 </select>
@@ -274,7 +274,7 @@ export default function TechnologyExplorer() {
                       <div className="p-2 rounded bg-muted/50">
                         <Coins className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
                         <p className="text-sm font-medium text-foreground">{formatFundingEur(displayStats.funding)}</p>
-                        <p className="text-xs text-muted-foreground">{regionFilter === "europe" ? "EU Funding" : regionFilter === "usa" ? "US Funding" : "Funding"}</p>
+                        <p className="text-xs text-muted-foreground">{regionFilter === "europe" ? "EU Investment" : regionFilter === "usa" ? "US Investment" : "Investment"}</p>
                       </div>
                       <div className="p-2 rounded bg-muted/50">
                         <Users className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
@@ -375,7 +375,7 @@ export default function TechnologyExplorer() {
                       <div className="p-3 rounded-lg bg-muted/50">
                         <Coins className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
                         <p className="text-lg font-bold text-foreground">{formatFundingEur(detailStats.funding)}</p>
-                        <p className="text-xs text-muted-foreground">Funding</p>
+                        <p className="text-xs text-muted-foreground">Investment</p>
                       </div>
                       <div className="p-3 rounded-lg bg-muted/50">
                         <Users className="h-4 w-4 mx-auto text-muted-foreground mb-1" />

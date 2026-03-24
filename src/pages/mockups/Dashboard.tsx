@@ -172,7 +172,7 @@ export default function Dashboard() {
                 trend={{ value: 8, label: "YoY growth" }}
               />
               <StatCard
-                title="Funding"
+                title="Investment"
                 value={formatFundingEur(stats.totalFunding)}
                 icon={TrendingUp}
                 trend={{ value: 15, label: "vs 2024" }}
