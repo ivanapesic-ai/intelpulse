@@ -17,6 +17,7 @@ export interface GraphNode {
     companyCount: number;
     totalFunding: number;
     patentCount: number;
+    slug?: string;
   };
 }
 
@@ -239,6 +240,7 @@ export function useKnowledgeGraph() {
             companyCount: companies,
             totalFunding: funding,
             patentCount: tech.total_patents || 0,
+            slug: kw.keyword,
           },
         });
       }
