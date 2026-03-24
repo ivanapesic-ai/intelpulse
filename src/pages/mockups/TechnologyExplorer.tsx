@@ -321,7 +321,7 @@ export default function TechnologyExplorer() {
                 {/* Compact metrics */}
                 {(() => {
                   const detailStats = getDisplayStats(liveSelectedTech);
-                  const regionLabel = regionFilter === "europe" ? "EU" : regionFilter === "usa" ? "US" : "";
+                  const regionLabel = regionFilter === "europe" ? "EU" : regionFilter === "usa" ? "US" : regionFilter === "china" ? "CN" : "";
                   return (
                     <div className="grid grid-cols-3 gap-3 text-center">
                       <div className="p-3 rounded-lg bg-muted/50">
