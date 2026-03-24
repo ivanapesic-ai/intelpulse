@@ -644,6 +644,11 @@ export default function TechnologyDeepDive() {
 
         <Separator className="my-10" />
 
+        {/* ── Signal Lineage ── */}
+        <SignalLineageTimeline links={lineageLinks || []} isLoading={lineageLoading} />
+
+        <Separator className="my-10" />
+
         {/* ── Related Technologies ── */}
         {cooccurrences && cooccurrences.length > 0 && (
           <>
