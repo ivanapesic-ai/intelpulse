@@ -17,7 +17,6 @@ import { useResearchSignalForKeyword } from "@/hooks/useResearchSignals";
 import { useNewsForKeyword } from "@/hooks/useNews";
 import { useEpoKeywordSearch } from "@/hooks/useEpoPatents";
 import { useCooccurrences } from "@/hooks/useCooccurrences";
-import { useCooccurrences } from "@/hooks/useCooccurrences";
 import { useWatchlist, useToggleWatch } from "@/hooks/useWatchlist";
 import { formatFundingEur, formatFundingUsd, formatNumber } from "@/types/database";
 import { cn } from "@/lib/utils";
