@@ -1,89 +1,65 @@
 
 
-## Plan: Semantic Layer SQL Migration (Steps 1–10)
+## Plan: Frontend Migration to `technology_intelligence`
 
-All verified against live database. Both `ontology_domains` and `ontology_concepts.domain_id` exist. Both `keyword_overview` and `domain_overview` confirmed joining `automotive_companies` (bug).
+### Pre-requisite: Add `technology_id` to materialized view
 
-### Single Migration File
+The view is missing `t.id AS technology_id`. Many consumers use `tech.id` as key. Single migration to drop and recreate the view with this column added.
 
-One SQL migration containing all steps in order:
+### Step 1 — Rewrite `useTechnologies()` 
 
-**Step 1 — Hotfix: Fix `keyword_overview` view**
-- `CREATE OR REPLACE VIEW keyword_overview` — change `automotive_companies ac` → `crunchbase_companies cc`, update column refs (`ac.total_funding_usd` → `cc.total_funding_usd`, `ac.patents_count` → `cc.patents_count`)
+Replace the `technologies` + `technology_keywords!inner` join with `SELECT * FROM technology_intelligence`. Map columns to the existing `Technology` interface. No client-side SDV filtering needed — the view already excludes inactive/non-SDV.
 
-**Step 2 — Fix `domain_overview` view**  
-- Same fix: `automotive_companies ac` → `crunchbase_companies cc`
+Keep `useTechnology(id)` as a `.eq("technology_id", id).single()` on the view.
 
-**Step 3 — Create `signal_definitions` table**
-- Columns: `id serial PK`, `signal_key text UNIQUE`, `label text`, `source_tables text[]`, `scoring_weight numeric`, `score_function text`, `display_order int`, `is_composite_input boolean`, `created_at timestamptz`
-- Seed 6 rows: Investment (0.30, composite), Employees (0.25, composite), Patents (0.25, composite), Research (0, not composite), Visibility (0, not composite), TRL (0, not composite)
-- RLS: public SELECT, admin ALL
+Keep `useKeywords()`, `useUpdateKeywordTags()`, `useAITagMapping()`, `useKeywordStats()` unchanged — they operate on `technology_keywords` directly and aren't part of the scoring layer.
 
-**Step 4 — Create `platform_config` table**
-- Columns: `key text PK`, `value text`, `description text`, `updated_at timestamptz`
-- Seed: `usd_eur_rate` = 0.92, `composite_formula` = 'weighted_log_ratio'
-- RLS: public SELECT, admin ALL
+### Step 2 — Rewrite `useTechnologyIntelligence()`
 
-**Step 5 — Add columns to `technologies`**
-- `regulatory_status text DEFAULT 'unknown'`
-- `growth_rate_pct numeric DEFAULT NULL`
+Same approach — `SELECT * FROM technology_intelligence`. Map to existing `TechnologyIntelligence` interface. `useSingleTechnologyIntelligence(keywordId)` becomes `.eq("keyword_id", keywordId).single()`.
 
-**Step 6 — Create 8 canonical SQL functions**
+Keep `useAggregateDocumentInsights()` and `useCalculateAllCOScores()` mutations — but update their `onSuccess` to invalidate `["technology-intelligence"]` only (the unified key).
 
-All `SECURITY DEFINER`, `STABLE`, reading from `technologies` table (which already has pre-aggregated values):
+### Step 3 — Rewrite `useDomainHierarchy`
 
-| Function | Source column | Thresholds |
-|---|---|---|
-| `get_investment_score(uuid)` | `total_funding_eur` | ≥5B→2, ≥500M→1, else 0 |
-| `get_employees_score(uuid)` | `total_employees` | ≥50k→2, ≥5k→1, else 0 |
-| `get_patents_score(uuid)` | `total_patents` | ≥10k→2, ≥500→1, else 0 |
-| `get_research_score(uuid)` | `total_research_works` | ≥100k→2, ≥10k→1, else 0 |
-| `get_visibility_score(uuid)` | calls existing `calculate_market_response_score` | delegates |
-| `get_company_count(uuid)` | `COUNT(DISTINCT)` from `crunchbase_keyword_mapping` | raw count |
-| `get_total_funding(uuid)` | `SUM(total_funding_usd)` × `platform_config.usd_eur_rate` from `crunchbase_companies` | raw numeric |
-| `get_maturity_score(uuid)` | weighted log-ratio (funding 30%, patents 25%, employees 25%, companies 20%) | 0–2 continuous |
+- `useDomainOverview()`: Query `technology_intelligence` with client-side grouping by `domain_id`/`domain_name`, aggregating counts and funding.
+- `useKeywordOverview()`: Each row in `technology_intelligence` IS a keyword overview. Direct mapping.
+- Keep exported interfaces, `QUADRANT_CONFIG`, `MATURITY_CONFIG`, `formatCompactNumber` unchanged.
 
-Each function takes `p_keyword_id uuid` and joins through `technologies.keyword_id`.
+### Step 4 — Simplify `useCOScoringEngine`
 
-**Step 7 — Create `technology_intelligence` materialized view**
+- **Remove** `useScoredTechnologies()` — zero external consumers (confirmed by search).
+- **Remove** `useQuadrantDistribution()` — zero external consumers.
+- **Remove** `calculateChallengeScore()` and `calculateOpportunityScore()` — client-side simulation functions no longer needed since canonical SQL functions exist.
+- **Keep** `useApplyCOScores()` mutation — still needed for admin recalculation. Update its `onSuccess` to call `refresh_technology_intelligence()` via RPC, then invalidate `["technology-intelligence"]`.
+- **Keep** `getQuadrant()` utility and `QUADRANT_CONFIG` constant.
+- **Keep** `ScoringFactors` interface (might be used elsewhere).
 
-```sql
-SELECT
-  tk.id AS keyword_id, tk.display_name AS name, tk.keyword AS slug, tk.aliases,
-  od.name AS domain_name, od.id AS domain_id,
-  get_investment_score(tk.id), get_employees_score(tk.id),
-  get_patents_score(tk.id), get_research_score(tk.id),
-  get_visibility_score(tk.id),
-  get_maturity_score(tk.id) AS maturity_score,
-  get_company_count(tk.id) AS company_count,
-  get_total_funding(tk.id) AS total_funding_eur,
-  t.total_patents, t.total_employees, t.total_research_works, ...
-  t.challenge_score, t.opportunity_score,
-  t.regulatory_status, t.growth_rate_pct,
-  now() AS refreshed_at
-FROM technology_keywords tk
-JOIN technologies t ON t.keyword_id = tk.id
-LEFT JOIN ontology_concepts oc ON tk.ontology_concept_id = oc.id
-LEFT JOIN ontology_domains od ON oc.domain_id = od.id
-WHERE tk.is_active = true AND COALESCE(tk.excluded_from_sdv, false) = false;
-```
-With `CREATE UNIQUE INDEX idx_ti_keyword ON technology_intelligence(keyword_id)`.
+### Step 5 — Update `SignalBreakdown` to read from `signal_definitions`
 
-**Step 8 — Create `refresh_technology_intelligence()` function**
-- Calls `REFRESH MATERIALIZED VIEW CONCURRENTLY technology_intelligence`
+Add a small `useQuery` for `signal_definitions` table. Use `label` and `display_order` from the DB rows to drive signal ordering and naming instead of the hardcoded `SIGNAL_DEFINITIONS` object. Fallback to current hardcoded values if query fails.
 
-**Step 9 — Update `score_all_technologies()`**
-- Replace hardcoded `'Some gaps'` with `COALESCE(t.regulatory_status, 'Some gaps')`
-- Replace hardcoded `15` with `COALESCE(t.growth_rate_pct, 15)`
-- Note: fallback defaults preserved during migration; actual per-keyword values to be populated soon after for top technologies (ADAS, V2X, EV Battery, SDV)
+### Step 6 — Unify query keys in `useDataSync`
 
-**Step 10 — Update `recalculate-percentiles` edge function**
-- After `recalculate_signal_percentiles` RPC call, add `supabase.rpc("refresh_technology_intelligence")`
+Replace scattered key arrays with a single `"technology-intelligence"` key that all hooks share. After any data import or recalculation, one `invalidateQueries(["technology-intelligence"])` refreshes everything.
+
+Update `SCORING_QUERY_KEYS` to include `"technology-intelligence"` and remove `"co-scored-technologies"`.
 
 ### Files Modified
-- **New migration SQL** — all steps 1–9
-- `supabase/functions/recalculate-percentiles/index.ts` — step 10
 
-### NOT in scope
-Frontend hook migration (reading from `technology_intelligence` instead of scattered sources) — separate follow-up once SQL layer verified.
+| File | Change |
+|---|---|
+| New migration SQL | Add `technology_id` to materialized view |
+| `src/hooks/useTechnologies.ts` | Rewrite `useTechnologies()` and `useTechnology()` to read from view |
+| `src/hooks/useTechnologyIntelligence.ts` | Rewrite both hooks to read from view |
+| `src/hooks/useDomainHierarchy.ts` | Rewrite to aggregate from view |
+| `src/hooks/useCOScoringEngine.ts` | Remove 4 unused exports, update `useApplyCOScores` invalidation |
+| `src/components/intelligence/SignalBreakdown.tsx` | Read signal config from `signal_definitions` |
+| `src/hooks/useDataSync.ts` | Add `"technology-intelligence"` to key arrays |
+
+### What stays unchanged
+- All page components (same interfaces consumed)
+- `useTechnologyRegionStats` (needs direct `crunchbase_keyword_mapping` for per-region breakdowns)
+- Admin mutation hooks (`useAITagMapping`, `useUpdateKeywordTags`)
+- `useKeywords`, `useKeywordStats`
 
