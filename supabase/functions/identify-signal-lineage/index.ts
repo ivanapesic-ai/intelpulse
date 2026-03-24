@@ -213,10 +213,28 @@ ${JSON.stringify(newsItems, null, 2)}`;
 
       const normalizeDate = (d: string | null): string | null => {
         if (!d) return null;
-        // Year-only like "2025" → "2025-01-01"
-        if (/^\d{4}$/.test(d)) return `${d}-01-01`;
-        // Already ISO-ish date
-        if (/^\d{4}-\d{2}/.test(d)) return d.slice(0, 10);
+
+        const value = d.trim();
+        const buildDate = (year: number, month?: number, day?: number) => {
+          const safeMonth = Math.min(12, Math.max(1, month ?? 1));
+          const maxDay = new Date(year, safeMonth, 0).getDate();
+          const safeDay = Math.min(maxDay, Math.max(1, day ?? 1));
+          return `${year.toString().padStart(4, "0")}-${safeMonth
+            .toString()
+            .padStart(2, "0")}-${safeDay.toString().padStart(2, "0")}`;
+        };
+
+        const yearOnly = value.match(/^(\d{4})$/);
+        if (yearOnly) return buildDate(Number(yearOnly[1]));
+
+        const yearMonth = value.match(/^(\d{4})[-/](\d{1,2})$/);
+        if (yearMonth) return buildDate(Number(yearMonth[1]), Number(yearMonth[2]));
+
+        const fullDate = value.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+        if (fullDate) {
+          return buildDate(Number(fullDate[1]), Number(fullDate[2]), Number(fullDate[3]));
+        }
+
         return null;
       };
 
