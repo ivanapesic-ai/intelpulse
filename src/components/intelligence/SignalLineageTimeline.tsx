@@ -1,4 +1,5 @@
 import { useMemo, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LineageLink } from "@/hooks/useSignalLineage";
@@ -20,7 +21,6 @@ type LaneType = keyof typeof LANE_CONFIG;
 
 function parseDate(d: string | null): number | null {
   if (!d) return null;
-  // Handle year-only strings like "2023"
   if (/^\d{4}$/.test(d)) return new Date(`${d}-06-15`).getTime();
   const t = new Date(d).getTime();
   return isNaN(t) ? null : t;
@@ -37,12 +37,10 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
 
   function showPopover(e: React.MouseEvent<SVGElement>, content: React.ReactNode) {
-    const svg = svgRef.current;
-    if (!svg) return;
-    const rect = svg.getBoundingClientRect();
+    const viewportPadding = 24;
     setPopover({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top - 12,
+      x: Math.min(Math.max(e.clientX, viewportPadding), window.innerWidth - viewportPadding),
+      y: Math.max(e.clientY - 12, viewportPadding),
       content,
     });
   }
@@ -54,7 +52,6 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
   const { nodes, connections, dateRange } = useMemo(() => {
     if (!links.length) return { nodes: [], connections: [], dateRange: { min: 0, max: 0 } };
 
-    // Collect all unique nodes
     const nodeMap = new Map<string, { id: string; type: LaneType; title: string; date: number | null }>();
 
     links.forEach((l) => {
@@ -80,13 +77,11 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
 
     const nodes = Array.from(nodeMap.values());
 
-    // Date range
     const dates = nodes.map((n) => n.date).filter(Boolean) as number[];
     const min = dates.length ? Math.min(...dates) : Date.now() - 3 * 365 * 86400000;
     const max = dates.length ? Math.max(...dates) : Date.now();
     const range = max - min || 1;
 
-    // Connections
     const connections = links.map((l) => ({
       id: l.id,
       sourceKey: `${l.source_type}:${l.source_id}`,
@@ -126,7 +121,6 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
     );
   }
 
-  // SVG dimensions
   const svgWidth = 800;
   const svgHeight = 240;
   const marginLeft = 80;
@@ -163,9 +157,11 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
             viewBox={`0 0 ${svgWidth} ${svgHeight}`}
             className="w-full min-w-[600px]"
             style={{ height: "auto", maxHeight: 280 }}
-            onMouseLeave={() => { setHoveredLink(null); hidePopover(); }}
+            onMouseLeave={() => {
+              setHoveredLink(null);
+              hidePopover();
+            }}
           >
-            {/* Arrowhead marker */}
             <defs>
               <marker
                 id="arrowhead"
@@ -183,7 +179,6 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
               </marker>
             </defs>
 
-            {/* Lane backgrounds */}
             {(["research", "patent", "news"] as LaneType[]).map((type) => (
               <g key={type}>
                 <rect
@@ -209,7 +204,6 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
               </g>
             ))}
 
-            {/* Date axis labels */}
             {dateRange.min > 0 && (
               <>
                 <text
@@ -232,7 +226,6 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
               </>
             )}
 
-            {/* Bezier connections */}
             {connections.map((conn) => {
               const sourceNode = nodes.find((n) => n.id === conn.sourceKey);
               const targetNode = nodes.find((n) => n.id === conn.targetKey);
@@ -253,24 +246,28 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
                   className="cursor-pointer"
                   onMouseEnter={(e) => {
                     setHoveredLink(conn.id);
-                    showPopover(e, (
+                    showPopover(
+                      e,
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-1.5">
-                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: LANE_CONFIG[sourceNode.type]?.color }} />
+                          <div className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: LANE_CONFIG[sourceNode.type]?.color }} />
                           <span className="text-xs font-medium">{sourceNode.title}</span>
                         </div>
-                        <div className="text-xs text-muted-foreground pl-3">↓ {conn.description}</div>
+                        <div className="pl-3 text-xs text-muted-foreground">↓ {conn.description}</div>
                         <div className="flex items-center gap-1.5">
-                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: LANE_CONFIG[targetNode.type]?.color }} />
+                          <div className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: LANE_CONFIG[targetNode.type]?.color }} />
                           <span className="text-xs font-medium">{targetNode.title}</span>
                         </div>
-                        <div className="text-[10px] text-muted-foreground pt-1 border-t border-border mt-1">
+                        <div className="mt-1 border-t border-border pt-1 text-[10px] text-muted-foreground">
                           Confidence: {Math.round(conn.confidence * 100)}%
                         </div>
                       </div>
-                    ));
+                    );
                   }}
-                  onMouseLeave={() => { setHoveredLink(null); hidePopover(); }}
+                  onMouseLeave={() => {
+                    setHoveredLink(null);
+                    hidePopover();
+                  }}
                 >
                   <path
                     d={`M ${sx} ${sy} C ${midX} ${sy}, ${midX} ${ty}, ${tx} ${ty}`}
@@ -291,7 +288,6 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
               );
             })}
 
-            {/* Nodes */}
             {nodes.map((node) => {
               const cx = getX(node.date);
               const cy = getLaneY(node.type);
@@ -307,15 +303,16 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
                   strokeWidth={2}
                   className="cursor-pointer"
                   onMouseEnter={(e) => {
-                    showPopover(e, (
+                    showPopover(
+                      e,
                       <div>
                         <p className="text-xs font-medium">{node.title}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
+                        <p className="mt-0.5 text-xs text-muted-foreground">
                           {LANE_CONFIG[node.type].label}
                           {node.date ? ` · ${new Date(node.date).getFullYear()}` : ""}
                         </p>
                       </div>
-                    ));
+                    );
                   }}
                   onMouseLeave={hidePopover}
                 />
@@ -323,34 +320,34 @@ export function SignalLineageTimeline({ links, isLoading }: Props) {
             })}
           </svg>
 
-          {/* Custom HTML popover */}
-          {popover && (
-            <div
-              className="absolute z-50 pointer-events-none rounded-md border bg-popover px-3 py-2 text-popover-foreground shadow-md max-w-xs"
-              style={{
-                left: popover.x,
-                top: popover.y,
-                transform: "translate(-50%, -100%)",
-              }}
-            >
-              {popover.content}
-            </div>
-          )}
+          {popover && typeof document !== "undefined"
+            ? createPortal(
+                <div
+                  className="pointer-events-none fixed z-[100] max-w-xs rounded-md border bg-popover px-3 py-2 text-popover-foreground shadow-md"
+                  style={{
+                    left: popover.x,
+                    top: popover.y,
+                    transform: "translate(-50%, -100%)",
+                  }}
+                >
+                  {popover.content}
+                </div>,
+                document.body
+              )
+            : null}
         </div>
 
-        {/* Legend */}
         <div className="flex items-center gap-4 px-6 pb-4 pt-1">
           {(["research", "patent", "news"] as LaneType[]).map((type) => (
             <div key={type} className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <div
-                className="w-2.5 h-2.5 rounded-full"
+                className="h-2.5 w-2.5 rounded-full"
                 style={{ backgroundColor: LANE_CONFIG[type].color }}
               />
               {LANE_CONFIG[type].label}
             </div>
           ))}
         </div>
-
       </CardContent>
     </Card>
   );
