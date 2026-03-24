@@ -652,7 +652,7 @@ function HybridRadarQuadrantLabeled({
   ];
 
   return (
-    <div className="relative w-full aspect-square max-w-xl mx-auto">
+    <div className="relative w-full aspect-square max-w-3xl mx-auto">
       <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
         <path d="M50,50 L50,5 A45,45 0 0,0 5,50 Z" fill="rgba(250, 204, 21, 0.2)" />
         <path d="M50,50 L95,50 A45,45 0 0,0 50,5 Z" fill="rgba(236, 72, 153, 0.15)" />
