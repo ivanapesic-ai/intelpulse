@@ -40,7 +40,7 @@ function RefreshTrlButton() {
 
       let updated = 0;
       for (const kw of keywords || []) {
-        const { error } = await supabase.rpc("aggregate_document_insights", { p_keyword_id: kw.id });
+        const { error } = await supabase.rpc("aggregate_document_insights", { tech_keyword_id: kw.id });
         if (!error) updated++;
       }
 
