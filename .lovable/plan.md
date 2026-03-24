@@ -1,65 +1,67 @@
 
 
-## Plan: Frontend Migration to `technology_intelligence`
+## Plan: Technology Deep Dive Page Redesign + Explorer Navigation Fix
 
-### Pre-requisite: Add `technology_id` to materialized view
+### Summary of Issues (from screenshots and user feedback)
 
-The view is missing `t.id AS technology_id`. Many consumers use `tech.id` as key. Single migration to drop and recreate the view with this column added.
+1. **Explorer**: Clicking a technology opens a dialog — should navigate directly to the deep dive page
+2. **Strategic Assessment**: C-O cards are too large with empty space underneath
+3. **Domain badge chip** at top (e.g. "Software Defined Vehicle Ecosystem") — remove it
+4. **Standards section**: Missing from the deep dive page entirely
+5. **Market Intelligence**: Missing Top Strategic Investors, Geographic Concentration, and Funding Stage Distribution — these existed in `MarketIntelligence.tsx` but aren't used on this page
+6. **Region Breakdown**: Replace simple bar chart with the richer Geographic Concentration from MarketIntelligence
+7. **Patents**: Chinese applicant names unreadable; need ability to list actual patents (not just top applicants)
+8. **Research**: Show top papers instead of just top institutions; make horizons expandable to see full lists
+9. **Add to My Signals**: No watchlist toggle on the deep dive page
+10. **Three Horizons cards**: Should show summary numbers in the card headers, and expand into a sheet/dialog with full listings when clicked
 
-### Step 1 — Rewrite `useTechnologies()` 
+---
 
-Replace the `technologies` + `technology_keywords!inner` join with `SELECT * FROM technology_intelligence`. Map columns to the existing `Technology` interface. No client-side SDV filtering needed — the view already excludes inactive/non-SDV.
+### Step 1 — Explorer: Navigate directly to deep dive
 
-Keep `useTechnology(id)` as a `.eq("technology_id", id).single()` on the view.
+Remove the `Dialog` from `TechnologyExplorer.tsx`. Change card `onClick` to navigate to `/technology/:slug` directly using `useNavigate()`. Remove all dialog-related state and markup.
 
-Keep `useKeywords()`, `useUpdateKeywordTags()`, `useAITagMapping()`, `useKeywordStats()` unchanged — they operate on `technology_keywords` directly and aren't part of the scoring layer.
+### Step 2 — Deep Dive header cleanup
 
-### Step 2 — Rewrite `useTechnologyIntelligence()`
+- Remove the domain badge chip (`tech.domainName` badge)
+- Add watchlist toggle button (eye icon) next to the title, using `useWatchlist` + `useToggleWatch`
 
-Same approach — `SELECT * FROM technology_intelligence`. Map to existing `TechnologyIntelligence` interface. `useSingleTechnologyIntelligence(keywordId)` becomes `.eq("keyword_id", keywordId).single()`.
+### Step 3 — Compact Strategic Assessment
 
-Keep `useAggregateDocumentInsights()` and `useCalculateAllCOScores()` mutations — but update their `onSuccess` to invalidate `["technology-intelligence"]` only (the unified key).
+Shrink the C-O cards: reduce padding, make them fixed-height so there's no empty space. Change layout from `lg:grid-cols-2` (2 cards + signal breakdown) to `lg:grid-cols-3` (challenge card + opportunity card + signal breakdown side by side, all same height).
 
-### Step 3 — Rewrite `useDomainHierarchy`
+### Step 4 — Add Market Intelligence sections
 
-- `useDomainOverview()`: Query `technology_intelligence` with client-side grouping by `domain_id`/`domain_name`, aggregating counts and funding.
-- `useKeywordOverview()`: Each row in `technology_intelligence` IS a keyword overview. Direct mapping.
-- Keep exported interfaces, `QUADRANT_CONFIG`, `MATURITY_CONFIG`, `formatCompactNumber` unchanged.
+Import and render `MarketIntelligence` component on the deep dive page after the Company Landscape section. This adds:
+- Top Strategic Investors (with investment counts)
+- Geographic Concentration (country bars with percentages)
+- Funding Stage Distribution (badge chips)
 
-### Step 4 — Simplify `useCOScoringEngine`
+Remove the current simple "Region Breakdown" card since Geographic Concentration replaces it.
 
-- **Remove** `useScoredTechnologies()` — zero external consumers (confirmed by search).
-- **Remove** `useQuadrantDistribution()` — zero external consumers.
-- **Remove** `calculateChallengeScore()` and `calculateOpportunityScore()` — client-side simulation functions no longer needed since canonical SQL functions exist.
-- **Keep** `useApplyCOScores()` mutation — still needed for admin recalculation. Update its `onSuccess` to call `refresh_technology_intelligence()` via RPC, then invalidate `["technology-intelligence"]`.
-- **Keep** `getQuadrant()` utility and `QUADRANT_CONFIG` constant.
-- **Keep** `ScoringFactors` interface (might be used elsewhere).
+### Step 5 — Add Standards section
 
-### Step 5 — Update `SignalBreakdown` to read from `signal_definitions`
+Import `StandardsSection` and render it after Score Cards (or after Strategic Assessment), passing `keywordId` and `aliases`.
 
-Add a small `useQuery` for `signal_definitions` table. Use `label` and `display_order` from the DB rows to drive signal ordering and naming instead of the hardcoded `SIGNAL_DEFINITIONS` object. Fallback to current hardcoded values if query fails.
+### Step 6 — Three Horizons: expandable with details
 
-### Step 6 — Unify query keys in `useDataSync`
+Add a `Sheet` (slide-over panel) for each horizon. The card shows summary stats (news count, patent count, research paper count). Clicking a card opens the sheet with:
+- **News**: Full list of news items with links
+- **Patents**: Patent list (titles from `patentSearch.data.patents` if available, plus top applicants)
+- **Research**: Top papers list from `research.topPapers` (title, year, citations, DOI link) + top institutions
 
-Replace scattered key arrays with a single `"technology-intelligence"` key that all hooks share. After any data import or recalculation, one `invalidateQueries(["technology-intelligence"])` refreshes everything.
+### Step 7 — Patent improvements
 
-Update `SCORING_QUERY_KEYS` to include `"technology-intelligence"` and remove `"co-scored-technologies"`.
+In the Patents horizon card and sheet:
+- If `patentSearch.data.patents` array exists, show patent titles/abstracts
+- For Chinese applicant names: no data-level fix possible (EPO returns original-language names), but add a note or attempt translation display
+
+---
 
 ### Files Modified
 
 | File | Change |
 |---|---|
-| New migration SQL | Add `technology_id` to materialized view |
-| `src/hooks/useTechnologies.ts` | Rewrite `useTechnologies()` and `useTechnology()` to read from view |
-| `src/hooks/useTechnologyIntelligence.ts` | Rewrite both hooks to read from view |
-| `src/hooks/useDomainHierarchy.ts` | Rewrite to aggregate from view |
-| `src/hooks/useCOScoringEngine.ts` | Remove 4 unused exports, update `useApplyCOScores` invalidation |
-| `src/components/intelligence/SignalBreakdown.tsx` | Read signal config from `signal_definitions` |
-| `src/hooks/useDataSync.ts` | Add `"technology-intelligence"` to key arrays |
-
-### What stays unchanged
-- All page components (same interfaces consumed)
-- `useTechnologyRegionStats` (needs direct `crunchbase_keyword_mapping` for per-region breakdowns)
-- Admin mutation hooks (`useAITagMapping`, `useUpdateKeywordTags`)
-- `useKeywords`, `useKeywordStats`
+| `src/pages/mockups/TechnologyExplorer.tsx` | Remove dialog, navigate directly to deep dive |
+| `src/pages/mockups/TechnologyDeepDive.tsx` | Major redesign: compact C-O, add watchlist toggle, add MarketIntelligence, add Standards, expandable Three Horizons, remove domain badge |
 
