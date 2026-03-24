@@ -56,6 +56,12 @@ const DEFAULT_STEPS: Omit<PipelineStep, "status">[] = [
     description: "Rebuild the materialized view that powers all dashboards",
     enabled: true,
   },
+  {
+    id: "analyze_lineage",
+    label: "Analyze Signal Lineage",
+    description: "Use AI to identify conceptual links between research, patents & news",
+    enabled: false,
+  },
 ];
 
 export function DataPipelinePanel() {
