@@ -194,6 +194,7 @@ const COLUMN_MAP: Record<string, string> = {
   'Description': 'description',
   'Full Description': 'full_description',
   'Headquarters Location': 'hq_location',
+  'Headquarters Country/Territory': 'hq_country',
   'Founded Date': 'founded_date',
   'Operating Status': 'operating_status',
   'Industries': 'industries',
