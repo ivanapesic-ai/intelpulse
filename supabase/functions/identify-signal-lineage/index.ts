@@ -62,20 +62,35 @@ async function analyzeKeyword(
       source: m.news_items.source_name || "",
     }));
 
-    // 3. Fetch patents via EPO edge function (cached or fresh)
+    // 3. Fetch patents via EPO IPC search using keyword name mapping
     let patentItems: any[] = [];
     try {
-      const { data: epoData } = await supabase.functions.invoke("epo-patent-lookup", {
-        body: { action: "keyword_search", keyword: keywordName },
-      });
-      if (epoData?.patents) {
-        patentItems = epoData.patents.slice(0, 20).map((p: any) => ({
-          id: p.publicationNumber || `patent_${Math.random().toString(36).slice(2)}`,
-          title: p.title || "Untitled Patent",
-          applicant: p.applicant || "",
-          filingDate: p.filingDate || null,
-          abstract: (p.abstract || "").slice(0, 200),
-        }));
+      // Hardcoded IPC map (subset matching epo-patent-lookup)
+      const IPC_MAP: Record<string, string> = {
+        "lidar": "G01S17/93", "sensor fusion": "G01S13/86",
+        "autonomous driving": "B60W60/00", "av software": "G06F8/65",
+        "electric vehicle": "B60L50/60", "ev battery": "H01M10/0525",
+        "battery management systems": "H01M10/42", "ev charging": "H02J7/00",
+        "vehicle to grid": "H02J3/38", "vehicle to everything": "H04W4/46",
+        "bidirectional charging": "H02J3/38", "smart grid": "H02J13/00",
+        "smart city": "G08G1/01", "fleet management": "G06Q10/06",
+        "telematics": "G07C5/08", "ev motor": "H02K7/00",
+        "micro grid": "H02J3/38", "energy management systems": "H02J3/14",
+      };
+      const ipcCode = IPC_MAP[keywordName.toLowerCase()];
+      if (ipcCode) {
+        const { data: epoData } = await supabase.functions.invoke("epo-patent-lookup", {
+          body: { action: "search_ipc_detailed", ipcCode, maxResults: 20 },
+        });
+        if (epoData?.patents) {
+          patentItems = epoData.patents.slice(0, 20).map((p: any) => ({
+            id: p.publicationNumber || `patent_${Math.random().toString(36).slice(2)}`,
+            title: p.title || "Untitled Patent",
+            applicant: p.applicant || "",
+            filingDate: p.filingDate || null,
+            abstract: (p.abstract || "").slice(0, 200),
+          }));
+        }
       }
     } catch {
       // Patents optional — continue without them
@@ -196,16 +211,25 @@ ${JSON.stringify(newsItems, null, 2)}`;
       // Clear previous lineage for this keyword
       await supabase.from("signal_lineage").delete().eq("keyword_id", keywordId);
 
+      const normalizeDate = (d: string | null): string | null => {
+        if (!d) return null;
+        // Year-only like "2025" → "2025-01-01"
+        if (/^\d{4}$/.test(d)) return `${d}-01-01`;
+        // Already ISO-ish date
+        if (/^\d{4}-\d{2}/.test(d)) return d.slice(0, 10);
+        return null;
+      };
+
       const rows = links.map((l) => ({
         keyword_id: keywordId,
         source_type: l.source_type,
         source_id: l.source_id,
         source_title: l.source_title,
-        source_date: l.source_date || null,
+        source_date: normalizeDate(l.source_date),
         target_type: l.target_type,
         target_id: l.target_id,
         target_title: l.target_title,
-        target_date: l.target_date || null,
+        target_date: normalizeDate(l.target_date),
         confidence: l.confidence,
         relationship_description: l.relationship_description,
       }));
