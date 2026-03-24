@@ -1,18 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+const PAGE_SIZE = 1000;
+
 // European countries list (EU27 + UK, Norway, Switzerland, Iceland)
 const EUROPE_COUNTRIES = [
   "Germany", "France", "Netherlands", "Belgium", "Italy", "Spain", "Sweden", "Finland",
   "Denmark", "Ireland", "Austria", "Poland", "Portugal", "Czech Republic", "Czechia",
   "Hungary", "Romania", "Bulgaria", "Greece", "Slovakia", "Croatia", "Slovenia",
   "Lithuania", "Latvia", "Estonia", "Luxembourg", "Malta", "Cyprus",
-  "United Kingdom", "Norway", "Switzerland", "Iceland", "Liechtenstein"
-];
+  "United Kingdom", "Norway", "Switzerland", "Iceland", "Liechtenstein", "The Netherlands"
+].map((country) => country.toLowerCase());
 
-const USA_COUNTRIES = ["United States", "USA", "US"];
+const USA_COUNTRIES = ["United States", "USA", "US"].map((country) => country.toLowerCase());
 
-const CHINA_COUNTRIES = ["China", "People's Republic of China", "PRC", "Hong Kong", "Macau"];
+const CHINA_COUNTRIES = ["China", "People's Republic of China", "PRC", "Hong Kong", "Macau"].map((country) => country.toLowerCase());
 
 interface TechnologyRegionStats {
   keywordId: string;
@@ -30,9 +32,19 @@ interface TechnologyRegionStats {
   globalEmployees: number;
 }
 
-// Parse employee count string to number (e.g., "51-100" -> 75)
+interface RegionMappingRow {
+  keyword_id: string | null;
+  company_id: string | null;
+  crunchbase_companies: {
+    hq_country: string | null;
+    total_funding_usd: number | null;
+    number_of_employees: string | null;
+  } | null;
+}
+
 function parseEmployeeCount(employeeStr: string | null): number {
   if (!employeeStr) return 0;
+
   const ranges: Record<string, number> = {
     "1-10": 5,
     "11-50": 30,
@@ -44,60 +56,67 @@ function parseEmployeeCount(employeeStr: string | null): number {
     "5001-10000": 7500,
     "10001+": 15000,
   };
+
   return ranges[employeeStr] || 0;
 }
 
+function normalizeCountry(country: string | null): string {
+  return (country || "").trim().toLowerCase();
+}
+
+async function fetchAllRegionMappings() {
+  const allMappings: RegionMappingRow[] = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("crunchbase_keyword_mapping")
+      .select(`
+        keyword_id,
+        company_id,
+        crunchbase_companies!inner (
+          hq_country,
+          total_funding_usd,
+          number_of_employees
+        )
+      `)
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) throw error;
+
+    const page = (data ?? []) as RegionMappingRow[];
+    allMappings.push(...page);
+
+    if (page.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+
+  return allMappings;
+}
+
 /**
- * This hook fetches company data and aggregates stats by region (Europe, USA, Both).
+ * This hook fetches company data and aggregates stats by region.
  * Client-side filtering based on hq_country.
  */
 export function useTechnologyRegionStats() {
   return useQuery({
     queryKey: ["technology-region-stats"],
     queryFn: async () => {
-      // Fetch all keyword mappings with company details
-      const { data: mappings, error: mappingError } = await supabase
-        .from("crunchbase_keyword_mapping")
-        .select(`
-          keyword_id,
-          company_id,
-          crunchbase_companies!inner (
-            hq_country,
-            total_funding_usd,
-            number_of_employees
-          )
-        `)
-        .limit(10000);
-
-      if (mappingError) throw mappingError;
-
-      // Build stats map by keyword
+      const mappings = await fetchAllRegionMappings();
       const statsMap = new Map<string, TechnologyRegionStats>();
 
-      for (const mapping of mappings || []) {
+      for (const mapping of mappings) {
         if (!mapping.keyword_id || !mapping.crunchbase_companies) continue;
 
-        const company = mapping.crunchbase_companies as {
-          hq_country: string | null;
-          total_funding_usd: number | null;
-          number_of_employees: string | null;
-        };
-
-        const country = company.hq_country || "";
-        const fundingEur = (company.total_funding_usd || 0) * 0.92; // USD to EUR
+        const company = mapping.crunchbase_companies;
+        const country = normalizeCountry(company.hq_country);
+        const fundingEur = (company.total_funding_usd || 0) * 0.92;
         const employees = parseEmployeeCount(company.number_of_employees);
 
-        const isEurope = EUROPE_COUNTRIES.some(c => 
-          country.toLowerCase() === c.toLowerCase()
-        );
-        const isUSA = USA_COUNTRIES.some(c => 
-          country.toLowerCase() === c.toLowerCase()
-        );
-        const isChina = CHINA_COUNTRIES.some(c => 
-          country.toLowerCase() === c.toLowerCase()
-        );
+        const isEurope = EUROPE_COUNTRIES.includes(country);
+        const isUSA = USA_COUNTRIES.includes(country);
+        const isChina = CHINA_COUNTRIES.includes(country);
 
-        // Get or create stats entry
         let stats = statsMap.get(mapping.keyword_id);
         if (!stats) {
           stats = {
@@ -118,7 +137,6 @@ export function useTechnologyRegionStats() {
           statsMap.set(mapping.keyword_id, stats);
         }
 
-        // Aggregate by region
         stats.globalCompanyCount++;
         stats.globalFunding += fundingEur;
         stats.globalEmployees += employees;
@@ -144,11 +162,10 @@ export function useTechnologyRegionStats() {
 
       return Array.from(statsMap.values());
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 }
 
-// Helper to get region-filtered stats for a specific technology
 export function getRegionStats(
   allStats: TechnologyRegionStats[] | undefined,
   keywordId: string | undefined,
@@ -187,7 +204,6 @@ export function getRegionStats(
     };
   }
 
-  // "all" = global totals (all regions)
   return {
     companyCount: stats.globalCompanyCount,
     funding: stats.globalFunding,
