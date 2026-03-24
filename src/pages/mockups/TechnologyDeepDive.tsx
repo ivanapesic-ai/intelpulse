@@ -233,9 +233,6 @@ export default function TechnologyDeepDive() {
               </Badge>
             )}
           </div>
-          {tech.description && (
-            <p className="text-muted-foreground max-w-3xl">{tech.description}</p>
-          )}
         </div>
 
         {/* ── Score Cards ── */}

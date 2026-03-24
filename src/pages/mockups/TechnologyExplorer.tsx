@@ -113,9 +113,6 @@ export default function TechnologyExplorer() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-foreground mb-2">Technology Explorer</h1>
-              <p className="text-muted-foreground">
-                Browse and analyze SDV technologies with market intelligence and scoring
-              </p>
             </div>
 
             <Button
@@ -216,9 +213,6 @@ export default function TechnologyExplorer() {
                       </div>
                     </div>
                     
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                      {tech.description || "Emerging technology area under active monitoring"}
-                    </p>
 
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div className="p-2 rounded bg-muted/50">

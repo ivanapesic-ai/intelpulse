@@ -106,10 +106,6 @@ export default function IntelligenceDashboard() {
           <div className="flex items-start justify-between mb-6">
             <div>
               <h1 className="text-3xl font-bold text-foreground mb-2">Technology Intelligence</h1>
-              <p className="text-muted-foreground max-w-xl">
-                SDV ecosystem overview with Challenge-Opportunity scoring based on the tender's 3-signal model (Investment,
-                Patents, Market Response).
-              </p>
             </div>
             <Button variant="outline" onClick={handleRecalculate} disabled={calculateScores.isPending}>
               <RefreshCw className={cn("h-4 w-4 mr-2", calculateScores.isPending && "animate-spin")} />
