@@ -161,7 +161,6 @@ export default function PublicDemo() {
                 icon={FileText}
               />
               <StatCard
-                title="Sample Funding"
                 title="Sample Investment"
                 value={formatFundingEur(stats.totalFunding)}
                 subtitle="Market data"
