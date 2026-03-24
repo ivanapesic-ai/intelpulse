@@ -670,19 +670,19 @@ serve(async (req) => {
 
           if (matchedIpc.length === 0) continue;
 
-          // Use only the FIRST (most specific) IPC code to avoid inflating by summing broad classes
-          // Date filter: last 1 year to stay under EPO's 10k result cap
+          // Sum patent counts across ALL matched IPC codes (up to 3)
           let totalPatents = 0;
-          const primaryCode = matchedIpc[0];
-          try {
-            const { totalCount } = await searchByIPC(token, primaryCode, 1, true);
-            totalPatents = totalCount || 0;
-          } catch (e) {
-            console.error(`IPC count failed for ${primaryCode}:`, e);
+          for (const code of matchedIpc.slice(0, 3)) {
+            try {
+              const { totalCount } = await searchByIPC(token, code, 1, true);
+              totalPatents += totalCount || 0;
+            } catch (e) {
+              console.error(`IPC count failed for ${code}:`, e);
+            }
+            await new Promise((r) => setTimeout(r, 400));
           }
-          await new Promise((r) => setTimeout(r, 400));
 
-          // Thresholds for 1-year, single-IPC-subclass counts
+          // Thresholds for 1-year, multi-IPC-subclass counts
           const patentsScore = totalPatents >= 2000 ? 2 : totalPatents >= 200 ? 1 : 0;
 
           await admin
