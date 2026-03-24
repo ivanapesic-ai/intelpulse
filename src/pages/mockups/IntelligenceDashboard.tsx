@@ -44,23 +44,6 @@ export default function IntelligenceDashboard() {
       (tech) => !searchQuery || tech.name.toLowerCase().includes(searchQuery.toLowerCase())
     ) || [];
 
-  // Align keyword/domain counters to the SAME dataset driving the matrix
-  const alignedKeywords = useMemo(() => {
-    if (!keywords || !technologies) return [];
-    const ids = new Set(technologies.map((t) => t.keywordId));
-    return keywords.filter((k) => ids.has(k.keywordId));
-  }, [keywords, technologies]);
-
-  const displayKeywordCount = useMemo(() => {
-    if (!technologies) return keywords?.length || 0;
-    return alignedKeywords.length;
-  }, [alignedKeywords.length, keywords?.length, technologies]);
-
-  const displayDomainCount = useMemo(() => {
-    if (!technologies) return domains?.length || 0;
-    const domainIds = new Set(alignedKeywords.map((k) => k.domainId));
-    return domainIds.size || 0;
-  }, [alignedKeywords, domains?.length, technologies]);
 
   const handleRecalculate = async () => {
     try {
