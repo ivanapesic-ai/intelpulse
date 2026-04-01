@@ -19,6 +19,7 @@ import { RssNewsPanel } from "@/components/admin/RssNewsPanel";
 import { ResearchSignalsPanel } from "@/components/admin/ResearchSignalsPanel";
 import { StandardsManagerPanel } from "@/components/admin/StandardsManagerPanel";
 import { DataPipelinePanel } from "@/components/admin/DataPipelinePanel";
+import { CordisPanel } from "@/components/admin/CordisPanel";
 import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
 
 export default function AdminPanel() {
