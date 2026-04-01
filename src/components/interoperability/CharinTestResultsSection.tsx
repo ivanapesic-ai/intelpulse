@@ -77,8 +77,13 @@ export function CharinTestResultsSection() {
             </Card>
             <Card className="bg-card/50 border-border/50">
               <CardContent className="p-4">
-                <p className="text-2xl font-bold text-foreground">{protocols?.length || 0}</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {protocols && protocols.length > 0 ? protocols.length : events && events.length > 0 ? "3+" : 0}
+                </p>
                 <p className="text-xs text-muted-foreground">Protocols Tested</p>
+                {protocols?.length === 0 && events && events.length > 0 && (
+                  <p className="text-[10px] text-muted-foreground/60 mt-0.5">CCS, ISO 15118, MCS</p>
+                )}
               </CardContent>
             </Card>
           </div>
