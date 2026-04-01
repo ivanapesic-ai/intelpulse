@@ -186,6 +186,9 @@ export default function AdminPanel() {
               <Button variant={dataSubTab === "cordis" ? "secondary" : "ghost"} size="sm" onClick={() => setDataSubTab("cordis")}>
                 <Landmark className="h-4 w-4 mr-1.5" /> CORDIS EU R&D
               </Button>
+              <Button variant={dataSubTab === "github" ? "secondary" : "ghost"} size="sm" onClick={() => setDataSubTab("github")}>
+                <Code className="h-4 w-4 mr-1.5" /> GitHub OSS
+              </Button>
             </div>
 
             {dataSubTab === "crunchbase" && <CrunchbaseImportPanel />}
