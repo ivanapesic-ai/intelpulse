@@ -1,6 +1,7 @@
 // supabase/functions/fetch-github-activity/index.ts
 // Fetches open-source repository metrics from GitHub Search API
 // Maps results to technology_keywords — gives "open-source momentum" signal
+// Uses background execution (waitUntil) to avoid client timeouts
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -13,7 +14,6 @@ const corsHeaders = {
 
 const GITHUB_API = "https://api.github.com";
 
-// Search query mappings — keywords that need domain-specific queries
 const KEYWORD_SEARCH_QUERIES: Record<string, string[]> = {
   "vehicle to grid": ["vehicle-to-grid", "V2G charging", "EVerest"],
   "bidirectional charging": ["bidirectional charging", "iso15118"],
@@ -90,6 +90,107 @@ async function searchGitHub(query: string, token: string | null, perPage = 30): 
   return data.items || [];
 }
 
+async function processKeywords(
+  supabaseClient: any,
+  keywords: { id: string; keyword: string }[],
+  githubToken: string | null,
+  perPage: number,
+  dryRun: boolean
+) {
+  let totalInserted = 0;
+  let totalFound = 0;
+
+  for (const kw of keywords) {
+    const queries = KEYWORD_SEARCH_QUERIES[kw.keyword.toLowerCase()] || [kw.keyword];
+    const allRepos = new Map<number, any>();
+
+    for (const query of queries) {
+      console.log(`GitHub search: "${query}" (keyword: ${kw.keyword})`);
+
+      try {
+        const repos = await searchGitHub(query, githubToken, perPage);
+        for (const repo of repos) {
+          if (!allRepos.has(repo.id)) {
+            allRepos.set(repo.id, repo);
+          }
+        }
+        await new Promise((r) => setTimeout(r, 2000));
+      } catch (err) {
+        console.warn(`GitHub search failed for "${query}":`, err.message);
+        if (err.message.includes("rate limited")) {
+          await new Promise((r) => setTimeout(r, 10000));
+        }
+      }
+    }
+
+    const repos = Array.from(allRepos.values());
+    totalFound += repos.length;
+
+    let inserted = 0;
+    const totalStars = repos.reduce((s, r) => s + (r.stargazers_count || 0), 0);
+    const topRepo = repos.length > 0
+      ? repos.sort((a, b) => (b.stargazers_count || 0) - (a.stargazers_count || 0))[0]?.full_name
+      : null;
+
+    if (!dryRun && repos.length > 0) {
+      const now = new Date().toISOString();
+      const cutoff = new Date();
+      cutoff.setFullYear(cutoff.getFullYear() - 1);
+
+      const rows = repos.map((repo, idx) => ({
+        github_id: repo.id,
+        full_name: repo.full_name,
+        owner: repo.owner?.login || "",
+        repo_name: repo.name,
+        description: (repo.description || "").slice(0, 500),
+        stars: repo.stargazers_count || 0,
+        forks: repo.forks_count || 0,
+        open_issues: repo.open_issues_count || 0,
+        watchers: repo.watchers_count || 0,
+        size_kb: repo.size || 0,
+        language: repo.language,
+        topics: repo.topics || [],
+        license: repo.license?.spdx_id || null,
+        created_at_gh: repo.created_at,
+        updated_at_gh: repo.updated_at,
+        pushed_at: repo.pushed_at,
+        is_active: new Date(repo.pushed_at || repo.updated_at) > cutoff,
+        activity_score: calculateActivityScore(repo),
+        momentum: determineMomentum(repo),
+        keyword_id: kw.id,
+        keyword: kw.keyword,
+        search_query: queries.join(" | "),
+        relevance_rank: idx + 1,
+        github_url: repo.html_url,
+        homepage_url: repo.homepage || null,
+        fetched_at: now,
+      }));
+
+      for (let i = 0; i < rows.length; i += 50) {
+        const chunk = rows.slice(i, i + 50);
+        const { data, error } = await supabaseClient
+          .from("github_oss_activity")
+          .upsert(chunk, {
+            onConflict: "github_id,keyword_id",
+            ignoreDuplicates: false,
+          })
+          .select("id");
+
+        if (error) {
+          console.error(`Upsert error for ${kw.keyword}:`, error.message);
+        } else {
+          inserted += data?.length || chunk.length;
+        }
+      }
+    }
+
+    totalInserted += inserted;
+    console.log(`${kw.keyword}: ${repos.length} repos, ${totalStars} total stars, top: ${topRepo}`);
+  }
+
+  console.log(`Background GitHub fetch complete: ${keywords.length} keywords, ${totalFound} repos found, ${totalInserted} inserted`);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -120,127 +221,40 @@ serve(async (req) => {
       keywords = allKeywords || [];
     }
 
-    const results: {
-      keyword: string;
-      queries: string[];
-      repos_found: number;
-      repos_inserted: number;
-      total_stars: number;
-      top_repo: string | null;
-    }[] = [];
+    // For single keyword, process inline; for bulk, use background execution
+    if (keywords.length <= 2) {
+      // Small enough to process inline
+      await processKeywords(supabaseClient, keywords, githubToken, per_page, dry_run);
 
-    let totalInserted = 0;
-    let totalFound = 0;
+      return new Response(
+        JSON.stringify({
+          success: true,
+          mode: "inline",
+          keywords_queued: keywords.length,
+          message: `Processed ${keywords.length} keyword(s) inline.`,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    for (const kw of keywords) {
-      const queries = KEYWORD_SEARCH_QUERIES[kw.keyword.toLowerCase()] || [kw.keyword];
-      const allRepos = new Map<number, any>();
+    // Background execution for bulk fetches
+    const promise = processKeywords(supabaseClient, keywords, githubToken, per_page, dry_run);
 
-      for (const query of queries) {
-        console.log(`GitHub search: "${query}" (keyword: ${kw.keyword})`);
-
-        try {
-          const repos = await searchGitHub(query, githubToken, per_page);
-          for (const repo of repos) {
-            if (!allRepos.has(repo.id)) {
-              allRepos.set(repo.id, repo);
-            }
-          }
-          await new Promise((r) => setTimeout(r, 2000));
-        } catch (err) {
-          console.warn(`GitHub search failed for "${query}":`, err.message);
-          if (err.message.includes("rate limited")) {
-            await new Promise((r) => setTimeout(r, 10000));
-          }
-        }
-      }
-
-      const repos = Array.from(allRepos.values());
-      totalFound += repos.length;
-
-      let inserted = 0;
-      const totalStars = repos.reduce((s, r) => s + (r.stargazers_count || 0), 0);
-      const topRepo = repos.length > 0
-        ? repos.sort((a, b) => (b.stargazers_count || 0) - (a.stargazers_count || 0))[0]?.full_name
-        : null;
-
-      if (!dry_run && repos.length > 0) {
-        const now = new Date().toISOString();
-        const cutoff = new Date();
-        cutoff.setFullYear(cutoff.getFullYear() - 1);
-
-        const rows = repos.map((repo, idx) => ({
-          github_id: repo.id,
-          full_name: repo.full_name,
-          owner: repo.owner?.login || "",
-          repo_name: repo.name,
-          description: (repo.description || "").slice(0, 500),
-          stars: repo.stargazers_count || 0,
-          forks: repo.forks_count || 0,
-          open_issues: repo.open_issues_count || 0,
-          watchers: repo.watchers_count || 0,
-          size_kb: repo.size || 0,
-          language: repo.language,
-          topics: repo.topics || [],
-          license: repo.license?.spdx_id || null,
-          created_at_gh: repo.created_at,
-          updated_at_gh: repo.updated_at,
-          pushed_at: repo.pushed_at,
-          is_active: new Date(repo.pushed_at || repo.updated_at) > cutoff,
-          activity_score: calculateActivityScore(repo),
-          momentum: determineMomentum(repo),
-          keyword_id: kw.id,
-          keyword: kw.keyword,
-          search_query: queries.join(" | "),
-          relevance_rank: idx + 1,
-          github_url: repo.html_url,
-          homepage_url: repo.homepage || null,
-          fetched_at: now,
-        }));
-
-        for (let i = 0; i < rows.length; i += 50) {
-          const chunk = rows.slice(i, i + 50);
-          const { data, error } = await supabaseClient
-            .from("github_oss_activity")
-            .upsert(chunk, {
-              onConflict: "github_id,keyword_id",
-              ignoreDuplicates: false,
-            })
-            .select("id");
-
-          if (error) {
-            console.error(`Upsert error for ${kw.keyword}:`, error.message);
-          } else {
-            inserted += data?.length || chunk.length;
-          }
-        }
-      }
-
-      totalInserted += inserted;
-
-      results.push({
-        keyword: kw.keyword,
-        queries,
-        repos_found: repos.length,
-        repos_inserted: inserted,
-        total_stars: totalStars,
-        top_repo: topRepo,
-      });
-
-      console.log(`${kw.keyword}: ${repos.length} repos, ${totalStars} total stars, top: ${topRepo}`);
+    // Use EdgeRuntime.waitUntil to keep processing after response
+    // @ts-ignore - EdgeRuntime is available in Supabase Edge Functions
+    if (typeof EdgeRuntime !== "undefined" && EdgeRuntime.waitUntil) {
+      // @ts-ignore
+      EdgeRuntime.waitUntil(promise);
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        summary: {
-          keywords_processed: keywords.length,
-          total_repos_found: totalFound,
-          total_repos_inserted: totalInserted,
-          github_token_used: !!githubToken,
-          dry_run,
-        },
-        details: results,
+        mode: "background",
+        keywords_queued: keywords.length,
+        github_token_used: !!githubToken,
+        dry_run,
+        message: `Queued ${keywords.length} keywords for background processing. Data will appear as it's fetched — refresh the page to see updates.`,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
