@@ -25,7 +25,7 @@ import CharinPanel from "@/components/admin/CharinPanel";
 import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
 
 export default function AdminPanel() {
-  const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "scraping" | "documents" | "news" | "research" | "cordis" | "github">("crunchbase");
+  const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "scraping" | "documents" | "news" | "research" | "cordis" | "github" | "charin">("crunchbase");
 
   // Data hooks
   const { data: crunchbaseStats } = useCrunchbaseStats();
