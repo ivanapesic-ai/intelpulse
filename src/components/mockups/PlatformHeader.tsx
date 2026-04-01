@@ -14,6 +14,7 @@ const navItems = [
   { path: "/knowledge-graph", label: "Graph", icon: Network },
   { path: "/my-signals", label: "My Signals", icon: Eye },
   { path: "/horizons", label: "Horizons", icon: Layers },
+  { path: "/interoperability", label: "Interop", icon: Shield },
 ];
 
 export function PlatformHeader() {
