@@ -155,6 +155,18 @@ export function DataPipelinePanel() {
             if (result && !result.success) throw new Error(result.error || "GitHub fetch failed");
             break;
           }
+          case "fetch_charin": {
+            // Seed known events first, then scrape
+            await supabase.functions.invoke("fetch-charin-data", {
+              body: { mode: "seed_known" },
+            });
+            const { data: result, error } = await supabase.functions.invoke("fetch-charin-data", {
+              body: { mode: "scrape_events" },
+            });
+            if (error) throw error;
+            if (result && !result.success) throw new Error(result.error || "CharIN fetch failed");
+            break;
+          }
           case "aggregate_trl": {
             const { data: keywords } = await supabase
               .from("technology_keywords")
