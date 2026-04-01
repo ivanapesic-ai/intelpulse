@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.identify-signal-lineage]
 verify_jwt = false
+
+[functions.fetch-cordis-projects]
+verify_jwt = false
