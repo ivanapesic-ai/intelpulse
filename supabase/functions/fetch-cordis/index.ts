@@ -6,34 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const SPARQL_ENDPOINT = "https://cordis.europa.eu/datalab/sparql";
-
-function buildSparqlQuery(searchTerm: string, limit = 50): string {
-  // Search for projects matching the keyword in title or objective
-  return `
-    PREFIX eurio: <http://data.europa.eu/s66#>
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-
-    SELECT DISTINCT ?project ?acronym ?title ?status ?startDate ?endDate ?totalCost ?ecContribution ?cordisId
-    WHERE {
-      ?project a eurio:Project .
-      ?project eurio:title ?title .
-      FILTER(LANG(?title) = "en")
-      FILTER(CONTAINS(LCASE(?title), LCASE("${searchTerm}")))
-      
-      OPTIONAL { ?project eurio:acronym ?acronym }
-      OPTIONAL { ?project eurio:status ?status }
-      OPTIONAL { ?project eurio:startDate ?startDate }
-      OPTIONAL { ?project eurio:endDate ?endDate }
-      OPTIONAL { ?project eurio:totalCost ?totalCost }
-      OPTIONAL { ?project eurio:ecMaxContribution ?ecContribution }
-      OPTIONAL { ?project eurio:projectID ?cordisId }
-    }
-    ORDER BY DESC(?totalCost)
-    LIMIT ${limit}
-  `;
-}
+const CORDIS_API = "https://cordis.europa.eu/search/en";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -54,57 +27,55 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const query = buildSparqlQuery(search_term, limit || 50);
+    const maxResults = Math.min(limit || 50, 100);
+    const url = `${CORDIS_API}?q=${encodeURIComponent(search_term)}&type=project&format=json&p=1&num=${maxResults}`;
     console.log(`Querying CORDIS for: "${search_term}"`);
 
-    const sparqlResponse = await fetch(SPARQL_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Accept: "application/sparql-results+json",
-      },
-      body: `query=${encodeURIComponent(query)}`,
+    const response = await fetch(url, {
+      headers: { Accept: "application/json" },
     });
 
-    if (!sparqlResponse.ok) {
-      const errorText = await sparqlResponse.text();
-      console.error("SPARQL error:", errorText);
+    if (!response.ok) {
+      console.error("CORDIS API error:", response.status);
       return new Response(
-        JSON.stringify({ error: `SPARQL query failed: ${sparqlResponse.status}` }),
+        JSON.stringify({ error: `CORDIS API failed: ${response.status}` }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const sparqlData = await sparqlResponse.json();
-    const bindings = sparqlData.results?.bindings || [];
-    console.log(`Found ${bindings.length} projects for "${search_term}"`);
+    const data = await response.json();
+    const totalHits = parseInt(data?.result?.header?.numHits || "0", 10);
+    const hits = data?.result?.hits?.hit || [];
+    console.log(`Found ${totalHits} total hits, processing ${hits.length} for "${search_term}"`);
 
-    // Transform and upsert projects
     let insertedCount = 0;
     let totalFunding = 0;
     let ecTotal = 0;
     let activeCount = 0;
     let completedCount = 0;
 
-    for (const b of bindings) {
-      const cordisId = b.cordisId?.value || b.project?.value?.split("/").pop() || null;
-      const totalCost = b.totalCost?.value ? parseFloat(b.totalCost.value) : null;
-      const ecContribution = b.ecContribution?.value ? parseFloat(b.ecContribution.value) : null;
-      const status = b.status?.value || null;
+    for (const hit of hits) {
+      const proj = hit.project;
+      if (!proj) continue;
+
+      const cordisId = proj.id || null;
+      const totalCost = proj.totalCost ? parseFloat(proj.totalCost) : null;
+      const ecContribution = proj.ecMaxContribution ? parseFloat(proj.ecMaxContribution) : null;
+      const status = proj.status || null;
 
       if (totalCost) totalFunding += totalCost;
       if (ecContribution) ecTotal += ecContribution;
-      if (status === "signed" || status === "SIGNED") activeCount++;
-      if (status === "closed" || status === "CLOSED") completedCount++;
+      if (status === "SIGNED") activeCount++;
+      if (status === "CLOSED") completedCount++;
 
       const { error } = await supabase.from("cordis_projects").upsert(
         {
           keyword_id,
-          project_acronym: b.acronym?.value || null,
-          project_title: b.title?.value || "Untitled",
+          project_acronym: proj.acronym || null,
+          project_title: proj.title || "Untitled",
           project_status: status,
-          start_date: b.startDate?.value || null,
-          end_date: b.endDate?.value || null,
+          start_date: proj.startDate || null,
+          end_date: proj.endDate || null,
           total_cost_eur: totalCost,
           ec_contribution_eur: ecContribution,
           cordis_url: cordisId ? `https://cordis.europa.eu/project/id/${cordisId}` : null,
@@ -121,7 +92,7 @@ Deno.serve(async (req) => {
     const { error: summaryError } = await supabase.from("cordis_keyword_summary").upsert(
       {
         keyword_id,
-        project_count: bindings.length,
+        project_count: totalHits,
         total_funding_eur: totalFunding,
         ec_contribution_eur: ecTotal,
         active_projects: activeCount,
@@ -138,7 +109,8 @@ Deno.serve(async (req) => {
       JSON.stringify({
         success: true,
         keyword: search_term,
-        projects_found: bindings.length,
+        total_hits: totalHits,
+        projects_found: hits.length,
         projects_stored: insertedCount,
         total_funding_eur: totalFunding,
         ec_contribution_eur: ecTotal,
