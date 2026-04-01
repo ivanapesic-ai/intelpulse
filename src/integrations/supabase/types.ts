@@ -268,6 +268,159 @@ export type Database = {
           },
         ]
       }
+      cordis_keyword_summary: {
+        Row: {
+          active_projects: number | null
+          completed_projects: number | null
+          ec_contribution_eur: number | null
+          id: string
+          keyword_id: string
+          last_fetched_at: string | null
+          project_count: number | null
+          total_funding_eur: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          active_projects?: number | null
+          completed_projects?: number | null
+          ec_contribution_eur?: number | null
+          id?: string
+          keyword_id: string
+          last_fetched_at?: string | null
+          project_count?: number | null
+          total_funding_eur?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          active_projects?: number | null
+          completed_projects?: number | null
+          ec_contribution_eur?: number | null
+          id?: string
+          keyword_id?: string
+          last_fetched_at?: string | null
+          project_count?: number | null
+          total_funding_eur?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cordis_keyword_summary_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: true
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "cordis_keyword_summary_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: true
+            referencedRelation: "keyword_mapping_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "cordis_keyword_summary_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: true
+            referencedRelation: "keyword_overview"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "cordis_keyword_summary_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: true
+            referencedRelation: "technology_intelligence"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "cordis_keyword_summary_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: true
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cordis_projects: {
+        Row: {
+          cordis_id: string | null
+          cordis_url: string | null
+          created_at: string | null
+          ec_contribution_eur: number | null
+          end_date: string | null
+          id: string
+          keyword_id: string
+          project_acronym: string | null
+          project_status: string | null
+          project_title: string
+          start_date: string | null
+          total_cost_eur: number | null
+        }
+        Insert: {
+          cordis_id?: string | null
+          cordis_url?: string | null
+          created_at?: string | null
+          ec_contribution_eur?: number | null
+          end_date?: string | null
+          id?: string
+          keyword_id: string
+          project_acronym?: string | null
+          project_status?: string | null
+          project_title: string
+          start_date?: string | null
+          total_cost_eur?: number | null
+        }
+        Update: {
+          cordis_id?: string | null
+          cordis_url?: string | null
+          created_at?: string | null
+          ec_contribution_eur?: number | null
+          end_date?: string | null
+          id?: string
+          keyword_id?: string
+          project_acronym?: string | null
+          project_status?: string | null
+          project_title?: string
+          start_date?: string | null
+          total_cost_eur?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cordis_projects_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "cordis_projects_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_mapping_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "cordis_projects_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_overview"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "cordis_projects_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_intelligence"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "cordis_projects_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crunchbase_companies: {
         Row: {
           created_at: string | null
