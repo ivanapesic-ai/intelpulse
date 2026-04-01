@@ -45,6 +45,12 @@ const DEFAULT_STEPS: Omit<PipelineStep, "status">[] = [
     enabled: true,
   },
   {
+    id: "fetch_charin",
+    label: "Fetch CharIN Interop Data",
+    description: "Seed known events and scrape CharIN event pages for test data",
+    enabled: true,
+  },
+  {
     id: "aggregate_trl",
     label: "Aggregate TRL Scores",
     description: "Recalculate TRL from document mentions for all keywords",
@@ -147,6 +153,18 @@ export function DataPipelinePanel() {
             });
             if (error) throw error;
             if (result && !result.success) throw new Error(result.error || "GitHub fetch failed");
+            break;
+          }
+          case "fetch_charin": {
+            // Seed known events first, then scrape
+            await supabase.functions.invoke("fetch-charin-data", {
+              body: { mode: "seed_known" },
+            });
+            const { data: result, error } = await supabase.functions.invoke("fetch-charin-data", {
+              body: { mode: "scrape_events" },
+            });
+            if (error) throw error;
+            if (result && !result.success) throw new Error(result.error || "CharIN fetch failed");
             break;
           }
           case "aggregate_trl": {

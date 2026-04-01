@@ -62,6 +62,272 @@ export type Database = {
         }
         Relationships: []
       }
+      charin_equipment: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          equipment_type: string
+          events_participated: number | null
+          id: string
+          manufacturer: string
+          max_power_kw: number | null
+          model: string
+          pass_rate: number | null
+          supports_bidirectional: boolean | null
+          supports_iso15118: boolean | null
+          supports_megawatt: boolean | null
+          supports_plug_and_charge: boolean | null
+          total_tests: number | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          equipment_type: string
+          events_participated?: number | null
+          id?: string
+          manufacturer: string
+          max_power_kw?: number | null
+          model: string
+          pass_rate?: number | null
+          supports_bidirectional?: boolean | null
+          supports_iso15118?: boolean | null
+          supports_megawatt?: boolean | null
+          supports_plug_and_charge?: boolean | null
+          total_tests?: number | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          equipment_type?: string
+          events_participated?: number | null
+          id?: string
+          manufacturer?: string
+          max_power_kw?: number | null
+          model?: string
+          pass_rate?: number | null
+          supports_bidirectional?: boolean | null
+          supports_iso15118?: boolean | null
+          supports_megawatt?: boolean | null
+          supports_plug_and_charge?: boolean | null
+          total_tests?: number | null
+        }
+        Relationships: []
+      }
+      charin_test_events: {
+        Row: {
+          country: string | null
+          created_at: string | null
+          end_date: string | null
+          event_name: string
+          event_type: string
+          fetched_at: string | null
+          id: string
+          location: string | null
+          organizer: string | null
+          report_url: string | null
+          scraped_from_url: string | null
+          source_document_id: string | null
+          start_date: string | null
+          total_attendees: number | null
+          total_evs: number | null
+          total_evses: number | null
+          total_individual_tests: number | null
+          total_pairings: number | null
+          total_test_hours: number | null
+          total_test_systems: number | null
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string | null
+          end_date?: string | null
+          event_name: string
+          event_type: string
+          fetched_at?: string | null
+          id?: string
+          location?: string | null
+          organizer?: string | null
+          report_url?: string | null
+          scraped_from_url?: string | null
+          source_document_id?: string | null
+          start_date?: string | null
+          total_attendees?: number | null
+          total_evs?: number | null
+          total_evses?: number | null
+          total_individual_tests?: number | null
+          total_pairings?: number | null
+          total_test_hours?: number | null
+          total_test_systems?: number | null
+        }
+        Update: {
+          country?: string | null
+          created_at?: string | null
+          end_date?: string | null
+          event_name?: string
+          event_type?: string
+          fetched_at?: string | null
+          id?: string
+          location?: string | null
+          organizer?: string | null
+          report_url?: string | null
+          scraped_from_url?: string | null
+          source_document_id?: string | null
+          start_date?: string | null
+          total_attendees?: number | null
+          total_evs?: number | null
+          total_evses?: number | null
+          total_individual_tests?: number | null
+          total_pairings?: number | null
+          total_test_hours?: number | null
+          total_test_systems?: number | null
+        }
+        Relationships: []
+      }
+      charin_test_results: {
+        Row: {
+          charging_power_kw: number | null
+          created_at: string | null
+          duration_minutes: number | null
+          ev_manufacturer: string | null
+          ev_model: string | null
+          event_id: string | null
+          evse_manufacturer: string | null
+          evse_model: string | null
+          id: string
+          is_bidirectional: boolean | null
+          is_dc: boolean | null
+          is_megawatt: boolean | null
+          keyword: string | null
+          keyword_id: string | null
+          protocol: string | null
+          result: string
+          result_detail: string | null
+          test_category: string | null
+          test_scenario: string
+          test_system: string | null
+          uses_iso15118: boolean | null
+          uses_plug_and_charge: boolean | null
+        }
+        Insert: {
+          charging_power_kw?: number | null
+          created_at?: string | null
+          duration_minutes?: number | null
+          ev_manufacturer?: string | null
+          ev_model?: string | null
+          event_id?: string | null
+          evse_manufacturer?: string | null
+          evse_model?: string | null
+          id?: string
+          is_bidirectional?: boolean | null
+          is_dc?: boolean | null
+          is_megawatt?: boolean | null
+          keyword?: string | null
+          keyword_id?: string | null
+          protocol?: string | null
+          result: string
+          result_detail?: string | null
+          test_category?: string | null
+          test_scenario: string
+          test_system?: string | null
+          uses_iso15118?: boolean | null
+          uses_plug_and_charge?: boolean | null
+        }
+        Update: {
+          charging_power_kw?: number | null
+          created_at?: string | null
+          duration_minutes?: number | null
+          ev_manufacturer?: string | null
+          ev_model?: string | null
+          event_id?: string | null
+          evse_manufacturer?: string | null
+          evse_model?: string | null
+          id?: string
+          is_bidirectional?: boolean | null
+          is_dc?: boolean | null
+          is_megawatt?: boolean | null
+          keyword?: string | null
+          keyword_id?: string | null
+          protocol?: string | null
+          result?: string
+          result_detail?: string | null
+          test_category?: string | null
+          test_scenario?: string
+          test_system?: string | null
+          uses_iso15118?: boolean | null
+          uses_plug_and_charge?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "charin_test_results_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "charin_event_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "charin_test_results_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "charin_test_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "charin_test_results_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "charin_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "charin_test_results_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "charin_test_results_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "cordis_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "charin_test_results_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "github_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "charin_test_results_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_mapping_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "charin_test_results_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_overview"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "charin_test_results_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_intelligence"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "charin_test_results_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_technology_evidence: {
         Row: {
           company_id: string | null
@@ -106,6 +372,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "dealroom_companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_technology_evidence_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "charin_keyword_summary"
+            referencedColumns: ["keyword_id"]
           },
           {
             foreignKeyName: "company_technology_evidence_keyword_id_fkey"
@@ -249,6 +522,13 @@ export type Database = {
             foreignKeyName: "concept_scoring_factors_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
+            referencedRelation: "charin_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "concept_scoring_factors_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
             referencedRelation: "combined_technology_graph"
             referencedColumns: ["keyword_id"]
           },
@@ -355,6 +635,13 @@ export type Database = {
           total_cost_eur?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "cordis_eu_projects_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "charin_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
           {
             foreignKeyName: "cordis_eu_projects_keyword_id_fkey"
             columns: ["keyword_id"]
@@ -597,6 +884,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sdv_ecosystem_companies"
             referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "crunchbase_keyword_mapping_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "charin_keyword_summary"
+            referencedColumns: ["keyword_id"]
           },
           {
             foreignKeyName: "crunchbase_keyword_mapping_keyword_id_fkey"
@@ -962,6 +1256,13 @@ export type Database = {
             foreignKeyName: "document_technology_mentions_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
+            referencedRelation: "charin_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "document_technology_mentions_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
             referencedRelation: "combined_technology_graph"
             referencedColumns: ["keyword_id"]
           },
@@ -1105,6 +1406,13 @@ export type Database = {
             foreignKeyName: "github_oss_activity_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
+            referencedRelation: "charin_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "github_oss_activity_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
             referencedRelation: "combined_technology_graph"
             referencedColumns: ["keyword_id"]
           },
@@ -1181,6 +1489,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "dealroom_companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "keyword_company_mapping_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "charin_keyword_summary"
+            referencedColumns: ["keyword_id"]
           },
           {
             foreignKeyName: "keyword_company_mapping_keyword_id_fkey"
@@ -1284,6 +1599,13 @@ export type Database = {
             foreignKeyName: "keyword_industry_mappings_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
+            referencedRelation: "charin_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "keyword_industry_mappings_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
             referencedRelation: "combined_technology_graph"
             referencedColumns: ["keyword_id"]
           },
@@ -1382,6 +1704,13 @@ export type Database = {
             foreignKeyName: "keyword_signal_snapshots_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
+            referencedRelation: "charin_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "keyword_signal_snapshots_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
             referencedRelation: "combined_technology_graph"
             referencedColumns: ["keyword_id"]
           },
@@ -1470,6 +1799,13 @@ export type Database = {
           url?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "keyword_standards_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "charin_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
           {
             foreignKeyName: "keyword_standards_keyword_id_fkey"
             columns: ["keyword_id"]
@@ -1577,6 +1913,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sdv_ecosystem_companies"
             referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "news_company_mentions_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "charin_keyword_summary"
+            referencedColumns: ["keyword_id"]
           },
           {
             foreignKeyName: "news_company_mentions_keyword_id_fkey"
@@ -1701,6 +2044,13 @@ export type Database = {
           news_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "news_keyword_matches_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "charin_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
           {
             foreignKeyName: "news_keyword_matches_keyword_id_fkey"
             columns: ["keyword_id"]
@@ -2213,6 +2563,13 @@ export type Database = {
             foreignKeyName: "research_signals_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
+            referencedRelation: "charin_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "research_signals_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
             referencedRelation: "combined_technology_graph"
             referencedColumns: ["keyword_id"]
           },
@@ -2419,6 +2776,13 @@ export type Database = {
             foreignKeyName: "signal_lineage_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
+            referencedRelation: "charin_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "signal_lineage_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
             referencedRelation: "combined_technology_graph"
             referencedColumns: ["keyword_id"]
           },
@@ -2604,6 +2968,13 @@ export type Database = {
             foreignKeyName: "technologies_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: true
+            referencedRelation: "charin_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "technologies_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: true
             referencedRelation: "combined_technology_graph"
             referencedColumns: ["keyword_id"]
           },
@@ -2687,6 +3058,13 @@ export type Database = {
             foreignKeyName: "technology_cooccurrences_keyword_id_a_fkey"
             columns: ["keyword_id_a"]
             isOneToOne: false
+            referencedRelation: "charin_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "technology_cooccurrences_keyword_id_a_fkey"
+            columns: ["keyword_id_a"]
+            isOneToOne: false
             referencedRelation: "combined_technology_graph"
             referencedColumns: ["keyword_id"]
           },
@@ -2731,6 +3109,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "technology_keywords"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technology_cooccurrences_keyword_id_b_fkey"
+            columns: ["keyword_id_b"]
+            isOneToOne: false
+            referencedRelation: "charin_keyword_summary"
+            referencedColumns: ["keyword_id"]
           },
           {
             foreignKeyName: "technology_cooccurrences_keyword_id_b_fkey"
@@ -2889,6 +3274,13 @@ export type Database = {
             foreignKeyName: "technology_keywords_parent_keyword_id_fkey"
             columns: ["parent_keyword_id"]
             isOneToOne: false
+            referencedRelation: "charin_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "technology_keywords_parent_keyword_id_fkey"
+            columns: ["parent_keyword_id"]
+            isOneToOne: false
             referencedRelation: "combined_technology_graph"
             referencedColumns: ["keyword_id"]
           },
@@ -2990,6 +3382,13 @@ export type Database = {
             foreignKeyName: "user_watchlist_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
+            referencedRelation: "charin_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "user_watchlist_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
             referencedRelation: "combined_technology_graph"
             referencedColumns: ["keyword_id"]
           },
@@ -3078,6 +3477,13 @@ export type Database = {
           trl_mentioned?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "web_technology_mentions_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "charin_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
           {
             foreignKeyName: "web_technology_mentions_keyword_id_fkey"
             columns: ["keyword_id"]
@@ -3260,6 +3666,59 @@ export type Database = {
           total_funding_usd?: number | null
           updated_at?: string | null
           website?: string | null
+        }
+        Relationships: []
+      }
+      charin_event_overview: {
+        Row: {
+          country: string | null
+          created_at: string | null
+          end_date: string | null
+          event_name: string | null
+          event_type: string | null
+          fetched_at: string | null
+          id: string | null
+          loaded_test_count: number | null
+          location: string | null
+          organizer: string | null
+          overall_pass_rate: number | null
+          protocols_tested: number | null
+          report_url: string | null
+          scraped_from_url: string | null
+          source_document_id: string | null
+          start_date: string | null
+          total_attendees: number | null
+          total_evs: number | null
+          total_evses: number | null
+          total_individual_tests: number | null
+          total_pairings: number | null
+          total_test_hours: number | null
+          total_test_systems: number | null
+        }
+        Relationships: []
+      }
+      charin_keyword_summary: {
+        Row: {
+          display_name: string | null
+          ev_manufacturers_tested: number | null
+          events_with_tests: number | null
+          evse_manufacturers_tested: number | null
+          keyword: string | null
+          keyword_id: string | null
+          pass_rate_pct: number | null
+          passed: number | null
+          total_tests: number | null
+        }
+        Relationships: []
+      }
+      charin_protocol_summary: {
+        Row: {
+          failed: number | null
+          partial: number | null
+          pass_rate_pct: number | null
+          passed: number | null
+          protocol: string | null
+          total_tests: number | null
         }
         Relationships: []
       }
@@ -3505,6 +3964,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sdv_ecosystem_companies"
             referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "crunchbase_keyword_mapping_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "charin_keyword_summary"
+            referencedColumns: ["keyword_id"]
           },
           {
             foreignKeyName: "crunchbase_keyword_mapping_keyword_id_fkey"

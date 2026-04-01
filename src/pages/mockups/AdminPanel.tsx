@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Database, FileText, Globe, Layers, Upload, CheckCircle, FileSpreadsheet, BarChart, Rss, BookOpen, Landmark, Code } from "lucide-react";
+import { ArrowLeft, Database, FileText, Globe, Layers, Upload, CheckCircle, FileSpreadsheet, BarChart, Rss, BookOpen, Landmark, Code, FlaskConical } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,10 +21,11 @@ import { StandardsManagerPanel } from "@/components/admin/StandardsManagerPanel"
 import { DataPipelinePanel } from "@/components/admin/DataPipelinePanel";
 import { CordisPanel } from "@/components/admin/CordisPanel";
 import GithubPanel from "@/components/admin/GithubPanel";
+import CharinPanel from "@/components/admin/CharinPanel";
 import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
 
 export default function AdminPanel() {
-  const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "scraping" | "documents" | "news" | "research" | "cordis" | "github">("crunchbase");
+  const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "scraping" | "documents" | "news" | "research" | "cordis" | "github" | "charin">("crunchbase");
 
   // Data hooks
   const { data: crunchbaseStats } = useCrunchbaseStats();
@@ -189,6 +190,9 @@ export default function AdminPanel() {
               <Button variant={dataSubTab === "github" ? "secondary" : "ghost"} size="sm" onClick={() => setDataSubTab("github")}>
                 <Code className="h-4 w-4 mr-1.5" /> GitHub OSS
               </Button>
+              <Button variant={dataSubTab === "charin" ? "secondary" : "ghost"} size="sm" onClick={() => setDataSubTab("charin")}>
+                <FlaskConical className="h-4 w-4 mr-1.5" /> CharIN Tests
+              </Button>
             </div>
 
             {dataSubTab === "crunchbase" && <CrunchbaseImportPanel />}
@@ -204,6 +208,7 @@ export default function AdminPanel() {
             {dataSubTab === "research" && <ResearchSignalsPanel />}
             {dataSubTab === "cordis" && <CordisPanel />}
             {dataSubTab === "github" && <GithubPanel />}
+            {dataSubTab === "charin" && <CharinPanel />}
           </TabsContent>
 
           {/* ===== STATUS TAB ===== */}
