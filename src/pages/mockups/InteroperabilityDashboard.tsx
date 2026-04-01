@@ -16,6 +16,7 @@ import { TestIntelligenceSection } from "@/components/interoperability/TestIntel
 import { InnovationPipelineSection } from "@/components/interoperability/InnovationPipelineSection";
 import { ProtocolReferenceGrid } from "@/components/interoperability/ProtocolReferenceGrid";
 import { CommStackExplainer } from "@/components/interoperability/CommStackExplainer";
+import { ManufacturerCompatibilityMatrix } from "@/components/interoperability/ManufacturerCompatibilityMatrix";
 
 function useInteropData() {
   return useQuery({
@@ -178,6 +179,11 @@ export default function InteroperabilityDashboard() {
 
             {/* Section 2: Standards Coverage Matrix */}
             <StandardsCoverageSection standards={data.standards} keywords={data.keywords} />
+
+            <Separator />
+
+            {/* Section 2.5: Manufacturer Compatibility */}
+            <ManufacturerCompatibilityMatrix />
 
             <Separator />
 
