@@ -33,6 +33,12 @@ const DEFAULT_STEPS: Omit<PipelineStep, "status">[] = [
     enabled: true,
   },
   {
+    id: "fetch_cordis",
+    label: "Fetch CORDIS EU R&D",
+    description: "Query CORDIS for EU-funded research projects per keyword",
+    enabled: true,
+  },
+  {
     id: "aggregate_trl",
     label: "Aggregate TRL Scores",
     description: "Recalculate TRL from document mentions for all keywords",
@@ -119,6 +125,20 @@ export function DataPipelinePanel() {
               body: { action: "enrich_all_technologies" },
             });
             if (error) throw error;
+            break;
+          }
+          case "fetch_cordis": {
+            const { data: kwList } = await supabase
+              .from("technology_keywords")
+              .select("id, keyword, display_name")
+              .eq("is_active", true)
+              .eq("excluded_from_sdv", false);
+            for (const kw of kwList || []) {
+              const searchTerm = kw.display_name || kw.keyword.replace(/_/g, " ");
+              await supabase.functions.invoke("fetch-cordis", {
+                body: { keyword_id: kw.id, search_term: searchTerm, limit: 50 },
+              });
+            }
             break;
           }
           case "aggregate_trl": {
