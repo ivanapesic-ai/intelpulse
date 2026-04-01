@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { GapAnalysisSection } from "@/components/interoperability/GapAnalysisSection";
 import { StandardsCoverageSection } from "@/components/interoperability/StandardsCoverageSection";
 import { CharinTestResultsSection } from "@/components/interoperability/CharinTestResultsSection";
+import { InteropOSSSection } from "@/components/interoperability/InteropOSSSection";
+import { InteropNewsSection } from "@/components/interoperability/InteropNewsSection";
 import { ProtocolReferenceGrid } from "@/components/interoperability/ProtocolReferenceGrid";
 import { CommStackExplainer } from "@/components/interoperability/CommStackExplainer";
 
