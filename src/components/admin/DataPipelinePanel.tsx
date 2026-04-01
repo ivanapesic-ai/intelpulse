@@ -39,6 +39,12 @@ const DEFAULT_STEPS: Omit<PipelineStep, "status">[] = [
     enabled: true,
   },
   {
+    id: "fetch_github",
+    label: "Fetch GitHub OSS Activity",
+    description: "Search GitHub for open-source repos per keyword — stars, forks, momentum",
+    enabled: true,
+  },
+  {
     id: "aggregate_trl",
     label: "Aggregate TRL Scores",
     description: "Recalculate TRL from document mentions for all keywords",
