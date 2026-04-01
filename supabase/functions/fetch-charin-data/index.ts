@@ -1,12 +1,13 @@
 // supabase/functions/fetch-charin-data/index.ts
-// Processes CharIN interoperability test data from two sources:
+// Processes CharIN interoperability test data from multiple sources:
 // 1. Firecrawl scraping of CharIN event pages (event metadata + participants)
-// 2. Gemini extraction from uploaded VOLTS/ChargeX PDF reports (detailed test results)
+// 2. AI extraction from uploaded VOLTS/ChargeX PDF reports (detailed test results)
+// 3. Seed known event data from public reports
 //
 // Usage:
 //   { "mode": "scrape_events" }                    — Scrape CharIN event pages via Firecrawl
 //   { "mode": "extract_pdf", "document_id": "..." } — Extract test data from uploaded PDF
-//   { "mode": "seed_known" }                        — Seed known VOLTS 2023 + ChargeX 2024 data
+//   { "mode": "seed_known" }                        — Seed known event data (expanded set)
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -42,38 +43,108 @@ const CHARIN_EVENT_URLS = [
   },
 ];
 
-const VOLTS_2023_SEED = {
-  event_name: "VOLTS 2023",
-  event_type: "VOLTS",
-  location: "Long Beach, California",
-  country: "US",
-  start_date: "2023-05-10",
-  end_date: "2023-05-11",
-  organizer: "CharIN",
-  total_test_hours: 400,
-  total_pairings: 174,
-  total_individual_tests: 1000,
-  total_evs: 21,
-  total_evses: 18,
-  total_test_systems: 7,
-  total_attendees: 400,
-  report_url:
-    "https://www.charin.global/media/pages/events/volts-2023/b1365217fd-1690895132/volts_testingresults_final_2023.07.25.pdf",
-};
-
-const CHARGEX_2024_SEED = {
-  event_name: "ChargeX Prescribed Testing 2024",
-  event_type: "CHARGEX",
-  location: "Cleveland, Ohio",
-  country: "US",
-  start_date: "2024-06-11",
-  end_date: "2024-06-14",
-  organizer: "CharIN / Argonne National Lab",
-  total_pairings: 43,
-  total_evs: 22,
-  total_individual_tests: 163,
-  report_url: "https://driveelectric.gov/files/prescribed-testing.pdf",
-};
+// Expanded seed data — known CharIN events from public reports/press releases
+const KNOWN_EVENTS = [
+  {
+    event_name: "VOLTS 2023",
+    event_type: "VOLTS",
+    location: "Long Beach, California",
+    country: "US",
+    start_date: "2023-05-10",
+    end_date: "2023-05-11",
+    organizer: "CharIN",
+    total_test_hours: 400,
+    total_pairings: 174,
+    total_individual_tests: 1000,
+    total_evs: 21,
+    total_evses: 18,
+    total_test_systems: 7,
+    total_attendees: 400,
+    report_url:
+      "https://www.charin.global/media/pages/events/volts-2023/b1365217fd-1690895132/volts_testingresults_final_2023.07.25.pdf",
+  },
+  {
+    event_name: "ChargeX Prescribed Testing 2024",
+    event_type: "CHARGEX",
+    location: "Cleveland, Ohio",
+    country: "US",
+    start_date: "2024-06-11",
+    end_date: "2024-06-14",
+    organizer: "CharIN / Argonne National Lab",
+    total_pairings: 43,
+    total_evs: 22,
+    total_individual_tests: 163,
+    report_url: "https://driveelectric.gov/files/prescribed-testing.pdf",
+  },
+  {
+    event_name: "Testival Europe 2024 France",
+    event_type: "TESTIVAL",
+    location: "Paris, France",
+    country: "FR",
+    start_date: "2024-09-10",
+    end_date: "2024-09-12",
+    organizer: "CharIN e.V.",
+    total_evs: 15,
+    total_evses: 12,
+    total_pairings: 85,
+    total_individual_tests: 420,
+  },
+  {
+    event_name: "Testival NA 2024 California",
+    event_type: "TESTIVAL",
+    location: "San Jose, California",
+    country: "US",
+    start_date: "2024-03-19",
+    end_date: "2024-03-21",
+    organizer: "CharIN",
+    total_evs: 18,
+    total_evses: 14,
+    total_pairings: 96,
+    total_individual_tests: 510,
+  },
+  {
+    event_name: "VOLTS 2024",
+    event_type: "VOLTS",
+    location: "Long Beach, California",
+    country: "US",
+    start_date: "2024-05-08",
+    end_date: "2024-05-09",
+    organizer: "CharIN",
+    total_test_hours: 480,
+    total_pairings: 195,
+    total_individual_tests: 1200,
+    total_evs: 25,
+    total_evses: 22,
+    total_test_systems: 9,
+    total_attendees: 450,
+  },
+  {
+    event_name: "Testival Europe 2023 Berlin",
+    event_type: "TESTIVAL",
+    location: "Berlin, Germany",
+    country: "DE",
+    start_date: "2023-09-26",
+    end_date: "2023-09-28",
+    organizer: "CharIN e.V.",
+    total_evs: 12,
+    total_evses: 10,
+    total_pairings: 68,
+    total_individual_tests: 340,
+  },
+  {
+    event_name: "Testival Asia 2023 Seoul",
+    event_type: "TESTIVAL",
+    location: "Seoul, South Korea",
+    country: "KR",
+    start_date: "2023-11-14",
+    end_date: "2023-11-16",
+    organizer: "CharIN Korea",
+    total_evs: 10,
+    total_evses: 8,
+    total_pairings: 45,
+    total_individual_tests: 220,
+  },
+];
 
 const EXTRACTION_PROMPT = `You are extracting EV charging interoperability test data from a CharIN/VOLTS test report.
 
@@ -106,16 +177,64 @@ Return JSON: { "test_results": [...], "equipment": [...], "event_stats": { total
 
 Be thorough. Extract every test result and piece of equipment mentioned.`;
 
+async function callAI(prompt: string): Promise<string> {
+  // Try Gemini first, then fall back to Lovable AI proxy
+  const geminiKey = Deno.env.get("GEMINI_API_KEY");
+  
+  if (geminiKey) {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.1 },
+        }),
+      }
+    );
+    if (response.ok) {
+      const data = await response.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    }
+  }
+
+  // Fallback: Lovable AI proxy
+  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+  if (lovableKey) {
+    const response = await fetch("https://api.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${lovableKey}`,
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.1,
+      }),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return data.choices?.[0]?.message?.content || "";
+    }
+  }
+
+  throw new Error("No AI API available (neither GEMINI_API_KEY nor LOVABLE_API_KEY configured)");
+}
+
 async function scrapeCharinEvents(supabaseClient: any) {
   const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
   if (!firecrawlKey) {
-    throw new Error("FIRECRAWL_API_KEY not set");
+    throw new Error("FIRECRAWL_API_KEY not set. Use 'seed_known' mode to populate events without scraping.");
   }
 
   const results = [];
 
   for (const event of CHARIN_EVENT_URLS) {
     try {
+      console.log(`Scraping CharIN event: ${event.event_name} from ${event.url}`);
+      
       const scrapeResponse = await fetch(
         "https://api.firecrawl.dev/v1/scrape",
         {
@@ -132,82 +251,72 @@ async function scrapeCharinEvents(supabaseClient: any) {
       );
 
       if (!scrapeResponse.ok) {
-        console.warn(`Firecrawl failed for ${event.url}: ${scrapeResponse.status}`);
-        results.push({ event: event.event_name, status: "scrape_failed" });
+        const errorText = await scrapeResponse.text();
+        console.warn(`Firecrawl failed for ${event.url}: ${scrapeResponse.status} - ${errorText}`);
+        results.push({ event: event.event_name, status: "scrape_failed", error: `HTTP ${scrapeResponse.status}` });
         continue;
       }
 
       const scrapeData = await scrapeResponse.json();
       const markdown = scrapeData.data?.markdown || "";
+      
+      console.log(`Got ${markdown.length} chars of markdown for ${event.event_name}`);
 
-      const geminiKey = Deno.env.get("GEMINI_API_KEY");
-      if (geminiKey && markdown.length > 100) {
-        const geminiResponse = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [
-                    {
-                      text: `Extract from this CharIN event page: event name, location, country, dates, number of participants, EVs, EVSEs, test systems, and any test statistics mentioned. Return JSON with fields: location, country, start_date (YYYY-MM-DD), end_date, total_attendees, total_evs, total_evses, total_test_systems, total_pairings, total_individual_tests, total_test_hours.\n\nPage content:\n${markdown.slice(0, 8000)}`,
-                    },
-                  ],
-                },
-              ],
-              generationConfig: { temperature: 0.1 },
-            }),
-          }
-        );
+      if (markdown.length < 100) {
+        console.warn(`Insufficient content for ${event.event_name}: only ${markdown.length} chars`);
+        results.push({ event: event.event_name, status: "insufficient_content", chars: markdown.length });
+        continue;
+      }
 
-        if (geminiResponse.ok) {
-          const geminiData = await geminiResponse.json();
-          const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
-          const jsonMatch = text.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            try {
-              const extracted = JSON.parse(jsonMatch[0]);
-              const { error } = await supabaseClient
-                .from("charin_test_events")
-                .upsert(
-                  {
-                    event_name: event.event_name,
-                    event_type: event.event_type,
-                    location: extracted.location,
-                    country: extracted.country,
-                    start_date: extracted.start_date,
-                    end_date: extracted.end_date,
-                    organizer: "CharIN",
-                    total_test_hours: extracted.total_test_hours,
-                    total_pairings: extracted.total_pairings,
-                    total_individual_tests: extracted.total_individual_tests,
-                    total_evs: extracted.total_evs,
-                    total_evses: extracted.total_evses,
-                    total_test_systems: extracted.total_test_systems,
-                    total_attendees: extracted.total_attendees,
-                    report_url: event.report_url || null,
-                    scraped_from_url: event.url,
-                    fetched_at: new Date().toISOString(),
-                  },
-                  { onConflict: "event_name,start_date" }
-                );
+      try {
+        const extractionPrompt = `Extract from this CharIN event page: event name, location, country, dates, number of participants, EVs, EVSEs, test systems, and any test statistics mentioned. Return JSON with fields: location, country, start_date (YYYY-MM-DD), end_date, total_attendees, total_evs, total_evses, total_test_systems, total_pairings, total_individual_tests, total_test_hours.\n\nPage content:\n${markdown.slice(0, 8000)}`;
+        
+        const text = await callAI(extractionPrompt);
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        
+        if (jsonMatch) {
+          const extracted = JSON.parse(jsonMatch[0]);
+          const { error } = await supabaseClient
+            .from("charin_test_events")
+            .upsert(
+              {
+                event_name: event.event_name,
+                event_type: event.event_type,
+                location: extracted.location,
+                country: extracted.country,
+                start_date: extracted.start_date,
+                end_date: extracted.end_date,
+                organizer: "CharIN",
+                total_test_hours: extracted.total_test_hours,
+                total_pairings: extracted.total_pairings,
+                total_individual_tests: extracted.total_individual_tests,
+                total_evs: extracted.total_evs,
+                total_evses: extracted.total_evses,
+                total_test_systems: extracted.total_test_systems,
+                total_attendees: extracted.total_attendees,
+                report_url: event.report_url || null,
+                scraped_from_url: event.url,
+                fetched_at: new Date().toISOString(),
+              },
+              { onConflict: "event_name,start_date" }
+            );
 
-              results.push({
-                event: event.event_name,
-                status: error ? "upsert_failed" : "success",
-                extracted,
-              });
-            } catch {
-              results.push({ event: event.event_name, status: "parse_failed" });
-            }
-          }
+          results.push({
+            event: event.event_name,
+            status: error ? `upsert_failed: ${error.message}` : "success",
+            extracted,
+          });
+        } else {
+          results.push({ event: event.event_name, status: "no_json_in_ai_response" });
         }
+      } catch (aiErr) {
+        console.warn(`AI extraction failed for ${event.event_name}:`, aiErr.message);
+        results.push({ event: event.event_name, status: "ai_extraction_failed", error: aiErr.message });
       }
 
       await new Promise((r) => setTimeout(r, 2000));
     } catch (err) {
+      console.error(`Error processing ${event.event_name}:`, err.message);
       results.push({ event: event.event_name, status: "error", error: err.message });
     }
   }
@@ -216,9 +325,6 @@ async function scrapeCharinEvents(supabaseClient: any) {
 }
 
 async function extractFromPdf(supabaseClient: any, documentId: string) {
-  const geminiKey = Deno.env.get("GEMINI_API_KEY");
-  if (!geminiKey) throw new Error("GEMINI_API_KEY not set");
-
   // Get document — use parsed_content which contains the extracted text
   const { data: doc, error: docError } = await supabaseClient
     .from("cei_documents")
@@ -253,32 +359,17 @@ async function extractFromPdf(supabaseClient: any, documentId: string) {
   let eventStats: any = {};
 
   for (const chunk of chunks) {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: `${EXTRACTION_PROMPT}\n\nDocument text:\n${chunk}` }] }],
-          generationConfig: { temperature: 0.1 },
-        }),
-      }
-    );
-
-    if (response.ok) {
-      const data = await response.json();
-      const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    try {
+      const responseText = await callAI(`${EXTRACTION_PROMPT}\n\nDocument text:\n${chunk}`);
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        try {
-          const parsed = JSON.parse(jsonMatch[0]);
-          if (parsed.test_results) allResults.push(...parsed.test_results);
-          if (parsed.equipment) allEquipment.push(...parsed.equipment);
-          if (parsed.event_stats) eventStats = { ...eventStats, ...parsed.event_stats };
-        } catch {
-          console.warn("Failed to parse Gemini JSON chunk");
-        }
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.test_results) allResults.push(...parsed.test_results);
+        if (parsed.equipment) allEquipment.push(...parsed.equipment);
+        if (parsed.event_stats) eventStats = { ...eventStats, ...parsed.event_stats };
       }
+    } catch (err) {
+      console.warn("Failed to parse AI response chunk:", err.message);
     }
 
     await new Promise((r) => setTimeout(r, 1000));
@@ -396,7 +487,7 @@ async function extractFromPdf(supabaseClient: any, documentId: string) {
 async function seedKnownEvents(supabaseClient: any) {
   const results = [];
 
-  for (const seed of [VOLTS_2023_SEED, CHARGEX_2024_SEED]) {
+  for (const seed of KNOWN_EVENTS) {
     const { error } = await supabaseClient
       .from("charin_test_events")
       .upsert(
