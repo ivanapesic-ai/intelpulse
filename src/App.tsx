@@ -19,6 +19,7 @@ import KnowledgeGraphPage from "./pages/mockups/KnowledgeGraphPage";
 import MySignals from "./pages/mockups/MySignals";
 import HorizonsPage from "./pages/mockups/HorizonsPage";
 import TechnologyDeepDive from "./pages/mockups/TechnologyDeepDive";
+import V2GInteropMatrix from "./pages/mockups/V2GInteropMatrix";
 
 const queryClient = new QueryClient();
 
