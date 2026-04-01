@@ -35,7 +35,7 @@ const DEFAULT_STEPS: Omit<PipelineStep, "status">[] = [
   {
     id: "fetch_cordis",
     label: "Fetch CORDIS EU R&D",
-    description: "Query CORDIS for EU-funded research projects per keyword",
+    description: "Query CORDIS SPARQL for EU-funded research projects per keyword",
     enabled: true,
   },
   {
