@@ -27,7 +27,7 @@ export interface CreateStandardInput {
 }
 
 const ISSUING_BODIES_SDO = ["ISO", "IEC", "ITU", "ETSI", "IEEE", "SAE", "UNECE", "CEN/CENELEC"] as const;
-const ISSUING_BODIES_CONSORTIA = ["CharIN", "AUTOSAR", "COVESA", "5GAA", "GENIVI", "OMA", "FIWARE", "Eclipse Foundation"] as const;
+const ISSUING_BODIES_CONSORTIA = ["CharIN", "AUTOSAR", "COVESA", "5GAA", "5G-ACIA", "Catena-X", "GENIVI", "OMA", "FIWARE", "Eclipse Foundation"] as const;
 
 export const ISSUING_BODIES = {
   sdo: ISSUING_BODIES_SDO,

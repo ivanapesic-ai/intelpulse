@@ -230,45 +230,87 @@
 
 ---
 
-## 7. Architecture & Standards Cross-Reference
+## 7. Architecture & Three Horizons Mapping
+
+The layered architecture maps directly to the platform's **Three Horizons** intelligence model:
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                  EU DATA STRATEGY                    │
-│          (Data Act, Data Governance Act)             │
-├─────────────────────────────────────────────────────┤
-│                                                      │
-│   ┌─────────────┐  ┌──────────────┐  ┌───────────┐ │
-│   │  Catena-X    │  │     MDS      │  │  DS4SSCC  │ │
-│   │ (Automotive) │  │  (Mobility)  │  │  (Cities) │ │
-│   └──────┬──────┘  └──────┬───────┘  └─────┬─────┘ │
-│          │                │                 │        │
-│   ┌──────┴──────────────────┴─────────────────┴───┐  │
-│   │        GAIA-X / IDS Reference Architecture     │  │
-│   │        (Sovereign Data Exchange Framework)     │  │
-│   └──────┬──────────────────┬─────────────────────┘  │
-│          │                  │                        │
-│   ┌──────┴──────┐    ┌──────┴──────┐                │
-│   │   EDC       │    │  NAPCORE    │                │
-│   │ (Connector) │    │   (NAPs)   │                │
-│   └─────────────┘    └─────────────┘                │
-│                                                      │
-├──────────────── STANDARDS LAYER ─────────────────────┤
-│                                                      │
-│  SDOs:  ISO · IEC · ETSI · IEEE · 3GPP · UNECE      │
-│                                                      │
-│  Consortia:  CharIN · 5G-ACIA · 5GAA · AUTOSAR      │
-│              COVESA · Catena-X · Eclipse SDV          │
-│                                                      │
-├──────────────── TESTING LAYER ───────────────────────┤
-│                                                      │
-│  CharIN Testivals · 5G-ACIA Testbeds · Catena-X     │
-│  Certification · ETSI Plugtests                      │
-│                                                      │
-├──────────────── RESEARCH LAYER ──────────────────────┤
-│                                                      │
-│  CORDIS: MobiSpaces · PrepDSpace4Mobility            │
-│  National: DFG · ANR · Innovate UK                   │
-│                                                      │
-└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    EU DATA STRATEGY                          │
+│            (Data Act, Data Governance Act)                   │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│   ┌─────────────┐  ┌──────────────┐  ┌───────────┐          │
+│   │  Catena-X    │  │     MDS      │  │  DS4SSCC  │          │
+│   │ (Automotive) │  │  (Mobility)  │  │  (Cities) │          │
+│   └──────┬──────┘  └──────┬───────┘  └─────┬─────┘          │
+│          │                │                 │                 │
+│   ┌──────┴──────────────────┴─────────────────┴───┐          │
+│   │        GAIA-X / IDS Reference Architecture     │          │
+│   │        (Sovereign Data Exchange Framework)     │          │
+│   └──────┬──────────────────┬─────────────────────┘          │
+│          │                  │                                 │
+│   ┌──────┴──────┐    ┌──────┴──────┐                         │
+│   │   EDC       │    │  NAPCORE    │                         │
+│   │ (Connector) │    │   (NAPs)   │                         │
+│   └─────────────┘    └─────────────┘                         │
+│                                                              │
+├═══════════════════════════════════════════════════════════════┤
+│                                                              │
+│  H1 TODAY — Market Activity & Live Data                      │
+│  ──────────────────────────────────────                      │
+│  • Data spaces going live (MDS, Catena-X production)         │
+│  • Mobilithek / NAPCORE open data feeds                      │
+│  • Mobito commercial vehicle data                            │
+│  • News signals (5G-ACIA announcements, Catena-X releases)   │
+│  → Platform: News, company activity, market signals          │
+│                                                              │
+├───────────────────────────────────────────────────────────────┤
+│                                                              │
+│  H2 TOMORROW — Standards & Testing                           │
+│  ─────────────────────────────────                           │
+│  SDOs:  ISO · IEC · ETSI · IEEE · 3GPP · UNECE              │
+│  Consortia:  CharIN · 5G-ACIA · 5GAA · AUTOSAR              │
+│              COVESA · Catena-X · Eclipse SDV                 │
+│                                                              │
+│  Testing:  CharIN Testivals · 5G-ACIA Testbeds              │
+│            Catena-X Certification · ETSI Plugtests           │
+│  → Platform: Patent volume, standards coverage, test results │
+│                                                              │
+├───────────────────────────────────────────────────────────────┤
+│                                                              │
+│  H3 FUTURE — Academic Research & Vision                      │
+│  ──────────────────────────────────────                      │
+│  CORDIS: MobiSpaces · PrepDSpace4Mobility · DS4SSCC pilots   │
+│  National: DFG · ANR · Innovate UK                           │
+│  → Platform: Research intensity, emerging concepts, CORDIS   │
+│                                                              │
+├═══════════════════════════════════════════════════════════════┤
+│                                                              │
+│           ┌─────────────────────────────────┐                │
+│           │   BluSpecs / IntelPulse Platform │                │
+│           │   (Intelligence Aggregation)     │                │
+│           │                                  │                │
+│           │  Ingests → Scores → Visualises   │                │
+│           │  across all three horizons       │                │
+│           └─────────────────────────────────┘                │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 8. Keyword Taxonomy Gaps
+
+Some initiatives reference concepts not currently in the platform taxonomy. These need resolution:
+
+| Missing Concept | Source Initiative | Recommended Action |
+|----------------|-------------------|--------------------|
+| Data Governance | MobiSpaces, MDS | Map → `Software Defined Vehicle` (data sovereignty aspect) |
+| Network Slicing | 5G-ACIA, 5GAA | Map → `5G V2X` (as alias or sub-concept) |
+| PCF / Product Carbon Footprint | Catena-X | Map → `EV Battery` (lifecycle/supply chain aspect) |
+| Digital Twin | Catena-X | Already partially covered via `Software Defined Vehicle` |
+| TSN (Time-Sensitive Networking) | 5G-ACIA | Map → `Vehicle to Everything` (in-vehicle networking) |
+| Multimodal Transport | NAPCORE, EONA-X | Out of scope — tangential to SDV core taxonomy |
+
+> **Decision**: Rather than expanding the keyword taxonomy, map these concepts as **aliases** on existing keywords where relevant, keeping the ~23-keyword structure tight.
