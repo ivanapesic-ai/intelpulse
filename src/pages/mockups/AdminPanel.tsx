@@ -23,7 +23,7 @@ import { CordisPanel } from "@/components/admin/CordisPanel";
 import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
 
 export default function AdminPanel() {
-  const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "scraping" | "documents" | "news" | "research">("crunchbase");
+  const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "scraping" | "documents" | "news" | "research" | "cordis">("crunchbase");
 
   // Data hooks
   const { data: crunchbaseStats } = useCrunchbaseStats();
