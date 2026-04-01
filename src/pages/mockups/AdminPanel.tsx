@@ -21,6 +21,7 @@ import { StandardsManagerPanel } from "@/components/admin/StandardsManagerPanel"
 import { DataPipelinePanel } from "@/components/admin/DataPipelinePanel";
 import { CordisPanel } from "@/components/admin/CordisPanel";
 import GithubPanel from "@/components/admin/GithubPanel";
+import CharinPanel from "@/components/admin/CharinPanel";
 import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
 
 export default function AdminPanel() {
