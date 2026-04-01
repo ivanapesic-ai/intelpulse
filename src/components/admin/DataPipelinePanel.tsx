@@ -39,6 +39,12 @@ const DEFAULT_STEPS: Omit<PipelineStep, "status">[] = [
     enabled: true,
   },
   {
+    id: "fetch_github",
+    label: "Fetch GitHub OSS Activity",
+    description: "Search GitHub for open-source repos per keyword — stars, forks, momentum",
+    enabled: true,
+  },
+  {
     id: "aggregate_trl",
     label: "Aggregate TRL Scores",
     description: "Recalculate TRL from document mentions for all keywords",
@@ -133,6 +139,14 @@ export function DataPipelinePanel() {
             });
             if (error) throw error;
             if (result && !result.success) throw new Error(result.error || "CORDIS fetch failed");
+            break;
+          }
+          case "fetch_github": {
+            const { data: result, error } = await supabase.functions.invoke("fetch-github-activity", {
+              body: {},
+            });
+            if (error) throw error;
+            if (result && !result.success) throw new Error(result.error || "GitHub fetch failed");
             break;
           }
           case "aggregate_trl": {

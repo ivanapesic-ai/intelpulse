@@ -125,6 +125,13 @@ export type Database = {
             foreignKeyName: "company_technology_evidence_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
+            referencedRelation: "github_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "company_technology_evidence_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
             referencedRelation: "keyword_mapping_summary"
             referencedColumns: ["keyword_id"]
           },
@@ -256,6 +263,13 @@ export type Database = {
             foreignKeyName: "concept_scoring_factors_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
+            referencedRelation: "github_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "concept_scoring_factors_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
             referencedRelation: "keyword_mapping_summary"
             referencedColumns: ["keyword_id"]
           },
@@ -353,6 +367,13 @@ export type Database = {
             columns: ["keyword_id"]
             isOneToOne: false
             referencedRelation: "cordis_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "cordis_eu_projects_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "github_keyword_summary"
             referencedColumns: ["keyword_id"]
           },
           {
@@ -589,6 +610,13 @@ export type Database = {
             columns: ["keyword_id"]
             isOneToOne: false
             referencedRelation: "cordis_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "crunchbase_keyword_mapping_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "github_keyword_summary"
             referencedColumns: ["keyword_id"]
           },
           {
@@ -948,6 +976,13 @@ export type Database = {
             foreignKeyName: "document_technology_mentions_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
+            referencedRelation: "github_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "document_technology_mentions_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
             referencedRelation: "keyword_mapping_summary"
             referencedColumns: ["keyword_id"]
           },
@@ -967,6 +1002,149 @@ export type Database = {
           },
           {
             foreignKeyName: "document_technology_mentions_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      github_oss_activity: {
+        Row: {
+          activity_score: number | null
+          created_at: string | null
+          created_at_gh: string | null
+          description: string | null
+          fetched_at: string | null
+          forks: number | null
+          full_name: string
+          github_id: number
+          github_url: string | null
+          homepage_url: string | null
+          id: string
+          is_active: boolean | null
+          keyword: string
+          keyword_id: string | null
+          language: string | null
+          license: string | null
+          momentum: string | null
+          open_issues: number | null
+          owner: string
+          pushed_at: string | null
+          relevance_rank: number | null
+          repo_name: string
+          search_query: string | null
+          size_kb: number | null
+          stars: number | null
+          topics: string[] | null
+          updated_at_gh: string | null
+          watchers: number | null
+        }
+        Insert: {
+          activity_score?: number | null
+          created_at?: string | null
+          created_at_gh?: string | null
+          description?: string | null
+          fetched_at?: string | null
+          forks?: number | null
+          full_name: string
+          github_id: number
+          github_url?: string | null
+          homepage_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          keyword: string
+          keyword_id?: string | null
+          language?: string | null
+          license?: string | null
+          momentum?: string | null
+          open_issues?: number | null
+          owner: string
+          pushed_at?: string | null
+          relevance_rank?: number | null
+          repo_name: string
+          search_query?: string | null
+          size_kb?: number | null
+          stars?: number | null
+          topics?: string[] | null
+          updated_at_gh?: string | null
+          watchers?: number | null
+        }
+        Update: {
+          activity_score?: number | null
+          created_at?: string | null
+          created_at_gh?: string | null
+          description?: string | null
+          fetched_at?: string | null
+          forks?: number | null
+          full_name?: string
+          github_id?: number
+          github_url?: string | null
+          homepage_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          keyword?: string
+          keyword_id?: string | null
+          language?: string | null
+          license?: string | null
+          momentum?: string | null
+          open_issues?: number | null
+          owner?: string
+          pushed_at?: string | null
+          relevance_rank?: number | null
+          repo_name?: string
+          search_query?: string | null
+          size_kb?: number | null
+          stars?: number | null
+          topics?: string[] | null
+          updated_at_gh?: string | null
+          watchers?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "github_oss_activity_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "combined_technology_graph"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "github_oss_activity_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "cordis_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "github_oss_activity_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "github_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "github_oss_activity_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_mapping_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "github_oss_activity_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_overview"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "github_oss_activity_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "technology_intelligence"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "github_oss_activity_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
             referencedRelation: "technology_keywords"
@@ -1016,6 +1194,13 @@ export type Database = {
             columns: ["keyword_id"]
             isOneToOne: false
             referencedRelation: "cordis_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "keyword_company_mapping_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "github_keyword_summary"
             referencedColumns: ["keyword_id"]
           },
           {
@@ -1113,6 +1298,13 @@ export type Database = {
             foreignKeyName: "keyword_industry_mappings_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
+            referencedRelation: "github_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "keyword_industry_mappings_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
             referencedRelation: "keyword_mapping_summary"
             referencedColumns: ["keyword_id"]
           },
@@ -1204,6 +1396,13 @@ export type Database = {
             foreignKeyName: "keyword_signal_snapshots_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
+            referencedRelation: "github_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "keyword_signal_snapshots_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
             referencedRelation: "keyword_mapping_summary"
             referencedColumns: ["keyword_id"]
           },
@@ -1283,6 +1482,13 @@ export type Database = {
             columns: ["keyword_id"]
             isOneToOne: false
             referencedRelation: "cordis_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "keyword_standards_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "github_keyword_summary"
             referencedColumns: ["keyword_id"]
           },
           {
@@ -1384,6 +1590,13 @@ export type Database = {
             columns: ["keyword_id"]
             isOneToOne: false
             referencedRelation: "cordis_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "news_company_mentions_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "github_keyword_summary"
             referencedColumns: ["keyword_id"]
           },
           {
@@ -1500,6 +1713,13 @@ export type Database = {
             columns: ["keyword_id"]
             isOneToOne: false
             referencedRelation: "cordis_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "news_keyword_matches_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "github_keyword_summary"
             referencedColumns: ["keyword_id"]
           },
           {
@@ -2007,6 +2227,13 @@ export type Database = {
             foreignKeyName: "research_signals_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
+            referencedRelation: "github_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "research_signals_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
             referencedRelation: "keyword_mapping_summary"
             referencedColumns: ["keyword_id"]
           },
@@ -2206,6 +2433,13 @@ export type Database = {
             foreignKeyName: "signal_lineage_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
+            referencedRelation: "github_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "signal_lineage_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
             referencedRelation: "keyword_mapping_summary"
             referencedColumns: ["keyword_id"]
           },
@@ -2384,6 +2618,13 @@ export type Database = {
             foreignKeyName: "technologies_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: true
+            referencedRelation: "github_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "technologies_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: true
             referencedRelation: "keyword_mapping_summary"
             referencedColumns: ["keyword_id"]
           },
@@ -2460,6 +2701,13 @@ export type Database = {
             foreignKeyName: "technology_cooccurrences_keyword_id_a_fkey"
             columns: ["keyword_id_a"]
             isOneToOne: false
+            referencedRelation: "github_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "technology_cooccurrences_keyword_id_a_fkey"
+            columns: ["keyword_id_a"]
+            isOneToOne: false
             referencedRelation: "keyword_mapping_summary"
             referencedColumns: ["keyword_id"]
           },
@@ -2496,6 +2744,13 @@ export type Database = {
             columns: ["keyword_id_b"]
             isOneToOne: false
             referencedRelation: "cordis_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "technology_cooccurrences_keyword_id_b_fkey"
+            columns: ["keyword_id_b"]
+            isOneToOne: false
+            referencedRelation: "github_keyword_summary"
             referencedColumns: ["keyword_id"]
           },
           {
@@ -2648,6 +2903,13 @@ export type Database = {
             foreignKeyName: "technology_keywords_parent_keyword_id_fkey"
             columns: ["parent_keyword_id"]
             isOneToOne: false
+            referencedRelation: "github_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "technology_keywords_parent_keyword_id_fkey"
+            columns: ["parent_keyword_id"]
+            isOneToOne: false
             referencedRelation: "keyword_mapping_summary"
             referencedColumns: ["keyword_id"]
           },
@@ -2742,6 +3004,13 @@ export type Database = {
             foreignKeyName: "user_watchlist_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
+            referencedRelation: "github_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "user_watchlist_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
             referencedRelation: "keyword_mapping_summary"
             referencedColumns: ["keyword_id"]
           },
@@ -2821,6 +3090,13 @@ export type Database = {
             columns: ["keyword_id"]
             isOneToOne: false
             referencedRelation: "cordis_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "web_technology_mentions_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "github_keyword_summary"
             referencedColumns: ["keyword_id"]
           },
           {
@@ -3248,6 +3524,13 @@ export type Database = {
             foreignKeyName: "crunchbase_keyword_mapping_keyword_id_fkey"
             columns: ["keyword_id"]
             isOneToOne: false
+            referencedRelation: "github_keyword_summary"
+            referencedColumns: ["keyword_id"]
+          },
+          {
+            foreignKeyName: "crunchbase_keyword_mapping_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
             referencedRelation: "keyword_mapping_summary"
             referencedColumns: ["keyword_id"]
           },
@@ -3343,6 +3626,24 @@ export type Database = {
           strategic_quadrant: string | null
           total_funding_usd: number | null
           total_patents: number | null
+        }
+        Relationships: []
+      }
+      github_keyword_summary: {
+        Row: {
+          active_repos: number | null
+          avg_stars: number | null
+          display_name: string | null
+          keyword: string | null
+          keyword_id: string | null
+          languages: string[] | null
+          last_fetched: string | null
+          latest_activity: string | null
+          max_stars: number | null
+          repo_count: number | null
+          top_repos: string[] | null
+          total_forks: number | null
+          total_stars: number | null
         }
         Relationships: []
       }

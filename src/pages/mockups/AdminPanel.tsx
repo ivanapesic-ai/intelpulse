@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Database, FileText, Globe, Layers, Upload, CheckCircle, FileSpreadsheet, BarChart, Rss, BookOpen, Landmark } from "lucide-react";
+import { ArrowLeft, Database, FileText, Globe, Layers, Upload, CheckCircle, FileSpreadsheet, BarChart, Rss, BookOpen, Landmark, Code } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,10 +20,11 @@ import { ResearchSignalsPanel } from "@/components/admin/ResearchSignalsPanel";
 import { StandardsManagerPanel } from "@/components/admin/StandardsManagerPanel";
 import { DataPipelinePanel } from "@/components/admin/DataPipelinePanel";
 import { CordisPanel } from "@/components/admin/CordisPanel";
+import GithubPanel from "@/components/admin/GithubPanel";
 import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
 
 export default function AdminPanel() {
-  const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "scraping" | "documents" | "news" | "research" | "cordis">("crunchbase");
+  const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "scraping" | "documents" | "news" | "research" | "cordis" | "github">("crunchbase");
 
   // Data hooks
   const { data: crunchbaseStats } = useCrunchbaseStats();
@@ -185,6 +186,9 @@ export default function AdminPanel() {
               <Button variant={dataSubTab === "cordis" ? "secondary" : "ghost"} size="sm" onClick={() => setDataSubTab("cordis")}>
                 <Landmark className="h-4 w-4 mr-1.5" /> CORDIS EU R&D
               </Button>
+              <Button variant={dataSubTab === "github" ? "secondary" : "ghost"} size="sm" onClick={() => setDataSubTab("github")}>
+                <Code className="h-4 w-4 mr-1.5" /> GitHub OSS
+              </Button>
             </div>
 
             {dataSubTab === "crunchbase" && <CrunchbaseImportPanel />}
@@ -199,6 +203,7 @@ export default function AdminPanel() {
             {dataSubTab === "news" && <RssNewsPanel />}
             {dataSubTab === "research" && <ResearchSignalsPanel />}
             {dataSubTab === "cordis" && <CordisPanel />}
+            {dataSubTab === "github" && <GithubPanel />}
           </TabsContent>
 
           {/* ===== STATUS TAB ===== */}
