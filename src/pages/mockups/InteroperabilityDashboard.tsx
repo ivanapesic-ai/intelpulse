@@ -182,6 +182,11 @@ export default function InteroperabilityDashboard() {
 
             <Separator />
 
+            {/* Section 2.5: Manufacturer Compatibility */}
+            <ManufacturerCompatibilityMatrix />
+
+            <Separator />
+
             {/* Section 3: Test Intelligence */}
             <TestIntelligenceSection />
 
