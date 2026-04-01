@@ -127,6 +127,20 @@ export function DataPipelinePanel() {
             if (error) throw error;
             break;
           }
+          case "fetch_cordis": {
+            const { data: kwList } = await supabase
+              .from("technology_keywords")
+              .select("id, keyword, display_name")
+              .eq("is_active", true)
+              .eq("excluded_from_sdv", false);
+            for (const kw of kwList || []) {
+              const searchTerm = kw.display_name || kw.keyword.replace(/_/g, " ");
+              await supabase.functions.invoke("fetch-cordis", {
+                body: { keyword_id: kw.id, search_term: searchTerm, limit: 50 },
+              });
+            }
+            break;
+          }
           case "aggregate_trl": {
             const { data: keywords } = await supabase
               .from("technology_keywords")
