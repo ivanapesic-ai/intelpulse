@@ -74,7 +74,7 @@ export function useGithubKeywordSummary() {
         .select("*")
         .order("total_stars", { ascending: false, nullsFirst: false });
       if (error) throw error;
-      return (data || []) as GithubKeywordSummary[];
+      return (data || []) as unknown as GithubKeywordSummary[];
     },
   });
 }
