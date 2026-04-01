@@ -79,7 +79,17 @@ export default function InteroperabilityDashboard() {
 
             <Separator />
 
-            {/* Section 4: Protocol Reference Grid */}
+            {/* Section 4: Open-Source Interop Ecosystem — fresh signals */}
+            <InteropOSSSection />
+
+            <Separator />
+
+            {/* Section 5: Interop News — what's happening now */}
+            <InteropNewsSection />
+
+            <Separator />
+
+            {/* Section 6: Protocol Reference Grid */}
             <ProtocolReferenceGrid />
 
             {/* Communication Stack Explainer — collapsible */}
