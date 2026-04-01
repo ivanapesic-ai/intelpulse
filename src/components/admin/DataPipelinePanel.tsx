@@ -45,6 +45,12 @@ const DEFAULT_STEPS: Omit<PipelineStep, "status">[] = [
     enabled: true,
   },
   {
+    id: "fetch_charin",
+    label: "Fetch CharIN Interop Data",
+    description: "Seed known events and scrape CharIN event pages for test data",
+    enabled: true,
+  },
+  {
     id: "aggregate_trl",
     label: "Aggregate TRL Scores",
     description: "Recalculate TRL from document mentions for all keywords",
