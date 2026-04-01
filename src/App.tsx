@@ -20,6 +20,7 @@ import MySignals from "./pages/mockups/MySignals";
 import HorizonsPage from "./pages/mockups/HorizonsPage";
 import TechnologyDeepDive from "./pages/mockups/TechnologyDeepDive";
 import V2GInteropMatrix from "./pages/mockups/V2GInteropMatrix";
+import InteroperabilityDashboard from "./pages/mockups/InteroperabilityDashboard";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +82,11 @@ const App = () => (
               } />
               
               <Route path="/v2g-interop" element={<V2GInteropMatrix />} />
+              <Route path="/interoperability" element={
+                <ProtectedRoute>
+                  <InteroperabilityDashboard />
+                </ProtectedRoute>
+              } />
 
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
