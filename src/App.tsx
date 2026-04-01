@@ -80,6 +80,8 @@ const App = () => (
                 </ProtectedRoute>
               } />
               
+              <Route path="/v2g-interop" element={<V2GInteropMatrix />} />
+
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
