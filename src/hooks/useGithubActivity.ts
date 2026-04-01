@@ -90,7 +90,7 @@ export function useTopGithubRepos(limit = 10) {
         .order("stars", { ascending: false })
         .limit(limit);
       if (error) throw error;
-      return (data || []) as GithubRepo[];
+      return (data || []) as unknown as GithubRepo[];
     },
   });
 }
