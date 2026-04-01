@@ -190,6 +190,9 @@ export default function AdminPanel() {
               <Button variant={dataSubTab === "github" ? "secondary" : "ghost"} size="sm" onClick={() => setDataSubTab("github")}>
                 <Code className="h-4 w-4 mr-1.5" /> GitHub OSS
               </Button>
+              <Button variant={dataSubTab === "charin" ? "secondary" : "ghost"} size="sm" onClick={() => setDataSubTab("charin")}>
+                <FlaskConical className="h-4 w-4 mr-1.5" /> CharIN Tests
+              </Button>
             </div>
 
             {dataSubTab === "crunchbase" && <CrunchbaseImportPanel />}
