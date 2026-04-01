@@ -208,6 +208,7 @@ export default function AdminPanel() {
             {dataSubTab === "research" && <ResearchSignalsPanel />}
             {dataSubTab === "cordis" && <CordisPanel />}
             {dataSubTab === "github" && <GithubPanel />}
+            {dataSubTab === "charin" && <CharinPanel />}
           </TabsContent>
 
           {/* ===== STATUS TAB ===== */}
