@@ -20,6 +20,7 @@ import { ResearchSignalsPanel } from "@/components/admin/ResearchSignalsPanel";
 import { StandardsManagerPanel } from "@/components/admin/StandardsManagerPanel";
 import { DataPipelinePanel } from "@/components/admin/DataPipelinePanel";
 import { CordisPanel } from "@/components/admin/CordisPanel";
+import GithubPanel from "@/components/admin/GithubPanel";
 import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
 
 export default function AdminPanel() {
