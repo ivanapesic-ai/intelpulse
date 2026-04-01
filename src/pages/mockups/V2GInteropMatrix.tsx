@@ -3,136 +3,145 @@ import { PlatformFooter } from "@/components/mockups/PlatformFooter";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { formatFundingUsd } from "@/types/database";
-import { BookOpen, Building2, Newspaper, FileText, TrendingUp, TrendingDown, Minus, ExternalLink } from "lucide-react";
+import { FileText, CheckCircle2, AlertTriangle, XCircle, Shield, Building2 } from "lucide-react";
+import { useMemo, useState } from "react";
 
-// The 4 V2G/charging keyword IDs from our taxonomy
-const V2G_KEYWORD_IDS = [
-  '78a385d0-ca18-4367-bdd1-895cbf344096', // Vehicle to Grid
-  '4c641930-edf8-48f6-a6f5-e766ca6262ad', // EV Charging
-  '3a7c5579-29e3-4191-a65e-e0072ef0f115', // Bidirectional Charging
-  'cfeb162f-9076-452d-92c0-08fe3c6a5a7b', // Smart Recharging
-];
+const ALL_BODIES_SDO = ["ISO", "IEC", "ITU", "ETSI", "IEEE", "SAE", "UNECE", "CEN/CENELEC"] as const;
+const ALL_BODIES_CONSORTIA = ["CharIN", "AUTOSAR", "COVESA", "5GAA", "GENIVI", "OMA", "FIWARE", "Eclipse Foundation"] as const;
+const ALL_BODIES = [...ALL_BODIES_SDO, ...ALL_BODIES_CONSORTIA];
 
-function useV2GStandards() {
+interface StandardRow {
+  id: string;
+  keyword_id: string;
+  standard_code: string;
+  standard_title: string;
+  issuing_body: string;
+  body_type: string;
+  status: string | null;
+  url: string | null;
+  description: string | null;
+}
+
+interface KeywordRow {
+  id: string;
+  display_name: string;
+  keyword: string;
+  excluded_from_sdv: boolean | null;
+}
+
+function useStandardsCoverage() {
   return useQuery({
-    queryKey: ['v2g-standards'],
+    queryKey: ["standards-coverage-matrix"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('keyword_standards')
-        .select('*, technology_keywords!keyword_standards_keyword_id_fkey(display_name)')
-        .in('keyword_id', V2G_KEYWORD_IDS)
-        .order('issuing_body');
-      if (error) throw error;
-      return data;
+      // Fetch all standards with keyword names
+      const { data: standards, error: sErr } = await supabase
+        .from("keyword_standards")
+        .select("id, keyword_id, standard_code, standard_title, issuing_body, body_type, status, url, description")
+        .order("issuing_body");
+      if (sErr) throw sErr;
+
+      // Fetch all active keywords (not excluded)
+      const { data: keywords, error: kErr } = await supabase
+        .from("technology_keywords")
+        .select("id, display_name, keyword, excluded_from_sdv")
+        .eq("excluded_from_sdv", false)
+        .order("display_name");
+      if (kErr) throw kErr;
+
+      return {
+        standards: (standards || []) as StandardRow[],
+        keywords: (keywords || []) as KeywordRow[],
+      };
     },
   });
 }
 
-function useV2GCompanies() {
-  return useQuery({
-    queryKey: ['v2g-companies'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('crunchbase_keyword_mapping')
-        .select('*, crunchbase_companies!crunchbase_keyword_mapping_company_id_fkey(organization_name, hq_country, total_funding_usd, number_of_employees, patents_count, website, industries), technology_keywords!crunchbase_keyword_mapping_keyword_id_fkey(display_name)')
-        .in('keyword_id', V2G_KEYWORD_IDS)
-        .order('match_confidence', { ascending: false });
-      if (error) throw error;
-      // Deduplicate companies, keeping the first occurrence
-      const seen = new Set<string>();
-      return data?.filter(row => {
-        const companyId = row.company_id;
-        if (!companyId || seen.has(companyId)) return false;
-        seen.add(companyId);
-        return true;
-      }) ?? [];
-    },
-  });
-}
+function CoverageCell({ standards, body }: { standards: StandardRow[]; body: string }) {
+  const matching = standards.filter((s) => s.issuing_body === body);
+  if (matching.length === 0) {
+    return (
+      <TableCell className="text-center">
+        <span className="text-muted-foreground/30">—</span>
+      </TableCell>
+    );
+  }
 
-function useV2GNews() {
-  return useQuery({
-    queryKey: ['v2g-news'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('news_keyword_matches')
-        .select('*, news_items!news_keyword_matches_news_id_fkey(title, url, published_at, source_name), technology_keywords!news_keyword_matches_keyword_id_fkey(display_name)')
-        .in('keyword_id', V2G_KEYWORD_IDS)
-        .order('created_at', { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return data;
-    },
-  });
-}
-
-function useV2GResearch() {
-  return useQuery({
-    queryKey: ['v2g-research'],
-    queryFn: async () => {
-      // Get latest snapshot per keyword
-      const { data, error } = await supabase
-        .from('research_signals')
-        .select('*, technology_keywords!research_signals_keyword_id_fkey(display_name)')
-        .in('keyword_id', V2G_KEYWORD_IDS)
-        .order('snapshot_date', { ascending: false });
-      if (error) throw error;
-      // Keep only latest per keyword
-      const seen = new Set<string>();
-      return data?.filter(row => {
-        if (seen.has(row.keyword_id)) return false;
-        seen.add(row.keyword_id);
-        return true;
-      }) ?? [];
-    },
-  });
-}
-
-function GrowthBadge({ rate }: { rate: number | null }) {
-  if (rate === null) return <Minus className="h-3 w-3 text-muted-foreground" />;
-  if (rate > 0) return (
-    <span className="inline-flex items-center gap-1 text-emerald-400 text-xs">
-      <TrendingUp className="h-3 w-3" /> +{rate.toFixed(1)}%
-    </span>
-  );
   return (
-    <span className="inline-flex items-center gap-1 text-red-400 text-xs">
-      <TrendingDown className="h-3 w-3" /> {rate.toFixed(1)}%
-    </span>
+    <TableCell className="text-center">
+      <TooltipProvider delayDuration={200}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex items-center justify-center gap-1 cursor-default">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              <span className="text-xs font-medium text-foreground">{matching.length}</span>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs">
+            <div className="space-y-1">
+              {matching.map((s) => (
+                <div key={s.id} className="text-xs">
+                  <span className="font-mono font-medium">{s.standard_code}</span>
+                  <span className="text-muted-foreground ml-1">— {s.standard_title}</span>
+                </div>
+              ))}
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </TableCell>
   );
 }
 
-function LoadingState() {
-  return (
-    <div className="space-y-4">
-      {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
-    </div>
-  );
+type CoverageLevel = "full" | "partial" | "none";
+
+function CoverageBadge({ level }: { level: CoverageLevel }) {
+  if (level === "full")
+    return <Badge variant="outline" className="text-xs border-emerald-500/30 bg-emerald-500/10 text-emerald-400">Well Covered</Badge>;
+  if (level === "partial")
+    return <Badge variant="outline" className="text-xs border-yellow-500/30 bg-yellow-500/10 text-yellow-400">Partial</Badge>;
+  return <Badge variant="outline" className="text-xs border-red-500/30 bg-red-500/10 text-red-400">Gap</Badge>;
 }
 
 export default function V2GInteropMatrix() {
-  const standards = useV2GStandards();
-  const companies = useV2GCompanies();
-  const news = useV2GNews();
-  const research = useV2GResearch();
+  const { data, isLoading } = useStandardsCoverage();
+  const [filter, setFilter] = useState<CoverageLevel | "all">("all");
 
-  // Group standards by issuing body
-  const standardsByBody = (standards.data ?? []).reduce<Record<string, typeof standards.data>>((acc, s) => {
-    const body = s.issuing_body;
-    if (!acc[body]) acc[body] = [];
-    acc[body]!.push(s);
-    return acc;
-  }, {});
+  const matrix = useMemo(() => {
+    if (!data) return [];
 
-  const totalCompanies = companies.data?.length ?? 0;
-  const totalStandards = standards.data?.length ?? 0;
-  const totalNews = news.data?.length ?? 0;
-  const totalResearchWorks = research.data?.reduce((sum, r) => sum + (r.total_works ?? 0), 0) ?? 0;
+    return data.keywords.map((kw) => {
+      const kwStandards = data.standards.filter((s) => s.keyword_id === kw.id);
+      const bodyCount = new Set(kwStandards.map((s) => s.issuing_body)).size;
+      const level: CoverageLevel = bodyCount >= 3 ? "full" : bodyCount >= 1 ? "partial" : "none";
+      return { keyword: kw, standards: kwStandards, bodyCount, totalStandards: kwStandards.length, level };
+    });
+  }, [data]);
+
+  const filtered = filter === "all" ? matrix : matrix.filter((r) => r.level === filter);
+
+  // Summary stats
+  const totalKeywords = matrix.length;
+  const covered = matrix.filter((r) => r.level !== "none").length;
+  const gaps = matrix.filter((r) => r.level === "none").length;
+  const coveragePct = totalKeywords > 0 ? Math.round((covered / totalKeywords) * 100) : 0;
+  const totalStandards = data?.standards.length ?? 0;
+
+  // Body distribution
+  const bodyDistribution = useMemo(() => {
+    if (!data) return [];
+    const counts: Record<string, number> = {};
+    for (const s of data.standards) {
+      counts[s.issuing_body] = (counts[s.issuing_body] || 0) + 1;
+    }
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([body, count]) => ({ body, count }));
+  }, [data]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -141,252 +150,166 @@ export default function V2GInteropMatrix() {
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-1">
             <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">Live Data</Badge>
-            <Badge variant="outline" className="text-xs">V2G Ecosystem</Badge>
+            <Badge variant="outline" className="text-xs">All Keywords</Badge>
           </div>
           <h1 className="text-3xl font-bold text-foreground mt-2">
-            V2G Charging — Standards & Ecosystem Overview
+            Standards Coverage Matrix
           </h1>
           <p className="text-muted-foreground mt-2 max-w-3xl">
-            Real-time view of interoperability standards, companies, research signals, and news coverage across Vehicle-to-Grid, EV Charging, Bidirectional Charging, and Smart Recharging.
+            Which technology keywords in our ontology are backed by international standards — and where are the gaps? 
+            Hover over any ✓ to see the specific standards linked.
           </p>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-          <Card className="bg-card/50 border-border/50">
-            <CardContent className="p-4 flex items-center gap-3">
-              <FileText className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-2xl font-bold text-foreground">{totalStandards}</p>
-                <p className="text-xs text-muted-foreground">Standards</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card/50 border-border/50">
-            <CardContent className="p-4 flex items-center gap-3">
-              <Building2 className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-2xl font-bold text-foreground">{totalCompanies}</p>
-                <p className="text-xs text-muted-foreground">Companies</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card/50 border-border/50">
-            <CardContent className="p-4 flex items-center gap-3">
-              <BookOpen className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-2xl font-bold text-foreground">{totalResearchWorks.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">Research Works</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card/50 border-border/50">
-            <CardContent className="p-4 flex items-center gap-3">
-              <Newspaper className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-2xl font-bold text-foreground">{totalNews}</p>
-                <p className="text-xs text-muted-foreground">News Articles</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {isLoading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
+          </div>
+        ) : (
+          <>
+            {/* Summary Row */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <Shield className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-2xl font-bold text-foreground">{totalStandards}</p>
+                      <p className="text-xs text-muted-foreground">Total Standards</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                    <div>
+                      <p className="text-2xl font-bold text-foreground">{covered}</p>
+                      <p className="text-xs text-muted-foreground">Keywords Covered</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                    <div>
+                      <p className="text-2xl font-bold text-foreground">{gaps}</p>
+                      <p className="text-xs text-muted-foreground">Coverage Gaps</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="p-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Coverage</span>
+                      <span className="font-medium text-foreground">{coveragePct}%</span>
+                    </div>
+                    <Progress value={coveragePct} className="h-2" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-        <Tabs defaultValue="standards" className="space-y-4">
-          <TabsList className="flex-wrap h-auto gap-1">
-            <TabsTrigger value="standards" className="gap-1.5"><FileText className="h-3.5 w-3.5" />Standards ({totalStandards})</TabsTrigger>
-            <TabsTrigger value="companies" className="gap-1.5"><Building2 className="h-3.5 w-3.5" />Companies ({totalCompanies})</TabsTrigger>
-            <TabsTrigger value="research" className="gap-1.5"><BookOpen className="h-3.5 w-3.5" />Research</TabsTrigger>
-            <TabsTrigger value="news" className="gap-1.5"><Newspaper className="h-3.5 w-3.5" />News ({totalNews})</TabsTrigger>
-          </TabsList>
-
-          {/* Standards Tab */}
-          <TabsContent value="standards">
-            {standards.isLoading ? <LoadingState /> : (
-              <div className="space-y-4">
-                {Object.entries(standardsByBody).map(([body, items]) => (
-                  <Card key={body} className="border-border/50">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">{body}</CardTitle>
-                      <CardDescription>{items?.length} standard{items?.length !== 1 ? 's' : ''}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-36">Code</TableHead>
-                            <TableHead>Title</TableHead>
-                            <TableHead className="hidden md:table-cell">Keyword</TableHead>
-                            <TableHead className="w-28">Status</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {items?.map(s => (
-                            <TableRow key={s.id}>
-                              <TableCell className="font-mono text-sm font-medium text-foreground">{s.standard_code}</TableCell>
-                              <TableCell className="text-sm text-muted-foreground">{s.standard_title}</TableCell>
-                              <TableCell className="hidden md:table-cell">
-                                <Badge variant="secondary" className="text-xs">
-                                  {(s as any).technology_keywords?.display_name ?? '—'}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="text-xs capitalize">{s.status ?? 'active'}</Badge>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Companies Tab */}
-          <TabsContent value="companies">
-            {companies.isLoading ? <LoadingState /> : (
-              <Card className="border-border/50">
+            {/* Body Distribution */}
+            {bodyDistribution.length > 0 && (
+              <Card className="border-border/50 mb-6">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Companies in V2G / Charging Ecosystem</CardTitle>
-                  <CardDescription>{totalCompanies} companies mapped via Crunchbase</CardDescription>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-primary" />
+                    Standards by Issuing Body
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Company</TableHead>
-                          <TableHead className="hidden sm:table-cell">Country</TableHead>
-                          <TableHead>Funding</TableHead>
-                          <TableHead className="hidden md:table-cell">Employees</TableHead>
-                          <TableHead className="hidden lg:table-cell">Keyword</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {companies.data?.slice(0, 100).map(row => {
-                          const c = (row as any).crunchbase_companies;
-                          if (!c) return null;
-                          return (
-                            <TableRow key={row.id}>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium text-sm text-foreground">{c.organization_name}</span>
-                                  {c.website && (
-                                    <a href={c.website} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">
-                                      <ExternalLink className="h-3 w-3" />
-                                    </a>
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">{c.hq_country ?? '—'}</TableCell>
-                              <TableCell className="text-sm font-medium text-foreground">
-                                {c.total_funding_usd ? formatFundingUsd(Number(c.total_funding_usd)) : '—'}
-                              </TableCell>
-                              <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{c.number_of_employees ?? '—'}</TableCell>
-                              <TableCell className="hidden lg:table-cell">
-                                <Badge variant="secondary" className="text-xs">
-                                  {(row as any).technology_keywords?.display_name ?? '—'}
-                                </Badge>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {bodyDistribution.map(({ body, count }) => (
+                      <Badge key={body} variant="secondary" className="text-xs gap-1.5 px-3 py-1">
+                        {body} <span className="font-bold">{count}</span>
+                      </Badge>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
 
-          {/* Research Tab */}
-          <TabsContent value="research">
-            {research.isLoading ? <LoadingState /> : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {research.data?.map(r => (
-                  <Card key={r.id} className="border-border/50">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base flex items-center justify-between">
-                        {(r as any).technology_keywords?.display_name ?? '—'}
-                        <GrowthBadge rate={r.growth_rate_yoy} />
-                      </CardTitle>
-                      <CardDescription>OpenAlex research signals · {r.snapshot_date}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-xs text-muted-foreground">Total Works</p>
-                          <p className="text-xl font-bold text-foreground">{(r.total_works ?? 0).toLocaleString()}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">Last 2 Years</p>
-                          <p className="text-xl font-bold text-foreground">{(r.works_last_2y ?? 0).toLocaleString()}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">Citations</p>
-                          <p className="text-xl font-bold text-foreground">{(r.citation_count ?? 0).toLocaleString()}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">h-index</p>
-                          <p className="text-xl font-bold text-foreground">{r.h_index ?? 0}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
+            {/* Filter */}
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-sm text-muted-foreground">Show:</span>
+              {(["all", "full", "partial", "none"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`text-xs px-3 py-1.5 rounded-md border transition-colors ${
+                    filter === f
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-card border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {f === "all" ? `All (${totalKeywords})` :
+                   f === "full" ? `Well Covered (${matrix.filter(r => r.level === "full").length})` :
+                   f === "partial" ? `Partial (${matrix.filter(r => r.level === "partial").length})` :
+                   `Gaps (${gaps})`}
+                </button>
+              ))}
+            </div>
 
-          {/* News Tab */}
-          <TabsContent value="news">
-            {news.isLoading ? <LoadingState /> : (
-              <Card className="border-border/50">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Recent News Coverage</CardTitle>
-                  <CardDescription>Latest {totalNews} articles mentioning V2G/charging keywords</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
+            {/* Matrix Table */}
+            <Card className="border-border/50">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Article</TableHead>
-                        <TableHead className="hidden md:table-cell">Source</TableHead>
-                        <TableHead className="hidden sm:table-cell">Keyword</TableHead>
-                        <TableHead className="w-28">Date</TableHead>
+                        <TableHead className="sticky left-0 bg-card z-10 min-w-[200px]">Technology Keyword</TableHead>
+                        <TableHead className="text-center w-20">Total</TableHead>
+                        <TableHead className="text-center w-24">Coverage</TableHead>
+                        {ALL_BODIES.map((body) => (
+                          <TableHead key={body} className="text-center min-w-[60px]">
+                            <span className="text-xs writing-mode-vertical">{body}</span>
+                          </TableHead>
+                        ))}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {news.data?.map(row => {
-                        const article = (row as any).news_items;
-                        if (!article) return null;
-                        return (
-                          <TableRow key={row.id}>
-                            <TableCell>
-                              <a href={article.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-foreground hover:text-primary transition-colors line-clamp-2">
-                                {article.title}
-                              </a>
-                            </TableCell>
-                            <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{article.source_name ?? '—'}</TableCell>
-                            <TableCell className="hidden sm:table-cell">
-                              <Badge variant="secondary" className="text-xs">
-                                {(row as any).technology_keywords?.display_name ?? '—'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                              {article.published_at ? new Date(article.published_at).toLocaleDateString() : '—'}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
+                      {filtered.map((row) => (
+                        <TableRow key={row.keyword.id}>
+                          <TableCell className="sticky left-0 bg-card z-10 font-medium text-sm text-foreground">
+                            {row.keyword.display_name}
+                          </TableCell>
+                          <TableCell className="text-center text-sm font-medium text-foreground">
+                            {row.totalStandards}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <CoverageBadge level={row.level} />
+                          </TableCell>
+                          {ALL_BODIES.map((body) => (
+                            <CoverageCell key={body} standards={row.standards} body={body} />
+                          ))}
+                        </TableRow>
+                      ))}
+                      {filtered.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={ALL_BODIES.length + 3} className="text-center py-8 text-muted-foreground">
+                            No keywords match this filter.
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-        </Tabs>
+                </div>
+              </CardContent>
+            </Card>
+
+            <p className="text-xs text-muted-foreground mt-4">
+              Coverage levels: <strong>Well Covered</strong> = 3+ issuing bodies · <strong>Partial</strong> = 1–2 bodies · <strong>Gap</strong> = no linked standards.
+              Standards are manually curated in the admin panel.
+            </p>
+          </>
+        )}
       </main>
       <PlatformFooter />
     </div>
