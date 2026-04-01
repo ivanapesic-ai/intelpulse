@@ -59,7 +59,7 @@ export function useGithubRepos(keywordId: string | null) {
         .eq("keyword_id", keywordId)
         .order("stars", { ascending: false });
       if (error) throw error;
-      return (data || []) as GithubRepo[];
+      return (data || []) as unknown as GithubRepo[];
     },
     enabled: !!keywordId,
   });
