@@ -33,6 +33,12 @@ const DEFAULT_STEPS: Omit<PipelineStep, "status">[] = [
     enabled: true,
   },
   {
+    id: "fetch_cordis",
+    label: "Fetch CORDIS EU R&D",
+    description: "Query CORDIS for EU-funded research projects per keyword",
+    enabled: true,
+  },
+  {
     id: "aggregate_trl",
     label: "Aggregate TRL Scores",
     description: "Recalculate TRL from document mentions for all keywords",
