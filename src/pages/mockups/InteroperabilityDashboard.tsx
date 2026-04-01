@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { GapAnalysisSection } from "@/components/interoperability/GapAnalysisSection";
 import { StandardsCoverageSection } from "@/components/interoperability/StandardsCoverageSection";
 import { CharinTestResultsSection } from "@/components/interoperability/CharinTestResultsSection";
+import { InteropOSSSection } from "@/components/interoperability/InteropOSSSection";
+import { InteropNewsSection } from "@/components/interoperability/InteropNewsSection";
 import { ProtocolReferenceGrid } from "@/components/interoperability/ProtocolReferenceGrid";
 import { CommStackExplainer } from "@/components/interoperability/CommStackExplainer";
 
@@ -77,7 +79,17 @@ export default function InteroperabilityDashboard() {
 
             <Separator />
 
-            {/* Section 4: Protocol Reference Grid */}
+            {/* Section 4: Open-Source Interop Ecosystem — fresh signals */}
+            <InteropOSSSection />
+
+            <Separator />
+
+            {/* Section 5: Interop News — what's happening now */}
+            <InteropNewsSection />
+
+            <Separator />
+
+            {/* Section 6: Protocol Reference Grid */}
             <ProtocolReferenceGrid />
 
             {/* Communication Stack Explainer — collapsible */}
