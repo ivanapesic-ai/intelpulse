@@ -3,22 +3,32 @@ import { PlatformFooter } from "@/components/mockups/PlatformFooter";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-import { GapAnalysisSection } from "@/components/interoperability/GapAnalysisSection";
+import { InteropHealthHeader } from "@/components/interoperability/InteropHealthHeader";
+import { InteropGapMatrix } from "@/components/interoperability/InteropGapMatrix";
 import { StandardsCoverageSection } from "@/components/interoperability/StandardsCoverageSection";
-import { CharinTestResultsSection } from "@/components/interoperability/CharinTestResultsSection";
-import { InteropOSSSection } from "@/components/interoperability/InteropOSSSection";
-import { InteropNewsSection } from "@/components/interoperability/InteropNewsSection";
+import { TestIntelligenceSection } from "@/components/interoperability/TestIntelligenceSection";
+import { InnovationPipelineSection } from "@/components/interoperability/InnovationPipelineSection";
 import { ProtocolReferenceGrid } from "@/components/interoperability/ProtocolReferenceGrid";
 import { CommStackExplainer } from "@/components/interoperability/CommStackExplainer";
 
 function useInteropData() {
   return useQuery({
-    queryKey: ["interop-dashboard-data"],
+    queryKey: ["interop-dashboard-data-v2"],
     queryFn: async () => {
-      const [{ data: standards, error: sErr }, { data: keywords, error: kErr }] = await Promise.all([
+      const [
+        { data: standards, error: sErr },
+        { data: keywords, error: kErr },
+        { data: events },
+        { data: githubRaw },
+        { data: cordisRaw },
+        { data: newsRaw },
+      ] = await Promise.all([
         supabase
           .from("keyword_standards")
           .select("id, keyword_id, standard_code, standard_title, issuing_body, body_type, status, url, description")
@@ -27,17 +37,95 @@ function useInteropData() {
           .from("technology_keywords")
           .select("id, display_name, keyword, excluded_from_sdv")
           .eq("excluded_from_sdv", false)
+          .eq("is_active", true)
           .order("display_name"),
+        supabase
+          .from("charin_test_events")
+          .select("id, total_individual_tests"),
+        supabase
+          .from("github_oss_activity")
+          .select("keyword_id")
+          .eq("is_active", true),
+        supabase
+          .from("cordis_eu_projects")
+          .select("keyword_id"),
+        supabase
+          .from("news_keyword_matches")
+          .select("keyword_id, news_id"),
       ]);
       if (sErr) throw sErr;
       if (kErr) throw kErr;
-      return { standards: standards || [], keywords: keywords || [] };
+
+      // Build per-keyword counts
+      const standardsByKeyword = new Map<string, number>();
+      for (const s of standards || []) {
+        standardsByKeyword.set(s.keyword_id, (standardsByKeyword.get(s.keyword_id) || 0) + 1);
+      }
+
+      // CharIN: count test results by keyword_id from charin_test_results
+      const charinByKeyword = new Map<string, number>();
+      // For now, no per-keyword charin data since results aren't linked yet
+      // But we have total event-level tests
+      const totalCharinTests = (events || []).reduce((s, e) => s + (e.total_individual_tests || 0), 0);
+
+      const githubByKeyword = new Map<string, number>();
+      for (const g of githubRaw || []) {
+        if (g.keyword_id) githubByKeyword.set(g.keyword_id, (githubByKeyword.get(g.keyword_id) || 0) + 1);
+      }
+
+      const cordisByKeyword = new Map<string, number>();
+      for (const c of cordisRaw || []) {
+        if (c.keyword_id) cordisByKeyword.set(c.keyword_id, (cordisByKeyword.get(c.keyword_id) || 0) + 1);
+      }
+
+      const newsByKeyword = new Map<string, number>();
+      const newsSeenPairs = new Set<string>();
+      for (const n of newsRaw || []) {
+        const key = `${n.keyword_id}:${n.news_id}`;
+        if (n.keyword_id && !newsSeenPairs.has(key)) {
+          newsSeenPairs.add(key);
+          newsByKeyword.set(n.keyword_id, (newsByKeyword.get(n.keyword_id) || 0) + 1);
+        }
+      }
+
+      const activeKeywords = keywords || [];
+      const totalGithubRepos = new Set((githubRaw || []).filter(g => g.keyword_id).map(g => g.keyword_id)).size > 0
+        ? (githubRaw || []).length
+        : 0;
+
+      // Count keywords with 4+ signals
+      const fullCoverageCount = activeKeywords.filter((kw) => {
+        const signals = [
+          standardsByKeyword.get(kw.id) || 0,
+          charinByKeyword.get(kw.id) || 0,
+          githubByKeyword.get(kw.id) || 0,
+          cordisByKeyword.get(kw.id) || 0,
+          newsByKeyword.get(kw.id) || 0,
+        ].filter(s => s > 0).length;
+        return signals >= 4;
+      }).length;
+
+      return {
+        standards: standards || [],
+        keywords: activeKeywords,
+        standardsByKeyword,
+        charinByKeyword,
+        githubByKeyword,
+        cordisByKeyword,
+        newsByKeyword,
+        totalStandards: (standards || []).length,
+        totalCharinTests,
+        activeGithubRepos: (githubRaw || []).length,
+        cordisProjects: (cordisRaw || []).filter(c => c.keyword_id).length,
+        fullCoverageCount,
+      };
     },
   });
 }
 
 export default function InteroperabilityDashboard() {
   const { data, isLoading } = useInteropData();
+  const [refOpen, setRefOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -53,8 +141,8 @@ export default function InteroperabilityDashboard() {
             Interoperability Intelligence
           </h1>
           <p className="text-muted-foreground mt-2 max-w-3xl">
-            Standards coverage, protocol compatibility, and interoperability testing across the SDV technology landscape.
-            Identifying gaps where technologies lack regulatory backing or conformance testing.
+            From health overview to evidence: standards coverage, conformance testing, open-source implementations,
+            and EU research funding across the SDV technology landscape.
           </p>
         </div>
 
@@ -64,36 +152,60 @@ export default function InteroperabilityDashboard() {
           </div>
         ) : data ? (
           <div className="space-y-10">
-            {/* Section 1: Gap Analysis — the "so what" */}
-            <GapAnalysisSection standards={data.standards} keywords={data.keywords} />
+            {/* Top: Health Score + Stat Cards */}
+            <InteropHealthHeader
+              totalStandards={data.totalStandards}
+              totalCharinTests={data.totalCharinTests}
+              activeGithubRepos={data.activeGithubRepos}
+              cordisProjects={data.cordisProjects}
+              keywordCount={data.keywords.length}
+              fullCoverageCount={data.fullCoverageCount}
+            />
 
             <Separator />
 
-            {/* Section 2: Standards Coverage Matrix — the evidence */}
+            {/* Section 1: Gap Analysis Matrix */}
+            <InteropGapMatrix
+              keywords={data.keywords}
+              standardsByKeyword={data.standardsByKeyword}
+              charinByKeyword={data.charinByKeyword}
+              githubByKeyword={data.githubByKeyword}
+              cordisByKeyword={data.cordisByKeyword}
+              newsByKeyword={data.newsByKeyword}
+            />
+
+            <Separator />
+
+            {/* Section 2: Standards Coverage Matrix */}
             <StandardsCoverageSection standards={data.standards} keywords={data.keywords} />
 
             <Separator />
 
-            {/* Section 3: CharIN Test Results — the proof */}
-            <CharinTestResultsSection />
+            {/* Section 3: Test Intelligence */}
+            <TestIntelligenceSection />
 
             <Separator />
 
-            {/* Section 4: Open-Source Interop Ecosystem — fresh signals */}
-            <InteropOSSSection />
+            {/* Section 4: Innovation Pipeline */}
+            <InnovationPipelineSection />
 
             <Separator />
 
-            {/* Section 5: Interop News — what's happening now */}
-            <InteropNewsSection />
-
-            <Separator />
-
-            {/* Section 6: Protocol Reference Grid */}
-            <ProtocolReferenceGrid />
-
-            {/* Communication Stack Explainer — collapsible */}
-            <CommStackExplainer />
+            {/* Section 5: Collapsible Reference */}
+            <Collapsible open={refOpen} onOpenChange={setRefOpen}>
+              <CollapsibleTrigger asChild>
+                <button className="w-full flex items-center justify-between p-4 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors">
+                  <span className="font-semibold text-foreground">Protocol Reference & Communication Stack</span>
+                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${refOpen ? "rotate-180" : ""}`} />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-4 space-y-6">
+                  <ProtocolReferenceGrid />
+                  <CommStackExplainer />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
         ) : null}
       </main>
