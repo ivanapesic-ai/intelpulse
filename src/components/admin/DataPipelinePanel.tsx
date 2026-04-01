@@ -128,17 +128,11 @@ export function DataPipelinePanel() {
             break;
           }
           case "fetch_cordis": {
-            const { data: kwList } = await supabase
-              .from("technology_keywords")
-              .select("id, keyword, display_name")
-              .eq("is_active", true)
-              .eq("excluded_from_sdv", false);
-            for (const kw of kwList || []) {
-              const searchTerm = kw.display_name || kw.keyword.replace(/_/g, " ");
-              await supabase.functions.invoke("fetch-cordis", {
-                body: { keyword_id: kw.id, search_term: searchTerm, limit: 50 },
-              });
-            }
+            const { data: result, error } = await supabase.functions.invoke("fetch-cordis-projects", {
+              body: {},
+            });
+            if (error) throw error;
+            if (result && !result.success) throw new Error(result.error || "CORDIS fetch failed");
             break;
           }
           case "aggregate_trl": {
