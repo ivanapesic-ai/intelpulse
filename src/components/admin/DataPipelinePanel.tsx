@@ -141,6 +141,14 @@ export function DataPipelinePanel() {
             if (result && !result.success) throw new Error(result.error || "CORDIS fetch failed");
             break;
           }
+          case "fetch_github": {
+            const { data: result, error } = await supabase.functions.invoke("fetch-github-activity", {
+              body: {},
+            });
+            if (error) throw error;
+            if (result && !result.success) throw new Error(result.error || "GitHub fetch failed");
+            break;
+          }
           case "aggregate_trl": {
             const { data: keywords } = await supabase
               .from("technology_keywords")
