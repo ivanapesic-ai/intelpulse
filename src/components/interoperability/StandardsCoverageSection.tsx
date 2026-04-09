@@ -71,6 +71,17 @@ function CoverageBadge({ level }: { level: CoverageLevel }) {
 export function StandardsCoverageSection({ standards, keywords }: StandardsCoverageSectionProps) {
   const [filter, setFilter] = useState<CoverageLevel | "all">("all");
 
+  // Derive active bodies from actual data
+  const activeBodies = useMemo(() => {
+    const seen = new Set(standards.map((s) => s.issuing_body));
+    const ordered = BODY_ORDER.filter((b) => seen.has(b));
+    // Add any bodies in data but not in preferred order
+    for (const b of seen) {
+      if (!ordered.includes(b)) ordered.push(b);
+    }
+    return ordered;
+  }, [standards]);
+
   const matrix = useMemo(() => {
     return keywords.map((kw) => {
       const kwStandards = standards.filter((s) => s.keyword_id === kw.id);
