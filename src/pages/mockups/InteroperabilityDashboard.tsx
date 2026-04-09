@@ -126,7 +126,7 @@ export default function InteroperabilityDashboard() {
             Interoperability Intelligence
           </h1>
           <p className="text-muted-foreground mt-2 max-w-3xl">
-            From health overview to evidence: standards coverage, conformance testing, open-source implementations,
+            From health overview to evidence: standards coverage, conformance testing,
             and EU research funding across the SDV technology landscape.
           </p>
         </div>
