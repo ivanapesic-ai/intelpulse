@@ -64,11 +64,7 @@ function useInteropData() {
       // But we have total event-level tests
       const totalCharinTests = (events || []).reduce((s, e) => s + (e.total_individual_tests || 0), 0);
 
-      const githubByKeyword = new Map<string, number>();
-      for (const g of githubRaw || []) {
-        if (g.keyword_id) githubByKeyword.set(g.keyword_id, (githubByKeyword.get(g.keyword_id) || 0) + 1);
-      }
-
+      const cordisByKeyword = new Map<string, number>();
       const cordisByKeyword = new Map<string, number>();
       for (const c of cordisRaw || []) {
         if (c.keyword_id) cordisByKeyword.set(c.keyword_id, (cordisByKeyword.get(c.keyword_id) || 0) + 1);
