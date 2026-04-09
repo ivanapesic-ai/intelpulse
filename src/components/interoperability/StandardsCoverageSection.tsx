@@ -172,7 +172,7 @@ export function StandardsCoverageSection({ standards, keywords }: StandardsCover
                   <TableHead className="sticky left-0 bg-card z-10 min-w-[200px]">Keyword</TableHead>
                   <TableHead className="text-center w-16">Total</TableHead>
                   <TableHead className="text-center w-24">Level</TableHead>
-                  {ALL_BODIES.map((body) => (
+                  {activeBodies.map((body) => (
                     <TableHead key={body} className="text-center min-w-[56px]">
                       <span className="text-xs">{body}</span>
                     </TableHead>
@@ -187,14 +187,14 @@ export function StandardsCoverageSection({ standards, keywords }: StandardsCover
                     </TableCell>
                     <TableCell className="text-center text-sm font-medium">{row.totalStandards}</TableCell>
                     <TableCell className="text-center"><CoverageBadge level={row.level} /></TableCell>
-                    {ALL_BODIES.map((body) => (
+                    {activeBodies.map((body) => (
                       <CoverageCell key={body} standards={row.standards} body={body} />
                     ))}
                   </TableRow>
                 ))}
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={ALL_BODIES.length + 3} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={activeBodies.length + 3} className="text-center py-8 text-muted-foreground">
                       No keywords match this filter.
                     </TableCell>
                   </TableRow>
