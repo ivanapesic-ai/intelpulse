@@ -26,7 +26,6 @@ function useInteropData() {
         { data: standards, error: sErr },
         { data: keywords, error: kErr },
         { data: events },
-        { data: githubRaw },
         { data: cordisRaw },
         { data: newsRaw },
       ] = await Promise.all([
@@ -43,10 +42,6 @@ function useInteropData() {
         supabase
           .from("charin_test_events")
           .select("id, total_individual_tests"),
-        supabase
-          .from("github_oss_activity")
-          .select("keyword_id")
-          .eq("is_active", true),
         supabase
           .from("cordis_eu_projects")
           .select("keyword_id"),
@@ -69,11 +64,6 @@ function useInteropData() {
       // But we have total event-level tests
       const totalCharinTests = (events || []).reduce((s, e) => s + (e.total_individual_tests || 0), 0);
 
-      const githubByKeyword = new Map<string, number>();
-      for (const g of githubRaw || []) {
-        if (g.keyword_id) githubByKeyword.set(g.keyword_id, (githubByKeyword.get(g.keyword_id) || 0) + 1);
-      }
-
       const cordisByKeyword = new Map<string, number>();
       for (const c of cordisRaw || []) {
         if (c.keyword_id) cordisByKeyword.set(c.keyword_id, (cordisByKeyword.get(c.keyword_id) || 0) + 1);
@@ -90,20 +80,16 @@ function useInteropData() {
       }
 
       const activeKeywords = keywords || [];
-      const totalGithubRepos = new Set((githubRaw || []).filter(g => g.keyword_id).map(g => g.keyword_id)).size > 0
-        ? (githubRaw || []).length
-        : 0;
 
-      // Count keywords with 4+ signals
+      // Count keywords with 3+ signals
       const fullCoverageCount = activeKeywords.filter((kw) => {
         const signals = [
           standardsByKeyword.get(kw.id) || 0,
           charinByKeyword.get(kw.id) || 0,
-          githubByKeyword.get(kw.id) || 0,
           cordisByKeyword.get(kw.id) || 0,
           newsByKeyword.get(kw.id) || 0,
         ].filter(s => s > 0).length;
-        return signals >= 4;
+        return signals >= 3;
       }).length;
 
       return {
@@ -111,12 +97,10 @@ function useInteropData() {
         keywords: activeKeywords,
         standardsByKeyword,
         charinByKeyword,
-        githubByKeyword,
         cordisByKeyword,
         newsByKeyword,
         totalStandards: (standards || []).length,
         totalCharinTests,
-        activeGithubRepos: (githubRaw || []).length,
         cordisProjects: (cordisRaw || []).filter(c => c.keyword_id).length,
         fullCoverageCount,
       };
@@ -142,7 +126,7 @@ export default function InteroperabilityDashboard() {
             Interoperability Intelligence
           </h1>
           <p className="text-muted-foreground mt-2 max-w-3xl">
-            From health overview to evidence: standards coverage, conformance testing, open-source implementations,
+            From health overview to evidence: standards coverage, conformance testing,
             and EU research funding across the SDV technology landscape.
           </p>
         </div>
@@ -157,7 +141,6 @@ export default function InteroperabilityDashboard() {
             <InteropHealthHeader
               totalStandards={data.totalStandards}
               totalCharinTests={data.totalCharinTests}
-              activeGithubRepos={data.activeGithubRepos}
               cordisProjects={data.cordisProjects}
               keywordCount={data.keywords.length}
               fullCoverageCount={data.fullCoverageCount}
@@ -170,7 +153,6 @@ export default function InteroperabilityDashboard() {
               keywords={data.keywords}
               standardsByKeyword={data.standardsByKeyword}
               charinByKeyword={data.charinByKeyword}
-              githubByKeyword={data.githubByKeyword}
               cordisByKeyword={data.cordisByKeyword}
               newsByKeyword={data.newsByKeyword}
             />
