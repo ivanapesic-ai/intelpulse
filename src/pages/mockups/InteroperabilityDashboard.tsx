@@ -65,7 +65,6 @@ function useInteropData() {
       const totalCharinTests = (events || []).reduce((s, e) => s + (e.total_individual_tests || 0), 0);
 
       const cordisByKeyword = new Map<string, number>();
-      const cordisByKeyword = new Map<string, number>();
       for (const c of cordisRaw || []) {
         if (c.keyword_id) cordisByKeyword.set(c.keyword_id, (cordisByKeyword.get(c.keyword_id) || 0) + 1);
       }
