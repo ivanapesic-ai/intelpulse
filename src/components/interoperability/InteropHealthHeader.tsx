@@ -1,11 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Shield, FlaskConical, GitBranch, BookOpen, Activity } from "lucide-react";
+import { Shield, FlaskConical, BookOpen, Activity } from "lucide-react";
 
 interface InteropHealthHeaderProps {
   totalStandards: number;
   totalCharinTests: number;
-  activeGithubRepos: number;
+  activeGithubRepos?: number;
   cordisProjects: number;
   keywordCount: number;
   fullCoverageCount: number;
@@ -14,17 +14,15 @@ interface InteropHealthHeaderProps {
 export function InteropHealthHeader({
   totalStandards,
   totalCharinTests,
-  activeGithubRepos,
   cordisProjects,
   keywordCount,
   fullCoverageCount,
 }: InteropHealthHeaderProps) {
   // Health score: weighted combination of coverage signals
-  const standardsScore = Math.min(totalStandards / 250, 1) * 30; // max 30
-  const testScore = Math.min(totalCharinTests / 2000, 1) * 25; // max 25
-  const ossScore = Math.min(activeGithubRepos / 50, 1) * 25; // max 25
-  const researchScore = Math.min(cordisProjects / 30, 1) * 20; // max 20
-  const healthScore = Math.round(standardsScore + testScore + ossScore + researchScore);
+  const standardsScore = Math.min(totalStandards / 250, 1) * 40; // max 40
+  const testScore = Math.min(totalCharinTests / 2000, 1) * 35; // max 35
+  const researchScore = Math.min(cordisProjects / 30, 1) * 25; // max 25
+  const healthScore = Math.round(standardsScore + testScore + researchScore);
 
   const healthColor =
     healthScore >= 70 ? "text-emerald-500" : healthScore >= 40 ? "text-yellow-500" : "text-destructive";
@@ -40,13 +38,11 @@ export function InteropHealthHeader({
   const stats = [
     { icon: Shield, label: "Standards Mapped", value: totalStandards, accent: "text-primary" },
     { icon: FlaskConical, label: "CharIN Tests", value: totalCharinTests.toLocaleString(), accent: "text-primary" },
-    { icon: GitBranch, label: "OSS Repos", value: activeGithubRepos, accent: "text-primary" },
     { icon: BookOpen, label: "EU R&D Projects", value: cordisProjects, accent: "text-primary" },
   ];
 
   return (
     <div className="space-y-4">
-      {/* Headline health score */}
       <Card className={`${healthBg}`}>
         <CardContent className="p-6">
           <div className="flex items-center justify-between flex-wrap gap-4">
@@ -74,7 +70,7 @@ export function InteropHealthHeader({
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
                   Composite score across {keywordCount} technology keywords — standards coverage, conformance testing,
-                  open-source implementations, and EU research funding.
+                  and EU research funding.
                 </p>
               </div>
             </div>
@@ -86,8 +82,7 @@ export function InteropHealthHeader({
         </CardContent>
       </Card>
 
-      {/* Four stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         {stats.map((s) => (
           <Card key={s.label} className="border-border/50">
             <CardContent className="p-4 flex items-center gap-3">
