@@ -141,7 +141,6 @@ export default function InteroperabilityDashboard() {
             <InteropHealthHeader
               totalStandards={data.totalStandards}
               totalCharinTests={data.totalCharinTests}
-              activeGithubRepos={0}
               cordisProjects={data.cordisProjects}
               keywordCount={data.keywords.length}
               fullCoverageCount={data.fullCoverageCount}
@@ -154,7 +153,6 @@ export default function InteroperabilityDashboard() {
               keywords={data.keywords}
               standardsByKeyword={data.standardsByKeyword}
               charinByKeyword={data.charinByKeyword}
-              githubByKeyword={new Map()}
               cordisByKeyword={data.cordisByKeyword}
               newsByKeyword={data.newsByKeyword}
             />
