@@ -6,9 +6,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { CheckCircle2, Shield, Building2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
-const ALL_BODIES_SDO = ["ISO", "IEC", "ITU", "ETSI", "IEEE", "SAE", "UNECE", "CEN/CENELEC"] as const;
-const ALL_BODIES_CONSORTIA = ["CharIN", "AUTOSAR", "COVESA", "5GAA", "GENIVI", "OMA", "FIWARE", "Eclipse Foundation"] as const;
-const ALL_BODIES = [...ALL_BODIES_SDO, ...ALL_BODIES_CONSORTIA];
+// Preferred display order — bodies not in this list appear at the end alphabetically
+const BODY_ORDER = ["ISO", "IEC", "IEEE", "SAE", "UNECE", "ETSI", "ITU", "CEN/CENELEC", "Catena-X", "AUTOSAR", "COVESA", "5GAA", "SOAFEE", "Eclipse Foundation"];
 
 interface StandardRow {
   id: string;
