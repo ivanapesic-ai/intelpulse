@@ -18,7 +18,7 @@ const KEYWORD_SEARCH_QUERIES: Record<string, string[]> = {
   "vehicle to grid": ["vehicle-to-grid", "V2G charging", "EVerest"],
   "bidirectional charging": ["bidirectional charging", "iso15118"],
   "battery management": ["battery management system", "BMS firmware"],
-  "digital twin": ["digital twin automotive", "digital twin simulation", "org:eclipse-tractusx digital-twin"],
+  "digital twin": ["digital twin automotive", "digital twin simulation"],
   "edge computing": ["edge computing IoT", "MEC automotive"],
   "lidar": ["LiDAR point cloud", "lidar autonomous driving"],
   "autonomous driving": ["autonomous driving", "self-driving car", "AUTOSAR adaptive"],
@@ -32,9 +32,7 @@ const KEYWORD_SEARCH_QUERIES: Record<string, string[]> = {
   "electric mobility": ["electric mobility", "EV fleet management"],
   "micro grid": ["microgrid controller", "microgrid energy management"],
   "ev motor": ["electric motor controller", "BLDC motor EV"],
-  "supply chain management": ["supply chain blockchain", "supply chain automotive", "org:eclipse-tractusx traceability"],
-  "software defined vehicle": ["software-defined-vehicle", "org:eclipse-sdv-blueprints", "org:catenax-eV"],
-  "ev battery": ["battery-passport", "org:eclipse-tractusx battery"],
+  "supply chain management": ["supply chain blockchain", "supply chain automotive"],
 };
 
 function calculateActivityScore(repo: any): number {
