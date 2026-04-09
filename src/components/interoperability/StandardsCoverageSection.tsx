@@ -6,9 +6,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { CheckCircle2, Shield, Building2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
-const ALL_BODIES_SDO = ["ISO", "IEC", "ITU", "ETSI", "IEEE", "SAE", "UNECE", "CEN/CENELEC"] as const;
-const ALL_BODIES_CONSORTIA = ["CharIN", "AUTOSAR", "COVESA", "5GAA", "GENIVI", "OMA", "FIWARE", "Eclipse Foundation"] as const;
-const ALL_BODIES = [...ALL_BODIES_SDO, ...ALL_BODIES_CONSORTIA];
+// Preferred display order — bodies not in this list appear at the end alphabetically
+const BODY_ORDER = ["ISO", "IEC", "IEEE", "SAE", "UNECE", "ETSI", "ITU", "CEN/CENELEC", "Catena-X", "AUTOSAR", "COVESA", "5GAA", "SOAFEE", "Eclipse Foundation"];
 
 interface StandardRow {
   id: string;
@@ -71,6 +70,17 @@ function CoverageBadge({ level }: { level: CoverageLevel }) {
 
 export function StandardsCoverageSection({ standards, keywords }: StandardsCoverageSectionProps) {
   const [filter, setFilter] = useState<CoverageLevel | "all">("all");
+
+  // Derive active bodies from actual data
+  const activeBodies = useMemo(() => {
+    const seen = new Set(standards.map((s) => s.issuing_body));
+    const ordered = BODY_ORDER.filter((b) => seen.has(b));
+    // Add any bodies in data but not in preferred order
+    for (const b of seen) {
+      if (!ordered.includes(b)) ordered.push(b);
+    }
+    return ordered;
+  }, [standards]);
 
   const matrix = useMemo(() => {
     return keywords.map((kw) => {
@@ -162,7 +172,7 @@ export function StandardsCoverageSection({ standards, keywords }: StandardsCover
                   <TableHead className="sticky left-0 bg-card z-10 min-w-[200px]">Keyword</TableHead>
                   <TableHead className="text-center w-16">Total</TableHead>
                   <TableHead className="text-center w-24">Level</TableHead>
-                  {ALL_BODIES.map((body) => (
+                  {activeBodies.map((body) => (
                     <TableHead key={body} className="text-center min-w-[56px]">
                       <span className="text-xs">{body}</span>
                     </TableHead>
@@ -177,14 +187,14 @@ export function StandardsCoverageSection({ standards, keywords }: StandardsCover
                     </TableCell>
                     <TableCell className="text-center text-sm font-medium">{row.totalStandards}</TableCell>
                     <TableCell className="text-center"><CoverageBadge level={row.level} /></TableCell>
-                    {ALL_BODIES.map((body) => (
+                    {activeBodies.map((body) => (
                       <CoverageCell key={body} standards={row.standards} body={body} />
                     ))}
                   </TableRow>
                 ))}
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={ALL_BODIES.length + 3} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={activeBodies.length + 3} className="text-center py-8 text-muted-foreground">
                       No keywords match this filter.
                     </TableCell>
                   </TableRow>
