@@ -65,37 +65,30 @@ function buildSparqlQuery(searchTerm: string, limit = 200): string {
   const escaped = searchTerm.replace(/"/g, '\\"');
 
   return `
-    PREFIX cordis: <http://cordis.europa.eu/ontology/>
-    PREFIX dcterms: <http://purl.org/dc/terms/>
-    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+    PREFIX eurio: <http://data.europa.eu/s66#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
     SELECT DISTINCT
-      ?project
+      ?identifier
       ?title
-      ?acronym
-      ?totalCost
-      ?ecContribution
+      ?acronymLabel
+      ?totalCostVal
       ?startDate
       ?endDate
       ?status
-      ?frameworkProgramme
-      ?callIdentifier
     WHERE {
-      ?project a cordis:Project .
-      ?project dcterms:title ?title .
-      FILTER(LANG(?title) = "en" || LANG(?title) = "")
+      ?project a eurio:Project .
+      ?project eurio:title ?title .
+      ?project eurio:identifier ?identifier .
       FILTER(REGEX(?title, "${escaped}", "i"))
 
-      OPTIONAL { ?project cordis:acronym ?acronym }
-      OPTIONAL { ?project cordis:totalCost ?totalCost }
-      OPTIONAL { ?project cordis:ecMaxContribution ?ecContribution }
-      OPTIONAL { ?project cordis:startDate ?startDate }
-      OPTIONAL { ?project cordis:endDate ?endDate }
-      OPTIONAL { ?project cordis:status ?status }
-      OPTIONAL { ?project cordis:frameworkProgramme ?frameworkProgramme }
-      OPTIONAL { ?project cordis:callIdentifier ?callIdentifier }
+      OPTIONAL { ?project eurio:hasAcronym ?acr . ?acr rdfs:label ?acronymLabel }
+      OPTIONAL { ?project eurio:hasTotalCost ?tc . ?tc eurio:value ?totalCostVal }
+      OPTIONAL { ?project eurio:startDate ?startDate }
+      OPTIONAL { ?project eurio:endDate ?endDate }
+      OPTIONAL { ?project eurio:projectStatus ?status }
     }
-    ORDER BY DESC(?totalCost)
+    ORDER BY DESC(?totalCostVal)
     LIMIT ${limit}
   `;
 }
@@ -123,29 +116,28 @@ async function queryCordis(
   return data.results?.bindings || [];
 }
 
-function extractProjectId(uri: string): string {
-  const match = uri.match(/\/project\/id\/(\d+)/);
-  return match ? match[1] : uri;
-}
-
 function parseProject(binding: Record<string, any>) {
+  const identifier = binding.identifier?.value || "";
+  // Extract acronym label — strip prefix if present (e.g. "HEFT: Full title" → "HEFT")
+  let acronym = binding.acronymLabel?.value || null;
+  if (acronym && acronym.includes(":")) {
+    acronym = acronym.split(":")[0].trim();
+  }
   return {
-    cordis_id: extractProjectId(binding.project?.value || ""),
+    cordis_id: identifier,
     title: binding.title?.value || "",
-    acronym: binding.acronym?.value || null,
-    total_cost_eur: binding.totalCost?.value
-      ? parseFloat(binding.totalCost.value)
+    acronym,
+    total_cost_eur: binding.totalCostVal?.value
+      ? parseFloat(binding.totalCostVal.value)
       : null,
-    eu_contribution_eur: binding.ecContribution?.value
-      ? parseFloat(binding.ecContribution.value)
-      : null,
+    eu_contribution_eur: null, // EU contribution requires deeper graph traversal
     start_date: binding.startDate?.value || null,
     end_date: binding.endDate?.value || null,
     status: binding.status?.value || null,
-    framework_programme: binding.frameworkProgramme?.value || null,
-    call_identifier: binding.callIdentifier?.value || null,
-    cordis_url: binding.project?.value
-      ? `https://cordis.europa.eu/project/id/${extractProjectId(binding.project.value)}`
+    framework_programme: null,
+    call_identifier: null,
+    cordis_url: identifier
+      ? `https://cordis.europa.eu/project/id/${identifier}`
       : null,
   };
 }

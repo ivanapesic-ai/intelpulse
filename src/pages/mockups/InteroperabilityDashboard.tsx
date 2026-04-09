@@ -26,6 +26,7 @@ function useInteropData() {
         { data: standards, error: sErr },
         { data: keywords, error: kErr },
         { data: events },
+        { data: charinResults },
         { data: cordisRaw },
         { data: newsRaw },
       ] = await Promise.all([
@@ -43,6 +44,9 @@ function useInteropData() {
           .from("charin_test_events")
           .select("id, total_individual_tests"),
         supabase
+          .from("charin_test_results")
+          .select("keyword_id"),
+        supabase
           .from("cordis_eu_projects")
           .select("keyword_id"),
         supabase
@@ -58,10 +62,11 @@ function useInteropData() {
         standardsByKeyword.set(s.keyword_id, (standardsByKeyword.get(s.keyword_id) || 0) + 1);
       }
 
-      // CharIN: count test results by keyword_id from charin_test_results
+      // CharIN: count test results by keyword_id
       const charinByKeyword = new Map<string, number>();
-      // For now, no per-keyword charin data since results aren't linked yet
-      // But we have total event-level tests
+      for (const r of charinResults || []) {
+        if (r.keyword_id) charinByKeyword.set(r.keyword_id, (charinByKeyword.get(r.keyword_id) || 0) + 1);
+      }
       const totalCharinTests = (events || []).reduce((s, e) => s + (e.total_individual_tests || 0), 0);
 
       const cordisByKeyword = new Map<string, number>();
