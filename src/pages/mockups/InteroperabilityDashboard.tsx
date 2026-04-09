@@ -26,6 +26,7 @@ function useInteropData() {
         { data: standards, error: sErr },
         { data: keywords, error: kErr },
         { data: events },
+        { data: charinResults },
         { data: cordisRaw },
         { data: newsRaw },
       ] = await Promise.all([
@@ -42,6 +43,9 @@ function useInteropData() {
         supabase
           .from("charin_test_events")
           .select("id, total_individual_tests"),
+        supabase
+          .from("charin_test_results")
+          .select("keyword_id"),
         supabase
           .from("cordis_eu_projects")
           .select("keyword_id"),
