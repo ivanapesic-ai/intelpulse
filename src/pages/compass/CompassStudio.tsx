@@ -142,6 +142,9 @@ export default function CompassStudio() {
     return localStorage.getItem(PERSONA_KEY) || PERSONA_PRESETS[0].text;
   });
   const [error, setError] = useState<string | null>(null);
+  const [research, setResearch] = useState<{ content: string; citations: string[] } | null>(null);
+  const [researching, setResearching] = useState(false);
+  const [researchMode, setResearchMode] = useState<"overview" | "milestones" | "deep">("overview");
   const abortRef = useRef<AbortController | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
