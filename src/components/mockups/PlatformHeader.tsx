@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Compass, LayoutDashboard, LogOut, Brain, Network, Eye, Layers, Shield } from "lucide-react";
+import { Compass, LayoutDashboard, LogOut, Brain, Network, Eye, Layers, Shield, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
@@ -62,6 +62,16 @@ export function PlatformHeader() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Link to="/compass">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 border-amber-400/40 bg-amber-400/5 text-amber-600 hover:bg-amber-400/10 hover:text-amber-700 dark:text-amber-300"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Compass Preview
+              </Button>
+            </Link>
             <ThemeToggle />
             <Button
               variant="ghost"
