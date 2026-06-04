@@ -186,6 +186,14 @@ export function DataPipelinePanel() {
             if (error) throw error;
             break;
           }
+          case "backfill_snapshots": {
+            const { data: result, error } = await supabase.functions.invoke("backfill-signal-snapshots", {
+              body: { months_back: 48 },
+            });
+            if (error) throw error;
+            if (result && result.error) throw new Error(result.error);
+            break;
+          }
           case "analyze_lineage": {
             const { data: keywords, error: keywordsError } = await supabase
               .from("technology_keywords")
