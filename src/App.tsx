@@ -29,7 +29,17 @@ import CompassEcosystem from "./pages/compass/CompassEcosystem";
 import CompassTechnology from "./pages/compass/CompassTechnology";
 import CompassExplore from "./pages/compass/CompassExplore";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes — avoid refetch flash on route change
+      gcTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
