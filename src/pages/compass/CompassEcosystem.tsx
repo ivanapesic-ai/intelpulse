@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Network, LayoutGrid, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Search, Network, LayoutGrid } from "lucide-react";
 import { useTechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
 import { signalStrength, strengthBand, fmtFunding, getQuadrant, QUADRANT_META } from "./lib";
+import EcosystemRelationships from "./components/EcosystemRelationships";
 import { cn } from "@/lib/utils";
 
 export default function CompassEcosystem() {
