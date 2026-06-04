@@ -275,7 +275,7 @@ export default function CompassTechnology() {
           <OverviewTab tech={tech} s100={s100} trend={trend} signals={signals} drivers={drivers} blockers={blockers} news={news} onJump={setTab} />
         )}
         {tab === "signals" && <SignalsTab signals={signals} trend={trend} />}
-        {tab === "trends" && <TrendsTab tech={tech} companies={companies} research={research ?? null} />}
+        {tab === "trends" && <TrendsTab tech={tech} companies={companies} research={research ?? null} timeline={timeline} />}
         {tab === "news" && <NewsTab news={news} />}
         {tab === "standards" && <StandardsTab standards={standards} />}
         {tab === "related" && <RelatedTab related={related} />}
