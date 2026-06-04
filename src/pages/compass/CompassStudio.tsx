@@ -5,8 +5,9 @@ import {
   FileText, Download, Sparkles, X, Loader2, FlaskConical, MessageSquare,
   CheckCircle2, Send, Paperclip, Plus, Printer, TrendingUp, TrendingDown,
   User, Settings2, StopCircle, Search, Newspaper, ShieldCheck, Network,
-  Upload, ChevronDown, Info, Trash2,
+  Upload, ChevronDown, Info, Trash2, Globe, ExternalLink,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { useTechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
 import { loadWorkspace, toggleWorkspace, signalStrength, strengthBand, fmtFunding, loadStances, loadWorkspaceItems, removeWorkspaceItem, type WorkspaceItem } from "./lib";
 import { cn } from "@/lib/utils";
