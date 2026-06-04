@@ -8,7 +8,7 @@ import {
   Upload, ChevronDown, Info, Trash2,
 } from "lucide-react";
 import { useTechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
-import { loadWorkspace, toggleWorkspace, signalStrength, strengthBand, fmtFunding, loadStances } from "./lib";
+import { loadWorkspace, toggleWorkspace, signalStrength, strengthBand, fmtFunding, loadStances, loadWorkspaceItems, removeWorkspaceItem, type WorkspaceItem } from "./lib";
 import { cn } from "@/lib/utils";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
