@@ -29,7 +29,7 @@ const TEMPLATES: Array<{ id: TemplateId; label: string; description: string; aud
 
 const MODES: Array<{ id: Mode; label: string; icon: typeof FileText; hint: string }> = [
   { id: "report", label: "Compose Report", icon: FileText, hint: "Pick a template — the analyst writes the narrative." },
-  { id: "hypothesis", label: "Stress-test", icon: FlaskConical, hint: "State a thesis. The analyst weighs the evidence and delivers a verdict." },
+  { id: "hypothesis", label: "Hypothesis", icon: FlaskConical, hint: "State a thesis. The analyst weighs the evidence and delivers a verdict." },
   { id: "chat", label: "Ask Analyst", icon: MessageSquare, hint: "Free-form Q&A grounded in your selected items." },
 ];
 
