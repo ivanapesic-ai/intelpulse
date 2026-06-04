@@ -3,9 +3,11 @@ import { Link } from "react-router-dom";
 import { TrendingUp, TrendingDown, Minus, BookmarkPlus, Bookmark, RefreshCw, ArrowUp, ArrowDown, Sparkles, ArrowRight } from "lucide-react";
 import { useTechnologyIntelligence, type TechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
 import { useSignalSnapshots, computeDeltas } from "@/hooks/useSignalSnapshots";
+import { COQuadrantMatrix } from "@/components/intelligence/COQuadrantMatrix";
+import { useNavigate } from "react-router-dom";
 import {
   signalStrength, strengthBand, fmtFunding, loadWorkspace, toggleWorkspace,
-  getLastVisit, touchLastVisit, getQuadrant, QUADRANT_META, type Quadrant,
+  getLastVisit, touchLastVisit,
 } from "./lib";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +23,7 @@ function timeAgo(d: Date | null) {
 
 export default function CompassHome() {
   const { data: techs = [], isLoading } = useTechnologyIntelligence();
+  const navigate = useNavigate();
   const keywordIds = useMemo(() => techs.map((t) => t.keywordId).filter(Boolean), [techs]);
   const { data: snaps = [] } = useSignalSnapshots(keywordIds, 6);
   const [lastVisit] = useState(() => getLastVisit());
@@ -49,10 +52,6 @@ export default function CompassHome() {
   const ranked = [...techs]
     .map((t) => ({ t, s: signalStrength(t) }))
     .sort((a, b) => b.s - a.s);
-
-  // Bucket techs by quadrant
-  const buckets: Record<Quadrant, TechnologyIntelligence[]> = { qw: [], bb: [], wt: [], rt: [] };
-  techs.forEach((t) => { const q = getQuadrant(t); if (q) buckets[q].push(t); });
 
   const totalSignals = techs.length;
   const moverCount = movers.length;
@@ -128,51 +127,20 @@ export default function CompassHome() {
         )}
       </section>
 
-      {/* Strategy matrix — Quadrants */}
+      {/* Strategy matrix — reused canonical component */}
       <section>
         <div className="mb-5 flex items-end justify-between gap-3">
           <div>
             <p className="text-[10.5px] font-semibold tracking-[0.2em] uppercase text-muted-foreground">Strategy matrix</p>
             <h2 className="mt-1.5 text-lg font-semibold">Market position of every tracked technology</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Bucketed by Opportunity × Challenge scores from the live intelligence engine.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Plotted by Opportunity × Challenge from the live intelligence engine.</p>
           </div>
         </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          {(["qw","bb","wt","rt"] as Quadrant[]).map((q) => {
-            const meta = QUADRANT_META[q];
-            const items = buckets[q];
-            return (
-              <div key={q} className={cn("rounded-xl border p-5", meta.ring, meta.bg)}>
-                <div className="flex items-baseline justify-between gap-3">
-                  <div>
-                    <p className={cn("text-[10px] font-semibold uppercase tracking-[0.18em]", meta.text)}>{meta.horizon} · {meta.action}</p>
-                    <h3 className="mt-1 text-base font-semibold">{meta.label}</h3>
-                    <p className="text-[11px] text-muted-foreground">{meta.sub}</p>
-                  </div>
-                  <span className="text-2xl font-light tabular-nums text-muted-foreground">{items.length}</span>
-                </div>
-                {items.length === 0 ? (
-                  <p className="mt-4 text-[11px] text-muted-foreground italic">No technologies scored in this quadrant.</p>
-                ) : (
-                  <ul className="mt-4 space-y-1">
-                    {items.slice(0, 6).map((t) => {
-                      const s = signalStrength(t);
-                      return (
-                        <li key={t.id} className="flex items-center justify-between gap-2 text-sm">
-                          <Link to={`/technology/${t.keyword || t.id}`} className="truncate hover:text-primary">{t.name}</Link>
-                          <span className="text-xs text-muted-foreground tabular-nums">{s}</span>
-                        </li>
-                      );
-                    })}
-                    {items.length > 6 && (
-                      <li className="text-[11px] text-muted-foreground italic pt-1">+{items.length - 6} more</li>
-                    )}
-                  </ul>
-                )}
-              </div>
-            );
-          })}
+        <div className="rounded-2xl border border-border bg-card p-4 sm:p-6">
+          <COQuadrantMatrix
+            technologies={techs}
+            onSelectTechnology={(t) => navigate(`/technology/${t.keyword || t.id}`)}
+          />
         </div>
       </section>
 
