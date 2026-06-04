@@ -251,11 +251,11 @@ export default function CompassExplore() {
       id: `tech-${t.id}`,
       source: "technologies" as const,
       title: t.name,
-      subtitle: t.domain || undefined,
+      subtitle: t.domainName || undefined,
       description: t.description || undefined,
       keywordId: t.keywordId,
       keyword: t.name,
-      badges: [t.maturityLabel || "—"].filter(Boolean) as string[],
+      badges: t.maturityScore != null ? [`Maturity ${t.maturityScore.toFixed(1)}`] : [],
       rightMeta: fmtFunding(t.totalFundingEur),
     }));
   }, [techs, filters]);
