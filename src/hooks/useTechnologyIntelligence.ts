@@ -106,6 +106,12 @@ export const SECTOR_COLORS: Record<string, string> = {
 };
 
 function mapRowToIntelligence(row: any): TechnologyIntelligence {
+  const keyword = typeof row.slug === "string"
+    ? row.slug
+    : typeof row.keyword === "string"
+      ? row.keyword
+      : undefined;
+
   return {
     id: row.technology_id,
     name: row.name,
@@ -139,7 +145,7 @@ function mapRowToIntelligence(row: any): TechnologyIntelligence {
     avgRelevanceScore: row.avg_relevance_score ? Number(row.avg_relevance_score) : undefined,
     documentDiversity: row.document_diversity ?? undefined,
     aliases: row.aliases || [],
-    keyword: row.slug || undefined,
+    keyword,
     challengeScore: row.challenge_score,
     opportunityScore: row.opportunity_score,
     sectorTags: row.sector_tags || [],

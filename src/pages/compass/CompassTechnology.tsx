@@ -18,14 +18,10 @@ import { useKeywordStandards } from "@/hooks/useKeywordStandards";
 import { useTechnologyTimeline } from "@/hooks/useTechnologyTimeline";
 import {
   signalStrength, strengthBand, fmtFunding, getQuadrant, QUADRANT_META,
-  loadWorkspace, toggleWorkspace, loadStances, setStance,
+  loadWorkspace, toggleWorkspace, loadStances, setStance, getTechnologySlug, slugifyTechnologyValue,
 } from "./lib";
 import { RELATIONSHIPS, getTechById } from "./data/technologies";
 import { cn } from "@/lib/utils";
-
-function slugify(s: string) {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-}
 
 type TabId = "overview" | "signals" | "trends" | "news" | "standards" | "related" | "interop";
 const TABS: Array<{ id: TabId; label: string; hint: string }> = [
@@ -53,10 +49,7 @@ export default function CompassTechnology() {
 
   const tech = useMemo(() => {
     const s = String(slug || "").toLowerCase();
-    return techs.find((t) => {
-      const kw = typeof t.keyword === "string" ? t.keyword.toLowerCase() : "";
-      return kw === s || t.id === s || slugify(t.name) === s;
-    });
+    return techs.find((t) => getTechnologySlug(t) === s || slugifyTechnologyValue(t.name) === s);
   }, [techs, slug]);
 
   const staticTech = useMemo(() => getTechById(slug), [slug]);
