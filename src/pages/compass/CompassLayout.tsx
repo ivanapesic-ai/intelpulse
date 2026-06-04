@@ -24,8 +24,6 @@ export default function CompassLayout() {
           <Link to="/compass" className="flex items-center gap-2.5">
             <img src={logo} alt="" className="w-7 h-7" width={28} height={28} />
             <div className="flex items-baseline gap-2">
-              <span className="text-lg leading-none"><BrandName /></span>
-              <span className="text-foreground-tertiary text-xs">/</span>
               <span className="font-semibold tracking-tight text-base">N1 Signal</span>
               <span className="rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.15em] text-warning hidden sm:inline">
                 Preview
