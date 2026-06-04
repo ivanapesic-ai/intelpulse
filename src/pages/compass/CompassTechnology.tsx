@@ -192,9 +192,6 @@ export default function CompassTechnology() {
               </div>
             </>
           )}
-          <Link to={`/technology/${keywordId || slug}`} className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground">
-            Open classic deep dive <ArrowRight className="h-3 w-3" />
-          </Link>
         </div>
       </header>
 
