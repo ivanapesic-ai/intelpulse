@@ -106,6 +106,7 @@ type ReportData = {
 export default function CompassStudio() {
   const { data: techs = [] } = useTechnologyIntelligence();
   const [workspace, setWorkspace] = useState<string[]>(loadWorkspace());
+  const [wsItems, setWsItems] = useState<WorkspaceItem[]>(loadWorkspaceItems());
   const [imports, setImports] = useState<{ name: string; size: number }[]>([]);
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
   const [mode, setMode] = useState<Mode>("report");
