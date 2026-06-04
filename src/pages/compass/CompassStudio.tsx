@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import {
   FileText, Download, Sparkles, X, Loader2, FlaskConical, MessageSquare,
-  CheckCircle2, Send, Cpu, Bookmark, Paperclip, Plus,
+  CheckCircle2, Send, Bookmark, Paperclip, Plus, Printer, TrendingUp, TrendingDown,
 } from "lucide-react";
 import { useTechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
 import { loadWorkspace, toggleWorkspace, signalStrength, strengthBand, fmtFunding, loadStances } from "./lib";
@@ -27,6 +27,23 @@ const MODES: Array<{ id: Mode; label: string; icon: typeof FileText; hint: strin
   { id: "chat", label: "Ask Analyst", icon: MessageSquare, hint: "Free-form Q&A grounded in your selected items." },
 ];
 
+type ReportItem = {
+  id: string; name: string; description?: string;
+  signal: number; band: { label: string; color: string };
+  stance?: "bullish" | "bearish";
+  funding: number; companies: number; patents: number; news: number;
+};
+
+type ReportData = {
+  kind: "report" | "hypothesis";
+  title: string; date: string; subtitle: string; intro: string;
+  hypothesis?: string;
+  avgSignal: number; totalFunding: number; itemCount: number;
+  items: ReportItem[];
+  forItems?: ReportItem[]; againstItems?: ReportItem[];
+  imports: { name: string; size: number }[];
+};
+
 export default function CompassStudio() {
   const { data: techs = [] } = useTechnologyIntelligence();
   const [workspace, setWorkspace] = useState<string[]>(loadWorkspace());
@@ -40,7 +57,7 @@ export default function CompassStudio() {
   const [chatLog, setChatLog] = useState<{ role: "user" | "assistant"; text: string }[]>([
     { role: "assistant", text: "I can see every item in your workspace. Ask anything — comparisons, summaries, or a deep follow-up on any technology." },
   ]);
-  const [report, setReport] = useState<string | null>(null);
+  const [report, setReport] = useState<ReportData | null>(null);
   const [generating, setGenerating] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -51,60 +68,50 @@ export default function CompassStudio() {
   const included = items.filter((t) => !excluded.has(t!.keywordId));
   const stances = loadStances();
 
+  const buildItem = (t: any): ReportItem => {
+    const s = signalStrength(t);
+    return {
+      id: t.keywordId, name: t.name, description: t.description,
+      signal: s, band: strengthBand(s),
+      stance: stances[t.keywordId]?.stance,
+      funding: t.totalFundingEur || 0,
+      companies: t.dealroomCompanyCount || 0,
+      patents: t.totalPatents || 0,
+      news: t.newsMentionCount || 0,
+    };
+  };
+
   const generate = async () => {
     setGenerating(true);
-    await new Promise((r) => setTimeout(r, 700));
+    await new Promise((r) => setTimeout(r, 600));
     const date = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
     const tpl = TEMPLATES.find((t) => t.id === templateId)!;
-    const avg = Math.round(included.reduce((a, t: any) => a + signalStrength(t), 0) / Math.max(included.length, 1));
-    const totalFunding = included.reduce((a, t: any) => a + (t.totalFundingEur || 0), 0);
+    const built = included.map((t: any) => buildItem(t));
+    const avg = Math.round(built.reduce((a, b) => a + b.signal, 0) / Math.max(built.length, 1));
+    const totalFunding = built.reduce((a, b) => a + b.funding, 0);
 
-    let md = "";
     if (mode === "hypothesis") {
-      md = [
-        `# Hypothesis Test — ${date}`, "",
-        `**Hypothesis:** ${hypothesis || "(no hypothesis stated)"}`, "",
-        `## Evidence For`,
-        ...included.filter((t: any) => signalStrength(t) >= 60).map((t: any) =>
-          `- **${t.name}** (${signalStrength(t)}/100) — ${fmtFunding(t.totalFundingEur)} invested across ${t.dealroomCompanyCount} companies; ${t.totalPatents.toLocaleString()} patents.`),
-        "",
-        `## Evidence Against`,
-        ...included.filter((t: any) => signalStrength(t) < 60).map((t: any) =>
-          `- **${t.name}** (${signalStrength(t)}/100) — signal below conviction threshold; ${t.newsMentionCount} news mentions (12mo).`),
-        "",
-        `## Verdict`,
-        `${included.filter((t: any) => signalStrength(t) >= 60).length} of ${included.length} items support the hypothesis.`,
-      ].join("\n");
+      setReport({
+        kind: "hypothesis",
+        title: "Hypothesis Test",
+        date, subtitle: "Analyst verdict",
+        intro: hypothesis || "(no hypothesis stated)",
+        hypothesis: hypothesis || "(no hypothesis stated)",
+        avgSignal: avg, totalFunding, itemCount: built.length, items: built,
+        forItems: built.filter((b) => b.signal >= 60),
+        againstItems: built.filter((b) => b.signal < 60),
+        imports,
+      });
     } else {
-      md = [
-        `# ${tpl.label} — ${date}`, "",
-        `_Template: ${tpl.label} · ${tpl.audience} · ${tpl.length}_`, "",
-        `${prompt}`, "",
-        `## Executive summary`,
-        `${included.length} technologies under review. Average Signal Strength: **${avg}/100**. Combined tracked investment: **${fmtFunding(totalFunding)}**.`,
-        imports.length ? `\n${imports.length} uploaded file${imports.length === 1 ? "" : "s"} attached: ${imports.map((i) => i.name).join(", ")}.` : "",
-        "",
-        `## Per-technology read`,
-        ...included.map((t: any) => {
-          const s = signalStrength(t);
-          const band = strengthBand(s).label;
-          const stance = stances[t.keywordId]?.stance;
-          return [
-            `### ${t.name} — ${s}/100 (${band})`,
-            stance ? `_Stance: ${stance === "bullish" ? "Bullish 🟢" : "Bearish 🔴"}_` : "",
-            ``,
-            `- Investment: ${fmtFunding(t.totalFundingEur)} across ${t.dealroomCompanyCount} companies`,
-            `- Patents: ${t.totalPatents.toLocaleString()}`,
-            `- News mentions (12mo): ${t.newsMentionCount}`,
-            t.description ? `\n${t.description.slice(0, 280)}${t.description.length > 280 ? "…" : ""}` : "",
-          ].filter(Boolean).join("\n");
-        }),
-        "",
-        `---`,
-        `*Generated by N1 Signal · Workspace · Data is real, narrative is currently rule-based.*`,
-      ].join("\n");
+      setReport({
+        kind: "report",
+        title: tpl.label, date,
+        subtitle: `${tpl.audience} · ${tpl.length}`,
+        intro: prompt,
+        avgSignal: avg, totalFunding, itemCount: built.length, items: built,
+        imports,
+      });
     }
-    setReport(md);
     setGenerating(false);
   };
 
@@ -119,12 +126,23 @@ export default function CompassStudio() {
     setChatDraft("");
   };
 
-  const download = () => {
+  const downloadPdf = () => {
     if (!report) return;
-    const blob = new Blob([report], { type: "text/markdown" });
+    const html = renderReportHtml(report);
+    const w = window.open("", "_blank", "width=900,height=1100");
+    if (!w) return;
+    w.document.write(html);
+    w.document.close();
+    w.onload = () => { w.focus(); w.print(); };
+  };
+
+  const downloadHtml = () => {
+    if (!report) return;
+    const html = renderReportHtml(report);
+    const blob = new Blob([html], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `n1signal-${mode}-${Date.now()}.md`; a.click();
+    a.href = url; a.download = `n1signal-${report.kind}-${Date.now()}.html`; a.click();
     URL.revokeObjectURL(url);
   };
 
@@ -296,16 +314,23 @@ export default function CompassStudio() {
               </button>
             )}
 
-            {/* Output */}
+            {/* Visual Output */}
             {report && (
-              <div className="mt-2 rounded-xl border border-border">
+              <div className="mt-2 rounded-xl border border-border bg-background">
                 <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-                  <p className="text-xs font-medium">Generated · {mode}</p>
-                  <button onClick={download} className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary">
-                    <Download className="h-3 w-3" /> Download .md
-                  </button>
+                  <p className="text-xs font-medium">Preview · {report.kind}</p>
+                  <div className="flex items-center gap-2">
+                    <button onClick={downloadHtml} className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary">
+                      <Download className="h-3 w-3" /> HTML
+                    </button>
+                    <button onClick={downloadPdf} className="inline-flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1 text-xs text-primary-foreground hover:opacity-90">
+                      <Printer className="h-3 w-3" /> Download PDF
+                    </button>
+                  </div>
                 </div>
-                <pre className="max-h-[480px] overflow-auto whitespace-pre-wrap p-4 text-[12.5px] leading-relaxed text-muted-foreground">{report}</pre>
+                <div className="max-h-[640px] overflow-auto">
+                  <ReportPreview report={report} />
+                </div>
               </div>
             )}
           </div>
@@ -313,4 +338,258 @@ export default function CompassStudio() {
       </div>
     </div>
   );
+}
+
+// ─── Visual report preview (React) ─────────────────────────────────────────
+function ReportPreview({ report }: { report: ReportData }) {
+  return (
+    <article className="mx-auto max-w-3xl p-8 text-foreground">
+      <header className="border-b border-border pb-5">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">N1 Signal · Workspace</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight">{report.title}</h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">{report.subtitle} · {report.date}</p>
+      </header>
+
+      {report.kind === "hypothesis" && (
+        <section className="mt-5 rounded-lg border-l-4 border-primary bg-primary/[0.04] p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Hypothesis</p>
+          <p className="mt-1.5 text-[15px] font-medium leading-snug">{report.hypothesis}</p>
+        </section>
+      )}
+
+      {report.kind === "report" && (
+        <p className="mt-5 text-[13.5px] leading-relaxed text-muted-foreground">{report.intro}</p>
+      )}
+
+      {/* KPI grid */}
+      <div className="mt-6 grid grid-cols-3 gap-3">
+        <Kpi label="Technologies" value={report.itemCount.toString()} />
+        <Kpi label="Avg signal" value={`${report.avgSignal}/100`} accent={report.avgSignal >= 60 ? "text-emerald-600" : report.avgSignal >= 40 ? "text-amber-600" : "text-rose-600"} />
+        <Kpi label="Investment" value={fmtFunding(report.totalFunding)} />
+      </div>
+
+      {report.kind === "hypothesis" ? (
+        <>
+          <Section title={`Evidence for · ${report.forItems!.length}`} accent="emerald">
+            {report.forItems!.length ? report.forItems!.map((it) => <ItemRow key={it.id} item={it} />) : <Empty>No items above the 60/100 conviction threshold.</Empty>}
+          </Section>
+          <Section title={`Evidence against · ${report.againstItems!.length}`} accent="rose">
+            {report.againstItems!.length ? report.againstItems!.map((it) => <ItemRow key={it.id} item={it} />) : <Empty>No items below conviction threshold.</Empty>}
+          </Section>
+          <div className="mt-6 rounded-lg bg-secondary/40 p-4 text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Verdict</p>
+            <p className="mt-1 text-lg font-semibold">
+              {report.forItems!.length} of {report.items.length} items support the hypothesis
+            </p>
+          </div>
+        </>
+      ) : (
+        <Section title="Per-technology read">
+          {report.items.map((it) => <ItemRow key={it.id} item={it} expanded />)}
+        </Section>
+      )}
+
+      {report.imports.length > 0 && (
+        <Section title="Attachments">
+          <ul className="space-y-1 text-[12.5px] text-muted-foreground">
+            {report.imports.map((f) => (
+              <li key={f.name}>📎 {f.name} <span className="tabular-nums">({Math.round(f.size / 1024)}KB)</span></li>
+            ))}
+          </ul>
+        </Section>
+      )}
+
+      <footer className="mt-8 border-t border-border pt-4 text-center text-[10.5px] text-muted-foreground">
+        Generated by N1 Signal · Data is real, narrative is rule-based.
+      </footer>
+    </article>
+  );
+}
+
+function Kpi({ label, value, accent }: { label: string; value: string; accent?: string }) {
+  return (
+    <div className="rounded-lg border border-border p-3">
+      <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">{label}</p>
+      <p className={cn("mt-1 text-xl font-semibold tabular-nums", accent)}>{value}</p>
+    </div>
+  );
+}
+
+function Section({ title, children, accent }: { title: string; children: React.ReactNode; accent?: "emerald" | "rose" }) {
+  return (
+    <section className="mt-6">
+      <h2 className={cn(
+        "mb-3 text-[11px] font-semibold uppercase tracking-[0.16em]",
+        accent === "emerald" ? "text-emerald-700 dark:text-emerald-400" :
+        accent === "rose" ? "text-rose-700 dark:text-rose-400" : "text-foreground"
+      )}>{title}</h2>
+      <div className="space-y-2.5">{children}</div>
+    </section>
+  );
+}
+
+function Empty({ children }: { children: React.ReactNode }) {
+  return <p className="rounded-md border border-dashed border-border px-3 py-2 text-[12px] italic text-muted-foreground">{children}</p>;
+}
+
+function ItemRow({ item, expanded }: { item: ReportItem; expanded?: boolean }) {
+  const barColor = item.signal >= 60 ? "bg-emerald-500" : item.signal >= 40 ? "bg-amber-500" : "bg-rose-500";
+  return (
+    <div className="rounded-lg border border-border p-3.5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h3 className="text-[14px] font-semibold truncate">{item.name}</h3>
+            {item.stance === "bullish" && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
+                <TrendingUp className="h-2.5 w-2.5" /> Bullish
+              </span>
+            )}
+            {item.stance === "bearish" && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/12 px-2 py-0.5 text-[10px] font-semibold text-rose-700 dark:text-rose-400">
+                <TrendingDown className="h-2.5 w-2.5" /> Bearish
+              </span>
+            )}
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
+              <div className={cn("h-full rounded-full", barColor)} style={{ width: `${item.signal}%` }} />
+            </div>
+            <span className={cn("text-[11px] font-semibold tabular-nums", item.band.color)}>{item.signal}/100</span>
+            <span className={cn("text-[10px]", item.band.color)}>{item.band.label}</span>
+          </div>
+        </div>
+      </div>
+      <div className="mt-3 grid grid-cols-4 gap-2 text-center">
+        <Stat label="Investment" value={fmtFunding(item.funding)} />
+        <Stat label="Companies" value={item.companies.toLocaleString()} />
+        <Stat label="Patents" value={item.patents.toLocaleString()} />
+        <Stat label="News 12mo" value={item.news.toLocaleString()} />
+      </div>
+      {expanded && item.description && (
+        <p className="mt-3 border-t border-border pt-3 text-[12px] leading-relaxed text-muted-foreground">
+          {item.description.slice(0, 320)}{item.description.length > 320 ? "…" : ""}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md bg-secondary/40 px-2 py-1.5">
+      <p className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="mt-0.5 text-[11.5px] font-semibold tabular-nums">{value}</p>
+    </div>
+  );
+}
+
+// ─── Self-contained printable HTML (for new window → PDF) ──────────────────
+function renderReportHtml(r: ReportData): string {
+  const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+  const bar = (signal: number) => {
+    const color = signal >= 60 ? "#10b981" : signal >= 40 ? "#f59e0b" : "#f43f5e";
+    return `<div class="bar"><div class="bar-fill" style="width:${signal}%;background:${color}"></div></div>`;
+  };
+  const itemHtml = (it: ReportItem, expanded = false) => `
+    <div class="item">
+      <div class="item-head">
+        <h3>${esc(it.name)}</h3>
+        ${it.stance === "bullish" ? `<span class="pill bullish">▲ Bullish</span>` : ""}
+        ${it.stance === "bearish" ? `<span class="pill bearish">▼ Bearish</span>` : ""}
+      </div>
+      <div class="signal-row">
+        ${bar(it.signal)}
+        <span class="signal-num">${it.signal}/100</span>
+        <span class="signal-band">${esc(it.band.label)}</span>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="stat-l">Investment</div><div class="stat-v">${esc(fmtFunding(it.funding))}</div></div>
+        <div class="stat"><div class="stat-l">Companies</div><div class="stat-v">${it.companies.toLocaleString()}</div></div>
+        <div class="stat"><div class="stat-l">Patents</div><div class="stat-v">${it.patents.toLocaleString()}</div></div>
+        <div class="stat"><div class="stat-l">News 12mo</div><div class="stat-v">${it.news.toLocaleString()}</div></div>
+      </div>
+      ${expanded && it.description ? `<p class="desc">${esc(it.description.slice(0, 320))}${it.description.length > 320 ? "…" : ""}</p>` : ""}
+    </div>`;
+
+  const body = r.kind === "hypothesis"
+    ? `
+      <div class="hyp">
+        <div class="eyebrow">Hypothesis</div>
+        <p class="hyp-text">${esc(r.hypothesis!)}</p>
+      </div>
+      ${kpiHtml(r)}
+      <h2 class="sec emerald">Evidence for · ${r.forItems!.length}</h2>
+      ${r.forItems!.length ? r.forItems!.map((it) => itemHtml(it)).join("") : `<p class="empty">No items above 60/100 conviction.</p>`}
+      <h2 class="sec rose">Evidence against · ${r.againstItems!.length}</h2>
+      ${r.againstItems!.length ? r.againstItems!.map((it) => itemHtml(it)).join("") : `<p class="empty">No items below conviction.</p>`}
+      <div class="verdict">
+        <div class="eyebrow">Verdict</div>
+        <p class="verdict-text">${r.forItems!.length} of ${r.items.length} items support the hypothesis</p>
+      </div>`
+    : `
+      <p class="intro">${esc(r.intro)}</p>
+      ${kpiHtml(r)}
+      <h2 class="sec">Per-technology read</h2>
+      ${r.items.map((it) => itemHtml(it, true)).join("")}`;
+
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(r.title)} — N1 Signal</title>
+<style>
+  *{box-sizing:border-box}
+  body{font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;color:#0f172a;margin:0;padding:40px;max-width:780px;margin:0 auto;background:#fff}
+  header{border-bottom:1px solid #e2e8f0;padding-bottom:20px;margin-bottom:24px}
+  .eyebrow{font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#64748b}
+  header .eyebrow{color:#4f46e5}
+  h1{font-size:30px;font-weight:600;letter-spacing:-0.02em;margin:6px 0 4px}
+  .meta{font-size:13px;color:#64748b;margin:0}
+  .intro{font-size:13.5px;color:#475569;margin:20px 0}
+  .hyp{border-left:4px solid #4f46e5;background:#eef2ff;padding:14px 16px;border-radius:6px;margin:22px 0}
+  .hyp-text{font-size:15px;font-weight:500;margin:6px 0 0}
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:22px 0}
+  .kpi{border:1px solid #e2e8f0;border-radius:8px;padding:12px}
+  .kpi-v{font-size:20px;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums}
+  .kpi-v.good{color:#059669}.kpi-v.warn{color:#d97706}.kpi-v.bad{color:#e11d48}
+  h2.sec{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#0f172a;margin:28px 0 12px}
+  h2.sec.emerald{color:#047857}h2.sec.rose{color:#be123c}
+  .item{border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin-bottom:10px;page-break-inside:avoid}
+  .item-head{display:flex;align-items:center;gap:8px}
+  .item-head h3{font-size:14px;font-weight:600;margin:0;flex:1}
+  .pill{font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px}
+  .pill.bullish{background:#d1fae5;color:#065f46}
+  .pill.bearish{background:#ffe4e6;color:#9f1239}
+  .signal-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+  .bar{flex:1;height:6px;background:#f1f5f9;border-radius:99px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:99px}
+  .signal-num{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:#0f172a}
+  .signal-band{font-size:10px;color:#64748b}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+  .stat{background:#f8fafc;border-radius:5px;padding:6px;text-align:center}
+  .stat-l{font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:#64748b}
+  .stat-v{font-size:11.5px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
+  .desc{font-size:12px;color:#475569;border-top:1px solid #e2e8f0;padding-top:10px;margin:10px 0 0;line-height:1.55}
+  .empty{font-style:italic;color:#94a3b8;border:1px dashed #e2e8f0;padding:8px 12px;border-radius:6px;font-size:12px}
+  .verdict{text-align:center;background:#f1f5f9;border-radius:8px;padding:16px;margin-top:24px}
+  .verdict-text{font-size:18px;font-weight:600;margin:4px 0 0}
+  footer{border-top:1px solid #e2e8f0;padding-top:12px;margin-top:32px;font-size:10.5px;color:#94a3b8;text-align:center}
+  @page{margin:18mm 14mm}
+  @media print{body{padding:0;max-width:none}}
+</style></head><body>
+<header>
+  <div class="eyebrow">N1 Signal · Workspace</div>
+  <h1>${esc(r.title)}</h1>
+  <p class="meta">${esc(r.subtitle)} · ${esc(r.date)}</p>
+</header>
+${body}
+${r.imports.length ? `<h2 class="sec">Attachments</h2><ul>${r.imports.map((f) => `<li>📎 ${esc(f.name)} (${Math.round(f.size / 1024)}KB)</li>`).join("")}</ul>` : ""}
+<footer>Generated by N1 Signal · Data is real, narrative is rule-based.</footer>
+</body></html>`;
+}
+
+function kpiHtml(r: ReportData): string {
+  const avgClass = r.avgSignal >= 60 ? "good" : r.avgSignal >= 40 ? "warn" : "bad";
+  return `<div class="kpis">
+    <div class="kpi"><div class="eyebrow">Technologies</div><div class="kpi-v">${r.itemCount}</div></div>
+    <div class="kpi"><div class="eyebrow">Avg signal</div><div class="kpi-v ${avgClass}">${r.avgSignal}/100</div></div>
+    <div class="kpi"><div class="eyebrow">Investment</div><div class="kpi-v">${fmtFunding(r.totalFunding)}</div></div>
+  </div>`;
 }
