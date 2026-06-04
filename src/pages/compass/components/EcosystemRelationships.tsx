@@ -1,7 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Link2, X } from "lucide-react";
+import { ArrowRight, Link2, X, Plus, Bookmark } from "lucide-react";
+import { toast } from "sonner";
 import { DOMAINS, TECHS, RELATIONSHIPS, getTechById, getDomain, type DomainId } from "../data/technologies";
+import { useTechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
+import { loadWorkspace, toggleWorkspace } from "../lib";
 import { cn } from "@/lib/utils";
 
 export type RelType = "requires" | "enables" | "co-occurs" | "depends-on" | "interoperability";
@@ -243,6 +246,18 @@ function NodePanel({ techId, onClose, onPickEdge }: { techId: string; onClose: (
   const tech = getTechById(techId)!;
   const domain = getDomain(tech.domain)!;
   const incident = RELATIONSHIPS.filter((r) => r.source === techId || r.target === techId);
+  const { data: dbTechs = [] } = useTechnologyIntelligence();
+  const matched = useMemo(
+    () => dbTechs.find((t) => t.name.toLowerCase() === tech.name.toLowerCase()),
+    [dbTechs, tech.name],
+  );
+  const [workspace, setWorkspace] = useState<string[]>(loadWorkspace());
+  useEffect(() => {
+    const h = () => setWorkspace(loadWorkspace());
+    window.addEventListener("n1:workspace-changed", h);
+    return () => window.removeEventListener("n1:workspace-changed", h);
+  }, []);
+  const inWorkspace = matched ? workspace.includes(matched.keywordId) : false;
   return (
     <div>
       <PanelHeader onClose={onClose} eyebrow={domain.short} />
@@ -257,6 +272,24 @@ function NodePanel({ techId, onClose, onPickEdge }: { techId: string; onClose: (
         >
           Open Deep Dive <ArrowRight className="h-3 w-3" />
         </Link>
+        {matched && (
+          <button
+            type="button"
+            onClick={() => {
+              const inAfter = toggleWorkspace(matched.keywordId);
+              setWorkspace(loadWorkspace());
+              toast.success(inAfter ? "Added to Workspace" : "Removed from Workspace");
+            }}
+            className={cn(
+              "inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-[11.5px] font-medium transition-colors",
+              inWorkspace
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border bg-background text-foreground hover:border-primary/40 hover:text-primary"
+            )}
+          >
+            {inWorkspace ? <><Bookmark className="h-3 w-3" /> In Workspace</> : <><Plus className="h-3 w-3" /> Add to Workspace</>}
+          </button>
+        )}
       </div>
       <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">
         Incident relationships ({incident.length})
