@@ -428,8 +428,8 @@ export default function CompassExplore() {
           </div>
         )}
 
-        <div className="grid gap-3 md:grid-cols-2">
-          {merged.map((r) => (
+        {(() => {
+          const renderCard = (r: ResultItem) => (
             <article
               key={r.id}
               className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/30"
@@ -493,8 +493,60 @@ export default function CompassExplore() {
                 </div>
               </div>
             </article>
-          ))}
-        </div>
+          );
+
+          // Single-source view: simple grid
+          if (filters.source !== "all") {
+            return (
+              <div className="grid gap-3 md:grid-cols-2">{merged.map(renderCard)}</div>
+            );
+          }
+
+          // "All" view: group by source so users see what's present AND what's empty
+          const order: Exclude<SourceType, "all">[] = ["technologies", "companies", "news", "research", "standards"];
+          const bySource: Record<string, ResultItem[]> = {};
+          for (const r of merged) (bySource[r.source] ||= []).push(r);
+
+          return (
+            <div className="space-y-6">
+              {order.map((src) => {
+                const items = bySource[src] || [];
+                return (
+                  <div key={src} className="space-y-2">
+                    <div className="flex items-baseline gap-2">
+                      <span className={cn("h-1.5 w-1.5 rounded-full", SOURCE_DOT[src])} />
+                      <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                        {SOURCE_TAB_LABEL[src]}
+                      </h2>
+                      <span className="text-[11px] text-muted-foreground tabular-nums">{items.length}</span>
+                    </div>
+                    {items.length === 0 ? (
+                      <div className="rounded-lg border border-dashed border-border bg-card/30 px-4 py-3">
+                        <p className="text-xs text-muted-foreground">
+                          No {SOURCE_TAB_LABEL[src].toLowerCase()} match
+                          {filters.keywordId ? " this technology" : " your filters"}.
+                          {filters.source === "all" && (
+                            <>
+                              {" "}
+                              <button
+                                onClick={() => setFilters({ ...filters, source: src })}
+                                className="underline hover:text-foreground"
+                              >
+                                Search {SOURCE_TAB_LABEL[src].toLowerCase()} only
+                              </button>
+                            </>
+                          )}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid gap-3 md:grid-cols-2">{items.map(renderCard)}</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </section>
     </div>
   );
