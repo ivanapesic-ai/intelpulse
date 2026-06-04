@@ -2,9 +2,9 @@ import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Home, Bookmark, FileText, LogOut, Network } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import BrandName from "@/components/BrandName";
 import logo from "@/assets/logo.svg";
 import { cn } from "@/lib/utils";
+import DomainSelector, { DomainPreviewBanner } from "./components/DomainSelector";
 
 const nav = [
   { to: "/compass", label: "Briefing", icon: Home, end: true },
@@ -20,16 +20,15 @@ export default function CompassLayout() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-[1480px] items-center justify-between px-6">
-          <Link to="/compass" className="flex items-center gap-2.5">
-            <img src={logo} alt="" className="w-7 h-7" width={28} height={28} />
-            <div className="flex items-baseline gap-2">
+        <div className="mx-auto flex h-16 max-w-[1480px] items-center justify-between gap-4 px-6">
+          <div className="flex items-center gap-3">
+            <Link to="/compass" className="flex items-center gap-2.5">
+              <img src={logo} alt="" className="w-7 h-7" width={28} height={28} />
               <span className="font-semibold tracking-tight text-base">N1 Signal</span>
-              <span className="rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.15em] text-warning hidden sm:inline">
-                Preview
-              </span>
-            </div>
-          </Link>
+            </Link>
+            <span className="h-5 w-px bg-border" aria-hidden />
+            <DomainSelector />
+          </div>
 
           <nav className="flex items-center gap-1">
             {nav.map((item) => (
@@ -70,6 +69,7 @@ export default function CompassLayout() {
           </div>
         </div>
       </header>
+      <DomainPreviewBanner />
 
       <main className="relative mx-auto max-w-[1480px] px-6 py-10">
         <Outlet />
