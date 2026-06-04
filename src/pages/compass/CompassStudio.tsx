@@ -113,7 +113,7 @@ export default function CompassStudio() {
   const [chatLog, setChatLog] = useState<{ role: "user" | "assistant"; text: string }[]>(() => {
     if (typeof window === "undefined") return [{ role: "assistant", text: "I have your workspace in context. Ask comparisons, stress-tests, or follow-ups on any item." }];
     try {
-      const raw = localStorage.getItem("n1:studio:chatLog");
+      const raw = sessionStorage.getItem("n1:studio:chatLog");
       if (raw) return JSON.parse(raw);
     } catch {}
     return [{ role: "assistant", text: "I have your workspace in context. Ask comparisons, stress-tests, or follow-ups on any item." }];
@@ -121,10 +121,14 @@ export default function CompassStudio() {
   const [report, setReport] = useState<ReportData | null>(() => {
     if (typeof window === "undefined") return null;
     try {
-      const raw = localStorage.getItem("n1:studio:report");
+      const raw = sessionStorage.getItem("n1:studio:report");
       if (raw) return JSON.parse(raw);
     } catch {}
     return null;
+  });
+  const [savedReports, setSavedReports] = useState<Array<ReportData & { savedId: string; savedAt: number }>>(() => {
+    if (typeof window === "undefined") return [];
+    try { return JSON.parse(localStorage.getItem("n1:studio:savedReports") || "[]"); } catch { return []; }
   });
   const [generating, setGenerating] = useState(false);
   const [streamingText, setStreamingText] = useState(""); // live narrative while generating
@@ -140,11 +144,32 @@ export default function CompassStudio() {
 
   useEffect(() => { localStorage.setItem(PERSONA_KEY, persona); }, [persona]);
   useEffect(() => {
-    try { localStorage.setItem("n1:studio:report", JSON.stringify(report)); } catch {}
+    try {
+      if (report) sessionStorage.setItem("n1:studio:report", JSON.stringify(report));
+      else sessionStorage.removeItem("n1:studio:report");
+    } catch {}
   }, [report]);
   useEffect(() => {
-    try { localStorage.setItem("n1:studio:chatLog", JSON.stringify(chatLog)); } catch {}
+    try { sessionStorage.setItem("n1:studio:chatLog", JSON.stringify(chatLog)); } catch {}
   }, [chatLog]);
+  useEffect(() => {
+    try { localStorage.setItem("n1:studio:savedReports", JSON.stringify(savedReports)); } catch {}
+  }, [savedReports]);
+
+  const reportSig = (r: ReportData) => `${r.title}|${r.date}|${(r.narrative || "").slice(0, 80)}`;
+  const currentSaved = !!report && savedReports.some((r) => reportSig(r) === reportSig(report));
+  const saveReport = () => {
+    if (!report || currentSaved) return;
+    const entry = { ...report, savedId: `r_${Date.now().toString(36)}`, savedAt: Date.now() };
+    setSavedReports([entry, ...savedReports].slice(0, 20));
+  };
+  const loadSavedReport = (id: string) => {
+    const r = savedReports.find((x) => x.savedId === id);
+    if (r) setReport(r);
+  };
+  const deleteSavedReport = (id: string) => {
+    setSavedReports(savedReports.filter((r) => r.savedId !== id));
+  };
 
   const items = useMemo(
     () => workspace.map((kid) => techs.find((t) => t.keywordId === kid)).filter(Boolean),
