@@ -8,7 +8,7 @@ import {
   Upload, ChevronDown, Info, Trash2,
 } from "lucide-react";
 import { useTechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
-import { loadWorkspace, toggleWorkspace, signalStrength, strengthBand, fmtFunding, loadStances } from "./lib";
+import { loadWorkspace, toggleWorkspace, signalStrength, strengthBand, fmtFunding, loadStances, loadWorkspaceItems, removeWorkspaceItem, type WorkspaceItem } from "./lib";
 import { cn } from "@/lib/utils";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -106,6 +106,7 @@ type ReportData = {
 export default function CompassStudio() {
   const { data: techs = [] } = useTechnologyIntelligence();
   const [workspace, setWorkspace] = useState<string[]>(loadWorkspace());
+  const [wsItems, setWsItems] = useState<WorkspaceItem[]>(loadWorkspaceItems());
   const [imports, setImports] = useState<{ name: string; size: number }[]>([]);
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
   const [mode, setMode] = useState<Mode>("report");
@@ -208,10 +209,25 @@ export default function CompassStudio() {
     chatScrollRef.current?.scrollTo({ top: chatScrollRef.current.scrollHeight, behavior: "smooth" });
   }, [chatLog, streamingText]);
 
+  useEffect(() => {
+    const h = () => { setWorkspace(loadWorkspace()); setWsItems(loadWorkspaceItems()); };
+    window.addEventListener("n1:workspace-changed", h);
+    return () => window.removeEventListener("n1:workspace-changed", h);
+  }, []);
+
+  const wsItemsByKind = useMemo(() => {
+    const g: Record<string, WorkspaceItem[]> = {};
+    for (const i of wsItems) (g[i.kind] ||= []).push(i);
+    return g;
+  }, [wsItems]);
+  const KIND_GROUP_LABEL: Record<string, string> = {
+    news: "News", company: "Companies", research: "Research papers", standard: "Standards", import: "Files",
+  };
+
   const stop = () => { abortRef.current?.abort(); abortRef.current = null; setGenerating(false); };
 
   const generate = async () => {
-    if (included.length === 0) return;
+    if (included.length === 0 && wsItems.length === 0) return;
     setError(null);
     setGenerating(true);
     setStreamingText("");
@@ -224,9 +240,12 @@ export default function CompassStudio() {
     const totalFunding = built.reduce((a, b) => a + b.funding, 0);
     let narrative = "";
     try {
+      const references = wsItems.map((w) => ({
+        kind: w.kind, title: w.title, subtitle: w.subtitle, url: w.url, keywordId: w.keywordId,
+      }));
       const body = mode === "hypothesis"
-        ? { mode: "hypothesis", persona, items: itemsForAI(), payload: { hypothesis: hypothesis || "(none stated)" } }
-        : { mode: "report", persona, items: itemsForAI(), payload: { brief: tpl.brief, template: tpl.label, audience: tpl.audience } };
+        ? { mode: "hypothesis", persona, items: itemsForAI(), references, payload: { hypothesis: hypothesis || "(none stated)" } }
+        : { mode: "report", persona, items: itemsForAI(), references, payload: { brief: tpl.brief, template: tpl.label, audience: tpl.audience } };
       await streamAnalyst(body, (delta) => {
         narrative += delta;
         setStreamingText(narrative);
@@ -260,6 +279,7 @@ export default function CompassStudio() {
     try {
       await streamAnalyst({
         mode: "chat", persona, items: itemsForAI(),
+        references: wsItems.map((w) => ({ kind: w.kind, title: w.title, subtitle: w.subtitle, url: w.url, keywordId: w.keywordId })),
         history: chatLog, payload: { message: text },
       }, (delta) => {
         acc += delta;
@@ -410,7 +430,7 @@ export default function CompassStudio() {
 
             {/* Items zone */}
             <div className="px-3 py-2.5">
-              {items.length === 0 && imports.length === 0 ? (
+              {items.length === 0 && imports.length === 0 && wsItems.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-border p-5 text-center">
                   <FileText className="mx-auto h-5 w-5 text-muted-foreground" />
                   <p className="mt-2 text-[11px] text-muted-foreground">Nothing pinned yet.</p>
@@ -475,6 +495,40 @@ export default function CompassStudio() {
                       </ul>
                     </WorkspaceGroup>
                   )}
+
+                  {(["news", "company", "research", "standard"] as const).map((kind) => {
+                    const list = wsItemsByKind[kind];
+                    if (!list || list.length === 0) return null;
+                    return (
+                      <WorkspaceGroup key={kind} label={KIND_GROUP_LABEL[kind]} count={list.length} defaultOpen>
+                        <ul className="space-y-1">
+                          {list.map((w) => (
+                            <li key={w.id} className="group flex items-center gap-2 rounded-md px-1.5 py-1.5 hover:bg-secondary/50">
+                              <span className={cn(
+                                "h-1.5 w-1.5 shrink-0 rounded-full",
+                                kind === "news" ? "bg-sky-500" : kind === "company" ? "bg-emerald-500" : kind === "research" ? "bg-violet-500" : "bg-amber-500",
+                              )} />
+                              <div className="min-w-0 flex-1">
+                                {w.url ? (
+                                  <a href={w.url} target="_blank" rel="noopener noreferrer" className="block truncate text-[12px] font-medium leading-tight hover:text-primary">{w.title}</a>
+                                ) : (
+                                  <p className="truncate text-[12px] font-medium leading-tight">{w.title}</p>
+                                )}
+                                {w.subtitle && <p className="truncate text-[10px] leading-tight text-muted-foreground">{w.subtitle}</p>}
+                              </div>
+                              <button
+                                onClick={() => { removeWorkspaceItem(w.id); setWsItems(loadWorkspaceItems()); }}
+                                title="Remove from workspace"
+                                className="shrink-0 rounded p-0.5 text-muted-foreground opacity-0 hover:bg-rose-500/10 hover:text-rose-500 group-hover:opacity-100"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </WorkspaceGroup>
+                    );
+                  })}
                 </div>
               )}
 

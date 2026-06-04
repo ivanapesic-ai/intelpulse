@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
 import { ArrowLeft, Search, Save, Trash2, Plus, ExternalLink, Bookmark, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { toggleWorkspace, loadWorkspace, fmtFunding } from "./lib";
+import { toggleWorkspace, loadWorkspace, fmtFunding, toggleWorkspaceItem, loadWorkspaceItems, type WorkspaceItemKind } from "./lib";
 import { toast } from "sonner";
 
 // ---------- Types ----------
@@ -240,9 +240,10 @@ export default function CompassExplore() {
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [saved, setSaved] = useState<SavedSearch[]>(loadSaved());
   const [workspace, setWorkspace] = useState<string[]>(loadWorkspace());
+  const [wsItems, setWsItems] = useState(loadWorkspaceItems());
 
   useEffect(() => {
-    const h = () => setWorkspace(loadWorkspace());
+    const h = () => { setWorkspace(loadWorkspace()); setWsItems(loadWorkspaceItems()); };
     window.addEventListener("n1:workspace-changed", h);
     return () => window.removeEventListener("n1:workspace-changed", h);
   }, []);
@@ -479,24 +480,65 @@ export default function CompassExplore() {
                   {r.rightMeta && (
                     <span className="text-xs text-muted-foreground tabular-nums">{r.rightMeta}</span>
                   )}
-                  {r.keywordId && (
-                    <button
-                      onClick={() => {
-                        toggleWorkspace(r.keywordId!);
-                        setWorkspace(loadWorkspace());
-                        toast.success(workspace.includes(r.keywordId!) ? "Removed from Workspace" : "Added to Workspace");
-                      }}
-                      title={workspace.includes(r.keywordId) ? "In Workspace" : "Add to Workspace"}
-                      className={cn(
-                        "rounded-md border p-1.5 transition-colors",
-                        workspace.includes(r.keywordId)
-                          ? "border-primary/40 bg-primary/10 text-primary"
-                          : "border-border bg-background text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      {workspace.includes(r.keywordId) ? <Bookmark className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-                    </button>
-                  )}
+                  {(() => {
+                    // Technology rows use legacy keyword workspace (already feeds Studio).
+                    if (r.source === "technologies" && r.keywordId) {
+                      const inWs = workspace.includes(r.keywordId);
+                      return (
+                        <button
+                          onClick={() => {
+                            toggleWorkspace(r.keywordId!);
+                            setWorkspace(loadWorkspace());
+                            toast.success(inWs ? "Removed from Workspace" : "Added to Workspace");
+                          }}
+                          title={inWs ? "In Workspace" : "Add to Workspace"}
+                          className={cn(
+                            "inline-flex items-center gap-1 rounded-md border px-1.5 py-1 text-[10.5px] font-medium transition-colors",
+                            inWs
+                              ? "border-primary/40 bg-primary/10 text-primary"
+                              : "border-border bg-background text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          {inWs ? <Bookmark className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                          <span>{inWs ? "In workspace" : "Add"}</span>
+                        </button>
+                      );
+                    }
+                    // News / companies / research / standards → typed workspace items.
+                    const kindMap: Record<string, WorkspaceItemKind> = {
+                      news: "news", companies: "company", research: "research", standards: "standard",
+                    };
+                    const kind = kindMap[r.source];
+                    if (!kind) return null;
+                    const refId = r.id.replace(/^[a-z]+-/, "");
+                    const inWs = wsItems.some((i) => i.kind === kind && i.refId === refId);
+                    return (
+                      <button
+                        onClick={() => {
+                          const added = toggleWorkspaceItem({
+                            kind, refId,
+                            title: r.title, subtitle: r.subtitle, url: r.url,
+                            keywordId: r.keywordId,
+                            meta: { date: r.date, badges: r.badges, rightMeta: r.rightMeta, keyword: r.keyword },
+                          });
+                          setWsItems(loadWorkspaceItems());
+                          toast.success(added ? "Added to Workspace" : "Removed from Workspace", {
+                            description: added ? `${r.title.slice(0, 60)} · ready for report` : undefined,
+                          });
+                        }}
+                        title={inWs ? "In Workspace" : `Add ${SOURCE_LABEL[r.source].toLowerCase()} to Workspace`}
+                        className={cn(
+                          "inline-flex items-center gap-1 rounded-md border px-1.5 py-1 text-[10.5px] font-medium transition-colors",
+                          inWs
+                            ? "border-primary/40 bg-primary/10 text-primary"
+                            : "border-border bg-background text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        {inWs ? <Bookmark className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                        <span>{inWs ? "In workspace" : "Add"}</span>
+                      </button>
+                    );
+                  })()}
                 </div>
               </div>
             </article>
