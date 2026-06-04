@@ -36,8 +36,6 @@ verify_jwt = false
 [functions.fetch-cordis-projects]
 verify_jwt = false
 
-[functions.fetch-github-activity]
-verify_jwt = false
 
 [functions.fetch-gdelt-history]
 verify_jwt = false

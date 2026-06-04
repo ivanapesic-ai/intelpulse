@@ -14,7 +14,6 @@ interface InteropGapMatrixProps {
   keywords: KeywordRow[];
   standardsByKeyword: Map<string, number>;
   charinByKeyword: Map<string, number>;
-  githubByKeyword?: Map<string, number>;
   cordisByKeyword: Map<string, number>;
   newsByKeyword: Map<string, number>;
 }
