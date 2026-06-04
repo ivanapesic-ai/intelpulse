@@ -426,7 +426,7 @@ export default function CompassStudio() {
 
             {/* Items zone */}
             <div className="px-3 py-2.5">
-              {items.length === 0 && imports.length === 0 ? (
+              {items.length === 0 && imports.length === 0 && wsItems.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-border p-5 text-center">
                   <FileText className="mx-auto h-5 w-5 text-muted-foreground" />
                   <p className="mt-2 text-[11px] text-muted-foreground">Nothing pinned yet.</p>
