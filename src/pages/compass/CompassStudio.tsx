@@ -491,6 +491,40 @@ export default function CompassStudio() {
                       </ul>
                     </WorkspaceGroup>
                   )}
+
+                  {(["news", "company", "research", "standard"] as const).map((kind) => {
+                    const list = wsItemsByKind[kind];
+                    if (!list || list.length === 0) return null;
+                    return (
+                      <WorkspaceGroup key={kind} label={KIND_GROUP_LABEL[kind]} count={list.length} defaultOpen>
+                        <ul className="space-y-1">
+                          {list.map((w) => (
+                            <li key={w.id} className="group flex items-center gap-2 rounded-md px-1.5 py-1.5 hover:bg-secondary/50">
+                              <span className={cn(
+                                "h-1.5 w-1.5 shrink-0 rounded-full",
+                                kind === "news" ? "bg-sky-500" : kind === "company" ? "bg-emerald-500" : kind === "research" ? "bg-violet-500" : "bg-amber-500",
+                              )} />
+                              <div className="min-w-0 flex-1">
+                                {w.url ? (
+                                  <a href={w.url} target="_blank" rel="noopener noreferrer" className="block truncate text-[12px] font-medium leading-tight hover:text-primary">{w.title}</a>
+                                ) : (
+                                  <p className="truncate text-[12px] font-medium leading-tight">{w.title}</p>
+                                )}
+                                {w.subtitle && <p className="truncate text-[10px] leading-tight text-muted-foreground">{w.subtitle}</p>}
+                              </div>
+                              <button
+                                onClick={() => { removeWorkspaceItem(w.id); setWsItems(loadWorkspaceItems()); }}
+                                title="Remove from workspace"
+                                className="shrink-0 rounded p-0.5 text-muted-foreground opacity-0 hover:bg-rose-500/10 hover:text-rose-500 group-hover:opacity-100"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </WorkspaceGroup>
+                    );
+                  })}
                 </div>
               )}
 
