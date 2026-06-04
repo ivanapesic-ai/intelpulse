@@ -431,12 +431,41 @@ function SignalsTab({ signals, trend }: { signals: { key: SignalKey; v: number }
   );
 }
 
-function TrendsTab({ tech, companies, research }: { tech: any; companies: any[]; research: any }) {
+function TrendsTab({ tech, companies, research, timeline }: { tech: any; companies: any[]; research: any; timeline: any[] }) {
   const topCompanies = companies.slice(0, 12);
   const topInst = (research?.topInstitutions || []).slice(0, 8);
+  const hasTimeline = (timeline || []).some((p) => p.news || p.companies || p.fundingUsd || p.cordis || p.papers || p.github);
 
   return (
     <div className="space-y-6">
+      {/* Historical timeline */}
+      <section className="rounded-2xl border border-border bg-card p-5">
+        <SectionHeader title="Historical timeline" subtitle="Yearly footprint across news, companies, funding, EU research and open source" />
+        {!hasTimeline ? (
+          <p className="mt-3 text-xs text-muted-foreground">Not enough historical data yet for this technology.</p>
+        ) : (
+          <div className="mt-4 h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={timeline} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+                <CartesianGrid stroke="hsl(var(--border))" vertical={false} />
+                <XAxis dataKey="year" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="left" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} width={32} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} width={48}
+                  tickFormatter={(v) => v >= 1e9 ? `$${(v/1e9).toFixed(1)}B` : v >= 1e6 ? `$${(v/1e6).toFixed(0)}M` : ""} />
+                <ReTooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                  formatter={(v: any, name: string) => name === "Funding" ? [fmtFunding(Number(v)), name] : [v, name]} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar yAxisId="left" dataKey="news" name="News" fill="hsl(210 75% 55%)" radius={[3, 3, 0, 0]} />
+                <Bar yAxisId="left" dataKey="companies" name="Companies founded" fill="hsl(265 55% 55%)" radius={[3, 3, 0, 0]} />
+                <Bar yAxisId="left" dataKey="cordis" name="EU projects" fill="hsl(32 70% 50%)" radius={[3, 3, 0, 0]} />
+                <Bar yAxisId="left" dataKey="github" name="OSS repos" fill="hsl(140 55% 45%)" radius={[3, 3, 0, 0]} />
+                <Line yAxisId="right" type="monotone" dataKey="fundingUsd" name="Funding" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </section>
+
       {/* Companies */}
       <section className="rounded-2xl border border-border bg-card p-5">
         <SectionHeader title="Top companies by funding" subtitle={`${companies.length} companies linked to this technology`} />
