@@ -240,9 +240,10 @@ export default function CompassExplore() {
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [saved, setSaved] = useState<SavedSearch[]>(loadSaved());
   const [workspace, setWorkspace] = useState<string[]>(loadWorkspace());
+  const [wsItems, setWsItems] = useState(loadWorkspaceItems());
 
   useEffect(() => {
-    const h = () => setWorkspace(loadWorkspace());
+    const h = () => { setWorkspace(loadWorkspace()); setWsItems(loadWorkspaceItems()); };
     window.addEventListener("n1:workspace-changed", h);
     return () => window.removeEventListener("n1:workspace-changed", h);
   }, []);
