@@ -52,12 +52,11 @@ export default function CompassTechnology() {
   const { data: techs = [], isLoading } = useTechnologyIntelligence();
 
   const tech = useMemo(() => {
-    const s = slug.toLowerCase();
-    return techs.find((t) =>
-      (t.keyword || "").toLowerCase() === s ||
-      t.id === s ||
-      slugify(t.name) === s
-    );
+    const s = String(slug || "").toLowerCase();
+    return techs.find((t) => {
+      const kw = typeof t.keyword === "string" ? t.keyword.toLowerCase() : "";
+      return kw === s || t.id === s || slugify(t.name) === s;
+    });
   }, [techs, slug]);
 
   const staticTech = useMemo(() => getTechById(slug), [slug]);
