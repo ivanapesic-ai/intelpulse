@@ -689,6 +689,47 @@ export default function CompassStudio() {
               </div>
             )}
 
+            {/* Web research (Perplexity) */}
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-[12px] font-semibold inline-flex items-center gap-1.5"><Globe className="h-3.5 w-3.5" /> Augment with live web research</p>
+                  <p className="text-[11px] text-muted-foreground">Pulls grounded findings + citations for the workspace topics.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <select value={researchMode} onChange={(e) => setResearchMode(e.target.value as any)}
+                    className="rounded-md border border-border bg-background px-2 py-1 text-[11.5px]">
+                    <option value="overview">Overview (last month)</option>
+                    <option value="milestones">Dated milestones (24mo)</option>
+                    <option value="deep">Deep analyst note</option>
+                  </select>
+                  <button onClick={runResearch} disabled={researching || (included.length === 0 && wsItems.length === 0)}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-[12px] hover:bg-secondary disabled:opacity-40">
+                    {researching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+                    {researching ? "Researching…" : "Run research"}
+                  </button>
+                </div>
+              </div>
+              {research && (
+                <div className="mt-3 border-t border-border pt-3">
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <ReactMarkdown>{research.content}</ReactMarkdown>
+                  </div>
+                  {research.citations.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">Sources</p>
+                      <ol className="mt-1.5 space-y-1 text-[11.5px]">
+                        {research.citations.slice(0, 12).map((c, i) => (
+                          <li key={i}><a href={c} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline"><span className="tabular-nums text-muted-foreground">[{i + 1}]</span> {c} <ExternalLink className="h-3 w-3" /></a></li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+
             {/* Live streaming preview while generating reports/hypotheses */}
             {generating && mode !== "chat" && streamingText && (
               <div className="rounded-xl border border-primary/30 bg-primary/[0.03] p-5">
