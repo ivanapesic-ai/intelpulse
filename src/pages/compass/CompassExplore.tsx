@@ -406,8 +406,8 @@ export default function CompassExplore() {
               )}
             >
               {s === "all" ? "All" : SOURCE_TAB_LABEL[s as Exclude<SourceType, "all">]}
-              {s !== "all" && grouped[s] != null && (
-                <span className="ml-1.5 text-[10px] opacity-60">{grouped[s]}</span>
+              {s !== "all" && (
+                <span className="ml-1.5 text-[10px] opacity-60">{grouped[s] ?? 0}</span>
               )}
             </button>
           ))}
