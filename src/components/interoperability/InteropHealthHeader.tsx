@@ -5,7 +5,6 @@ import { Shield, FlaskConical, BookOpen, Activity } from "lucide-react";
 interface InteropHealthHeaderProps {
   totalStandards: number;
   totalCharinTests: number;
-  activeGithubRepos?: number;
   cordisProjects: number;
   keywordCount: number;
   fullCoverageCount: number;
