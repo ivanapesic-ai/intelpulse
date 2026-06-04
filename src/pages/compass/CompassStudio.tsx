@@ -240,9 +240,12 @@ export default function CompassStudio() {
     const totalFunding = built.reduce((a, b) => a + b.funding, 0);
     let narrative = "";
     try {
+      const references = wsItems.map((w) => ({
+        kind: w.kind, title: w.title, subtitle: w.subtitle, url: w.url, keywordId: w.keywordId,
+      }));
       const body = mode === "hypothesis"
-        ? { mode: "hypothesis", persona, items: itemsForAI(), payload: { hypothesis: hypothesis || "(none stated)" } }
-        : { mode: "report", persona, items: itemsForAI(), payload: { brief: tpl.brief, template: tpl.label, audience: tpl.audience } };
+        ? { mode: "hypothesis", persona, items: itemsForAI(), references, payload: { hypothesis: hypothesis || "(none stated)" } }
+        : { mode: "report", persona, items: itemsForAI(), references, payload: { brief: tpl.brief, template: tpl.label, audience: tpl.audience } };
       await streamAnalyst(body, (delta) => {
         narrative += delta;
         setStreamingText(narrative);
