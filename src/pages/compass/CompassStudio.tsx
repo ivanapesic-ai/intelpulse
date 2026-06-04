@@ -110,10 +110,22 @@ export default function CompassStudio() {
   const [templateId, setTemplateId] = useState<TemplateId>("executive");
   const [hypothesis, setHypothesis] = useState("");
   const [chatDraft, setChatDraft] = useState("");
-  const [chatLog, setChatLog] = useState<{ role: "user" | "assistant"; text: string }[]>([
-    { role: "assistant", text: "I have your workspace in context. Ask comparisons, stress-tests, or follow-ups on any item." },
-  ]);
-  const [report, setReport] = useState<ReportData | null>(null);
+  const [chatLog, setChatLog] = useState<{ role: "user" | "assistant"; text: string }[]>(() => {
+    if (typeof window === "undefined") return [{ role: "assistant", text: "I have your workspace in context. Ask comparisons, stress-tests, or follow-ups on any item." }];
+    try {
+      const raw = localStorage.getItem("n1:studio:chatLog");
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return [{ role: "assistant", text: "I have your workspace in context. Ask comparisons, stress-tests, or follow-ups on any item." }];
+  });
+  const [report, setReport] = useState<ReportData | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem("n1:studio:report");
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return null;
+  });
   const [generating, setGenerating] = useState(false);
   const [streamingText, setStreamingText] = useState(""); // live narrative while generating
   const [showPersona, setShowPersona] = useState(false);
@@ -127,6 +139,12 @@ export default function CompassStudio() {
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { localStorage.setItem(PERSONA_KEY, persona); }, [persona]);
+  useEffect(() => {
+    try { localStorage.setItem("n1:studio:report", JSON.stringify(report)); } catch {}
+  }, [report]);
+  useEffect(() => {
+    try { localStorage.setItem("n1:studio:chatLog", JSON.stringify(chatLog)); } catch {}
+  }, [chatLog]);
 
   const items = useMemo(
     () => workspace.map((kid) => techs.find((t) => t.keywordId === kid)).filter(Boolean),
