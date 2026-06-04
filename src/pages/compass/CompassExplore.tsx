@@ -213,6 +213,14 @@ const SOURCE_LABEL: Record<Exclude<SourceType, "all">, string> = {
   technologies: "Technology",
 };
 
+const SOURCE_TAB_LABEL: Record<Exclude<SourceType, "all">, string> = {
+  news: "News",
+  companies: "Companies",
+  research: "Research",
+  standards: "Standards",
+  technologies: "Technologies",
+};
+
 const SOURCE_DOT: Record<Exclude<SourceType, "all">, string> = {
   news: "bg-sky-500",
   companies: "bg-emerald-500",
