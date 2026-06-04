@@ -58,6 +58,31 @@ export default function CompassTechnology() {
     };
   }, []);
 
+  // Snapshot trend
+  const trend = useMemo(() => {
+    if (!snapshots.length) return [] as { label: string; composite: number; investment: number; patents: number; visibility: number }[];
+    return snapshots.map((s) => ({
+      label: new Date(s.snapshot_date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+      composite: Number(s.composite_score) || 0,
+      investment: Number(s.investment_score) || 0,
+      patents: Number(s.patents_score) || 0,
+      visibility: Number(s.visibility_score) || 0,
+    }));
+  }, [snapshots]);
+
+  // Related techs from static relationships graph
+  const related = useMemo(() => {
+    const matchId = staticTech?.id ?? slug;
+    return RELATIONSHIPS
+      .filter((r) => r.source === matchId || r.target === matchId)
+      .map((r) => {
+        const otherId = r.source === matchId ? r.target : r.source;
+        const other = getTechById(otherId);
+        return other ? { rel: r, other } : null;
+      })
+      .filter(Boolean) as { rel: typeof RELATIONSHIPS[number]; other: NonNullable<ReturnType<typeof getTechById>> }[];
+  }, [staticTech, slug]);
+
   if (isLoading) {
     return <div className="h-96 animate-pulse rounded-2xl border border-border bg-card" />;
   }
@@ -84,30 +109,6 @@ export default function CompassTechnology() {
   const inWs = keywordId ? ws.includes(keywordId) : false;
   const stance = keywordId ? stances[keywordId]?.stance : undefined;
 
-  // Snapshot trend
-  const trend = useMemo(() => {
-    if (!snapshots.length) return [] as { label: string; composite: number; investment: number; patents: number; visibility: number }[];
-    return snapshots.map((s) => ({
-      label: new Date(s.snapshot_date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
-      composite: Number(s.composite_score) || 0,
-      investment: Number(s.investment_score) || 0,
-      patents: Number(s.patents_score) || 0,
-      visibility: Number(s.visibility_score) || 0,
-    }));
-  }, [snapshots]);
-
-  // Related techs from static relationships graph
-  const related = useMemo(() => {
-    const matchId = staticTech?.id ?? slug;
-    return RELATIONSHIPS
-      .filter((r) => r.source === matchId || r.target === matchId)
-      .map((r) => {
-        const otherId = r.source === matchId ? r.target : r.source;
-        const other = getTechById(otherId);
-        return other ? { rel: r, other } : null;
-      })
-      .filter(Boolean) as { rel: typeof RELATIONSHIPS[number]; other: NonNullable<ReturnType<typeof getTechById>> }[];
-  }, [staticTech, slug]);
 
   const signals = tech ? [
     { key: "investment", v: tech.investmentScore },
