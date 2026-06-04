@@ -23,6 +23,7 @@ function timeAgo(d: Date | null) {
 
 export default function CompassHome() {
   const { data: techs = [], isLoading } = useTechnologyIntelligence();
+  const navigate = useNavigate();
   const keywordIds = useMemo(() => techs.map((t) => t.keywordId).filter(Boolean), [techs]);
   const { data: snaps = [] } = useSignalSnapshots(keywordIds, 6);
   const [lastVisit] = useState(() => getLastVisit());
@@ -51,10 +52,6 @@ export default function CompassHome() {
   const ranked = [...techs]
     .map((t) => ({ t, s: signalStrength(t) }))
     .sort((a, b) => b.s - a.s);
-
-  // Bucket techs by quadrant
-  const buckets: Record<Quadrant, TechnologyIntelligence[]> = { qw: [], bb: [], wt: [], rt: [] };
-  techs.forEach((t) => { const q = getQuadrant(t); if (q) buckets[q].push(t); });
 
   const totalSignals = techs.length;
   const moverCount = movers.length;
