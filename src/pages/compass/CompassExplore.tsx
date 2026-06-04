@@ -213,6 +213,14 @@ const SOURCE_LABEL: Record<Exclude<SourceType, "all">, string> = {
   technologies: "Technology",
 };
 
+const SOURCE_TAB_LABEL: Record<Exclude<SourceType, "all">, string> = {
+  news: "News",
+  companies: "Companies",
+  research: "Research",
+  standards: "Standards",
+  technologies: "Technologies",
+};
+
 const SOURCE_DOT: Record<Exclude<SourceType, "all">, string> = {
   news: "bg-sky-500",
   companies: "bg-emerald-500",
@@ -397,7 +405,7 @@ export default function CompassExplore() {
                   : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
               )}
             >
-              {s === "all" ? "All" : SOURCE_LABEL[s as Exclude<SourceType, "all">] + "s"}
+              {s === "all" ? "All" : SOURCE_TAB_LABEL[s as Exclude<SourceType, "all">]}
               {s !== "all" && grouped[s] != null && (
                 <span className="ml-1.5 text-[10px] opacity-60">{grouped[s]}</span>
               )}
