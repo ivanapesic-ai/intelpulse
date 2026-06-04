@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { TrendingUp, TrendingDown, X, Check, ArrowRight, Eye } from "lucide-react";
+import { TrendingUp, TrendingDown, X, Check, ArrowRight, Eye, Search } from "lucide-react";
 import { useTechnologyIntelligence, type TechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
 import { useSignalSnapshots, computeDeltas } from "@/hooks/useSignalSnapshots";
 import { loadStances, setStance, signalStrength, strengthBand, fmtFunding, loadWorkspace, toggleWorkspace, type Stance } from "./lib";
@@ -37,14 +37,22 @@ export default function CompassSignals() {
 
   return (
     <div className="space-y-10">
-      <header>
-        <p className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Watchlist with conviction</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">My Signals</h1>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Mark technologies you expect to accelerate as <span className="text-emerald-600 dark:text-emerald-300">bullish</span>,
-          and those you think are over-hyped or stalling as <span className="text-rose-600 dark:text-rose-300">bearish</span>.
-          We'll check your conviction against momentum.
-        </p>
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Watchlist with conviction</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight">My Signals</h1>
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+            Mark technologies you expect to accelerate as <span className="text-emerald-600 dark:text-emerald-300">bullish</span>,
+            and those you think are over-hyped or stalling as <span className="text-rose-600 dark:text-rose-300">bearish</span>.
+            We'll check your conviction against momentum.
+          </p>
+        </div>
+        <Link
+          to="/compass/explore"
+          className="hidden sm:inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-2 text-xs font-medium text-foreground hover:bg-secondary"
+        >
+          <Search className="h-3.5 w-3.5" /> Advanced search
+        </Link>
       </header>
 
       <div className="grid gap-6 md:grid-cols-2">
