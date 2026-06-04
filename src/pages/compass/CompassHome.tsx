@@ -3,9 +3,11 @@ import { Link } from "react-router-dom";
 import { TrendingUp, TrendingDown, Minus, BookmarkPlus, Bookmark, RefreshCw, ArrowUp, ArrowDown, Sparkles, ArrowRight } from "lucide-react";
 import { useTechnologyIntelligence, type TechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
 import { useSignalSnapshots, computeDeltas } from "@/hooks/useSignalSnapshots";
+import { COQuadrantMatrix } from "@/components/intelligence/COQuadrantMatrix";
+import { useNavigate } from "react-router-dom";
 import {
   signalStrength, strengthBand, fmtFunding, loadWorkspace, toggleWorkspace,
-  getLastVisit, touchLastVisit, getQuadrant, QUADRANT_META, type Quadrant,
+  getLastVisit, touchLastVisit,
 } from "./lib";
 import { cn } from "@/lib/utils";
 
