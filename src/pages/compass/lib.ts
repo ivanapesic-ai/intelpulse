@@ -101,6 +101,44 @@ export function toggleWorkspace(keywordId: string) {
   return items.includes(keywordId);
 }
 
+/* Typed workspace items (news, companies, research, standards, etc.) */
+export type WorkspaceItemKind = "news" | "company" | "research" | "standard" | "import";
+export interface WorkspaceItem {
+  id: string;          // stable: `${kind}:${refId}`
+  kind: WorkspaceItemKind;
+  refId: string;
+  title: string;
+  subtitle?: string;
+  url?: string;
+  keywordId?: string;
+  meta?: Record<string, unknown>;
+  addedAt: number;
+}
+
+const WORKSPACE_ITEMS_KEY = "n1signal:workspaceItems";
+export function loadWorkspaceItems(): WorkspaceItem[] {
+  try { return JSON.parse(localStorage.getItem(WORKSPACE_ITEMS_KEY) || "[]"); } catch { return []; }
+}
+export function hasWorkspaceItem(kind: WorkspaceItemKind, refId: string): boolean {
+  return loadWorkspaceItems().some((i) => i.kind === kind && i.refId === refId);
+}
+export function toggleWorkspaceItem(input: Omit<WorkspaceItem, "id" | "addedAt"> & { id?: string }): boolean {
+  const id = input.id ?? `${input.kind}:${input.refId}`;
+  const items = loadWorkspaceItems();
+  const idx = items.findIndex((i) => i.id === id);
+  let added: boolean;
+  if (idx >= 0) { items.splice(idx, 1); added = false; }
+  else { items.push({ ...input, id, addedAt: Date.now() }); added = true; }
+  localStorage.setItem(WORKSPACE_ITEMS_KEY, JSON.stringify(items));
+  window.dispatchEvent(new Event("n1:workspace-changed"));
+  return added;
+}
+export function removeWorkspaceItem(id: string) {
+  const items = loadWorkspaceItems().filter((i) => i.id !== id);
+  localStorage.setItem(WORKSPACE_ITEMS_KEY, JSON.stringify(items));
+  window.dispatchEvent(new Event("n1:workspace-changed"));
+}
+
 const LAST_VISIT_KEY = "n1signal:lastVisit";
 export function getLastVisit(): Date | null {
   const raw = localStorage.getItem(LAST_VISIT_KEY);
