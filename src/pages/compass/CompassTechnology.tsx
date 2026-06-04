@@ -87,7 +87,7 @@ export default function CompassTechnology() {
       label: new Date(s.snapshot_date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
       composite: Number(s.composite_score) || 0,
       investment: Number(s.investment_score) || 0,
-      research: Number(s.research_score) || 0,
+      research: Number((s as any).research_score) || 0,
       patents: Number(s.patents_score) || 0,
       visibility: Number(s.visibility_score) || 0,
     }));
@@ -369,7 +369,7 @@ function SignalsTab({ signals, trend }: { signals: { key: SignalKey; v: number }
             {(["composite", ...Object.keys(SIGNAL_LABELS)] as const).map((s) => (
               <button
                 key={s}
-                onClick={() => setActive(s)}
+                onClick={() => setActive(s as SignalKey | "composite")}
                 className={cn(
                   "rounded-full border px-2.5 py-1 text-[11.5px] font-medium transition-colors",
                   active === s ? "border-foreground bg-foreground text-background" : "border-border bg-background text-muted-foreground hover:bg-secondary"
