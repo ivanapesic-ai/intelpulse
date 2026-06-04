@@ -26,6 +26,7 @@ import CompassHome from "./pages/compass/CompassHome";
 import CompassSignals from "./pages/compass/CompassSignals";
 import CompassStudio from "./pages/compass/CompassStudio";
 import CompassEcosystem from "./pages/compass/CompassEcosystem";
+import CompassTechnology from "./pages/compass/CompassTechnology";
 
 const queryClient = new QueryClient();
 
@@ -103,6 +104,7 @@ const App = () => (
                 <Route path="ecosystem" element={<CompassEcosystem />} />
                 <Route path="signals" element={<CompassSignals />} />
                 <Route path="studio" element={<CompassStudio />} />
+                <Route path="technology/:slug" element={<CompassTechnology />} />
               </Route>
 
               {/* Catch-all */}

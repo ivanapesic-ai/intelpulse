@@ -70,7 +70,7 @@ export default function CompassEcosystem() {
             const q = getQuadrant(t);
             const meta = q ? QUADRANT_META[q] : null;
             return (
-              <Link key={t.id} to={`/technology/${t.keyword || t.id}`}
+              <Link key={t.id} to={`/compass/technology/${t.keyword || t.id}`}
                 className="group flex flex-col rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/30 hover:shadow-sm">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">

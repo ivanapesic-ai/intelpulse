@@ -252,7 +252,7 @@ function NodePanel({ techId, onClose, onPickEdge }: { techId: string; onClose: (
       </div>
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Link
-          to={`/technology/${tech.id}`}
+          to={`/compass/technology/${tech.id}`}
           className="inline-flex items-center gap-1 rounded-md bg-foreground px-2.5 py-1.5 text-[11.5px] font-medium text-background hover:opacity-90"
         >
           Open Deep Dive <ArrowRight className="h-3 w-3" />
@@ -306,12 +306,12 @@ function EdgePanel({ rel, onClose }: { rel: typeof RELATIONSHIPS[number]; onClos
         </span>
       </div>
       <div className="flex items-center gap-2 text-[14px] font-semibold">
-        <Link to={`/technology/${s.id}`} className="inline-flex items-center gap-1.5 rounded px-1 -mx-1 hover:bg-secondary">
+        <Link to={`/compass/technology/${s.id}`} className="inline-flex items-center gap-1.5 rounded px-1 -mx-1 hover:bg-secondary">
           <span className="h-2 w-2 rounded-sm" style={{ background: s.color }} />
           {s.shortName ?? s.name}
         </Link>
         <Link2 className="h-3.5 w-3.5 text-muted-foreground" />
-        <Link to={`/technology/${t.id}`} className="inline-flex items-center gap-1.5 rounded px-1 -mx-1 hover:bg-secondary">
+        <Link to={`/compass/technology/${t.id}`} className="inline-flex items-center gap-1.5 rounded px-1 -mx-1 hover:bg-secondary">
           <span className="h-2 w-2 rounded-sm" style={{ background: t.color }} />
           {t.shortName ?? t.name}
         </Link>
@@ -319,13 +319,13 @@ function EdgePanel({ rel, onClose }: { rel: typeof RELATIONSHIPS[number]; onClos
       <p className="mt-3 text-[12.5px] text-muted-foreground leading-relaxed">{rel.note}</p>
       <div className="mt-4 flex flex-wrap items-center gap-2 pt-3 border-t border-border">
         <Link
-          to={`/technology/${s.id}`}
+          to={`/compass/technology/${s.id}`}
           className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11.5px] font-medium hover:bg-secondary"
         >
           {s.shortName ?? s.name} Deep Dive <ArrowRight className="h-3 w-3" />
         </Link>
         <Link
-          to={`/technology/${t.id}`}
+          to={`/compass/technology/${t.id}`}
           className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11.5px] font-medium hover:bg-secondary"
         >
           {t.shortName ?? t.name} Deep Dive <ArrowRight className="h-3 w-3" />
