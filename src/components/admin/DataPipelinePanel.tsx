@@ -69,6 +69,12 @@ const DEFAULT_STEPS: Omit<PipelineStep, "status">[] = [
     enabled: true,
   },
   {
+    id: "backfill_snapshots",
+    label: "Backfill Signal Snapshots (history)",
+    description: "Replay news, companies & EU projects month-by-month back 48 months",
+    enabled: false,
+  },
+  {
     id: "analyze_lineage",
     label: "Analyze Signal Lineage",
     description: "Use AI to identify conceptual links between research, patents & news",
