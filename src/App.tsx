@@ -21,6 +21,10 @@ import HorizonsPage from "./pages/mockups/HorizonsPage";
 import TechnologyDeepDive from "./pages/mockups/TechnologyDeepDive";
 import V2GInteropMatrix from "./pages/mockups/V2GInteropMatrix";
 import InteroperabilityDashboard from "./pages/mockups/InteroperabilityDashboard";
+import CompassLayout from "./pages/compass/CompassLayout";
+import CompassHome from "./pages/compass/CompassHome";
+import CompassSignals from "./pages/compass/CompassSignals";
+import CompassStudio from "./pages/compass/CompassStudio";
 
 const queryClient = new QueryClient();
 
@@ -87,6 +91,17 @@ const App = () => (
                   <InteroperabilityDashboard />
                 </ProtectedRoute>
               } />
+
+              {/* Compass UX sandbox */}
+              <Route path="/compass" element={
+                <ProtectedRoute>
+                  <CompassLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<CompassHome />} />
+                <Route path="signals" element={<CompassSignals />} />
+                <Route path="studio" element={<CompassStudio />} />
+              </Route>
 
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
