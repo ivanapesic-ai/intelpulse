@@ -538,6 +538,14 @@ export default function CompassStudio() {
                 <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
                   <p className="text-xs font-medium">Preview · {report.kind}</p>
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={saveReport}
+                      disabled={currentSaved}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary disabled:opacity-50"
+                      title={currentSaved ? "Already saved" : "Save to your library (kept across sessions)"}
+                    >
+                      {currentSaved ? "Saved" : "Save"}
+                    </button>
                     <button onClick={downloadHtml} className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary">
                       <Download className="h-3 w-3" /> HTML
                     </button>
@@ -549,6 +557,30 @@ export default function CompassStudio() {
                 <div className="max-h-[640px] overflow-auto">
                   <ReportPreview report={report} />
                 </div>
+                <p className="border-t border-border px-4 py-2 text-[11px] text-muted-foreground">
+                  Draft is kept for this browser session only. Click <span className="font-medium text-foreground">Save</span> to keep it in your library.
+                </p>
+              </div>
+            )}
+
+            {savedReports.length > 0 && (
+              <div className="mt-3 rounded-xl border border-border bg-background">
+                <div className="border-b border-border px-4 py-2.5">
+                  <p className="text-xs font-medium">Saved reports <span className="text-muted-foreground">({savedReports.length})</span></p>
+                </div>
+                <ul className="divide-y divide-border">
+                  {savedReports.map((r) => (
+                    <li key={r.savedId} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                      <button onClick={() => loadSavedReport(r.savedId)} className="flex-1 truncate text-left text-[13px] hover:text-primary">
+                        <span className="font-medium">{r.title}</span>
+                        <span className="ml-2 text-[11px] text-muted-foreground">{r.date} · {r.itemCount} tech</span>
+                      </button>
+                      <button onClick={() => deleteSavedReport(r.savedId)} className="text-[11px] text-muted-foreground hover:text-rose-600">
+                        Delete
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
           </div>
