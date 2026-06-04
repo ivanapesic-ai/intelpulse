@@ -100,6 +100,7 @@ const App = () => (
                 </ProtectedRoute>
               }>
                 <Route index element={<CompassHome />} />
+                <Route path="ecosystem" element={<CompassEcosystem />} />
                 <Route path="signals" element={<CompassSignals />} />
                 <Route path="studio" element={<CompassStudio />} />
               </Route>
