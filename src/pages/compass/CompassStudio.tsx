@@ -209,6 +209,21 @@ export default function CompassStudio() {
     chatScrollRef.current?.scrollTo({ top: chatScrollRef.current.scrollHeight, behavior: "smooth" });
   }, [chatLog, streamingText]);
 
+  useEffect(() => {
+    const h = () => { setWorkspace(loadWorkspace()); setWsItems(loadWorkspaceItems()); };
+    window.addEventListener("n1:workspace-changed", h);
+    return () => window.removeEventListener("n1:workspace-changed", h);
+  }, []);
+
+  const wsItemsByKind = useMemo(() => {
+    const g: Record<string, WorkspaceItem[]> = {};
+    for (const i of wsItems) (g[i.kind] ||= []).push(i);
+    return g;
+  }, [wsItems]);
+  const KIND_GROUP_LABEL: Record<string, string> = {
+    news: "News", company: "Companies", research: "Research papers", standard: "Standards", import: "Files",
+  };
+
   const stop = () => { abortRef.current?.abort(); abortRef.current = null; setGenerating(false); };
 
   const generate = async () => {
