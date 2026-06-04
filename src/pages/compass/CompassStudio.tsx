@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import {
   FileText, Download, Sparkles, X, Loader2, FlaskConical, MessageSquare,
   CheckCircle2, Send, Paperclip, Plus, Printer, TrendingUp, TrendingDown,
-  User, Settings2, StopCircle,
+  User, Settings2, StopCircle, Search, Newspaper, ShieldCheck, Network,
+  Upload, ChevronDown, Info, Trash2,
 } from "lucide-react";
 import { useTechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
 import { loadWorkspace, toggleWorkspace, signalStrength, strengthBand, fmtFunding, loadStances } from "./lib";
@@ -342,65 +344,148 @@ export default function CompassStudio() {
         )}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-        {/* LEFT — selected items */}
-        <aside className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-[10.5px] font-medium uppercase tracking-widest text-muted-foreground">Selected items</h3>
-            <span className="text-[10.5px] text-muted-foreground">{included.length}/{items.length}</span>
+      <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)]">
+        {/* LEFT — workspace (single card, two zones) */}
+        <aside>
+          <div className="rounded-xl border border-border bg-card">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2.5">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <h3 className="text-[11px] font-semibold uppercase tracking-widest">Workspace</h3>
+                <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">{items.length}</span>
+                <span title="Items here are sent to the AI analyst as context for reports, hypotheses and chat." className="text-muted-foreground hover:text-foreground cursor-help">
+                  <Info className="h-3 w-3" />
+                </span>
+              </div>
+              {items.length > 0 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setExcluded(new Set(items.map((t: any) => t.keywordId)))}
+                    title="Uncheck all (keep in workspace, exclude from next AI turn)"
+                    className="rounded px-1.5 py-0.5 text-[10.5px] text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  >
+                    Uncheck all
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!confirm(`Remove all ${items.length} items from your workspace?`)) return;
+                      items.forEach((t: any) => toggleWorkspace(t.keywordId));
+                      setWorkspace(loadWorkspace());
+                      setExcluded(new Set());
+                    }}
+                    title="Remove every item from the workspace"
+                    className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500"
+                  >
+                    <Trash2 className="h-3 w-3" /> Clear
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Add zone */}
+            <div className="border-b border-border px-3 py-2.5">
+              <p className="mb-1.5 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">Add from</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                <Link to="/compass/explore" className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1.5 text-[11px] hover:border-primary/40 hover:text-primary">
+                  <Search className="h-3 w-3" /> Search
+                </Link>
+                <Link to="/compass/signals" className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1.5 text-[11px] hover:border-primary/40 hover:text-primary">
+                  <Newspaper className="h-3 w-3" /> Signals
+                </Link>
+                <Link to="/compass/ecosystem" className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1.5 text-[11px] hover:border-primary/40 hover:text-primary">
+                  <Network className="h-3 w-3" /> Ecosystem
+                </Link>
+                <Link to="/compass/explore?source=standards" className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1.5 text-[11px] hover:border-primary/40 hover:text-primary">
+                  <ShieldCheck className="h-3 w-3" /> Standards
+                </Link>
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  className="col-span-2 inline-flex items-center justify-center gap-1.5 rounded-md border border-border bg-background px-2 py-1.5 text-[11px] hover:border-primary/40 hover:text-primary"
+                >
+                  <Upload className="h-3 w-3" /> Import file
+                </button>
+              </div>
+              <input ref={fileRef} type="file" multiple hidden onChange={(e) => { onImport(e.target.files); if (fileRef.current) fileRef.current.value = ""; }} />
+            </div>
+
+            {/* Items zone */}
+            <div className="px-3 py-2.5">
+              {items.length === 0 && imports.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-border p-5 text-center">
+                  <FileText className="mx-auto h-5 w-5 text-muted-foreground" />
+                  <p className="mt-2 text-[11px] text-muted-foreground">Nothing pinned yet.</p>
+                  <p className="mt-0.5 text-[10.5px] text-muted-foreground">Use the buttons above to add technologies, news or files.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {items.length > 0 && (
+                    <WorkspaceGroup
+                      label="Technologies"
+                      count={items.length}
+                      defaultOpen
+                    >
+                      <ul className="space-y-1">
+                        {items.map((t: any) => {
+                          const isOff = excluded.has(t.keywordId);
+                          const s = signalStrength(t);
+                          const band = strengthBand(s);
+                          return (
+                            <li key={t.id} className={cn("group flex items-center gap-2 rounded-md px-1.5 py-1.5 transition-colors", isOff ? "opacity-50" : "hover:bg-secondary/50")}>
+                              <input
+                                type="checkbox"
+                                checked={!isOff}
+                                onChange={() => setExcluded((p) => { const n = new Set(p); n.has(t.keywordId) ? n.delete(t.keywordId) : n.add(t.keywordId); return n; })}
+                                title={isOff ? "Include in next AI turn" : "Exclude from next AI turn"}
+                                className="h-3.5 w-3.5 shrink-0 accent-primary"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-[12px] font-medium leading-tight">{t.name}</p>
+                                <p className={cn("text-[10px] leading-tight", band.color)}>{band.label} · {s}/100</p>
+                              </div>
+                              <button
+                                onClick={() => { toggleWorkspace(t.keywordId); setWorkspace(loadWorkspace()); }}
+                                title="Remove from workspace"
+                                className="shrink-0 rounded p-0.5 text-muted-foreground opacity-0 hover:bg-rose-500/10 hover:text-rose-500 group-hover:opacity-100"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </WorkspaceGroup>
+                  )}
+
+                  {imports.length > 0 && (
+                    <WorkspaceGroup label="Files" count={imports.length} defaultOpen>
+                      <ul className="space-y-1">
+                        {imports.map((f, i) => (
+                          <li key={f.name + i} className="group flex items-center gap-2 rounded-md px-1.5 py-1.5 hover:bg-secondary/50">
+                            <Paperclip className="h-3 w-3 shrink-0 text-muted-foreground" />
+                            <span className="min-w-0 flex-1 truncate text-[11.5px]">{f.name}</span>
+                            <span className="shrink-0 tabular-nums text-[10px] text-muted-foreground">{Math.round(f.size / 1024)}KB</span>
+                            <button
+                              onClick={() => setImports((p) => p.filter((_, idx) => idx !== i))}
+                              className="shrink-0 rounded p-0.5 text-muted-foreground opacity-0 hover:bg-rose-500/10 hover:text-rose-500 group-hover:opacity-100"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </WorkspaceGroup>
+                  )}
+                </div>
+              )}
+
+              {items.length > 0 && (
+                <p className="mt-3 border-t border-border pt-2 text-[10px] text-muted-foreground">
+                  <CheckCircle2 className="mr-1 inline h-2.5 w-2.5" />
+                  {included.length} of {items.length} will be sent to the analyst.
+                </p>
+              )}
+            </div>
           </div>
-
-          {items.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border p-6 text-center">
-              <FileText className="mx-auto h-6 w-6 text-muted-foreground" />
-              <p className="mt-3 text-xs text-muted-foreground">Pin technologies from the Briefing using the bookmark icon.</p>
-            </div>
-          ) : (
-            <ul className="space-y-2">
-              {items.map((t: any) => {
-                const isOff = excluded.has(t.keywordId);
-                const s = signalStrength(t);
-                const band = strengthBand(s);
-                return (
-                  <li key={t.id} className={cn("rounded-lg border p-2.5 transition-colors", isOff ? "border-dashed border-border bg-secondary/30 opacity-60" : "border-border bg-card")}>
-                    <div className="flex items-start gap-2">
-                      <input type="checkbox" checked={!isOff} onChange={() => setExcluded((p) => { const n = new Set(p); n.has(t.keywordId) ? n.delete(t.keywordId) : n.add(t.keywordId); return n; })}
-                        className="mt-0.5 h-3.5 w-3.5 accent-primary" />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[12px] font-medium">{t.name}</p>
-                        <p className={cn("text-[10.5px]", band.color)}>{band.label} · {s}/100</p>
-                      </div>
-                      <button onClick={() => { toggleWorkspace(t.keywordId); setWorkspace(loadWorkspace()); }}
-                        className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-secondary hover:text-foreground">
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-
-          {imports.length > 0 && (
-            <div className="rounded-xl border border-border p-3">
-              <p className="mb-2 text-[10.5px] font-medium uppercase tracking-widest text-muted-foreground">Imports</p>
-              <ul className="space-y-1">
-                {imports.map((f) => (
-                  <li key={f.name} className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                    <Paperclip className="h-3 w-3" />
-                    <span className="truncate">{f.name}</span>
-                    <span className="ml-auto tabular-nums">{Math.round(f.size / 1024)}KB</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <input ref={fileRef} type="file" multiple hidden onChange={(e) => { onImport(e.target.files); if (fileRef.current) fileRef.current.value = ""; }} />
-          <button onClick={() => fileRef.current?.click()}
-            className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border bg-secondary/40 px-3 py-2 text-[11.5px] text-muted-foreground hover:border-primary/40 hover:text-foreground">
-            <Plus className="h-3.5 w-3.5" /> Import files
-          </button>
         </aside>
 
         {/* CENTER — Analyst console */}
