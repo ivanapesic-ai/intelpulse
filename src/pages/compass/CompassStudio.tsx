@@ -227,7 +227,7 @@ export default function CompassStudio() {
   const stop = () => { abortRef.current?.abort(); abortRef.current = null; setGenerating(false); };
 
   const generate = async () => {
-    if (included.length === 0) return;
+    if (included.length === 0 && wsItems.length === 0) return;
     setError(null);
     setGenerating(true);
     setStreamingText("");
