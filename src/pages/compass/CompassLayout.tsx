@@ -9,7 +9,7 @@ import DomainSelector, { DomainPreviewBanner } from "./components/DomainSelector
 const nav = [
   { to: "/compass", label: "Briefing", icon: Home, end: true },
   { to: "/compass/ecosystem", label: "Ecosystem", icon: Network },
-  { to: "/compass/signals", label: "My Signals", icon: Bookmark },
+  { to: "/compass/signals", label: "Signals", icon: Bookmark },
   { to: "/compass/studio", label: "Workspace", icon: FileText },
 ];
 
