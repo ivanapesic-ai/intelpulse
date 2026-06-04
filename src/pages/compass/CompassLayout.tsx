@@ -76,7 +76,7 @@ export default function CompassLayout() {
       </main>
 
       <footer className="border-t border-border py-6 text-center text-xs text-foreground-tertiary">
-        N1 Signal · UX experiment on <BrandName /> · Data is live, layouts are exploratory
+        N1 Signal · UX experiment · Data is live, layouts are exploratory
       </footer>
     </div>
   );
