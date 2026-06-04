@@ -1,31 +1,89 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import {
   FileText, Download, Sparkles, X, Loader2, FlaskConical, MessageSquare,
-  CheckCircle2, Send, Bookmark, Paperclip, Plus, Printer, TrendingUp, TrendingDown,
+  CheckCircle2, Send, Paperclip, Plus, Printer, TrendingUp, TrendingDown,
+  User, Settings2, StopCircle,
 } from "lucide-react";
 import { useTechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
 import { loadWorkspace, toggleWorkspace, signalStrength, strengthBand, fmtFunding, loadStances } from "./lib";
 import { cn } from "@/lib/utils";
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const ANALYST_URL = `${SUPABASE_URL}/functions/v1/compass-analyst`;
+
 type Mode = "report" | "hypothesis" | "chat";
 type TemplateId = "executive" | "deep-dive" | "momentum" | "watchlist";
 
-const TEMPLATES: Array<{ id: TemplateId; label: string; description: string; audience: string; length: string; prompt: string }> = [
+const TEMPLATES: Array<{ id: TemplateId; label: string; description: string; audience: string; length: string; brief: string }> = [
   { id: "executive", label: "Executive Brief", description: "Leadership-ready summary: key moves, risks and asks.", audience: "Leadership", length: "~1 page",
-    prompt: "Draft a 1-page executive brief. Lead with the top movements, then risks, then a single recommended action." },
+    brief: "1-page executive brief: top movements, risks, single recommended action." },
   { id: "deep-dive", label: "Technology Deep Dive", description: "Detailed analysis with momentum, standards and interop.", audience: "Analysts", length: "~4 pages",
-    prompt: "Produce a deep dive covering momentum, drivers, related standards and interoperability impact." },
+    brief: "Deep dive: momentum, drivers, standards landscape, interoperability impact." },
   { id: "momentum", label: "Momentum Update", description: "What moved up, what moved down, and why.", audience: "Strategy", length: "~2 pages",
-    prompt: "Summarize momentum across the selected items. Group by rising, stable and declining; call out the strongest driver for each." },
+    brief: "Momentum summary grouped as rising / stable / declining with strongest driver each." },
   { id: "watchlist", label: "Watchlist Review", description: "Stance check on bullish vs bearish items.", audience: "Owners", length: "~2 pages",
-    prompt: "Review each item. Confirm or challenge the stance based on the selected signals." },
+    brief: "Review each watchlist item, confirm or challenge the user's stance based on signals." },
 ];
 
 const MODES: Array<{ id: Mode; label: string; icon: typeof FileText; hint: string }> = [
-  { id: "report", label: "Compose Report", icon: FileText, hint: "Pick a template and generate a structured report." },
-  { id: "hypothesis", label: "Test Hypothesis", icon: FlaskConical, hint: "State a thesis. The analyst weighs evidence." },
+  { id: "report", label: "Compose Report", icon: FileText, hint: "Pick a template — the analyst writes the narrative." },
+  { id: "hypothesis", label: "Stress-test", icon: FlaskConical, hint: "State a thesis. The analyst weighs the evidence and delivers a verdict." },
   { id: "chat", label: "Ask Analyst", icon: MessageSquare, hint: "Free-form Q&A grounded in your selected items." },
 ];
+
+const PERSONA_PRESETS = [
+  { id: "analyst", label: "Sober Analyst", text: "You are a sober, executive-grade technology intelligence analyst. Reason only from the workspace data. If data is thin, say so. Be terse, structured, no fluff." },
+  { id: "vc", label: "VC Investor", text: "You are a Series-B technology investor. Frame everything in terms of investability: market timing, defensibility, capital efficiency, exit paths. Be opinionated but data-grounded." },
+  { id: "oem", label: "OEM Strategy Lead", text: "You are head of strategy at a global OEM. Frame everything in terms of make/buy/partner decisions, supplier risk, time-to-platform, and competitive exposure." },
+  { id: "standards", label: "Standards Expert", text: "You are a standards and interoperability expert. Frame everything in terms of consortia momentum, protocol convergence, compliance risk, and ecosystem lock-in." },
+];
+
+const PERSONA_KEY = "n1:analyst:persona";
+
+// ─── SSE streaming helper ─────────────────────────────────────────────────
+async function streamAnalyst(
+  body: Record<string, unknown>,
+  onDelta: (chunk: string) => void,
+  signal: AbortSignal,
+): Promise<void> {
+  const res = await fetch(ANALYST_URL, {
+    method: "POST",
+    signal,
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${SUPABASE_KEY}`,
+      "apikey": SUPABASE_KEY,
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok || !res.body) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || `HTTP ${res.status}`);
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const lines = buf.split("\n");
+    buf = lines.pop() || "";
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data:")) continue;
+      const data = trimmed.slice(5).trim();
+      if (data === "[DONE]") return;
+      try {
+        const json = JSON.parse(data);
+        const delta = json?.choices?.[0]?.delta?.content;
+        if (delta) onDelta(delta);
+      } catch { /* skip */ }
+    }
+  }
+}
 
 type ReportItem = {
   id: string; name: string; description?: string;
@@ -33,14 +91,13 @@ type ReportItem = {
   stance?: "bullish" | "bearish";
   funding: number; companies: number; patents: number; news: number;
 };
-
 type ReportData = {
   kind: "report" | "hypothesis";
-  title: string; date: string; subtitle: string; intro: string;
-  hypothesis?: string;
+  title: string; date: string; subtitle: string;
+  brief?: string; hypothesis?: string;
+  narrative: string; // AI-generated
   avgSignal: number; totalFunding: number; itemCount: number;
   items: ReportItem[];
-  forItems?: ReportItem[]; againstItems?: ReportItem[];
   imports: { name: string; size: number }[];
 };
 
@@ -51,15 +108,25 @@ export default function CompassStudio() {
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
   const [mode, setMode] = useState<Mode>("report");
   const [templateId, setTemplateId] = useState<TemplateId>("executive");
-  const [prompt, setPrompt] = useState(TEMPLATES[0].prompt);
   const [hypothesis, setHypothesis] = useState("");
   const [chatDraft, setChatDraft] = useState("");
   const [chatLog, setChatLog] = useState<{ role: "user" | "assistant"; text: string }[]>([
-    { role: "assistant", text: "I can see every item in your workspace. Ask anything — comparisons, summaries, or a deep follow-up on any technology." },
+    { role: "assistant", text: "I have your workspace in context. Ask comparisons, stress-tests, or follow-ups on any item." },
   ]);
   const [report, setReport] = useState<ReportData | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [streamingText, setStreamingText] = useState(""); // live narrative while generating
+  const [showPersona, setShowPersona] = useState(false);
+  const [persona, setPersona] = useState<string>(() => {
+    if (typeof window === "undefined") return PERSONA_PRESETS[0].text;
+    return localStorage.getItem(PERSONA_KEY) || PERSONA_PRESETS[0].text;
+  });
+  const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { localStorage.setItem(PERSONA_KEY, persona); }, [persona]);
 
   const items = useMemo(
     () => workspace.map((kid) => techs.find((t) => t.keywordId === kid)).filter(Boolean),
@@ -81,49 +148,86 @@ export default function CompassStudio() {
     };
   };
 
+  // AI item payload (compact for prompt)
+  const itemsForAI = () => included.map((t: any) => {
+    const it = buildItem(t);
+    return {
+      name: it.name, signal: it.signal, band: it.band.label,
+      stance: it.stance, funding: it.funding, companies: it.companies,
+      patents: it.patents, news: it.news,
+      description: it.description,
+    };
+  });
+
+  useEffect(() => {
+    chatScrollRef.current?.scrollTo({ top: chatScrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [chatLog, streamingText]);
+
+  const stop = () => { abortRef.current?.abort(); abortRef.current = null; setGenerating(false); };
+
   const generate = async () => {
+    if (included.length === 0) return;
+    setError(null);
     setGenerating(true);
-    await new Promise((r) => setTimeout(r, 600));
+    setStreamingText("");
+    const ac = new AbortController();
+    abortRef.current = ac;
     const date = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
     const tpl = TEMPLATES.find((t) => t.id === templateId)!;
     const built = included.map((t: any) => buildItem(t));
     const avg = Math.round(built.reduce((a, b) => a + b.signal, 0) / Math.max(built.length, 1));
     const totalFunding = built.reduce((a, b) => a + b.funding, 0);
-
-    if (mode === "hypothesis") {
-      setReport({
-        kind: "hypothesis",
-        title: "Hypothesis Test",
-        date, subtitle: "Analyst verdict",
-        intro: hypothesis || "(no hypothesis stated)",
-        hypothesis: hypothesis || "(no hypothesis stated)",
-        avgSignal: avg, totalFunding, itemCount: built.length, items: built,
-        forItems: built.filter((b) => b.signal >= 60),
-        againstItems: built.filter((b) => b.signal < 60),
-        imports,
-      });
-    } else {
-      setReport({
-        kind: "report",
-        title: tpl.label, date,
-        subtitle: `${tpl.audience} · ${tpl.length}`,
-        intro: prompt,
-        avgSignal: avg, totalFunding, itemCount: built.length, items: built,
-        imports,
-      });
+    let narrative = "";
+    try {
+      const body = mode === "hypothesis"
+        ? { mode: "hypothesis", persona, items: itemsForAI(), payload: { hypothesis: hypothesis || "(none stated)" } }
+        : { mode: "report", persona, items: itemsForAI(), payload: { brief: tpl.brief, template: tpl.label, audience: tpl.audience } };
+      await streamAnalyst(body, (delta) => {
+        narrative += delta;
+        setStreamingText(narrative);
+      }, ac.signal);
+    } catch (e: any) {
+      if (e.name !== "AbortError") setError(e.message || "Analyst failed");
     }
+    setReport({
+      kind: mode === "hypothesis" ? "hypothesis" : "report",
+      title: mode === "hypothesis" ? "Hypothesis Stress-test" : tpl.label,
+      date, subtitle: mode === "hypothesis" ? "Analyst verdict" : `${tpl.audience} · ${tpl.length}`,
+      brief: tpl.brief, hypothesis: mode === "hypothesis" ? hypothesis : undefined,
+      narrative, avgSignal: avg, totalFunding, itemCount: built.length, items: built, imports,
+    });
     setGenerating(false);
+    setStreamingText("");
+    abortRef.current = null;
   };
 
-  const sendChat = () => {
+  const sendChat = async () => {
     const text = chatDraft.trim();
-    if (!text) return;
-    const top = [...included].sort((a, b) => signalStrength(b as any) - signalStrength(a as any))[0] as any;
-    const reply = top
-      ? `Looking across your ${included.length} workspace items, **${top.name}** is the standout (${signalStrength(top)}/100 — ${fmtFunding(top.totalFundingEur)} invested). To answer "${text}": this is best evaluated by combining momentum and conviction. The strongest evidence comes from investment and research signals.`
-      : `Your workspace is empty — add a few technologies first and I can compare them.`;
-    setChatLog((p) => [...p, { role: "user", text }, { role: "assistant", text: reply }]);
+    if (!text || generating) return;
+    setError(null);
     setChatDraft("");
+    const next = [...chatLog, { role: "user" as const, text }];
+    setChatLog([...next, { role: "assistant" as const, text: "" }]);
+    setGenerating(true);
+    const ac = new AbortController();
+    abortRef.current = ac;
+    let acc = "";
+    try {
+      await streamAnalyst({
+        mode: "chat", persona, items: itemsForAI(),
+        history: chatLog, payload: { message: text },
+      }, (delta) => {
+        acc += delta;
+        setChatLog([...next, { role: "assistant", text: acc }]);
+      }, ac.signal);
+    } catch (e: any) {
+      if (e.name !== "AbortError") {
+        setError(e.message || "Analyst failed");
+        setChatLog([...next, { role: "assistant", text: "_Sorry — analyst unreachable._" }]);
+      }
+    }
+    setGenerating(false);
+    abortRef.current = null;
   };
 
   const downloadPdf = () => {
@@ -131,11 +235,9 @@ export default function CompassStudio() {
     const html = renderReportHtml(report);
     const w = window.open("", "_blank", "width=900,height=1100");
     if (!w) return;
-    w.document.write(html);
-    w.document.close();
+    w.document.write(html); w.document.close();
     w.onload = () => { w.focus(); w.print(); };
   };
-
   const downloadHtml = () => {
     if (!report) return;
     const html = renderReportHtml(report);
@@ -145,7 +247,6 @@ export default function CompassStudio() {
     a.href = url; a.download = `n1signal-${report.kind}-${Date.now()}.html`; a.click();
     URL.revokeObjectURL(url);
   };
-
   const onImport = (files: FileList | null) => {
     if (!files) return;
     setImports((p) => [...p, ...Array.from(files).map((f) => ({ name: f.name, size: f.size }))]);
@@ -160,17 +261,42 @@ export default function CompassStudio() {
             <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">Workspace</p>
             <h1 className="mt-2 text-xl font-semibold">Where exploration becomes analysis, hypothesis and report</h1>
             <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
-              Everything you pinned converges here. Your analyst reads it all — compose a report, test a hypothesis, or just ask a question.
+              Everything you pinned converges here. Your AI analyst reads it all — compose a report, stress-test a thesis, or just ask.
             </p>
           </div>
-          <span className={cn(
-            "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11.5px] font-medium",
-            included.length > 0 ? "bg-primary/10 text-primary" : "bg-secondary text-muted-foreground"
-          )}>
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            {included.length}/{items.length} items ready for the analyst
-          </span>
+          <div className="flex flex-col items-end gap-2">
+            <span className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11.5px] font-medium",
+              included.length > 0 ? "bg-primary/10 text-primary" : "bg-secondary text-muted-foreground"
+            )}>
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              {included.length}/{items.length} items ready
+            </span>
+            <button onClick={() => setShowPersona((v) => !v)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-[11px] text-muted-foreground hover:text-foreground hover:border-primary/40">
+              <User className="h-3 w-3" /> Analyst persona
+              <Settings2 className="h-3 w-3" />
+            </button>
+          </div>
         </div>
+
+        {showPersona && (
+          <div className="mt-4 rounded-xl border border-border bg-card p-4">
+            <p className="text-[10.5px] font-medium uppercase tracking-widest text-muted-foreground">Who is the analyst?</p>
+            <p className="mt-1 text-[11.5px] text-muted-foreground">Same data, re-framed for the reader. Pick a preset or write your own.</p>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {PERSONA_PRESETS.map((p) => (
+                <button key={p.id} onClick={() => setPersona(p.text)}
+                  className={cn("rounded-full border px-3 py-1 text-[11px] transition-colors",
+                    persona === p.text ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <textarea value={persona} onChange={(e) => setPersona(e.target.value)} rows={3}
+              className="mt-3 w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-[12.5px] focus:border-primary focus:outline-none" />
+          </div>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
@@ -261,61 +387,110 @@ export default function CompassStudio() {
 
           <div className="p-5 space-y-4">
             {mode === "report" && (
-              <>
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                  {TEMPLATES.map((t) => (
-                    <button key={t.id} onClick={() => { setTemplateId(t.id); setPrompt(t.prompt); setReport(null); }}
-                      className={cn(
-                        "rounded-lg border p-3 text-left transition-all",
-                        templateId === t.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
-                      )}>
-                      <p className="text-[12.5px] font-semibold">{t.label}</p>
-                      <p className="mt-1 text-[10.5px] text-muted-foreground line-clamp-2">{t.description}</p>
-                      <p className="mt-1.5 text-[10px] text-muted-foreground">{t.audience} · {t.length}</p>
-                    </button>
-                  ))}
-                </div>
-                <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={3}
-                  className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none" />
-              </>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                {TEMPLATES.map((t) => (
+                  <button key={t.id} onClick={() => { setTemplateId(t.id); setReport(null); }}
+                    className={cn(
+                      "rounded-lg border p-3 text-left transition-all",
+                      templateId === t.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                    )}>
+                    <p className="text-[12.5px] font-semibold">{t.label}</p>
+                    <p className="mt-1 text-[10.5px] text-muted-foreground line-clamp-2">{t.description}</p>
+                    <p className="mt-1.5 text-[10px] text-muted-foreground">{t.audience} · {t.length}</p>
+                  </button>
+                ))}
+              </div>
             )}
 
             {mode === "hypothesis" && (
-              <textarea value={hypothesis} onChange={(e) => setHypothesis(e.target.value)} rows={3}
-                placeholder="e.g. 'SDV middleware will consolidate around 2 vendors by 2027'"
-                className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none" />
+              <div>
+                <label className="text-[10.5px] font-medium uppercase tracking-widest text-muted-foreground">Your thesis</label>
+                <textarea value={hypothesis} onChange={(e) => setHypothesis(e.target.value)} rows={3}
+                  placeholder="e.g. 'SDV middleware will consolidate around 2 vendors by 2027'"
+                  className="mt-2 w-full resize-none rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none" />
+              </div>
             )}
 
             {mode === "chat" && (
               <div className="space-y-3">
-                <div className="max-h-72 space-y-2 overflow-y-auto rounded-lg border border-border bg-secondary/30 p-3">
+                <div ref={chatScrollRef} className="max-h-96 space-y-3 overflow-y-auto rounded-lg border border-border bg-background p-4">
                   {chatLog.map((m, i) => (
-                    <div key={i} className={cn("rounded-lg px-3 py-2 text-[12.5px]", m.role === "user" ? "ml-8 bg-primary/10 text-foreground" : "mr-8 bg-card border border-border")}>
-                      {m.text}
+                    <div key={i} className={cn("flex gap-2", m.role === "user" ? "justify-end" : "justify-start")}>
+                      {m.role === "assistant" && (
+                        <div className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                          <Sparkles className="h-3 w-3" />
+                        </div>
+                      )}
+                      <div className={cn(
+                        "max-w-[85%] rounded-2xl px-3.5 py-2 text-[13px] leading-relaxed",
+                        m.role === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-secondary/60 text-foreground"
+                      )}>
+                        {m.role === "assistant"
+                          ? (m.text
+                              ? <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_p]:my-1.5 [&_ul]:my-1.5 [&_li]:my-0">
+                                  <ReactMarkdown>{m.text}</ReactMarkdown>
+                                </div>
+                              : <span className="inline-flex gap-1 text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />thinking…</span>)
+                          : m.text}
+                      </div>
                     </div>
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  <input value={chatDraft} onChange={(e) => setChatDraft(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendChat()}
-                    placeholder="Ask the analyst about your workspace…"
-                    className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none" />
-                  <button onClick={sendChat} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground hover:opacity-90">
-                    <Send className="h-3.5 w-3.5" /> Send
-                  </button>
+                  <input value={chatDraft} onChange={(e) => setChatDraft(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && sendChat()}
+                    disabled={generating}
+                    placeholder={included.length ? "Ask the analyst about your workspace…" : "Pin items first, then ask…"}
+                    className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none disabled:opacity-50" />
+                  {generating ? (
+                    <button onClick={stop} className="inline-flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-2 text-sm hover:bg-secondary/70">
+                      <StopCircle className="h-3.5 w-3.5" /> Stop
+                    </button>
+                  ) : (
+                    <button onClick={sendChat} disabled={!chatDraft.trim() || included.length === 0}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground hover:opacity-90 disabled:opacity-40">
+                      <Send className="h-3.5 w-3.5" /> Send
+                    </button>
+                  )}
                 </div>
               </div>
             )}
 
             {mode !== "chat" && (
-              <button onClick={generate} disabled={included.length === 0 || generating}
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-40">
-                {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                {generating ? "Synthesising…" : mode === "hypothesis" ? "Run test" : "Generate"}
-              </button>
+              <div className="flex items-center gap-3">
+                <button onClick={generate} disabled={included.length === 0 || generating}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-40">
+                  {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  {generating ? "Analyst is writing…" : mode === "hypothesis" ? "Weigh the evidence" : "Generate"}
+                </button>
+                {generating && (
+                  <button onClick={stop} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary">
+                    <StopCircle className="h-3.5 w-3.5" /> Stop
+                  </button>
+                )}
+              </div>
             )}
 
-            {/* Visual Output */}
-            {report && (
+            {error && (
+              <div className="rounded-md border border-rose-500/30 bg-rose-500/5 px-3 py-2 text-[12px] text-rose-600 dark:text-rose-400">
+                {error}
+              </div>
+            )}
+
+            {/* Live streaming preview while generating reports/hypotheses */}
+            {generating && mode !== "chat" && streamingText && (
+              <div className="rounded-xl border border-primary/30 bg-primary/[0.03] p-5">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-primary">Analyst is writing…</p>
+                <div className="prose prose-sm dark:prose-invert max-w-none">
+                  <ReactMarkdown>{streamingText}</ReactMarkdown>
+                </div>
+              </div>
+            )}
+
+            {/* Final structured output */}
+            {report && !generating && (
               <div className="mt-2 rounded-xl border border-border bg-background">
                 <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
                   <p className="text-xs font-medium">Preview · {report.kind}</p>
@@ -350,15 +525,18 @@ function ReportPreview({ report }: { report: ReportData }) {
         <p className="mt-1.5 text-sm text-muted-foreground">{report.subtitle} · {report.date}</p>
       </header>
 
-      {report.kind === "hypothesis" && (
+      {report.kind === "hypothesis" && report.hypothesis && (
         <section className="mt-5 rounded-lg border-l-4 border-primary bg-primary/[0.04] p-4">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Hypothesis</p>
           <p className="mt-1.5 text-[15px] font-medium leading-snug">{report.hypothesis}</p>
         </section>
       )}
 
-      {report.kind === "report" && (
-        <p className="mt-5 text-[13.5px] leading-relaxed text-muted-foreground">{report.intro}</p>
+      {/* AI narrative */}
+      {report.narrative && (
+        <section className="mt-6 prose prose-sm dark:prose-invert max-w-none">
+          <ReactMarkdown>{report.narrative}</ReactMarkdown>
+        </section>
       )}
 
       {/* KPI grid */}
@@ -368,26 +546,9 @@ function ReportPreview({ report }: { report: ReportData }) {
         <Kpi label="Investment" value={fmtFunding(report.totalFunding)} />
       </div>
 
-      {report.kind === "hypothesis" ? (
-        <>
-          <Section title={`Evidence for · ${report.forItems!.length}`} accent="emerald">
-            {report.forItems!.length ? report.forItems!.map((it) => <ItemRow key={it.id} item={it} />) : <Empty>No items above the 60/100 conviction threshold.</Empty>}
-          </Section>
-          <Section title={`Evidence against · ${report.againstItems!.length}`} accent="rose">
-            {report.againstItems!.length ? report.againstItems!.map((it) => <ItemRow key={it.id} item={it} />) : <Empty>No items below conviction threshold.</Empty>}
-          </Section>
-          <div className="mt-6 rounded-lg bg-secondary/40 p-4 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Verdict</p>
-            <p className="mt-1 text-lg font-semibold">
-              {report.forItems!.length} of {report.items.length} items support the hypothesis
-            </p>
-          </div>
-        </>
-      ) : (
-        <Section title="Per-technology read">
-          {report.items.map((it) => <ItemRow key={it.id} item={it} expanded />)}
-        </Section>
-      )}
+      <Section title="Data behind the analysis">
+        {report.items.map((it) => <ItemRow key={it.id} item={it} expanded={report.kind === "report"} />)}
+      </Section>
 
       {report.imports.length > 0 && (
         <Section title="Attachments">
@@ -400,7 +561,7 @@ function ReportPreview({ report }: { report: ReportData }) {
       )}
 
       <footer className="mt-8 border-t border-border pt-4 text-center text-[10.5px] text-muted-foreground">
-        Generated by N1 Signal · Data is real, narrative is rule-based.
+        Generated by N1 Signal · AI-authored narrative grounded in workspace data.
       </footer>
     </article>
   );
@@ -415,21 +576,13 @@ function Kpi({ label, value, accent }: { label: string; value: string; accent?: 
   );
 }
 
-function Section({ title, children, accent }: { title: string; children: React.ReactNode; accent?: "emerald" | "rose" }) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-6">
-      <h2 className={cn(
-        "mb-3 text-[11px] font-semibold uppercase tracking-[0.16em]",
-        accent === "emerald" ? "text-emerald-700 dark:text-emerald-400" :
-        accent === "rose" ? "text-rose-700 dark:text-rose-400" : "text-foreground"
-      )}>{title}</h2>
+      <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground">{title}</h2>
       <div className="space-y-2.5">{children}</div>
     </section>
   );
-}
-
-function Empty({ children }: { children: React.ReactNode }) {
-  return <p className="rounded-md border border-dashed border-border px-3 py-2 text-[12px] italic text-muted-foreground">{children}</p>;
 }
 
 function ItemRow({ item, expanded }: { item: ReportItem; expanded?: boolean }) {
@@ -484,9 +637,30 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-// ─── Self-contained printable HTML (for new window → PDF) ──────────────────
+// ─── Self-contained printable HTML ─────────────────────────────────────────
 function renderReportHtml(r: ReportData): string {
   const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+  // crude markdown -> html
+  const md = (s: string) => {
+    const lines = s.split("\n");
+    let html = "", inList = false;
+    const closeList = () => { if (inList) { html += "</ul>"; inList = false; } };
+    for (const raw of lines) {
+      const line = raw.trim();
+      if (!line) { closeList(); continue; }
+      const h = line.match(/^(#{1,4})\s+(.*)$/);
+      if (h) { closeList(); html += `<h${h[1].length}>${esc(h[2])}</h${h[1].length}>`; continue; }
+      if (/^[-*]\s+/.test(line)) {
+        if (!inList) { html += "<ul>"; inList = true; }
+        html += `<li>${esc(line.replace(/^[-*]\s+/, "")).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")}</li>`;
+        continue;
+      }
+      closeList();
+      html += `<p>${esc(line).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")}</p>`;
+    }
+    closeList();
+    return html;
+  };
   const bar = (signal: number) => {
     const color = signal >= 60 ? "#10b981" : signal >= 40 ? "#f59e0b" : "#f43f5e";
     return `<div class="bar"><div class="bar-fill" style="width:${signal}%;background:${color}"></div></div>`;
@@ -512,45 +686,28 @@ function renderReportHtml(r: ReportData): string {
       ${expanded && it.description ? `<p class="desc">${esc(it.description.slice(0, 320))}${it.description.length > 320 ? "…" : ""}</p>` : ""}
     </div>`;
 
-  const body = r.kind === "hypothesis"
-    ? `
-      <div class="hyp">
-        <div class="eyebrow">Hypothesis</div>
-        <p class="hyp-text">${esc(r.hypothesis!)}</p>
-      </div>
-      ${kpiHtml(r)}
-      <h2 class="sec emerald">Evidence for · ${r.forItems!.length}</h2>
-      ${r.forItems!.length ? r.forItems!.map((it) => itemHtml(it)).join("") : `<p class="empty">No items above 60/100 conviction.</p>`}
-      <h2 class="sec rose">Evidence against · ${r.againstItems!.length}</h2>
-      ${r.againstItems!.length ? r.againstItems!.map((it) => itemHtml(it)).join("") : `<p class="empty">No items below conviction.</p>`}
-      <div class="verdict">
-        <div class="eyebrow">Verdict</div>
-        <p class="verdict-text">${r.forItems!.length} of ${r.items.length} items support the hypothesis</p>
-      </div>`
-    : `
-      <p class="intro">${esc(r.intro)}</p>
-      ${kpiHtml(r)}
-      <h2 class="sec">Per-technology read</h2>
-      ${r.items.map((it) => itemHtml(it, true)).join("")}`;
-
   return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(r.title)} — N1 Signal</title>
 <style>
   *{box-sizing:border-box}
-  body{font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;color:#0f172a;margin:0;padding:40px;max-width:780px;margin:0 auto;background:#fff}
+  body{font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;color:#0f172a;margin:0;padding:40px;max-width:780px;margin:0 auto;background:#fff}
   header{border-bottom:1px solid #e2e8f0;padding-bottom:20px;margin-bottom:24px}
   .eyebrow{font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#64748b}
   header .eyebrow{color:#4f46e5}
   h1{font-size:30px;font-weight:600;letter-spacing:-0.02em;margin:6px 0 4px}
   .meta{font-size:13px;color:#64748b;margin:0}
-  .intro{font-size:13.5px;color:#475569;margin:20px 0}
   .hyp{border-left:4px solid #4f46e5;background:#eef2ff;padding:14px 16px;border-radius:6px;margin:22px 0}
   .hyp-text{font-size:15px;font-weight:500;margin:6px 0 0}
+  .narrative{margin:22px 0;color:#1e293b}
+  .narrative h1,.narrative h2,.narrative h3,.narrative h4{margin:18px 0 8px;font-weight:600}
+  .narrative h2{font-size:16px}.narrative h3{font-size:14px}
+  .narrative p{margin:8px 0}
+  .narrative ul{margin:8px 0;padding-left:20px}
+  .narrative li{margin:3px 0}
   .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:22px 0}
   .kpi{border:1px solid #e2e8f0;border-radius:8px;padding:12px}
   .kpi-v{font-size:20px;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums}
   .kpi-v.good{color:#059669}.kpi-v.warn{color:#d97706}.kpi-v.bad{color:#e11d48}
   h2.sec{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#0f172a;margin:28px 0 12px}
-  h2.sec.emerald{color:#047857}h2.sec.rose{color:#be123c}
   .item{border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin-bottom:10px;page-break-inside:avoid}
   .item-head{display:flex;align-items:center;gap:8px}
   .item-head h3{font-size:14px;font-weight:600;margin:0;flex:1}
@@ -567,9 +724,6 @@ function renderReportHtml(r: ReportData): string {
   .stat-l{font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:#64748b}
   .stat-v{font-size:11.5px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
   .desc{font-size:12px;color:#475569;border-top:1px solid #e2e8f0;padding-top:10px;margin:10px 0 0;line-height:1.55}
-  .empty{font-style:italic;color:#94a3b8;border:1px dashed #e2e8f0;padding:8px 12px;border-radius:6px;font-size:12px}
-  .verdict{text-align:center;background:#f1f5f9;border-radius:8px;padding:16px;margin-top:24px}
-  .verdict-text{font-size:18px;font-weight:600;margin:4px 0 0}
   footer{border-top:1px solid #e2e8f0;padding-top:12px;margin-top:32px;font-size:10.5px;color:#94a3b8;text-align:center}
   @page{margin:18mm 14mm}
   @media print{body{padding:0;max-width:none}}
@@ -579,17 +733,16 @@ function renderReportHtml(r: ReportData): string {
   <h1>${esc(r.title)}</h1>
   <p class="meta">${esc(r.subtitle)} · ${esc(r.date)}</p>
 </header>
-${body}
+${r.kind === "hypothesis" && r.hypothesis ? `<div class="hyp"><div class="eyebrow">Hypothesis</div><p class="hyp-text">${esc(r.hypothesis)}</p></div>` : ""}
+${r.narrative ? `<div class="narrative">${md(r.narrative)}</div>` : ""}
+<div class="kpis">
+  <div class="kpi"><div class="eyebrow">Technologies</div><div class="kpi-v">${r.itemCount}</div></div>
+  <div class="kpi"><div class="eyebrow">Avg signal</div><div class="kpi-v ${r.avgSignal >= 60 ? "good" : r.avgSignal >= 40 ? "warn" : "bad"}">${r.avgSignal}/100</div></div>
+  <div class="kpi"><div class="eyebrow">Investment</div><div class="kpi-v">${fmtFunding(r.totalFunding)}</div></div>
+</div>
+<h2 class="sec">Data behind the analysis</h2>
+${r.items.map((it) => itemHtml(it, r.kind === "report")).join("")}
 ${r.imports.length ? `<h2 class="sec">Attachments</h2><ul>${r.imports.map((f) => `<li>📎 ${esc(f.name)} (${Math.round(f.size / 1024)}KB)</li>`).join("")}</ul>` : ""}
-<footer>Generated by N1 Signal · Data is real, narrative is rule-based.</footer>
+<footer>Generated by N1 Signal · AI-authored narrative grounded in workspace data.</footer>
 </body></html>`;
-}
-
-function kpiHtml(r: ReportData): string {
-  const avgClass = r.avgSignal >= 60 ? "good" : r.avgSignal >= 40 ? "warn" : "bad";
-  return `<div class="kpis">
-    <div class="kpi"><div class="eyebrow">Technologies</div><div class="kpi-v">${r.itemCount}</div></div>
-    <div class="kpi"><div class="eyebrow">Avg signal</div><div class="kpi-v ${avgClass}">${r.avgSignal}/100</div></div>
-    <div class="kpi"><div class="eyebrow">Investment</div><div class="kpi-v">${fmtFunding(r.totalFunding)}</div></div>
-  </div>`;
 }
