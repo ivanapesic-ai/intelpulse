@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Network, LayoutGrid } from "lucide-react";
+import { Search, Network, LayoutGrid, Bookmark, Plus } from "lucide-react";
+import { toast } from "sonner";
 import { useTechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
-import { signalStrength, strengthBand, fmtFunding, getQuadrant, QUADRANT_META } from "./lib";
+import { signalStrength, strengthBand, fmtFunding, getQuadrant, QUADRANT_META, loadWorkspace, toggleWorkspace } from "./lib";
 import EcosystemRelationships from "./components/EcosystemRelationships";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +11,13 @@ export default function CompassEcosystem() {
   const { data: techs = [], isLoading } = useTechnologyIntelligence();
   const [mode, setMode] = useState<"map" | "list">("map");
   const [query, setQuery] = useState("");
+  const [workspace, setWorkspace] = useState<string[]>(loadWorkspace());
+
+  useEffect(() => {
+    const h = () => setWorkspace(loadWorkspace());
+    window.addEventListener("n1:workspace-changed", h);
+    return () => window.removeEventListener("n1:workspace-changed", h);
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -71,8 +79,27 @@ export default function CompassEcosystem() {
             const meta = q ? QUADRANT_META[q] : null;
             return (
               <Link key={t.id} to={`/compass/technology/${t.keyword || t.id}`}
-                className="group flex flex-col rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/30 hover:shadow-sm">
-                <div className="flex items-start justify-between gap-3">
+                className="group relative flex flex-col rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/30 hover:shadow-sm">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const inAfter = toggleWorkspace(t.keywordId);
+                    setWorkspace(loadWorkspace());
+                    toast.success(inAfter ? "Added to Workspace" : "Removed from Workspace");
+                  }}
+                  title={workspace.includes(t.keywordId) ? "In Workspace" : "Add to Workspace"}
+                  className={cn(
+                    "absolute right-2 top-2 z-10 rounded-md border p-1.5 transition-colors",
+                    workspace.includes(t.keywordId)
+                      ? "border-primary/40 bg-primary/10 text-primary"
+                      : "border-border bg-background text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-foreground"
+                  )}
+                >
+                  {workspace.includes(t.keywordId) ? <Bookmark className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+                </button>
+                <div className="flex items-start justify-between gap-3 pr-8">
                   <div className="min-w-0">
                     <p className="text-[10.5px] font-medium uppercase tracking-wider text-muted-foreground">{t.domainName || "—"}</p>
                     <h3 className="mt-0.5 truncate text-sm font-semibold">{t.name}</h3>
