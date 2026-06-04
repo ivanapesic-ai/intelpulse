@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
 import { ArrowLeft, Search, Save, Trash2, Plus, ExternalLink, Bookmark, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { toggleWorkspace, loadWorkspace, fmtFunding } from "./lib";
+import { toggleWorkspace, loadWorkspace, fmtFunding, toggleWorkspaceItem, loadWorkspaceItems, type WorkspaceItemKind } from "./lib";
 import { toast } from "sonner";
 
 // ---------- Types ----------
