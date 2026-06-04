@@ -69,6 +69,7 @@ export default function CompassLayout() {
           </div>
         </div>
       </header>
+      <DomainPreviewBanner />
 
       <main className="relative mx-auto max-w-[1480px] px-6 py-10">
         <Outlet />
