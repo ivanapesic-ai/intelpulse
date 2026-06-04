@@ -20,12 +20,12 @@ import { ResearchSignalsPanel } from "@/components/admin/ResearchSignalsPanel";
 import { StandardsManagerPanel } from "@/components/admin/StandardsManagerPanel";
 import { DataPipelinePanel } from "@/components/admin/DataPipelinePanel";
 import { CordisPanel } from "@/components/admin/CordisPanel";
-import GithubPanel from "@/components/admin/GithubPanel";
+
 import CharinPanel from "@/components/admin/CharinPanel";
 import { useCrunchbaseStats } from "@/hooks/useCrunchbase";
 
 export default function AdminPanel() {
-  const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "scraping" | "documents" | "news" | "research" | "cordis" | "github" | "charin">("crunchbase");
+  const [dataSubTab, setDataSubTab] = useState<"crunchbase" | "patents" | "scraping" | "documents" | "news" | "research" | "cordis" | "charin">("crunchbase");
 
   // Data hooks
   const { data: crunchbaseStats } = useCrunchbaseStats();
@@ -187,9 +187,6 @@ export default function AdminPanel() {
               <Button variant={dataSubTab === "cordis" ? "secondary" : "ghost"} size="sm" onClick={() => setDataSubTab("cordis")}>
                 <Landmark className="h-4 w-4 mr-1.5" /> CORDIS EU R&D
               </Button>
-              <Button variant={dataSubTab === "github" ? "secondary" : "ghost"} size="sm" onClick={() => setDataSubTab("github")}>
-                <Code className="h-4 w-4 mr-1.5" /> GitHub OSS
-              </Button>
               <Button variant={dataSubTab === "charin" ? "secondary" : "ghost"} size="sm" onClick={() => setDataSubTab("charin")}>
                 <FlaskConical className="h-4 w-4 mr-1.5" /> CharIN Tests
               </Button>
@@ -207,7 +204,7 @@ export default function AdminPanel() {
             {dataSubTab === "news" && <RssNewsPanel />}
             {dataSubTab === "research" && <ResearchSignalsPanel />}
             {dataSubTab === "cordis" && <CordisPanel />}
-            {dataSubTab === "github" && <GithubPanel />}
+            
             {dataSubTab === "charin" && <CharinPanel />}
           </TabsContent>
 
