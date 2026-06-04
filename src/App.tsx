@@ -104,6 +104,7 @@ const App = () => (
                 <Route path="ecosystem" element={<CompassEcosystem />} />
                 <Route path="signals" element={<CompassSignals />} />
                 <Route path="studio" element={<CompassStudio />} />
+                <Route path="technology/:slug" element={<CompassTechnology />} />
               </Route>
 
               {/* Catch-all */}
