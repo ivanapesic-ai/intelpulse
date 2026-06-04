@@ -61,34 +61,7 @@ export default function CompassEcosystem() {
       {isLoading ? (
         <div className="h-72 animate-pulse rounded-2xl border border-border bg-card" />
       ) : mode === "map" ? (
-        <div className="space-y-8">
-          {domains.map((d) => (
-            <section key={d.name}>
-              <div className="mb-3 flex items-baseline justify-between">
-                <h2 className="text-sm font-semibold">{d.name}</h2>
-                <span className="text-[11px] text-muted-foreground">{d.items.length} technologies</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {d.items.map((t) => {
-                  const s = signalStrength(t);
-                  const band = strengthBand(s);
-                  const q = getQuadrant(t);
-                  return (
-                    <Link key={t.id} to={`/technology/${t.keyword || t.id}`}
-                      className={cn(
-                        "group inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-xs transition-all hover:border-primary/40 hover:shadow-sm",
-                        q ? QUADRANT_META[q].ring : "border-border"
-                      )}>
-                      <span className={cn("h-1.5 w-1.5 rounded-full", band.bar)} />
-                      <span className="font-medium">{t.name}</span>
-                      <span className="tabular-nums text-muted-foreground">{s}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
-        </div>
+        <EcosystemRelationships />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((t) => {
