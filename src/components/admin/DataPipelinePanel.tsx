@@ -39,12 +39,6 @@ const DEFAULT_STEPS: Omit<PipelineStep, "status">[] = [
     enabled: true,
   },
   {
-    id: "fetch_github",
-    label: "Fetch GitHub OSS Activity",
-    description: "Search GitHub for open-source repos per keyword — stars, forks, momentum",
-    enabled: true,
-  },
-  {
     id: "fetch_charin",
     label: "Fetch CharIN Interop Data",
     description: "Seed known events and scrape CharIN event pages for test data",
