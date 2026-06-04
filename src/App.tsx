@@ -25,6 +25,7 @@ import CompassLayout from "./pages/compass/CompassLayout";
 import CompassHome from "./pages/compass/CompassHome";
 import CompassSignals from "./pages/compass/CompassSignals";
 import CompassStudio from "./pages/compass/CompassStudio";
+import CompassEcosystem from "./pages/compass/CompassEcosystem";
 
 const queryClient = new QueryClient();
 
@@ -99,6 +100,7 @@ const App = () => (
                 </ProtectedRoute>
               }>
                 <Route index element={<CompassHome />} />
+                <Route path="ecosystem" element={<CompassEcosystem />} />
                 <Route path="signals" element={<CompassSignals />} />
                 <Route path="studio" element={<CompassStudio />} />
               </Route>

@@ -69,7 +69,7 @@ export function PlatformHeader() {
                 className="gap-1.5 border-amber-400/40 bg-amber-400/5 text-amber-600 hover:bg-amber-400/10 hover:text-amber-700 dark:text-amber-300"
               >
                 <Sparkles className="h-3.5 w-3.5" />
-                Compass Preview
+                N1 Signal
               </Button>
             </Link>
             <ThemeToggle />
