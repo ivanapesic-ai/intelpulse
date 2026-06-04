@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { TrendingUp, TrendingDown, Minus, BookmarkPlus, Bookmark, RefreshCw, ArrowUp, ArrowDown, Sparkles, ArrowRight } from "lucide-react";
 import { useTechnologyIntelligence, type TechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
 import { useSignalSnapshots, computeDeltas } from "@/hooks/useSignalSnapshots";
-import { COQuadrantMatrix } from "@/components/intelligence/COQuadrantMatrix";
+import { GartnerMatrixSampler } from "@/components/intelligence/GartnerMatrixSampler";
 import { useNavigate } from "react-router-dom";
 import {
   signalStrength, strengthBand, fmtFunding, loadWorkspace, toggleWorkspace,
@@ -137,7 +137,7 @@ export default function CompassHome() {
           </div>
         </div>
         <div className="rounded-2xl border border-border bg-card p-4 sm:p-6">
-          <COQuadrantMatrix
+          <GartnerMatrixSampler
             technologies={techs}
             onSelectTechnology={(t) => navigate(`/technology/${t.keyword || t.id}`)}
           />
