@@ -68,6 +68,7 @@ export default function CompassTechnology() {
   const { data: companies = [] } = useCompaniesForTechnology(keywordId);
   const { data: research } = useResearchSignalForKeyword(keywordId || null);
   const { data: standards = [] } = useKeywordStandards(keywordId || null);
+  const { data: timeline = [] } = useTechnologyTimeline(keywordId);
 
   const [tab, setTab] = useState<TabId>("overview");
   const [ws, setWs] = useState<string[]>(() => loadWorkspace());
