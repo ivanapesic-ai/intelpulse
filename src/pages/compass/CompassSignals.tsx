@@ -84,7 +84,7 @@ export default function CompassSignals() {
                 return (
                   <tr key={t.id} className="transition-colors hover:bg-secondary/40">
                     <td className="px-4 py-3">
-                      <Link to={`/technology/${t.keyword || t.id}`} className="hover:text-primary">{t.name}</Link>
+                      <Link to={`/compass/technology/${t.keyword || t.id}`} className="hover:text-primary">{t.name}</Link>
                     </td>
                     <td className="px-4 py-3 text-right"><span className={cn("tabular-nums", band.color)}>{s}</span></td>
                     <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">{fmtFunding(t.totalFundingEur)}</td>
@@ -167,7 +167,7 @@ function StanceColumn({
             return (
               <div key={t.id} className="group rounded-lg border border-border bg-background/40 p-3">
                 <div className="flex items-start justify-between gap-3">
-                  <Link to={`/technology/${t.keyword || t.id}`} className="min-w-0 flex-1">
+                  <Link to={`/compass/technology/${t.keyword || t.id}`} className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{t.name}</p>
                     <p className="text-[11px] text-muted-foreground">Strength {s} · {fmtFunding(t.totalFundingEur)}</p>
                   </Link>

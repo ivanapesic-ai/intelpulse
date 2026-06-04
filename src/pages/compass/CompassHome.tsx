@@ -213,7 +213,7 @@ export default function CompassHome() {
               const Icon = up ? ArrowUp : ArrowDown;
               return (
                 <li key={t!.keywordId}>
-                  <Link to={`/technology/${t!.keyword || t!.id}`}
+                  <Link to={`/compass/technology/${t!.keyword || t!.id}`}
                     className="group block rounded-xl border border-border bg-background/60 backdrop-blur-sm p-4 transition-all hover:border-primary/30 hover:bg-background">
                     <div className="flex items-center gap-2">
                       <span className={cn("inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-semibold",
@@ -256,7 +256,7 @@ export default function CompassHome() {
           <div className="rounded-2xl border border-border bg-card p-4 sm:p-6">
             <GartnerMatrixSampler
               technologies={techs}
-              onSelectTechnology={(t) => navigate(`/technology/${t.keyword || t.id}`)}
+              onSelectTechnology={(t) => navigate(`/compass/technology/${t.keyword || t.id}`)}
             />
           </div>
 
@@ -373,7 +373,7 @@ export default function CompassHome() {
                         <div key={t.id} className="grid grid-cols-[1fr_140px_44px] items-center gap-3">
                           <div className="flex items-center gap-1.5 min-w-0">
                             {inWs && <Bookmark className="h-3 w-3 shrink-0 fill-amber-500 text-amber-500" />}
-                            <Link to={`/technology/${t.keyword || t.id}`}
+                            <Link to={`/compass/technology/${t.keyword || t.id}`}
                               className={cn("truncate text-[12px] hover:text-foreground", inWs ? "font-medium text-foreground" : "text-muted-foreground")}>
                               {t.name}
                             </Link>
