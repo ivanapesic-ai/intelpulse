@@ -2,6 +2,22 @@
 
 import type { TechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
 
+export function slugifyTechnologyValue(value: unknown): string {
+  return typeof value === "string"
+    ? value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")
+    : "";
+}
+
+export function getTechnologySlug(tech: Pick<TechnologyIntelligence, "keyword" | "id" | "name"> | { keyword?: unknown; id?: unknown; name?: unknown }): string {
+  const keyword = typeof tech.keyword === "string" ? tech.keyword.trim().toLowerCase() : "";
+  if (keyword) return keyword;
+
+  const id = typeof tech.id === "string" ? tech.id.trim().toLowerCase() : "";
+  if (id) return id;
+
+  return slugifyTechnologyValue(tech.name);
+}
+
 /** Convert 4-signal 0-2 scores into a 0-100 composite "Signal Strength". */
 export function signalStrength(t: TechnologyIntelligence): number {
   const parts = [

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Search, Network, LayoutGrid, Bookmark, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useTechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
-import { signalStrength, strengthBand, fmtFunding, getQuadrant, QUADRANT_META, loadWorkspace, toggleWorkspace } from "./lib";
+import { signalStrength, strengthBand, fmtFunding, getQuadrant, QUADRANT_META, loadWorkspace, toggleWorkspace, getTechnologySlug } from "./lib";
 import EcosystemRelationships from "./components/EcosystemRelationships";
 import { cn } from "@/lib/utils";
 
@@ -78,7 +78,7 @@ export default function CompassEcosystem() {
             const q = getQuadrant(t);
             const meta = q ? QUADRANT_META[q] : null;
             return (
-              <Link key={t.id} to={`/compass/technology/${t.keyword || t.id}`}
+              <Link key={t.id} to={`/compass/technology/${getTechnologySlug(t)}`}
                 className="group relative flex flex-col rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/30 hover:shadow-sm">
                 <button
                   type="button"
