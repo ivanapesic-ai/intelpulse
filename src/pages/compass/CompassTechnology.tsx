@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip,
-  ResponsiveContainer, Area, AreaChart,
+  ResponsiveContainer, Area, AreaChart, ComposedChart, Bar, Legend,
 } from "recharts";
 import { useTechnologyIntelligence } from "@/hooks/useTechnologyIntelligence";
 import { useSignalSnapshots } from "@/hooks/useSignalSnapshots";
@@ -15,6 +15,7 @@ import { useNewsForKeyword } from "@/hooks/useNews";
 import { useCompaniesForTechnology } from "@/hooks/useCompaniesForTechnology";
 import { useResearchSignalForKeyword } from "@/hooks/useResearchSignals";
 import { useKeywordStandards } from "@/hooks/useKeywordStandards";
+import { useTechnologyTimeline } from "@/hooks/useTechnologyTimeline";
 import {
   signalStrength, strengthBand, fmtFunding, getQuadrant, QUADRANT_META,
   loadWorkspace, toggleWorkspace, loadStances, setStance,
