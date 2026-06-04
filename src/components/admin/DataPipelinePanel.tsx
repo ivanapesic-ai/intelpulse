@@ -69,6 +69,12 @@ const DEFAULT_STEPS: Omit<PipelineStep, "status">[] = [
     enabled: true,
   },
   {
+    id: "backfill_snapshots",
+    label: "Backfill Signal Snapshots (history)",
+    description: "Replay news, companies & EU projects month-by-month back 48 months",
+    enabled: false,
+  },
+  {
     id: "analyze_lineage",
     label: "Analyze Signal Lineage",
     description: "Use AI to identify conceptual links between research, patents & news",
@@ -178,6 +184,14 @@ export function DataPipelinePanel() {
           case "refresh_view": {
             const { error } = await supabase.rpc("refresh_technology_intelligence");
             if (error) throw error;
+            break;
+          }
+          case "backfill_snapshots": {
+            const { data: result, error } = await supabase.functions.invoke("backfill-signal-snapshots", {
+              body: { months_back: 48 },
+            });
+            if (error) throw error;
+            if (result && result.error) throw new Error(result.error);
             break;
           }
           case "analyze_lineage": {
