@@ -109,16 +109,23 @@ function useSearch(filters: Filters) {
 
       // -- Companies (Crunchbase) --
       if (wantsAll || filters.source === "companies") {
+        let companyIds: string[] | null = null;
+        if (filters.keywordId) {
+          const { data: maps } = await supabase
+            .from("crunchbase_keyword_mapping")
+            .select("company_id")
+            .eq("keyword_id", filters.keywordId)
+            .limit(2000);
+          companyIds = (maps || []).map((m: any) => m.company_id);
+          if (companyIds.length === 0) companyIds = ["00000000-0000-0000-0000-000000000000"];
+        }
         let q = supabase
           .from("crunchbase_companies")
           .select("id, organization_name, description, website, hq_country, total_funding_usd, last_funding_date, technology_keywords, industries")
           .order("total_funding_usd", { ascending: false, nullsFirst: false })
           .limit(wantsAll ? 30 : 100);
         if (text) q = q.or(`organization_name.ilike.%${text}%,description.ilike.%${text}%`);
-        if (filters.keywordId) {
-          // technology_keywords is uuid[] of keyword ids
-          q = q.contains("technology_keywords", [filters.keywordId]);
-        }
+        if (companyIds) q = q.in("id", companyIds);
         const { data } = await q;
         for (const c of data || []) {
           out.push({
