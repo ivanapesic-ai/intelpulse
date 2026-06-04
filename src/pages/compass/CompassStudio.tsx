@@ -299,6 +299,30 @@ export default function CompassStudio() {
     abortRef.current = null;
   };
 
+  const runResearch = async () => {
+    const topics = included.map((t: any) => t.name).filter(Boolean);
+    const extra = wsItems.filter((w) => w.kind !== "import").map((w) => w.title).slice(0, 6);
+    const all = Array.from(new Set([...topics, ...extra]));
+    if (all.length === 0) {
+      setError("Add at least one item to the workspace first.");
+      return;
+    }
+    setError(null);
+    setResearching(true);
+    setResearch(null);
+    try {
+      const { data, error: err } = await supabase.functions.invoke("perplexity-research", {
+        body: { topics: all, mode: researchMode, recency: "month" },
+      });
+      if (err) throw err;
+      if (data?.error) throw new Error(data.error);
+      setResearch({ content: data?.content || "", citations: data?.citations || [] });
+    } catch (e: any) {
+      setError(e?.message || "Web research failed");
+    }
+    setResearching(false);
+  };
+
   const downloadPdf = () => {
     if (!report) return;
     const html = renderReportHtml(report);
