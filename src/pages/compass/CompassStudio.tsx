@@ -279,6 +279,7 @@ export default function CompassStudio() {
     try {
       await streamAnalyst({
         mode: "chat", persona, items: itemsForAI(),
+        references: wsItems.map((w) => ({ kind: w.kind, title: w.title, subtitle: w.subtitle, url: w.url, keywordId: w.keywordId })),
         history: chatLog, payload: { message: text },
       }, (delta) => {
         acc += delta;
