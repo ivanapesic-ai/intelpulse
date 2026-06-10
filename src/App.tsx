@@ -14,6 +14,7 @@ import Dashboard from "./pages/mockups/Dashboard";
 import TechnologyExplorer from "./pages/mockups/TechnologyExplorer";
 import AdminPanel from "./pages/mockups/AdminPanel";
 import PublicDemo from "./pages/mockups/PublicDemo";
+import N1SignalTeaser from "./pages/N1SignalTeaser";
 import IntelligenceDashboard from "./pages/mockups/IntelligenceDashboard";
 import KnowledgeGraphPage from "./pages/mockups/KnowledgeGraphPage";
 import MySignals from "./pages/mockups/MySignals";
@@ -51,7 +52,8 @@ const App = () => (
           <BrowserRouter>
             <Routes>
             {/* Public */}
-            <Route path="/" element={<PublicDemo />} />
+            <Route path="/" element={<N1SignalTeaser />} />
+            <Route path="/demo" element={<PublicDemo />} />
             <Route path="/login" element={<Login />} />
               
               {/* Authenticated Users */}
