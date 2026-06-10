@@ -628,15 +628,15 @@ function HybridRadarQuadrantLabeled({
         (2 - challenge) - 1
       );
       
-      const baseDistance = 15 + maturityRing * 15;
+      const baseDistance = 12 + maturityRing * 12;
       const signalAngleOffset = ((investmentSignal - 1) / 2) * 0.25;
-      const signalDistOffset = ((patentSignal - 1) / 2) * 6;
+      const signalDistOffset = ((patentSignal - 1) / 2) * 4;
       const mediaAngleOffset = ((mediaSignal - 1) / 2) * 0.15;
       const indexAngleSpread = ((i % 11) - 5) * 0.08;
-      const indexDistSpread = ((i % 5) - 2) * 2;
+      const indexDistSpread = ((i % 5) - 2) * 1.5;
       
       const finalAngle = quadrantAngle + signalAngleOffset + mediaAngleOffset + indexAngleSpread;
-      const finalDist = Math.max(10, Math.min(44, baseDistance + signalDistOffset + indexDistSpread));
+      const finalDist = Math.max(8, Math.min(36, baseDistance + signalDistOffset + indexDistSpread));
       
       const x = centerX + Math.cos(finalAngle) * finalDist;
       const y = centerY - Math.sin(finalAngle) * finalDist;
@@ -652,7 +652,8 @@ function HybridRadarQuadrantLabeled({
   ];
 
   return (
-    <div className="relative w-full aspect-square max-w-3xl mx-auto">
+    <div className="relative w-full aspect-square max-w-xl mx-auto">
+
       <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
         <path d="M50,50 L50,5 A45,45 0 0,0 5,50 Z" fill="rgba(250, 204, 21, 0.2)" />
         <path d="M50,50 L95,50 A45,45 0 0,0 50,5 Z" fill="rgba(236, 72, 153, 0.15)" />
@@ -680,7 +681,7 @@ function HybridRadarQuadrantLabeled({
 
       <TooltipProvider>
         {positioned.map(({ tech, x, y }, i) => {
-          const size = 44 + Math.min(tech.totalFundingEur / 50_000_000, 1) * 20;
+          const size = 32 + Math.min(tech.totalFundingEur / 50_000_000, 1) * 14;
           const isSelected = selectedId === tech.id;
           const color = getTechColorByIndex(i);
           const label = getSmartLabel(tech.name);
