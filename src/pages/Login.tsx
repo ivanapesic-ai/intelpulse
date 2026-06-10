@@ -19,22 +19,22 @@ import logo from '@/assets/logo.svg';
  
    // Check if already logged in
    useEffect(() => {
-     const checkSession = async () => {
-       const { data: { session } } = await supabase.auth.getSession();
-       if (session) {
-         navigate('/dashboard');
-       }
-     };
-     checkSession();
- 
-     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-       if (event === 'SIGNED_IN' && session) {
-         navigate('/dashboard');
-       }
-     });
- 
-     return () => subscription.unsubscribe();
-   }, [navigate]);
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate('/compass');
+      }
+    };
+    checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        navigate('/compass');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
  
    const handleSubmit = async (e: React.FormEvent) => {
      e.preventDefault();
@@ -47,7 +47,7 @@ import logo from '@/assets/logo.svg';
            email,
            password,
            options: {
-             emailRedirectTo: window.location.origin + '/dashboard',
+             emailRedirectTo: window.location.origin + '/compass',
            },
          });
          if (error) throw error;
