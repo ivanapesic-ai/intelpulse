@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Lock, ArrowRight, Check, TrendingUp, Database, FileText, Activity } from "lucide-react";
+import { Lock, ArrowRight, Check, TrendingUp, Database, FileText, Activity, Sparkles } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -99,9 +99,18 @@ export default function PublicDemo() {
               <Badge variant="outline" className="ml-2 text-xs">Demo</Badge>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <ThemeToggle />
-              <Button variant="outline" size="sm" onClick={() => navigate('/login')}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/login')}
+                className="gap-1.5 border-amber-400/40 bg-amber-400/5 text-amber-600 hover:bg-amber-400/10 hover:text-amber-700 dark:text-amber-300"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                N1 Signal
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>
                 Sign In
               </Button>
               <Button size="sm" onClick={() => setShowAccessDialog(true)}>
@@ -128,10 +137,21 @@ export default function PublicDemo() {
               Real-time maturity tracking powered by market signals, document analysis, and hybrid scoring model.
             </p>
 
-            {/* Demo Notice */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-warning/10 border border-warning/30 text-sm">
-              <Lock className="h-4 w-4 text-warning" />
-              <span className="text-foreground">Demo Mode — Showing 5 of {totalTechCount}+ tracked technologies</span>
+            {/* Demo Notice + N1 Signal preview */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-warning/10 border border-warning/30 text-sm">
+                <Lock className="h-4 w-4 text-warning" />
+                <span className="text-foreground">Demo Mode — Showing 5 of {totalTechCount}+ tracked technologies</span>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => navigate('/login')}
+                className="gap-1.5 bg-amber-500 text-white hover:bg-amber-600"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Preview N1 Signal
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
             </div>
           </div>
         </div>
