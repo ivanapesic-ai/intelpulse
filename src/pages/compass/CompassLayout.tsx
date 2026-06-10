@@ -52,12 +52,6 @@ export default function CompassLayout() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <Link
-              to="/dashboard"
-              className="hidden text-xs text-muted-foreground hover:text-foreground md:block"
-            >
-              ← Back to platform
-            </Link>
             <ThemeToggle />
             <button
               onClick={async () => { await signOut(); navigate("/login"); }}
