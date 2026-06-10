@@ -1,0 +1,2 @@
+UPDATE auth.users SET email = 'demo@house11.ai', raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb) || jsonb_build_object('email', 'demo@house11.ai') WHERE email = 'demo@pulse11.ai';
+UPDATE auth.identities SET identity_data = COALESCE(identity_data, '{}'::jsonb) || jsonb_build_object('email', 'demo@house11.ai') WHERE identity_data->>'email' = 'demo@pulse11.ai';
